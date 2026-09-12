@@ -278,7 +278,7 @@ buffer[sizeof(buffer) - 1] = '\0';
 - Use `snprintf(buffer, sizeof(buffer), "format %s", val)` for safe formatted string composition.
 
 18. Performance Considerations
-- Cache Line Locality: Accessing 2D arrays row-by-row (`matrix[r][c]`) follows memory layout and achieves near 100% cache hits. Accessing column-by-column (`matrix[c][r]`) causes cache thrashing and runs up to 10x slower on large matrices.
+- Cache Line Locality: Accessing 2D arrays row-by-row (`matrix[r][c]`) follows contiguous row-major memory layout and maximizes CPU cache spatial locality. Accessing column-by-column (`matrix[c][r]`) induces non-contiguous memory strides across cache lines, causing frequent cache misses and degraded throughput; the exact performance penalty depends on CPU cache hierarchy, line size (typically 64 bytes), compiler prefetching, and matrix dimensions.
 
 19. Security Considerations
 - Stack Smashing: Buffer overflows allow overwriting function return addresses, enabling arbitrary code execution (CWE-120). Always use bounds-checking functions.
@@ -300,7 +300,7 @@ A: No. `strtok()` maintains internal static state to track position across calls
 23. Interview Questions
 Beginner:
 Q: What is the difference between `char str[] = "text";` and `char *str = "text";`?
-A: `char str[]` allocates an array on the stack and copies the characters into it, allowing in-place modification. `char *str` points directly to a read-only string literal in the `.rodata` segment, and attempting to modify it causes undefined behavior (segmentation fault).
+A: `char str[]` allocates an array in writable memory (e.g. on the stack) and copies the characters into it, allowing in-place modification. `char *str = "text";` points directly to the string literal; attempting to modify a string literal is undefined behavior according to the ISO C standard (and in typical OS implementations like Linux ELF, string literals reside in read-only memory pages, triggering a segmentation fault on write attempts).
 
 Intermediate:
 Q: Explain how array-to-pointer decay works in C.
@@ -313,7 +313,7 @@ A: `snprintf(buf, size, fmt, ...)` writes at most `size - 1` characters and alwa
 24. Exam Questions
 Short-Answer: What is the output of `printf("%c", *"hello" + 1);`? (Output: 'i', because `*"hello"` is 'h' (ASCII 104), and $104 + 1 = 105$ ('i')).
 Medium-Answer: Write a function to check if a string is a palindrome ignoring case.
-Long-Answer: Explain row-major order memory layout for 2D arrays, derive the linear index formula, and explain why traversing columns first hurts cache performance.
+Long-Answer: Explain row-major order memory layout for 2D arrays, derive the linear index formula (index = r * cols + c), and analyze how stride-based column traversal degrades spatial cache locality depending on cache line width and matrix dimensions.
 
 25. Practice Questions
 1. Implement a custom version of `strlen`, `strcpy`, and `strcmp` without including `<string.h>`.

@@ -11,7 +11,7 @@ Advanced C systems programming requires mastering the subtle mechanics of the C 
 2. Learning Objectives
 - Master preprocessor macro mechanics: function-like macros, token concatenation (`##`), stringification (`#`), variadic macros (`__VA_ARGS__`), and header guards.
 - Understand multi-file architecture: header/source separation, external vs internal linkage (`extern`, `static`), translation units, and symbol visibility.
-- Differentiate C type qualifiers: `const`, `volatile` (hardware memory barriers and MMIO), and `restrict` (aliasing optimization).
+- Differentiate C type qualifiers: `const`, `volatile` (preventing compiler register caching for MMIO/signals without providing CPU hardware memory barriers), and `restrict` (aliasing contract for optimization).
 - Categorize Undefined Behavior (UB), Implementation-Defined Behavior, and Unspecified Behavior with concrete examples.
 - Master diagnostic sanitizers (ASan, UBSan, TSan) and GNU Debugger (GDB) workflow for low-level memory analysis.
 
