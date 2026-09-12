@@ -1,175 +1,128 @@
-COURSE: c
-TOPIC: structures_unions
-LEVEL: intermediate
+COURSE: C
+TOPIC: STRUCTURES_UNIONS
+LEVEL: INTERMEDIATE
 SOURCE: c_structures_unions.txt
 
-TITLE: C Structures, Unions, Enumerations, and Memory Alignment
+TITLE: Deep C Structures, Unions, Bit-Fields, Memory Alignment, and Data Modeling
 
 1. Introduction
-While primitive data types represent individual scalars, complex software applications require grouping related heterogeneous data into composite entities. C provides user-defined composite data types through structures (`struct`), unions (`union`), enumerations (`enum`), and type aliasing (`typedef`). A structure aggregates multiple variables of different types under a single contiguous block, whereas a union allows multiple members to share the exact same memory space. Understanding structure declarations, initialization syntax, member access operators (`.` and `->`), pointer-to-structure mechanics, nested composites, bit-fields, memory alignment, and structure padding is essential for writing efficient systems code, network protocol parsers, and hardware drivers.
+Structures (`struct`), unions (`union`), enumerations (`enum`), and bit-fields are C's composite user-defined data types, allowing developers to group heterogeneous attributes into unified, contiguous memory models. Structures are the cornerstone of procedural domain modeling and the architectural foundation for complex data structures (linked lists, trees, graphs, OS device tables). Understanding how compilers arrange struct members in physical memory—including CPU hardware alignment rules, padding bytes, offset calculations, self-referential pointer links, and overlapping union memory—is crucial for high-performance systems engineering.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Define, declare, initialize, and manipulate C structures.
-- Use member access operators: direct access (`.`) and pointer dereference access (`->`).
-- Implement arrays of structures and nested structures.
-- Pass structures to functions by value and by pointer reference efficiently.
-- Apply `typedef` to define clean, readable type aliases.
-- Understand unions, shared memory layouts, and type-punning mechanics.
-- Compare memory models of structures versus unions.
-- Define and utilize enumerations (`enum`) for state machines and categorical types.
-- Understand struct memory padding, byte alignment, and compiler packing pragmas.
+- Master `struct` syntax: declaration, typedef aliasing, designated initializers, and member access (`.` and `->`).
+- Understand memory layout: data alignment, struct padding, and the `offsetof` macro from `<stddef.h>`.
+- Implement self-referential structures for dynamic nodes (linked lists and binary search trees).
+- Master `union` semantics, overlapping memory layouts, and tagged (discriminated) union design patterns.
+- Utilize bit-fields and enumerations (`enum`) for hardware register mapping and compact bit-level protocols.
 
-3. Core Concepts
-- Structure (`struct`): A contiguous record holding multiple distinct member variables simultaneously.
-- Union (`union`): A memory entity whose size equals its largest member; only one member is stored at any given time.
-- Arrow Operator (`->`): Syntactic shorthand `ptr->member` for `(*ptr).member`.
-- Type Aliasing (`typedef`): Assigns descriptive custom type names to existing primitive or composite types.
-- Enumeration (`enum`): A distinct user type consisting of named integer constants.
-- Memory Alignment & Padding: Hardware-driven alignment constraints causing compilers to insert unused padding bytes between struct members.
+3. Prerequisites
+- Proficiency in C fundamentals, data types, arrays, pointers, and dynamic memory allocation.
 
-4. Detailed Explanation
-4.1 Structures
-- Declaration:
-  struct Student {
-      int id;
-      char name[50];
-      float gpa;
-  };
-- Initialization: Can use positional initializers `struct Student s1 = {101, "Alice", 3.9};` or designated initializers `struct Student s1 = {.name = "Alice", .id = 101, .gpa = 3.9};`.
-- Pointer Access:
-  struct Student *s_ptr = &s1;
-  printf("%s", s_ptr->name);
+4. Core Concepts
+- Structure (`struct`): A composite data type whose members are laid out sequentially in contiguous memory. Total size equals the sum of member sizes plus padding bytes.
+- Member Access Operators: The dot operator (`.`) accesses members on direct struct instances; the arrow operator (`->`) dereferences a struct pointer to access members (`ptr->field` $\equiv$ `(*ptr).field`).
+- Hardware Alignment: CPUs access memory most efficiently when $N$-byte data types are stored at memory addresses divisible by $N$. Compilers insert padding bytes to satisfy alignment requirements.
+- Union (`union`): A user-defined type where all members share the exact same starting memory address. Total size equals the size of its largest member.
+- Tagged Union: An architectural pattern combining a struct, an enum tag, and a union to safely represent dynamic polymorphic data types.
 
-4.2 Memory Alignment and Padding
-CPUs access memory more efficiently in multiples of word boundaries (typically 4 or 8 bytes).
-Given:
-struct Data {
-    char a;    // 1 byte + 3 bytes padding
-    int b;     // 4 bytes
-    char c;    // 1 byte + 3 bytes padding
+5. Detailed Theory
+5.1 Struct Memory Layout, Padding, and Alignment
+Consider the following structure on a 64-bit architecture:
+```c
+struct Example {
+    char a;     // 1 byte
+    // 3 padding bytes inserted here to align 'b' on 4-byte boundary
+    int b;      // 4 bytes
+    char c;     // 1 byte
+    // 7 padding bytes inserted here to align struct size to multiple of 8
+    double *d;  // 8 bytes (pointer)
 };
-Total size is 12 bytes instead of 6 bytes.
-Reordering members by descending size:
-struct OptimizedData {
-    int b;     // 4 bytes
-    char a;    // 1 byte
-    char c;    // 1 byte + 2 bytes padding
+```
+Without padding: $1 + 4 + 1 + 8 = 14$ bytes.
+With compiler alignment padding: Total size is 24 bytes!
+Reordering members by decreasing size minimizes padding:
+```c
+struct Optimized {
+    double *d;  // 8 bytes
+    int b;      // 4 bytes
+    char a;     // 1 byte
+    char c;     // 1 byte
+    // 2 padding bytes to round total size to multiple of 8
+}; // Total size: 16 bytes (33% memory reduction!)
+```
+
+5.2 The `offsetof` Macro
+From `<stddef.h>`, `offsetof(type, member)` computes the byte offset of a struct field from the structure's base address at compile time:
+```c
+size_t offset_b = offsetof(struct Example, b); // Evaluates to 4
+```
+
+5.3 Unions and Memory Sharing
+In a union, modifying one member overwrites the shared memory space of all other members:
+```c
+union DataPacket {
+    uint32_t raw_integer; // 4 bytes
+    uint8_t bytes[4];     // 4 bytes
+    float float_val;      // 4 bytes
 };
-Total size is reduced to 8 bytes (33% memory saving).
+```
+This union consumes exactly 4 bytes. Writing to `raw_integer` and reading from `bytes` allows inspecting raw byte representations (type punning).
 
-4.3 Unions and Shared Memory
-- All union members share the exact same starting memory address.
-- Useful for variant data types (discriminated unions) and hardware register bit-level representations.
+6. Syntax
+- Struct Definition:
+  `typedef struct Person { char name[32]; int age; } Person;`
+- Pointer Member Access:
+  `Person *p = &person; p->age = 30;`
+- Tagged Union:
+  `typedef struct { DataType tag; union { int i; float f; } data; } Value;`
 
-4.4 Enumerations
-- Default assigns integer values starting from 0: `enum Color { RED, GREEN, BLUE };` (RED=0, GREEN=1, BLUE=2).
-- Explicit integer assignments are supported.
-
-5. Syntax
-5.1 Struct and Typedef
-typedef struct {
-    double x;
-    double y;
-} Point2D;
-
-5.2 Union Definition
-typedef union {
-    int int_val;
-    float float_val;
-    char bytes[4];
-} DataPacket;
-
-6. Basic Examples
-Example 6.1: Basic Struct Declaration, Initialization, and Printing
+7. Basic Examples (Beginner Level)
+```c
 #include <stdio.h>
 #include <string.h>
 
 typedef struct {
-    int employee_id;
-    char name[32];
-    double salary;
-} Employee;
-
-void print_employee(const Employee *emp) {
-    printf("ID: %d | Name: %s | Salary: $%.2f\n", emp->employee_id, emp->name, emp->salary);
-}
-
-int main(void) {
-    Employee emp1 = {1001, "Marcus Vance", 85000.00};
-    Employee emp2;
-    emp2.employee_id = 1002;
-    strncpy(emp2.name, "Elena Rostova", sizeof(emp2.name) - 1);
-    emp2.salary = 92500.50;
-
-    print_employee(&emp1);
-    print_employee(&emp2);
-    return 0;
-}
-
-Example 6.2: Enumeration for Day and State
-#include <stdio.h>
-
-typedef enum {
-    LOG_DEBUG = 10,
-    LOG_INFO  = 20,
-    LOG_WARN  = 30,
-    LOG_ERROR = 40
-} LogLevel;
-
-void log_message(LogLevel level, const char *msg) {
-    switch (level) {
-        case LOG_DEBUG: printf("[DEBUG] %s\n", msg); break;
-        case LOG_INFO:  printf("[INFO]  %s\n", msg); break;
-        case LOG_WARN:  printf("[WARN]  %s\n", msg); break;
-        case LOG_ERROR: printf("[ERROR] %s\n", msg); break;
-    }
-}
-
-int main(void) {
-    log_message(LOG_INFO, "System service initialized.");
-    log_message(LOG_ERROR, "Failed to connect to database host.");
-    return 0;
-}
-
-7. Intermediate Examples
-Example 7.1: Array of Structs and Search
-#include <stdio.h>
-#include <string.h>
-
-typedef struct {
-    char code[8];
     char title[64];
-    int credits;
-} Course;
+    char author[32];
+    int publication_year;
+    double price;
+} Book;
 
-int find_course(const Course catalog[], int count, const char *target_code) {
-    for (int i = 0; i < count; i++) {
-        if (strcmp(catalog[i].code, target_code) == 0) {
-            return i;
-        }
-    }
-    return -1;
+void print_book(const Book *b) {
+    if (b == NULL) return;
+    printf("Book: \\"%s\\" by %s (%d) - $%.2f\\n", 
+           b->title, b->author, b->publication_year, b->price);
 }
 
 int main(void) {
-    Course catalog[] = {
-        {"CS101", "Introduction to C", 4},
-        {"CS102", "Data Structures in C++", 4},
-        {"CS201", "Systems Programming in C", 3}
+    // Designated initializer (C99)
+    Book book1 = {
+        .title = "The C Programming Language",
+        .author = "Kernighan and Ritchie",
+        .publication_year = 1978,
+        .price = 45.50
     };
-    int total = sizeof(catalog) / sizeof(catalog[0]);
 
-    int idx = find_course(catalog, total, "CS201");
-    if (idx != -1) {
-        printf("Found: %s - %s (%d Credits)\n", catalog[idx].code, catalog[idx].title, catalog[idx].credits);
-    }
+    print_book(&book1);
+
+    // Modify via pointer
+    Book *book_ptr = &book1;
+    book_ptr->price = 39.99;
+    printf("Updated price: $%.2f\\n", book1.price);
+
     return 0;
 }
+```
+Expected Output:
+```
+Book: "The C Programming Language" by Kernighan and Ritchie (1978) - $45.50
+Updated price: $39.99
+```
 
-8. Advanced Examples
-Example 8.1: Tagged / Discriminated Union (Variant Type)
+8. Intermediate Examples (Tagged Discriminated Union Pattern)
+```c
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum {
     TYPE_INT,
@@ -180,83 +133,253 @@ typedef enum {
 typedef struct {
     ValueType type;
     union {
-        int i_val;
-        float f_val;
-        char *s_val;
-    } data;
+        int int_val;
+        double float_val;
+        const char *str_val;
+    } as;
 } DynamicValue;
 
 void print_dynamic_value(const DynamicValue *val) {
     switch (val->type) {
         case TYPE_INT:
-            printf("Integer: %d\n", val->data.i_val);
+            printf("[Integer] %d\\n", val->as.int_val);
             break;
         case TYPE_FLOAT:
-            printf("Float: %.4f\n", val->data.f_val);
+            printf("[Float  ] %.4f\\n", val->as.float_val);
             break;
         case TYPE_STRING:
-            printf("String: %s\n", val->data.s_val);
+            printf("[String ] \\"%s\\"\\n", val->as.str_val);
             break;
     }
 }
 
 int main(void) {
-    DynamicValue v1 = {.type = TYPE_INT, .data.i_val = 1024};
-    DynamicValue v2 = {.type = TYPE_FLOAT, .data.f_val = 3.14159f};
-    DynamicValue v3 = {.type = TYPE_STRING, .data.s_val = "Adaptive Learning Engine"};
+    DynamicValue v1 = { .type = TYPE_INT, .as.int_val = 1024 };
+    DynamicValue v2 = { .type = TYPE_FLOAT, .as.float_val = 3.14159 };
+    DynamicValue v3 = { .type = TYPE_STRING, .as.str_val = "Adaptive Engine" };
 
     print_dynamic_value(&v1);
     print_dynamic_value(&v2);
     print_dynamic_value(&v3);
+
     return 0;
 }
+```
+Expected Output:
+```
+[Integer] 1024
+[Float  ] 3.1416
+[String ] "Adaptive Engine"
+```
 
-9. Code Explanation
-In Example 6.1:
-- Passing `&emp1` (a pointer) to `print_employee` avoids copying the entire 44-byte structure onto the stack, executing in $O(1)$ time and memory.
-In Example 8.1:
-- The tagged union pattern pairs an `enum` discriminator (`type`) with a `union` payload (`data`). This ensures type safety when accessing union members in C.
+9. Advanced Examples (Hardware Register Bit-Fields and Struct Padding Analysis)
+```c
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
 
-10. Practical Use Cases
-- Network packet headers (IP, TCP, UDP protocol structures).
-- Abstract Syntax Trees (AST) and expression parsers in compilers.
-- Embedded microcontroller peripheral register mappings.
-- Relational database record modeling and serialization layers.
+// Bit-field struct mapping hardware status register
+typedef struct {
+    uint8_t power_on    : 1; // Bit 0: Power status (0=Off, 1=On)
+    uint8_t ready       : 1; // Bit 1: Device ready
+    uint8_t error_code  : 4; // Bits 2-5: Error code (0-15)
+    uint8_t mode        : 2; // Bits 6-7: Operating mode (0-3)
+} HardwareRegister;
 
-11. Common Mistakes
-1. Using dot operator on a pointer: `emp_ptr.name` instead of `emp_ptr->name` or `(*emp_ptr).name`.
-2. Assuming `sizeof(struct)` is simply the sum of its member sizes, ignoring compiler padding.
-3. Accessing inactive union members without checking the active tag.
-4. Returning local struct pointers: Returning `&local_struct` produces a dangling pointer.
+struct Unaligned {
+    char c1;
+    int i;
+    char c2;
+    double d;
+};
 
-12. Edge Cases
-- Self-referential structures: A struct cannot contain an instance of itself directly (`struct Node next;` fails), but it can contain a pointer to itself (`struct Node *next;`).
-- Zero-length arrays at end of struct: Used as flexible array members in C99 for variable-length packet buffers (`char payload[];`).
+struct Aligned {
+    double d;
+    int i;
+    char c1;
+    char c2;
+};
 
-13. Best Practices
-- Order struct members from largest type to smallest type to minimize alignment padding.
-- Pass structures larger than 16 bytes via `const` pointers (`const MyStruct *ptr`).
-- Always use tagged unions when handling polymorphic data in pure C.
+int main(void) {
+    HardwareRegister reg = {0};
+    reg.power_on = 1;
+    reg.ready = 1;
+    reg.error_code = 5;
+    reg.mode = 2;
 
-14. Performance Considerations
-- Pass-by-reference eliminates CPU cache thrashing caused by copying large struct instances across stack frames.
-- Be cautious with compiler packing pragmas (`#pragma pack(1)`); packing reduces byte size but may cause CPU bus unaligned access penalties on ARM architectures.
+    printf("Hardware Register Configured:\\n");
+    printf("Power: %u, Ready: %u, ErrorCode: %u, Mode: %u\\n",
+           reg.power_on, reg.ready, reg.error_code, reg.mode);
+    printf("Size of HardwareRegister: %zu byte\\n", sizeof(HardwareRegister));
 
-15. Comparison with Related Concepts
-- Struct vs Union: In a struct, each member has its own distinct memory offset; in a union, all members overlap at byte offset 0.
-- C Structs vs C++ Classes: In C, structs contain only data fields and have no access modifiers (all public) or member functions.
+    printf("\\n--- Memory Alignment & Padding Demonstration ---\\n");
+    printf("Size of struct Unaligned: %zu bytes\\n", sizeof(struct Unaligned));
+    printf("  Offset of c1: %zu\\n", offsetof(struct Unaligned, c1));
+    printf("  Offset of i : %zu\\n", offsetof(struct Unaligned, i));
+    printf("  Offset of c2: %zu\\n", offsetof(struct Unaligned, c2));
+    printf("  Offset of d : %zu\\n", offsetof(struct Unaligned, d));
 
-16. Debugging Tips
-- Inspect memory layout and padding offsets using the standard `offsetof(struct_type, member)` macro from `<stddef.h>`.
-- Use GDB `print *emp_ptr` to display all members of a struct instance simultaneously.
+    printf("Size of struct Aligned  : %zu bytes\\n", sizeof(struct Aligned));
 
-17. Interview Questions and Concept Checks
-1. What is structure padding and why does the compiler introduce it?
-   - Compilers insert padding bytes between struct members to align data types to native word boundaries (e.g., 4-byte or 8-byte boundaries) for faster CPU memory access.
-2. How does a union determine its total memory footprint?
-   - The size of a union is equal to the size of its largest member, rounded up to the alignment requirement of its most strictly aligned member.
-3. What is a flexible array member in C99?
-   - An unsized array declared as the last member of a struct (`type arr[]`) used to allocate contiguous variable-length payload buffers.
+    return 0;
+}
+```
+Expected Output:
+```
+Hardware Register Configured:
+Power: 1, Ready: 1, ErrorCode: 5, Mode: 2
+Size of HardwareRegister: 1 byte
 
-18. Summary
-Structures, unions, and enumerations provide C with rich data abstraction capabilities. Understanding memory alignment, pointer access syntax, and tagged union patterns allows programmers to design compact, high-performance data models for real-world software.
+--- Memory Alignment & Padding Demonstration ---
+Size of struct Unaligned: 24 bytes
+  Offset of c1: 0
+  Offset of i : 4
+  Offset of c2: 8
+  Offset of d : 16
+Size of struct Aligned  : 16 bytes
+```
+
+10. Line-by-Line Code Explanation
+- `uint8_t power_on : 1;`: Bit-field syntax. Allocates exactly 1 bit from the underlying `uint8_t` byte for this member. The compiler packs these fields into a single byte.
+- `offsetof(struct Unaligned, i)`: Computes the runtime byte offset (here 4 bytes). The compiler added 3 padding bytes after `c1` (at offset 0) so that the 4-byte `int i` starts at an address divisible by 4.
+
+11. Practical Programming Problems
+Problem 1: Self-Referential Binary Search Tree (BST) Node Implementation
+Implement a BST insertion and in-order traversal using self-referential structures.
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct TreeNode {
+    int value;
+    struct TreeNode *left;
+    struct TreeNode *right;
+} TreeNode;
+
+TreeNode* bst_insert(TreeNode *root, int val) {
+    if (root == NULL) {
+        TreeNode *new_node = (TreeNode*)malloc(sizeof(TreeNode));
+        new_node->value = val;
+        new_node->left = new_node->right = NULL;
+        return new_node;
+    }
+    if (val < root->value) {
+        root->left = bst_insert(root->left, val);
+    } else {
+        root->right = bst_insert(root->right, val);
+    }
+    return root;
+}
+
+void bst_inorder(const TreeNode *root) {
+    if (root != NULL) {
+        bst_inorder(root->left);
+        printf("%d ", root->value);
+        bst_inorder(root->right);
+    }
+}
+
+int main(void) {
+    TreeNode *root = NULL;
+    int items[] = { 50, 30, 70, 20, 40, 60, 80 };
+    for (int i = 0; i < 7; i++) {
+        root = bst_insert(root, items[i]);
+    }
+    printf("BST In-Order Traversal: ");
+    bst_inorder(root);
+    printf("\\n");
+    return 0;
+}
+```
+Complexity: Time $O(N \log N)$ average insertion, Space $O(N)$.
+
+12. Real-World Applications
+- Network Protocols: IP and TCP packet headers modeled via packed structs matching exact network wire formats.
+- Operating Systems: Inodes, file descriptors, and process control blocks (PCBs) structured as C structs.
+- Database Engines: B-Tree disk page serialization using fixed-layout structs.
+
+13. Common Mistakes
+- Pass-by-Value Struct Performance Penalty: Passing large structs by value (`void process(BigStruct s)`) copies all bytes onto the stack. Always pass pointers to structs (`const BigStruct *s`).
+- Self-Referential Struct Missing `struct` Keyword: Writing `typedef struct { Node *next; } Node;` fails because `Node` is not yet defined inside its own body. Must write `typedef struct Node { struct Node *next; } Node;`.
+- Reading the Wrong Union Member: Reading a union field different from the last one written without knowing the active tag leads to garbage or undefined data interpretation.
+
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```c
+// Bug: Invalid self-referential declaration
+typedef struct {
+    int val;
+    Node *next; // ERROR: unknown type name 'Node'
+} Node;
+```
+CORRECT VERSION:
+```c
+typedef struct Node {
+    int val;
+    struct Node *next; // Correct forward declaration
+} Node;
+```
+
+15. Debugging Techniques
+- Compiler Packing Flags: In GCC, use `#pragma pack(1)` or `__attribute__((packed))` to disable padding when interfacing with binary hardware protocols.
+- GDB Struct Printing: Use `print *node_ptr` in GDB to inspect all struct fields simultaneously.
+
+16. Edge Cases
+- Deep Struct Copying: The assignment `structA = structB;` performs a shallow byte-copy. Any pointer members inside will point to the exact same memory, requiring manual deep-copying for dynamic buffers.
+- Bit-Field Endianness: The ordering of bit-fields within a byte is implementation-defined by compiler ABI and endianness.
+
+17. Best Practices
+- Order struct members from largest to smallest type to minimize compiler padding holes.
+- Always pass structs larger than 16 bytes via `const StructType *ptr`.
+- Use designated initializers (`.member = val`) for clarity and forward-compatibility.
+
+18. Performance Considerations
+- Cache Line Alignment: Packing related variables into the same struct ensures they reside on the same 64-byte L1 CPU cache line.
+
+19. Security Considerations
+- Uninitialized Padding Leak: When writing a struct over a network socket via `write()` or `send()`, uninitialized padding bytes may leak sensitive stack memory. Use `memset(&s, 0, sizeof(s))` before populating.
+
+20. Memory Considerations
+- Union Memory Savings: Unions allow multiple mutually exclusive attributes to occupy the same memory slot, slashing memory footprints in large data sets.
+
+21. Comparison with Related Concepts
+- Struct vs Union: In a struct, every member has its own distinct memory offset; in a union, all members share the same starting address.
+- Struct vs Class (C++): A C struct contains only data fields and no member methods, access specifiers, or constructors.
+
+22. Frequently Asked Questions
+Q: Why is the `sizeof` a struct larger than the sum of its members?
+A: The compiler inserts alignment padding bytes so that each member begins at an address satisfying hardware architecture alignment constraints.
+
+Q: What is a flexible array member?
+A: In C99, declaring an unsized array as the last member of a struct (`int data[];`) allows dynamically allocating a variable-sized array contiguous with the struct header in a single `malloc()` call.
+
+23. Interview Questions
+Beginner:
+Q: What is the difference between `.` and `->` operators?
+A: The dot operator (`.`) accesses a struct member on a direct struct instance variable. The arrow operator (`->`) dereferences a struct pointer and accesses the member (`ptr->x` is equivalent to `(*ptr).x`).
+
+Intermediate:
+Q: How can you find the size of a struct without using `sizeof`?
+A: By taking the difference between pointers to adjacent elements of an array: `struct Node arr[2]; size_t size = (char*)&arr[1] - (char*)&arr[0];`.
+
+Advanced:
+Q: Explain how the Linux kernel's `container_of` macro works.
+A: `container_of(ptr, type, member)` takes a pointer to a struct member and computes the base address of the enclosing structure by subtracting the compile-time offset: `(type *)((char *)ptr - offsetof(type, member))`.
+
+24. Exam Questions
+Short-Answer: What is the size of `union U { char a; int b; double c; };` on a 64-bit system? (8 bytes, the size of `double`).
+Medium-Answer: Explain why struct padding occurs and how reordering struct fields can reduce memory consumption.
+Long-Answer: Design a polymorphic AST node system using tagged unions representing Integer, Float, and Binary Operation nodes.
+
+25. Practice Questions
+1. Implement a generic linked-list queue using a `struct Node` with `enqueue`, `dequeue`, and `is_empty` operations.
+2. Write a program to serialize a struct containing nested structs and strings into a binary file.
+
+26. Summary
+Structures and unions provide powerful data aggregation and hardware mapping abstractions in C. By understanding struct padding, memory alignment rules, tagged union polymorphism, and bit-field layouts, developers can write high-efficiency, memory-optimal software.
+
+27. Key Takeaways
+- Structs allocate sequential memory; unions share overlapping memory.
+- Order struct fields by descending size to eliminate wasted padding bytes.
+- Pass structs via `const Type *ptr` to prevent expensive stack memory copying.
+- Zero structs with `memset` to prevent leaking uninitialized padding data.

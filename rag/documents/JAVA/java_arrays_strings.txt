@@ -1,210 +1,310 @@
-COURSE: java
-TOPIC: arrays_strings
-LEVEL: intermediate
+COURSE: JAVA
+TOPIC: ARRAYS_STRINGS
+LEVEL: INTERMEDIATE
 SOURCE: java_arrays_strings.txt
 
-TITLE: Java Arrays and String Manipulation: Memory Layout, Immutability, StringBuilder, and String Pooling
+TITLE: Deep Java Arrays, String Pool Immutability, StringBuilder, and Text Processing
 
 1. Introduction
-Arrays and text strings are fundamental data structures in Java. In Java, **arrays are first-class heap objects** with fixed capacities and built-in boundary validation (`.length`). Unlike primitive types, Java strings (`java.lang.String`) are **immutable reference objects** backed by the JVM **String Constant Pool** for memory optimization. For mutable string concatenation and intensive text manipulation, Java provides `StringBuilder` (non-synchronized, high-performance) and `StringBuffer` (thread-safe, synchronized). Understanding contiguous heap array allocations, multidimensional jagged arrays, string immutability, pooling mechanics, and standard algorithms (`java.util.Arrays`) is essential for building efficient, memory-optimized Java software.
+Sequential data arrays and text processing are ubiquitous in Java software engineering. In Java, arrays are first-class, fixed-length heap objects that retain runtime type and length information with guaranteed bounds checking (`ArrayIndexOutOfBoundsException`). Strings (`java.lang.String`) are immutable character sequences backed by the JVM String Constant Pool to optimize memory reuse. For intensive mutable text operations, Java provides `java.lang.StringBuilder` (high-performance non-synchronized buffer) and `java.lang.StringBuffer` (thread-safe synchronized buffer). Understanding array heap layouts, String pool intern mechanics, compact strings (Latin-1 byte arrays in Java 9+), and regular expressions is essential for building scalable applications.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Declare, instantiate, initialize, and traverse 1D and multidimensional (including jagged/ragged) arrays.
-- Utilize standard utility methods from `java.util.Arrays` (sort, binarySearch, equals, fill, copyOf).
-- Understand String Immutability and its benefits for security, caching, and thread safety.
-- Master the JVM String Constant Pool and the `.intern()` method.
-- Compare `String`, `StringBuilder`, and `StringBuffer` in terms of performance and thread safety.
-- Apply essential String methods: `length()`, `charAt()`, `substring()`, `indexOf()`, `split()`, `replace()`, `trim()`, `strip()`.
-- Compare strings properly using `.equals()` and `.compareTo()` instead of `==`.
-- Prevent `ArrayIndexOutOfBoundsException` and `NullPointerException`.
+- Master array declaration, dynamic instantiation, multidimensional array layouts, and length fields.
+- Understand Java String Immutability and the JVM String Constant Pool (`String.intern()`).
+- Differentiate `String`, `StringBuilder`, and `StringBuffer` memory and concurrency semantics.
+- Master standard string methods: slicing, splitting, trimming, formatting, and regular expressions.
+- Analyze array utility methods in `java.util.Arrays` (`sort`, `binarySearch`, `copyOf`, `equals`).
+- Understand Compact Strings optimization (byte array storage for ISO-8859-1 / Latin-1 text in modern Java).
 
-3. Core Concepts
-- Arrays as Heap Objects: Arrays are dynamically instantiated on the heap via `new`; array variables store references.
-- Array Length Property: Arrays possess an immutable public final field `.length` (not a method).
-- String Immutability: Once created, the character sequence inside a `String` object cannot be modified; operations returning "modified" strings allocate new heap objects.
-- String Constant Pool: A special memory region within the JVM Heap storing unique string literals to prevent redundant allocations.
-- StringBuilder vs StringBuffer: `StringBuilder` is faster for single-threaded mutation; `StringBuffer` synchronizes methods for thread safety.
+3. Prerequisites
+- Proficiency in Java fundamentals, control flow, methods, and basic OOP.
 
-4. Detailed Explanation
-4.1 Array Memory Layout
-- 1D Array: `int[] numbers = new int[5];` allocates a contiguous block on the heap with default zero values.
-- 2D Jagged Array: Java multidimensional arrays are arrays of array references, allowing rows of varying lengths:
-  int[][] jagged = new int[3][];
-  jagged[0] = new int[2];
-  jagged[1] = new int[4];
+4. Core Concepts
+- Array as Object: In Java, arrays inherit directly from `java.lang.Object`, reside on the heap, and have a public `final int length` field.
+- String Pool: A dedicated memory table in the JVM heap storing unique canonical string literal instances to prevent redundant allocations.
+- String Immutability: Once constructed, a `String` object's character sequence cannot be altered in memory. All modifying methods return a brand-new `String`.
+- Compact Strings (Java 9+): Strings are stored internally as `byte[]` with a coder flag (LATIN1 = 1 byte/char vs UTF16 = 2 bytes/char), cutting memory in half for Western text.
+- `StringBuilder`: A mutable, resizable character array buffer designed for high-speed single-threaded string concatenation.
 
-4.2 The String Pool & Memory Optimization
-- Literal Declaration: `String s1 = "Java";` -> Checks String Pool; if present, reuses reference; if absent, adds to pool.
-- Object Creation via New: `String s2 = new String("Java");` -> Explicitly allocates a new distinct object on the regular heap.
-- Equality Comparison:
-  - `s1 == s2`: Compares memory reference addresses (evaluates to `false`).
-  - `s1.equals(s2)`: Compares character contents (evaluates to `true`).
+5. Detailed Theory
+5.1 Array Heap Memory Layout
+When declaring `int[] arr = new int[5];`:
+- A single contiguous array object is allocated on the JVM Heap.
+- Contains the standard 12-byte object header + 4-byte `length` field + $5 \times 4 = 20$ bytes of integer data + 4 bytes padding = 40 bytes total.
+- Multidimensional Arrays (Jagged Arrays): A 2D array `int[][] matrix = new int[3][4];` is an array of 3 object references, each pointing to an independent 4-element `int[]` heap array. Rows can have differing lengths!
 
-4.3 StringBuilder Performance
-Repeated string concatenation using `+` in a loop creates $O(N^2)$ temporary garbage objects. Using `StringBuilder.append()` operates on an internal dynamically-resizing `char[]`/`byte[]` buffer in $O(1)$ amortized time.
+5.2 String Immutability and the String Constant Pool
+```java
+String s1 = "Java"; // Stored in String Constant Pool
+String s2 = "Java"; // Reuses reference to s1 from pool!
+String s3 = new String("Java"); // Forces new object allocation on Heap outside pool
+```
+- `s1 == s2`: Evaluates to `true` (shares the exact same memory address).
+- `s1 == s3`: Evaluates to `false` (different heap instances).
+- `s1.equals(s3)`: Evaluates to `true` (identical character sequences).
+- `s3.intern()`: Searches the String Pool; if "Java" exists, returns the pooled reference.
 
-5. Syntax
-5.1 Array Declaration and Arrays Utility
+5.3 Why Strings Are Immutable in Java
+1. Security: Strings represent database connection URLs, file paths, and network credentials. Immutability prevents malicious tampering after validation.
+2. Thread Safety: Immutable objects are inherently thread-safe and can be shared across concurrent threads with zero synchronization.
+3. String Pool Caching: Reusing string instances is only safe because no thread can modify a shared string's content.
+4. HashCode Caching: `String.hashCode()` is computed lazily and cached permanently in a private field, accelerating HashMap lookups.
+
+5.4 `StringBuilder` vs `StringBuffer`
+- `String` Concatenation in Loops (`str += "a"`): Creates a new `String` object and copies characters on EVERY iteration ($O(N^2)$ time and massive garbage generation).
+- `StringBuilder`: Pre-allocates a resizable `byte[]` buffer. `append()` runs in amortized $O(1)$ time. Non-thread-safe (use for local methods).
+- `StringBuffer`: Synchronized methods for thread-safety. Slower due to locking overhead.
+
+6. Syntax
+- Array: `int[] numbers = new int[]{ 10, 20, 30 };`
+- 2D Jagged Array: `int[][] jagged = new int[2][]; jagged[0] = new int[3]; jagged[1] = new int[5];`
+- StringBuilder: `StringBuilder sb = new StringBuilder("Initial"); sb.append(" Text");`
+- String Split: `String[] tokens = str.split(",");`
+
+7. Basic Examples (Beginner Level)
+```java
 import java.util.Arrays;
 
-int[] numbers = {45, 12, 85, 32, 89};
-Arrays.sort(numbers);
-int idx = Arrays.binarySearch(numbers, 32);
-
-5.2 StringBuilder Syntax
-StringBuilder sb = new StringBuilder("Initial");
-sb.append(" - ").append(2026).append(" Engine");
-String result = sb.toString();
-
-6. Basic Examples
-Example 6.1: Array Traversal, Search, and Copying
-package com.learning.arrays;
-
-import java.util.Arrays;
-
-public class ArrayOperations {
+public class ArrayBasics {
     public static void main(String[] args) {
-        int[] scores = {88, 92, 79, 95, 84};
-
-        System.out.printf("Original Array: %s%n", Arrays.toString(scores));
-
-        // Sorting
+        // Array creation and sorting
+        int[] scores = { 88, 95, 72, 91, 84 };
         Arrays.sort(scores);
-        System.out.printf("Sorted Array:   %s%n", Arrays.toString(scores));
 
-        // Binary Search
-        int target = 92;
-        int foundIndex = Arrays.binarySearch(scores, target);
-        System.out.printf("Target %d found at index: %d%n", target, foundIndex);
+        System.out.println("Sorted scores: " + Arrays.toString(scores));
+        System.out.println("Length of array: " + scores.length);
 
-        // Array Copy
-        int[] expanded = Arrays.copyOf(scores, scores.length + 2);
-        expanded[5] = 99;
-        expanded[6] = 100;
-        System.out.printf("Expanded Array: %s%n", Arrays.toString(expanded));
+        // String operations
+        String greeting = "  Hello, Modern Java World!  ";
+        String cleaned = greeting.trim().toUpperCase();
+        System.out.println("Cleaned String: \"" + cleaned + "\"");
+        System.out.println("Contains 'JAVA': " + cleaned.contains("JAVA"));
+        System.out.println("Substring:      \"" + cleaned.substring(7, 18) + "\"");
     }
 }
+```
+Expected Output:
+```
+Sorted scores: [72, 84, 88, 91, 95]
+Length of array: 5
+Cleaned String: "HELLO, MODERN JAVA WORLD!"
+Contains 'JAVA': true
+Substring:      "MODERN JAVA"
+```
 
-Example 6.2: String Pool and Equality Demonstration
-package com.learning.arrays;
-
-public class StringPoolDemo {
+8. Intermediate Examples (String Pool Verification and StringBuilder Performance)
+```java
+public class StringDeepDive {
     public static void main(String[] args) {
-        String literal1 = "AdaptiveLearning";
-        String literal2 = "AdaptiveLearning";
-        String heapString = new String("AdaptiveLearning");
+        // 1. String Pool and intern() Verification
+        String literalA = "AdaptiveEngine";
+        String literalB = "AdaptiveEngine";
+        String heapString = new String("AdaptiveEngine");
+        String internedString = heapString.intern();
 
-        System.out.printf("literal1 == literal2:       %b (Same pool reference)%n", literal1 == literal2); // true
-        System.out.printf("literal1 == heapString:     %b (Distinct heap objects)%n", literal1 == heapString); // false
-        System.out.printf("literal1.equals(heapString): %b (Equivalent contents)%n", literal1.equals(heapString)); // true
+        System.out.println("literalA == literalB:        " + (literalA == literalB)); // true
+        System.out.println("literalA == heapString:      " + (literalA == heapString)); // false
+        System.out.println("literalA == internedString:  " + (literalA == internedString)); // true
+        System.out.println("literalA.equals(heapString): " + literalA.equals(heapString)); // true
 
-        // Interning
-        String interned = heapString.intern();
-        System.out.printf("literal1 == interned:       %b (Pool reference matched)%n", literal1 == interned); // true
+        // 2. StringBuilder vs Naive Concatenation
+        long startTime = System.nanoTime();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Header: [");
+        for (int i = 1; i <= 5; i++) {
+            sb.append("Item_").append(i);
+            if (i < 5) sb.append(", ");
+        }
+        sb.append("]");
+        long elapsed = System.nanoTime() - startTime;
+
+        System.out.println("\nGenerated via StringBuilder: " + sb.toString());
+        System.out.printf("StringBuilder execution time: %.3f µs\n", elapsed / 1000.0);
     }
 }
+```
+Expected Output:
+```
+literalA == literalB:        true
+literalA == heapString:      false
+literalA == internedString:  true
+literalA.equals(heapString): true
 
-7. Intermediate Examples
-Example 7.1: Jagged 2D Array for Storing Variable-Length Test Batches
-package com.learning.arrays;
+Generated via StringBuilder: Header: [Item_1, Item_2, Item_3, Item_4, Item_5]
+StringBuilder execution time: 18.500 µs
+```
 
-public class JaggedArrayDemo {
+9. Advanced Examples (2D Jagged Arrays and Regex Pattern Matching)
+```java
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+public class AdvancedTextProcessing {
     public static void main(String[] args) {
-        // Allocate 3 student grade rosters of different sizes
-        double[][] studentQuizzes = new double[3][];
-        studentQuizzes[0] = new double[]{88.5, 92.0};               // Student 1: 2 quizzes
-        studentQuizzes[1] = new double[]{95.0, 89.5, 94.0, 91.5};    // Student 2: 4 quizzes
-        studentQuizzes[2] = new double[]{78.0, 82.5, 80.0};          // Student 3: 3 quizzes
-
-        System.out.println("--- Student Quiz Averages ---");
-        for (int i = 0; i < studentQuizzes.length; i++) {
-            double sum = 0.0;
-            for (double score : studentQuizzes[i]) {
-                sum += score;
+        // 1. Jagged 2D Array
+        int[][] pyramid = new int[4][];
+        for (int r = 0; r < 4; r++) {
+            pyramid[r] = new int[r + 1];
+            for (int c = 0; c <= r; c++) {
+                pyramid[r][c] = (r + 1) * 10 + (c + 1);
             }
-            double avg = sum / studentQuizzes[i].length;
-            System.out.printf("Student #%d: %d quizzes | Average: %.2f%n", i + 1, studentQuizzes[i].length, avg);
+        }
+
+        System.out.println("Jagged 2D Array Structure:");
+        for (int[] row : pyramid) {
+            System.out.print("  [ ");
+            for (int val : row) System.out.print(val + " ");
+            System.out.println("]");
+        }
+
+        // 2. Regular Expression Parsing
+        String logData = "2026-09-12 [ERROR] User 1042 failed login from IP 192.168.1.50";
+        Pattern pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}) \\[(\\w+)\\] User (\\d+) .* IP ([\\d\\.]+)");
+        Matcher matcher = pattern.matcher(logData);
+
+        if (matcher.find()) {
+            System.out.println("\nParsed Regex Log Fields:");
+            System.out.println("  Date:     " + matcher.group(1));
+            System.out.println("  Severity: " + matcher.group(2));
+            System.out.println("  User ID:  " + matcher.group(3));
+            System.out.println("  IP Addr:  " + matcher.group(4));
         }
     }
 }
+```
+Expected Output:
+```
+Jagged 2D Array Structure:
+  [ 11 ]
+  [ 21 22 ]
+  [ 31 32 33 ]
+  [ 41 42 43 44 ]
 
-8. Advanced Examples
-Example 8.1: High-Performance Text Processing with StringBuilder vs String Benchmark
-package com.learning.arrays;
+Parsed Regex Log Fields:
+  Date:     2026-09-12
+  Severity: ERROR
+  User ID:  1042
+  IP Addr:  192.168.1.50
+```
 
-public class StringConcatenationBenchmark {
+10. Line-by-Line Code Explanation
+- `heapString.intern()`: Checks the JVM String Constant Pool. If an equal string exists, returns the pooled canonical reference; otherwise, adds `heapString` to the pool and returns it.
+- `Pattern.compile(...)` & `matcher.group(i)`: Precompiles a regex AST and extracts parenthesized capturing groups in $O(N)$ text scanning time.
+
+11. Practical Programming Problems
+Problem 1: Valid Anagram Checker using Frequency Array
+Determine if two strings are anagrams in $O(N)$ time and $O(1)$ auxiliary space.
+```java
+public class AnagramChecker {
+    public static boolean isAnagram(String s, String t) {
+        if (s.length() != t.length()) return false;
+        int[] charCounts = new int[26];
+
+        for (int i = 0; i < s.length(); i++) {
+            charCounts[s.charAt(i) - 'a']++;
+            charCounts[t.charAt(i) - 'a']--;
+        }
+
+        for (int count : charCounts) {
+            if (count != 0) return false;
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
-        int iterations = 20000;
-
-        // 1. Inefficient String Concatenation (+)
-        long startStr = System.currentTimeMillis();
-        String str = "";
-        for (int i = 0; i < iterations; i++) {
-            str += "A";
-        }
-        long durationStr = System.currentTimeMillis() - startStr;
-
-        // 2. Efficient StringBuilder
-        long startSb = System.currentTimeMillis();
-        StringBuilder sb = new StringBuilder(iterations);
-        for (int i = 0; i < iterations; i++) {
-            sb.append("A");
-        }
-        String result = sb.toString();
-        long durationSb = System.currentTimeMillis() - startSb;
-
-        System.out.printf("String (+) Concatenation: %d ms (Created %d garbage objects)%n", durationStr, iterations);
-        System.out.printf("StringBuilder Append:     %d ms (O(1) amortized buffer mutations)%n", durationSb);
+        System.out.println("isAnagram('anagram', 'nagaram'): " + isAnagram("anagram", "nagaram"));
+        System.out.println("isAnagram('rat', 'car'):         " + isAnagram("rat", "car"));
     }
 }
+```
+Complexity: Time $O(N)$, Space $O(1)$ (fixed 26-element array).
 
-9. Code Explanation
-In Example 6.2:
-- String literals point to the same shared object in the String Constant Pool (`literal1 == literal2` is `true`).
-- `new String(...)` forces allocation of a new instance on the heap outside the pool. Calling `.intern()` retrieves the canonical representation from the String Pool.
-In Example 8.1:
-- `String +=` creates a new `String` object and copies all previous characters on every iteration ($O(N^2)$).
-- `StringBuilder` appends in-place in $O(1)$ amortized time ($O(N)$ total), completing in 1-2 ms vs hundreds of milliseconds.
+12. Real-World Applications
+- Web Log Analysis: Extracting timestamps, HTTP status codes, and user agents using regex.
+- Database Query Builders: Constructing dynamic SQL queries via `StringBuilder`.
+- NLP & Text Classification: Tokenizing and sanitizing documents for machine learning models.
 
-10. Practical Use Cases
-- High-throughput SQL query generation and JSON serialization using `StringBuilder`.
-- Parsing structured CSV datasets and log tokens using `String.split()`.
-- Multidimensional grid systems in game development and image matrix filtering.
+13. Common Mistakes
+- Using `==` to Compare Strings: `str1 == str2` compares memory pointers, which fails for strings constructed at runtime. Always use `str1.equals(str2)`.
+- In-Loop String Concatenation: Writing `String s = ""; for (...) s += item;` causes $O(N^2)$ memory copying. Always use `StringBuilder`.
+- Array Index Out of Bounds: Accessing `arr[arr.length]` throws `ArrayIndexOutOfBoundsException`.
 
-11. Common Mistakes
-1. Comparing Strings using `==` instead of `.equals()`.
-2. Using `+` in large loops instead of `StringBuilder`.
-3. Off-by-one errors on array bounds: `arr[arr.length]` throws `ArrayIndexOutOfBoundsException` (valid indices are `0` to `arr.length - 1`).
-4. Calling methods on `null` String references, triggering `NullPointerException`.
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```java
+// Bug: Comparing dynamic strings with ==
+String input = new Scanner(System.in).next();
+if (input == "admin") { // FAILS even if user types 'admin'!
+    grantAccess();
+}
+```
+CORRECT VERSION:
+```java
+if ("admin".equals(input)) { // Safe against nulls and checks content
+    grantAccess();
+}
+```
 
-12. Edge Cases
-- Empty array declaration: `int[] empty = new int[0];` has `.length == 0` and is valid.
-- `String.split(",")` drops trailing empty tokens by default (use `str.split(",", -1)` to retain all fields).
+15. Debugging Techniques
+- Inspect Array Contents: Use `Arrays.deepToString(matrix)` to print multi-dimensional arrays.
+- Memory Profiling: Use VisualVM or JProfiler to inspect `char[]` and `byte[]` string retained heap sizes.
 
-13. Best Practices
-- Always use `.equals()` or `.equalsIgnoreCase()` for string comparisons.
-- Use `StringBuilder` for multi-step string assembly.
-- Utilize `java.util.Arrays` utility methods for sorting and searching rather than writing manual loops.
-- Pass `Arrays.copyOf()` when returning internal array fields from a class to prevent external mutation.
+16. Edge Cases
+- Null Safe Equals: Writing `"constant".equals(variable)` prevents `NullPointerException` if `variable` is `null`.
+- Empty vs Blank Strings (Java 11+): `"".isEmpty()` is `true`; `"   ".isEmpty()` is `false`; `"   ".isBlank()` is `true`.
 
-14. Performance Considerations
-- Pre-size `StringBuilder(initialCapacity)` if the final character length is approximately known to prevent internal buffer resizing.
-- Compact Strings (Java 9+): Strings backed by `byte[]` with Latin-1 encoding consume only 1 byte per character instead of 2 bytes for ASCII text.
+17. Best Practices
+- Always use `StringBuilder` for loop string construction.
+- Use `"literal".equals(var)` to prevent null pointer exceptions.
+- Use `Arrays.copyOf()` or `System.arraycopy()` for high-speed native memory array copying.
 
-15. Comparison with Related Concepts
-- `String` vs `StringBuilder` vs `StringBuffer`: `String` is immutable; `StringBuilder` is mutable and non-synchronized (fastest); `StringBuffer` is mutable and synchronized (thread-safe).
+18. Performance Considerations
+- `System.arraycopy()`: Invokes a hardware-optimized C/Assembly `memmove` operation, copying millions of elements in sub-millisecond time.
 
-16. Debugging Tips
-- Print array contents legibly using `Arrays.toString(arr)` or `Arrays.deepToString(matrix)` for multidimensional arrays.
+19. Security Considerations
+- Password Storage: Store sensitive credentials in `char[]` rather than `String`. Strings remain in heap memory until garbage collected, whereas `char[]` can be zeroed out immediately with `Arrays.fill(pwd, '0')`.
 
-17. Interview Questions and Concept Checks
-1. Why is `String` immutable in Java?
-   - For security (network/file parameters cannot be altered after validation), thread safety (immutable objects can be shared freely across threads without locking), and string pool caching efficiency.
-2. What is the difference between `.equals()` and `==` when comparing Java strings?
-   - `==` checks if both variables refer to the exact same memory address; `.equals()` compares the actual character contents.
-3. What is the advantage of a jagged array in Java?
-   - Jagged arrays allow sub-arrays of differing lengths, saving substantial memory when modeling triangular matrices or irregular data sets.
+20. Memory Considerations
+- String Interning Memory Leak: Calling `.intern()` on millions of dynamic unique strings can overwhelm the JVM Metaspace/String Pool table.
 
-18. Summary
-Arrays and strings form the foundation of Java data manipulation. Understanding heap allocations, the String Constant Pool, immutability, and `StringBuilder` optimization enables developers to write clean, performant, and memory-safe applications.
+21. Comparison with Related Concepts
+- `String` vs `StringBuilder` vs `StringBuffer`: `String` is immutable; `StringBuilder` is mutable and single-threaded (fast); `StringBuffer` is mutable and synchronized (thread-safe).
+- `arr.length` vs `str.length()`: `length` is a field on arrays; `length()` is a method on `String`.
+
+22. Frequently Asked Questions
+Q: Why is `String` immutable in Java?
+A: For security, thread safety, String Pool caching, and immutable hashcode caching.
+
+Q: What is the difference between `str.length()` and `arr.length`?
+A: On arrays, `length` is a public final field; on strings, `length()` is an accessor method.
+
+23. Interview Questions
+Beginner:
+Q: What is the difference between `equals()` and `==` when comparing Java Strings?
+A: `==` compares object reference memory addresses (checking if both point to the exact same object in RAM). `equals()` compares the actual character sequences for content equality.
+
+Intermediate:
+Q: Explain how the String Constant Pool works in Java.
+A: The String Constant Pool is a special storage area in the JVM heap. When a string literal is created, the JVM checks the pool; if an identical string already exists, it returns the pooled reference, avoiding redundant memory allocation.
+
+Advanced:
+Q: What is Compact Strings in Java 9+ and how does it save memory?
+A: Prior to Java 9, `String` stored characters in a `char[]` array (2 bytes per character). In Java 9+, Compact Strings replaces this with a `byte[]` array and a coder flag. If the string contains only Latin-1 characters, it stores 1 byte per character, cutting string heap memory usage by up to 50% across enterprise applications.
+
+24. Exam Questions
+Short-Answer: What class should be used for thread-safe mutable string concatenation? (`StringBuffer`).
+Medium-Answer: Explain why storing passwords in a `char[]` array is more secure than in a `String`.
+Long-Answer: Detail the internal mechanics of `StringBuilder.append()`, explaining capacity growth factors and how `System.arraycopy` reallocates buffers.
+
+25. Practice Questions
+1. Implement a method that compresses a string using counts of repeated characters (e.g. "aabcccccaaa" -> "a2b1c5a3") using `StringBuilder`.
+2. Write a program to rotate an $N \times N$ 2D matrix by 90 degrees clockwise in-place.
+
+26. Summary
+Arrays and Strings are foundational data handling mechanisms in Java. Mastering array heap layouts, String pool caching, immutability benefits, and `StringBuilder` optimizations allows developers to build high-performance, memory-efficient software.
+
+27. Key Takeaways
+- Arrays are heap objects with fixed length.
+- Strings are immutable and cached in the String Constant Pool.
+- Always use `equals()` for string comparison; never `==`.
+- Use `StringBuilder` for loop concatenations to avoid $O(N^2)$ memory thrashing.

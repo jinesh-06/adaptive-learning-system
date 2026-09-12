@@ -1,218 +1,325 @@
-COURSE: python
-TOPIC: file_handling
-LEVEL: intermediate
+COURSE: PYTHON
+TOPIC: FILE_HANDLING
+LEVEL: INTERMEDIATE
 SOURCE: python_file_handling.txt
 
-TITLE: Python File Handling: Streams, Context Managers (with), JSON, CSV, and Pathlib
+TITLE: Deep Python File Handling, Context Managers, JSON, CSV, and Pathlib Architecture
 
 1. Introduction
-File handling and persistent I/O operations are indispensable capabilities for reading configurations, ingesting datasets, writing logs, and serializing structured application state. Python provides a clean, unified file stream abstraction via the built-in open() function, standard context managers (with statement), the modern object-oriented file-system library <pathlib>, and specialized serialization modules for <json> and <csv>. Understanding file modes, encoding standards (UTF-8), streaming large files lazily, context manager mechanics, and structured serialization is essential for building robust data pipelines and storage layers.
+File handling and serialization in Python enable persistent data storage, filesystem navigation, structured document processing, and inter-process communication. Python's modern I/O subsystem combines standard text and binary stream manipulation with the powerful Context Manager protocol (`with` statement), the modern object-oriented `pathlib` module, and built-in serialization libraries (`json`, `csv`). Understanding resource safety, deterministic file closing, line-buffering mechanics, encoding specifications (UTF-8), and binary vs text modes is foundational for building reliable data pipelines.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Open, read, write, and append to files safely using open() and the with statement.
-- Distinguish between text modes ('r', 'w', 'a') and binary modes ('rb', 'wb').
-- Understand why UTF-8 encoding must always be specified explicitly (encoding='utf-8').
-- Read files using .read(), .readline(), .readlines(), and direct line-by-line streaming iteration.
-- Implement object-oriented file path operations using pathlib.Path.
-- Serialize and deserialize structured data using the json module (json.dump, json.load, json.dumps, json.loads).
-- Read and write delimited tabular datasets using the csv module (csv.reader, csv.writer, csv.DictReader, csv.DictWriter).
-- Handle file system errors gracefully (FileNotFoundError, PermissionError, JSONDecodeError).
+- Master file opening modes (`'r'`, `'w'`, `'a'`, `'x'`, `'b'`, `'+'`) and character encodings (`utf-8`).
+- Understand Context Managers and the `with` statement for deterministic resource deallocation.
+- Implement object-oriented filesystem path manipulation using `pathlib.Path`.
+- Master structured data parsing: Reading and writing JSON (`json.dump`, `json.load`) and CSV (`csv.reader`, `csv.DictWriter`).
+- Implement high-performance chunked file streaming for multi-gigabyte files.
+- Build custom Context Managers using the `__enter__` and `__exit__` dunder protocol and `@contextlib.contextmanager`.
 
-3. Core Concepts
-- Context Manager (with open(...) as f:): Guarantees that the underlying file descriptor is closed automatically upon exiting the block, even if an unhandled exception occurs.
-- Lazy Line Iteration: Iterating directly over a file object for line in f: reads lines on-demand, preventing high memory usage on large multi-gigabyte files.
-- Pathlib: Modern object-oriented path manipulation replacing legacy os.path strings.
-- Serialization: Converting in-memory Python objects (dicts, lists) into disk-storable formats (JSON text, binary bytes).
+3. Prerequisites
+- Proficiency in Python fundamentals, strings, data structures, and exception handling.
 
-4. Detailed Explanation
-4.1 File Modes
-- 'r': Read text (default). Fails if file does not exist.
-- 'w': Write text. Creates or overwrites/truncates existing file.
-- 'a': Append text. Writes to end of file without truncation.
-- 'r+': Read and write text.
-- 'rb' / 'wb': Binary mode for non-text assets (images, compiled models, pickle files).
+4. Core Concepts
+- Context Manager Protocol: A pair of magic methods (`__enter__` and `__exit__`) that guarantee cleanup logic executes upon leaving a `with` block.
+- Text Mode vs Binary Mode: Text mode decodes bytes into Unicode strings using a specified encoding; Binary mode (`'b'`) reads and writes raw `bytes` objects without translation.
+- `pathlib.Path`: Modern object-oriented path abstraction replacing legacy `os.path` string operations.
+- Serialization: Converting in-memory Python objects (dicts, lists) into disk-persisted byte streams (JSON, CSV, Pickle).
 
-4.2 Explicit Encoding
-Always pass encoding='utf-8' to open() to prevent operating-system dependent encoding bugs (e.g., Windows CP1252 vs Linux UTF-8).
+5. Detailed Theory
+5.1 File Opening Modes and UTF-8 Encoding
+```python
+with open("data.txt", mode="r", encoding="utf-8") as f:
+    content = f.read()
+```
+- Modes:
+  - `'r'`: Read only (default). Fails if file is missing (`FileNotFoundError`).
+  - `'w'`: Write only. Truncates existing file or creates new file.
+  - `'a'`: Append only. Writes at the end of the file.
+  - `'x'`: Exclusive creation. Fails with `FileExistsError` if file already exists.
+  - `'b'`: Binary mode (e.g. `'rb'`, `'wb'`). Returns `bytes`.
+  - `'+'`: Update mode (reading and writing).
+*Rule: Always specify `encoding="utf-8"` explicitly to prevent platform-dependent encoding bugs on Windows.*
 
-4.3 Pathlib (from pathlib import Path)
-- Construct path: p = Path('data') / 'raw' / 'dataset.txt'
-- Check existence: p.exists(), p.is_file(), p.is_dir()
-- Read/Write shortcut: text = p.read_text(encoding='utf-8'), p.write_text('content', encoding='utf-8')
-- Directory scanning: p.glob('*.txt'), p.rglob('*.py')
+5.2 The Context Manager Protocol (`__enter__` and `__exit__`)
+When entering a `with expr as target:` statement:
+1. Python evaluates `expr` to obtain a context manager object.
+2. Calls `__enter__()` and assigns return value to `target`.
+3. Executes the inner code block.
+4. Calls `__exit__(exc_type, exc_val, exc_tb)` upon exiting the block, even if an exception was raised.
+If `__exit__` returns `True`, it suppresses the exception; otherwise, the exception propagates.
 
-4.4 JSON and CSV Processing
-- JSON: json.dump(obj, file_handle, indent=2) writes to file; data = json.load(file_handle) reads from file.
-- CSV: csv.DictReader(file_handle) parses each line into a dictionary mapping column headers to cell values.
+5.3 Modern Filesystem Traversal with `pathlib.Path`
+`pathlib.Path` provides intuitive operator-based path construction:
+```python
+from pathlib import Path
+data_file = Path.home() / "project" / "data" / "users.json"
+if data_file.exists():
+    text = data_file.read_text(encoding="utf-8")
+```
 
-5. Syntax
-5.1 Context Manager File Reading
-with open("data.txt", "r", encoding="utf-8") as file:
-    for line in file:
-        print(line.strip())
+5.4 JSON and CSV Serialization
+- `json.dumps(obj)` / `json.loads(str)`: Memory string conversion.
+- `json.dump(obj, file)` / `json.load(file)`: Direct file stream serialization.
+- `csv.DictReader(file)` / `csv.DictWriter(file, fieldnames)`: Maps CSV rows directly to Python dictionaries.
 
-5.2 Pathlib and JSON Serialization
+6. Syntax
+- Context File Read: `with open(path, "r", encoding="utf-8") as f: ...`
+- Pathlib Glob: `for p in Path(".").glob("*.txt"): ...`
+- JSON Write: `json.dump(data, f, indent=2)`
+- Contextlib: `@contextlib.contextmanager def my_ctx(): ...`
+
+7. Basic Examples (Beginner Level)
+```python
+from pathlib import Path
+
+# Write and Read using standard with statement
+filename = "sample_log.txt"
+
+with open(filename, "w", encoding="utf-8") as file:
+    file.write("2026-09-12 10:00:00 [INFO] System Initialized\n")
+    file.write("2026-09-12 10:00:05 [INFO] RAG Knowledge Base Loaded\n")
+    file.write("2026-09-12 10:00:10 [SUCCESS] Ready for Queries\n")
+
+print(f"Successfully written to {filename}\n")
+
+print("--- Reading File Line by Line ---")
+with open(filename, "r", encoding="utf-8") as file:
+    for line_num, line in enumerate(file, start=1):
+        print(f"Line {line_num}: {line.strip()}")
+
+# Cleanup
+Path(filename).unlink(missing_ok=True)
+```
+Expected Output:
+```
+Successfully written to sample_log.txt
+
+--- Reading File Line by Line ---
+Line 1: 2026-09-12 10:00:00 [INFO] System Initialized
+Line 2: 2026-09-12 10:00:05 [INFO] RAG Knowledge Base Loaded
+Line 3: 2026-09-12 10:00:10 [SUCCESS] Ready for Queries
+```
+
+8. Intermediate Examples (JSON and CSV Structured Processing)
+```python
 import json
-from pathlib import Path
-
-file_path = Path("config.json")
-config_data = {"version": "2.0", "engine": "RAG"}
-
-# Write JSON
-file_path.write_text(json.dumps(config_data, indent=2), encoding="utf-8")
-
-# Read JSON
-loaded_config = json.loads(file_path.read_text(encoding="utf-8"))
-
-6. Basic Examples
-Example 6.1: Writing and Reading Text Files Safely
-from pathlib import Path
-
-def demonstrate_text_io():
-    out_file = Path("sample_notes.txt")
-
-    # 1. Write lines
-    with open(out_file, "w", encoding="utf-8") as f:
-        f.write("Line 1: Adaptive Learning Engine\n")
-        f.write("Line 2: RAG Pipeline Knowledge Base\n")
-        f.write("Line 3: Cognitive Load Awareness\n")
-
-    print(f"Wrote text to {out_file.name}")
-
-    # 2. Lazy stream reading
-    print("Reading file line by line:")
-    with open(out_file, "r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f, start=1):
-            print(f"  [{line_num}] {line.strip()}")
-
-    # Cleanup
-    if out_file.exists():
-        out_file.unlink()
-
-demonstrate_text_io()
-
-7. Intermediate Examples
-Example 7.1: CSV DictReader and DictWriter
 import csv
 from pathlib import Path
 
-def process_csv_dataset():
-    csv_file = Path("students.csv")
-    students = [
-        {"id": 101, "name": "Marcus", "gpa": 3.9},
-        {"id": 102, "name": "Elena", "gpa": 3.7},
-        {"id": 103, "name": "David", "gpa": 3.2}
+# 1. JSON Serialization
+student_data = {
+    "course": "Python",
+    "students": [
+        {"id": 101, "name": "Alice", "score": 95.5},
+        {"id": 102, "name": "Bob", "score": 88.0}
     ]
+}
 
-    # 1. Write CSV
-    with open(csv_file, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "name", "gpa"])
-        writer.writeheader()
-        writer.writerows(students)
+json_path = Path("students.json")
+with json_path.open("w", encoding="utf-8") as f:
+    json.dump(student_data, f, indent=2)
 
-    # 2. Read and filter CSV
-    print(f"Reading student records from {csv_file.name}:")
-    with open(csv_file, "r", newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            gpa = float(row["gpa"])
-            status = "Honors" if gpa >= 3.5 else "Standard"
-            print(f"  Student: {row['name']:<10} | GPA: {gpa:.2f} ({status})")
+with json_path.open("r", encoding="utf-8") as f:
+    loaded_json = json.load(f)
 
-    # Cleanup
-    if csv_file.exists():
-        csv_file.unlink()
+print(f"Loaded JSON Course: {loaded_json['course']}")
+print(f"Student 1: {loaded_json['students'][0]['name']}")
 
-process_csv_dataset()
+# 2. CSV DictWriter and DictReader
+csv_path = Path("grades.csv")
+fieldnames = ["id", "name", "grade"]
 
-8. Advanced Examples
-Example 8.1: JSON Configuration Manager and Directory Traversal
-import json
-from pathlib import Path
+records = [
+    {"id": 101, "name": "Alice", "grade": "A"},
+    {"id": 102, "name": "Bob", "grade": "B"}
+]
 
-class ConfigManager:
-    def __init__(self, config_path: Path):
-        self.path = config_path
-        self.data = self._load()
+with csv_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(records)
 
-    def _load(self) -> dict:
-        if not self.path.exists():
-            return {}
-        try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError as err:
-            print(f"Warning: Corrupt config file: {err}")
-            return {}
-
-    def save(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(self.data, f, indent=4)
-
-    def set(self, key: str, value: any) -> None:
-        self.data[key] = value
-        self.save()
-
-config_file = Path("test_scratch") / "app_config.json"
-cfg = ConfigManager(config_file)
-cfg.set("rag_model", "all-MiniLM-L6-v2")
-cfg.set("top_k", 5)
-
-print(f"Saved Config Data: {cfg.data}")
+print("\n--- Reading CSV with DictReader ---")
+with csv_path.open("r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(f"  ID: {row['id']}, Name: {row['name']}, Grade: {row['grade']}")
 
 # Cleanup
-if config_file.exists():
-    config_file.unlink()
-    if config_file.parent.exists():
-        config_file.parent.rmdir()
+json_path.unlink(missing_ok=True)
+csv_path.unlink(missing_ok=True)
+```
+Expected Output:
+```
+Loaded JSON Course: Python
+Student 1: Alice
 
-9. Code Explanation
-In Example 7.1:
-- csv.DictWriter writes dictionary records directly to disk. The parameter newline='' prevents blank line insertion on Windows operating systems.
-In Example 8.1:
-- ConfigManager encapsulates file reading and writing behind a clean interface. self.path.parent.mkdir(parents=True, exist_ok=True) automatically creates any missing parent directories before writing.
+--- Reading CSV with DictReader ---
+  ID: 101, Name: Alice, Grade: A
+  ID: 102, Name: Bob, Grade: B
+```
 
-10. Practical Use Cases
-- Ingesting raw educational text files into RAG embedding vector stores.
-- Managing application settings, database credentials, and model hyperparameters in JSON.
-- Exporting analytics reports and user activity logs into CSV format.
+9. Advanced Examples (Custom Context Manager and Chunked Binary Streaming)
+```python
+import contextlib
+import time
+from pathlib import Path
 
-11. Common Mistakes
-1. Forgetting to close files when not using with statements, leaking OS file handles.
-2. Reading entire multi-gigabyte files into memory via f.read() instead of streaming lines via for line in f:.
-3. Omitting encoding='utf-8', leading to UnicodeDecodeError when processing international characters on Windows.
-4. Omitting newline='' in csv operations on Windows, causing extra blank rows.
+# Custom Context Manager via Class Protocol
+class ExecutionTimer:
+    def __init__(self, task_name: str):
+        self.task_name = task_name
+        self.start_time = 0.0
 
-12. Edge Cases
-- Reading a file that is concurrently being modified by another OS process.
-- Truncating a file when opening in 'w' mode before reading existing contents.
+    def __enter__(self):
+        self.start_time = time.perf_counter()
+        print(f"[START] Task '{self.task_name}' began.")
+        return self
 
-13. Best Practices
-- Always use with open(...) context managers.
-- Always specify encoding='utf-8'.
-- Use pathlib.Path over legacy string path manipulations (os.path.join).
-- Check file existence using path.exists() or catch FileNotFoundError.
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        elapsed = time.perf_counter() - self.start_time
+        print(f"[FINISH] Task '{self.task_name}' completed in {elapsed*1000:.3f} ms.")
+        return False # Do not suppress exceptions
 
-14. Performance Considerations
-- Streaming large files line-by-line keeps memory footprint at O(1) constant overhead regardless of file size.
-- For high-performance binary serialization in Python, use pickle (internal) or msgpack/protobuf (cross-language) instead of raw text.
+# Generator-based Context Manager using contextlib
+@contextlib.contextmanager
+def temporary_file(filename: str):
+    p = Path(filename)
+    p.write_text("temporary initial state", encoding="utf-8")
+    try:
+        yield p
+    finally:
+        p.unlink(missing_ok=True)
+        print(f"[CLEANUP] Deleted temporary file '{filename}'.")
 
-15. Comparison with Related Concepts
-- pathlib.Path vs os.path: pathlib provides an intuitive, object-oriented API with operator overloading (/ operator joins paths) whereas os.path operates on raw strings.
+# Execution
+with ExecutionTimer("Disk I/O Simulation"):
+    with temporary_file("temp_scratch.txt") as temp_p:
+        print(f"Working with file: {temp_p.name} (Content: '{temp_p.read_text()}')")
+```
+Expected Output:
+```
+[START] Task 'Disk I/O Simulation' began.
+Working with file: temp_scratch.txt (Content: 'temporary initial state')
+[CLEANUP] Deleted temporary file 'temp_scratch.txt'.
+[FINISH] Task 'Disk I/O Simulation' completed in 1.500 ms.
+```
 
-16. Debugging Tips
-- Check file permissions and absolute paths using Path(filename).resolve().
-- Validate JSON payloads using online linters or Python's json.loads in interactive mode.
+10. Line-by-Line Code Explanation
+- `class ExecutionTimer: def __enter__(self): ... def __exit__(self, ...):`: Implements the context manager dunder protocol. `__enter__` captures the starting timestamp; `__exit__` calculates elapsed runtime when leaving the block.
+- `@contextlib.contextmanager`: Converts a generator function containing a single `yield` into a context manager. Code before `yield` acts as `__enter__`; code after `yield` in the `finally` block acts as `__exit__`.
 
-17. Interview Questions and Concept Checks
-1. Why is the with statement preferred when opening files in Python?
-   - The with statement utilizes the context manager protocol (__enter__ and __exit__), guaranteeing that f.close() is called automatically upon block exit even if an exception is raised.
-2. What happens if you call open('file.txt', 'w') on an existing file?
-   - The file is immediately truncated to 0 bytes, erasing all previous content before any write operations occur.
-3. How does for line in file: process files efficiently?
-   - It utilizes Python's file iterator to stream lines lazily using an internal buffer, avoiding loading the entire file into memory at once.
+11. Practical Programming Problems
+Problem 1: Chunked Multi-Gigabyte File Copy with Hash Digest
+Implement a memory-efficient file copy that streams binary data in 64KB chunks and computes an SHA-256 checksum.
+```python
+import hashlib
+from pathlib import Path
 
-18. Summary
-File handling in Python is intuitive and robust when utilizing context managers, explicit encodings, Pathlib, and standard serialization libraries. These tools ensure memory safety, data integrity, and clean cross-platform I/O operations.
+def copy_file_with_hash(src: Path, dst: Path, chunk_size: int = 65536) -> str:
+    sha256 = hashlib.sha256()
+    with src.open("rb") as f_src, dst.open("wb") as f_dst:
+        while chunk := f_src.read(chunk_size):
+            sha256.update(chunk)
+            f_dst.write(chunk)
+    return sha256.hexdigest()
+
+src_file = Path("test_src.bin")
+dst_file = Path("test_dst.bin")
+src_file.write_bytes(b"Binary Payload Data Chunk 12345")
+
+digest = copy_file_with_hash(src_file, dst_file)
+print(f"File copied successfully. SHA-256: {digest[:16]}...")
+
+src_file.unlink()
+dst_file.unlink()
+```
+Complexity: Time $O(N)$ bytes, Space $O(1)$ memory.
+
+12. Real-World Applications
+- Machine Learning Data Loaders: Streaming training samples from CSV/JSONL files in batches.
+- Web Application Uploads: Receiving multi-part binary file uploads safely in chunked buffers.
+- Log Rotation Systems: Compressing and archiving rotated server logs using `pathlib` and `gzip`.
+
+13. Common Mistakes
+- Omitting `encoding="utf-8"`: Defaults to Windows CP-1252 on Windows, crashing with `UnicodeDecodeError` when encountering UTF-8 characters.
+- Reading Entire Massive Files with `f.read()`: Loads the entire file into RAM, crashing with `MemoryError` on multi-gigabyte datasets. Iterate line-by-line (`for line in f:`) or in chunks.
+- Forgetting `newline=""` in CSV Writers: Causes blank extra lines on Windows operating systems.
+
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```python
+# Bug: Missing encoding and no context manager
+f = open("data.txt", "r") # Leak if exception occurs; platform encoding bug!
+content = f.read()
+f.close()
+```
+CORRECT VERSION:
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    content = f.read() # Guaranteed safe closure and explicit UTF-8
+```
+
+15. Debugging Techniques
+- Check File Position: Use `f.tell()` and `f.seek(0)` to inspect and reposition stream offsets.
+- Path Diagnostics: Use `path.resolve()` to print absolute canonical paths.
+
+16. Edge Cases
+- Empty File Reading: `json.load()` on an empty file raises `json.JSONDecodeError`. Check `path.stat().st_size > 0` first.
+- Newline Normalization: Universal newlines mode automatically translates `\r\n` to `\n` in text mode.
+
+17. Best Practices
+- Always use the `with` statement for file operations.
+- Prefer `pathlib.Path` over the legacy `os.path` module.
+- Always specify `encoding="utf-8"` for text files.
+
+18. Performance Considerations
+- Buffered Iteration: `for line in f:` reads data through internal C-level line buffers, achieving high throughput.
+
+19. Security Considerations
+- Path Traversal Attacks: Never join user input directly into file paths without validating `resolved_path.is_relative_to(base_dir)`.
+
+20. Memory Considerations
+- Chunked Streaming: Streaming files in 64KB blocks keeps memory usage capped at 64KB regardless of file size (100MB or 50GB).
+
+21. Comparison with Related Concepts
+- `pathlib.Path` vs `os.path`: `pathlib` is an object-oriented API with clean operator overloading (`/`); `os.path` requires cumbersome string concatenation.
+- `json` vs `pickle`: `json` is human-readable, cross-language, and secure; `pickle` is Python-specific, binary, and insecure if parsing untrusted data.
+
+22. Frequently Asked Questions
+Q: Why is `pathlib` preferred over `os.path`?
+A: `pathlib` provides an intuitive, object-oriented interface for path manipulation, inspection, reading (`read_text()`), and globbing, replacing fragmented `os`, `os.path`, and `glob` calls.
+
+Q: What does the Walrus operator `while chunk := f.read(65536):` do?
+A: The assignment expression (`:=`) reads a chunk into `chunk` and evaluates its truthiness in a single statement, cleanly terminating the loop when `read()` returns an empty `b""` at EOF.
+
+23. Interview Questions
+Beginner:
+Q: Why should you always open files using a `with` statement?
+A: The `with` statement acts as a Context Manager that guarantees the file is automatically closed when execution leaves the block, even if an unhandled exception is raised.
+
+Intermediate:
+Q: What is the difference between `json.dump()` and `json.dumps()`?
+A: `json.dump(obj, file)` serializes an object directly into a writable file stream; `json.dumps(obj)` serializes an object into an in-memory JSON formatted string.
+
+Advanced:
+Q: Explain how the Context Manager protocol works and what parameters `__exit__` receives.
+A: A context manager implements `__enter__` (which sets up resources and returns a target object) and `__exit__(self, exc_type, exc_val, exc_tb)`. If an exception occurs inside the `with` block, its type, value, and traceback are passed to `__exit__`. If `__exit__` returns `True`, the exception is suppressed; otherwise, it propagates normally.
+
+24. Exam Questions
+Short-Answer: What mode flag opens a file for exclusive creation, failing if the file already exists? (`'x'`).
+Medium-Answer: Explain why `newline=""` is required when opening files for `csv.writer` on Windows.
+Long-Answer: Design an atomic file writer context manager that writes data to a temporary file and renames it to the destination on successful exit, preventing partially written corrupt files.
+
+25. Practice Questions
+1. Write a script that scans a directory recursively using `pathlib.Path.rglob()` and computes the total size of all `.py` files.
+2. Implement an atomic JSON settings manager with backup generation.
+
+26. Summary
+File handling in Python pairs standard text/binary streams with context managers and object-oriented `pathlib` paths. Mastering context managers, JSON/CSV serialization, and chunked streaming allows developers to write robust, leak-free data processing software.
+
+27. Key Takeaways
+- Always use `with open(...)` with explicit `encoding="utf-8"`.
+- Use `pathlib.Path` for all filesystem operations.
+- Stream large files in chunks to maintain $O(1)$ memory usage.
+- Use `json.dump` and `csv.DictWriter` for structured serialization.

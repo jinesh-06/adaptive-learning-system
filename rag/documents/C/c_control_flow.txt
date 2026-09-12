@@ -1,260 +1,352 @@
-COURSE: c
-TOPIC: control_flow
-LEVEL: beginner
+COURSE: C
+TOPIC: CONTROL_FLOW
+LEVEL: BEGINNER
 SOURCE: c_control_flow.txt
 
-TITLE: C Control Flow: Conditional Branching, Decision Ladders, Loops, and Jump Statements
+TITLE: Deep C Control Flow, Branching Logic, Loop Mechanics, and Jump Tables
 
 1. Introduction
-Control flow structures dictate the order in which individual statements, instructions, or function calls are executed or evaluated within a C program. By default, C executes sequentially from the beginning of main() downwards. Control flow constructs alter this linear path through conditional branching (if, if-else, switch) and iteration mechanisms (for, while, do-while), alongside jump statements (break, continue, goto, return). Mastering control flow allows developers to implement complex business logic, finite state machines, parsing engines, and algorithmic iterations efficiently.
+Control flow structures dictate the execution path of a program based on logical conditions, evaluations, and iterative constraints. In C, control flow statements map directly to hardware conditional branch opcodes (`jne`, `je`, `jle`, `cmp`) and unconditional jumps (`jmp`) in CPU machine code. Understanding how conditional statements (`if`, `if-else`, `switch-case`) and loops (`for`, `while`, `do-while`) are evaluated at the machine level enables developers to write predictable, high-throughput, branch-predictor-friendly software.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Understand single-branch (`if`), dual-branch (`if-else`), nested conditions, and multi-way `else-if` ladders.
-- Master the `switch-case-default` statement, fall-through mechanics, and compile-time jump table optimizations.
-- Implement pre-test iteration loops (`while`, `for`) and post-test iteration loops (`do-while`).
-- Construct and control multi-dimensional nested loops with precise termination boundaries.
-- Utilize jump statements (`break`, `continue`, `goto`, `return`) appropriately and discern anti-patterns.
-- Diagnose and debug infinite loops, off-by-one errors, and unintended loop termination.
+- Master conditional branching semantics: short-circuit boolean evaluation, ternary expressions, and chained `else-if` ladders.
+- Understand the mechanics of `switch-case` statements, jump table assembly generation, and intentional fall-through with `[[fallthrough]]`.
+- Differentiate iterative constructs (`for`, `while`, `do-while`) and their pre-test versus post-test evaluation semantics.
+- Control loop iteration flow safely using `break`, `continue`, and disciplined `goto` error handling patterns.
+- Analyze CPU branch prediction implications and cache-friendly loop iteration structures.
 
-3. Core Concepts
-- Truthiness in C: Any non-zero numeric expression evaluates to boolean True; exactly 0 evaluates to False.
-- Short-Circuit Evaluation: Logical `&&` halts evaluation if the left operand is 0; `||` halts if the left operand is non-zero.
-- Loop Invariants: Conditions that hold true before and after each iteration of a loop.
-- Jump Tables: Compiler optimization for dense switch statements indexing branch targets in $O(1)$ time.
-- Unreachable Code: Dead code blocks resulting from unconditional jumps or flawed logic branching.
+3. Prerequisites
+- Mastery of C fundamentals, relational operators (`==`, `!=`, `<`, `>`, `<=`, `>=`), and logical operators (`&&`, `||`, `!`).
+- Understanding of integer truthiness (in C, 0 evaluates to false; any non-zero value evaluates to true).
 
-4. Detailed Explanation
-4.1 Conditional Branching
-- `if (condition)`: Executes statement block if condition != 0.
-- `if-else`: Provides an alternative branch when condition == 0.
-- `else-if ladder`: Evaluates conditions sequentially until one matches; subsequent branches are skipped.
-- `switch (integral_expression)`: Matches expression against compile-time integer constants.
-  - Requires `break` to avoid fall-through to subsequent case labels.
-  - `default` executes when no case matches.
+4. Core Concepts
+- Branching: Conditional redirection of the instruction pointer (`EIP`/`RIP`) based on condition flags in the CPU status register (`EFLAGS`).
+- Short-Circuit Evaluation: Logical `&&` and `||` guarantee left-to-right evaluation, halting immediately once the final truth value is determined.
+- Jump Tables: Modern C compilers optimize dense `switch` statements into indirect lookup jump tables executing in $O(1)$ time regardless of the number of cases.
+- Loop Invariants: Logical assertions that remain true before and after each iteration of a loop, ensuring algorithmic correctness.
 
-4.2 Iteration Statements
-- `for (init; condition; update)`: Ideal for counter-controlled loops where iteration count is predetermined.
-- `while (condition)`: Pre-test loop evaluated prior to executing the body. If initial condition is false, body executes 0 times.
-- `do { ... } while (condition);`: Post-test loop guaranteeing at least one execution of the loop body regardless of initial condition.
+5. Detailed Theory
+5.1 Conditional Branching and Boolean Logic
+In C (prior to C99 `<stdbool.h>`), booleans are represented directly as integers:
+- False: Evaluates strictly to `0`.
+- True: Any non-zero integer (`1`, `-5`, `42`).
+When evaluating `if (expression)`, the expression is converted to a scalar. If non-zero, the consequent branch executes.
 
-4.3 Jump Statements
-- `break`: Immediately terminates innermost enclosing `for`, `while`, `do-while`, or `switch` block.
-- `continue`: Skips remainder of current loop iteration and advances directly to the update expression (in `for`) or condition check (in `while`).
-- `goto label`: Unconditionally transfers execution to the identifier label within the same function scope.
-- `return`: Terminates the current function and passes a return value back to the caller.
+Short-circuit evaluation is guaranteed:
+- In `A && B`: If `A` evaluates to `0`, `B` is NEVER evaluated.
+- In `A || B`: If `A` evaluates to non-zero, `B` is NEVER evaluated.
+This property is foundational for defensive programming:
+```c
+if (ptr != NULL && *ptr > 0) { /* safe dereference */ }
+```
 
-5. Syntax
-5.1 If-Else Ladder
-if (condition1) {
-    /* executed if condition1 is true */
-} else if (condition2) {
-    /* executed if condition2 is true */
-} else {
-    /* executed if all conditions false */
-}
+5.2 Switch-Case and Compiler Jump Tables
+A `switch` statement evaluates an integral condition and transfers control to matching `case` labels:
+- The expression must evaluate to an integer type (`char`, `int`, `enum`).
+- Case labels must be compile-time integer constant expressions.
+- Execution continues sequentially across subsequent cases unless halted by `break` (fall-through).
+When cases are densely clustered (e.g., cases 1 through 10), the compiler constructs an array of code pointers (a Jump Table). The CPU performs a single indirect jump `jmp [jump_table + index*8]`, achieving $O(1)$ execution time. When cases are sparse, the compiler falls back to binary search trees or sequential comparison cascades.
 
-5.2 Switch-Case Statement
-switch (expression) {
-    case CONST1:
-        /* statements */
-        break;
-    case CONST2:
-        /* statements */
-        break;
-    default:
-        /* fallback */
-        break;
-}
+5.3 Iteration Constructs
+1. `while (condition)`: Pre-test loop. Condition is evaluated before entering the body. If initially false, the loop body executes zero times.
+2. `do { body } while (condition);`: Post-test loop. Body executes at least once before the condition is tested.
+3. `for (init; condition; update)`: Standard iteration loop. `init` runs once; `condition` is evaluated before every iteration; `update` runs after each iteration.
 
-5.3 Loops
-for (int i = 0; i < N; i++) { /* statements */ }
-while (condition) { /* statements */ }
-do { /* statements */ } while (condition);
+6. Syntax
+- If-Else:
+  `if (cond) { ... } else if (cond2) { ... } else { ... }`
+- Switch:
+  `switch (integral_expr) { case CONST1: ... break; default: ... }`
+- Ternary:
+  `result = (condition) ? value_if_true : value_if_false;`
+- For Loop:
+  `for (int i = 0; i < N; i++) { ... }`
 
-6. Basic Examples
-Example 6.1: Number Classification with If-Else
+7. Basic Examples (Beginner Level)
+```c
 #include <stdio.h>
 
 int main(void) {
-    int number = -14;
+    int score = 85;
+    char grade;
 
-    if (number > 0) {
-        printf("%d is positive.\n", number);
-    } else if (number < 0) {
-        printf("%d is negative.\n", number);
+    // Else-If Ladder
+    if (score >= 90) {
+        grade = 'A';
+    } else if (score >= 80) {
+        grade = 'B';
+    } else if (score >= 70) {
+        grade = 'C';
+    } else if (score >= 60) {
+        grade = 'D';
     } else {
-        printf("The number is zero.\n");
+        grade = 'F';
     }
 
-    if (number % 2 == 0) {
-        printf("%d is even.\n", number);
-    } else {
-        printf("%d is odd.\n", number);
+    printf("Score: %d -> Final Grade: %c\n", score, grade);
+
+    // Basic For Loop
+    printf("Counting from 1 to 5: ");
+    for (int i = 1; i <= 5; i++) {
+        printf("%d ", i);
     }
+    printf("\n");
+
     return 0;
 }
+```
+Expected Output:
+```
+Score: 85 -> Final Grade: B
+Counting from 1 to 5: 1 2 3 4 5
+```
 
-Example 6.2: Menu Selection with Switch-Case
-#include <stdio.h>
-
-int main(void) {
-    char choice = 'B';
-
-    switch (choice) {
-        case 'A':
-        case 'a':
-            printf("Action: Add record\n");
-            break;
-        case 'B':
-        case 'b':
-            printf("Action: Browse records\n");
-            break;
-        case 'Q':
-        case 'q':
-            printf("Action: Quit program\n");
-            break;
-        default:
-            printf("Invalid selection.\n");
-            break;
-    }
-    return 0;
-}
-
-7. Intermediate Examples
-Example 7.1: Prime Number Generation using Nested Loops and Break
+8. Intermediate Examples (Menu-Driven State Machine with Switch and Fall-Through)
+```c
 #include <stdio.h>
 #include <stdbool.h>
 
-int main(void) {
-    int limit = 30;
-    printf("Prime numbers up to %d:\n", limit);
+typedef enum {
+    STATE_INIT = 1,
+    STATE_PROCESSING,
+    STATE_SUCCESS,
+    STATE_ERROR,
+    STATE_EXIT
+} SystemState;
 
-    for (int num = 2; num <= limit; num++) {
-        bool is_prime = true;
-        for (int factor = 2; factor * factor <= num; factor++) {
-            if (num % factor == 0) {
-                is_prime = false;
-                break; // Factor found; stop checking
+int main(void) {
+    SystemState current_state = STATE_INIT;
+    int retry_count = 0;
+
+    while (current_state != STATE_EXIT) {
+        switch (current_state) {
+            case STATE_INIT:
+                printf("[STATE] Initializing hardware drivers...\n");
+                current_state = STATE_PROCESSING;
+                break;
+
+            case STATE_PROCESSING:
+                printf("[STATE] Processing incoming data packets...\n");
+                retry_count++;
+                if (retry_count < 2) {
+                    current_state = STATE_ERROR;
+                } else {
+                    current_state = STATE_SUCCESS;
+                }
+                break;
+
+            case STATE_ERROR:
+                printf("[WARNING] Transient error occurred! Retrying... (Attempt %d)\n", retry_count);
+                current_state = STATE_PROCESSING;
+                break;
+
+            case STATE_SUCCESS:
+                printf("[SUCCESS] All tasks completed successfully!\n");
+                current_state = STATE_EXIT;
+                break;
+
+            default:
+                printf("[ERROR] Unrecognized system state!\n");
+                current_state = STATE_EXIT;
+                break;
+        }
+    }
+
+    printf("State machine terminated cleanly.\n");
+    return 0;
+}
+```
+Expected Output:
+```
+[STATE] Initializing hardware drivers...
+[STATE] Processing incoming data packets...
+[WARNING] Transient error occurred! Retrying... (Attempt 1)
+[STATE] Processing incoming data packets...
+[SUCCESS] All tasks completed successfully!
+State machine terminated cleanly.
+```
+
+9. Advanced Examples (Goto Cleanup Idiom for Resource Deallocation)
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+bool process_transaction(int client_id, double amount) {
+    int *buffer1 = NULL;
+    int *buffer2 = NULL;
+    bool success = false;
+
+    printf("Initiating transaction for client %d (amount: $%.2f)\n", client_id, amount);
+
+    // Allocate resource 1
+    buffer1 = (int*)malloc(1024 * sizeof(int));
+    if (buffer1 == NULL) {
+        printf("Error: Failed to allocate buffer1\n");
+        goto cleanup_none;
+    }
+
+    // Allocate resource 2
+    buffer2 = (int*)malloc(2048 * sizeof(int));
+    if (buffer2 == NULL) {
+        printf("Error: Failed to allocate buffer2\n");
+        goto cleanup_buffer1;
+    }
+
+    // Business Logic Simulation
+    if (amount <= 0.0) {
+        printf("Validation Error: Negative transaction amount rejected!\n");
+        goto cleanup_buffer2;
+    }
+
+    printf("Transaction processed successfully.\n");
+    success = true;
+
+    // Structured cascading cleanup
+cleanup_buffer2:
+    free(buffer2);
+    printf("Freed buffer2\n");
+
+cleanup_buffer1:
+    free(buffer1);
+    printf("Freed buffer1\n");
+
+cleanup_none:
+    return success;
+}
+
+int main(void) {
+    process_transaction(101, 250.0);
+    printf("---------------------------------\n");
+    process_transaction(102, -50.0);
+    return 0;
+}
+```
+
+10. Line-by-Line Code Explanation
+- `goto cleanup_buffer1;`: In C systems programming (such as the Linux kernel), `goto` is the standard, idiomatically accepted pattern for centralized error cleanup. It replaces deeply nested `if-else` cascades with flat, linear resource unwinding.
+- `cleanup_buffer2: free(buffer2);`: When an error occurs after allocating `buffer2`, the jump lands at `cleanup_buffer2`, frees `buffer2`, and falls through to `cleanup_buffer1` to free `buffer1`, ensuring zero memory leaks.
+
+11. Practical Programming Problems
+Problem 1: Prime Number Sieve of Eratosthenes
+Write a program to find all prime numbers up to $N = 50$ using loops and boolean arrays.
+```c
+#include <stdio.h>
+#include <stdbool.h>
+
+#define MAX_N 50
+
+int main(void) {
+    bool is_prime[MAX_N + 1];
+    for (int i = 0; i <= MAX_N; i++) is_prime[i] = true;
+    is_prime[0] = is_prime[1] = false;
+
+    for (int p = 2; p * p <= MAX_N; p++) {
+        if (is_prime[p]) {
+            for (int multiple = p * p; multiple <= MAX_N; multiple += p) {
+                is_prime[multiple] = false;
             }
         }
-        if (is_prime) {
-            printf("%d ", num);
-        }
+    }
+
+    printf("Primes up to %d: ", MAX_N);
+    for (int i = 2; i <= MAX_N; i++) {
+        if (is_prime[i]) printf("%d ", i);
     }
     printf("\n");
     return 0;
 }
+```
+Complexity: Time $O(N \log \log N)$, Space $O(N)$.
 
-8. Advanced Examples
-Example 8.1: Finite State Machine (FSM) using Switch and State Enum
-#include <stdio.h>
+12. Real-World Applications
+- Network Routers: Parsing IP protocol packet headers in high-throughput network packet switches using jump-table `switch` constructs.
+- Device Driver Cleanups: Kernel driver initialization uses cascading `goto out_err` labels to unwind memory-mapped I/O, IRQ lines, and DMA buffers.
+- Compilers & Lexers: Lexical scanners switch over character ASCII values to identify tokens.
 
-typedef enum {
-    STATE_IDLE,
-    STATE_CONNECTING,
-    STATE_CONNECTED,
-    STATE_ERROR
-} ConnectionState;
+13. Common Mistakes
+- Accidental Assignment in Condition (`if (x = 5)` instead of `if (x == 5)`): Assigns 5 to `x` and evaluates to true because 5 is non-zero.
+- Missing `break` in Switch Statements: Causes unintentional fall-through, executing unexpected subsequent case blocks.
+- Off-by-One Loop Bounds: Using `<=` instead of `<` on an array of length $N$, leading to buffer overruns at index $N$.
 
-typedef enum {
-    EVENT_CONNECT_REQ,
-    EVENT_ACK_RECEIVED,
-    EVENT_TIMEOUT,
-    EVENT_DISCONNECT
-} ConnectionEvent;
-
-ConnectionState handle_event(ConnectionState current, ConnectionEvent event) {
-    switch (current) {
-        case STATE_IDLE:
-            if (event == EVENT_CONNECT_REQ) {
-                printf("[FSM] Transitioning IDLE -> CONNECTING\n");
-                return STATE_CONNECTING;
-            }
-            break;
-        case STATE_CONNECTING:
-            if (event == EVENT_ACK_RECEIVED) {
-                printf("[FSM] Transitioning CONNECTING -> CONNECTED\n");
-                return STATE_CONNECTED;
-            } else if (event == EVENT_TIMEOUT) {
-                printf("[FSM] Timeout! Transitioning CONNECTING -> ERROR\n");
-                return STATE_ERROR;
-            }
-            break;
-        case STATE_CONNECTED:
-            if (event == EVENT_DISCONNECT) {
-                printf("[FSM] Transitioning CONNECTED -> IDLE\n");
-                return STATE_IDLE;
-            }
-            break;
-        case STATE_ERROR:
-            printf("[FSM] Resetting ERROR -> IDLE\n");
-            return STATE_IDLE;
-    }
-    printf("[FSM] Unhandled event in current state.\n");
-    return current;
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```c
+// Bug: Accidental assignment inside condition
+int status = 0;
+if (status = 1) { // Always true! Modifies status!
+    printf("Status is active\n");
 }
-
-int main(void) {
-    ConnectionState state = STATE_IDLE;
-    state = handle_event(state, EVENT_CONNECT_REQ);
-    state = handle_event(state, EVENT_ACK_RECEIVED);
-    state = handle_event(state, EVENT_DISCONNECT);
-    return 0;
+```
+CORRECT VERSION:
+```c
+int status = 0;
+if (status == 1) {
+    printf("Status is active\n");
 }
+```
 
-9. Code Explanation
-In Example 7.1:
-- The outer loop tests each candidate integer `num`.
-- The inner loop checks divisibility up to $\sqrt{num}$ (`factor * factor <= num`), which minimizes iterations from $O(N)$ to $O(\sqrt{N})$.
-- As soon as a divisor is discovered, `is_prime` is set to false, and `break` terminates the inner loop immediately.
-In Example 8.1:
-- An enumeration models states and events cleanly.
-- The `switch` statement inspects the current state, evaluating events to determine safe, deterministic state transitions.
+15. Debugging Techniques
+- Yoda Conditions: Writing `if (1 == status)` causes the compiler to reject accidental assignments (`1 = status`) with a compile-time error.
+- Compiler Warnings: Enable `-Wparentheses` to detect unparenthesized assignments inside `if` conditions.
 
-10. Practical Use Cases
-- Protocol parsers and network packet decoding.
-- Interactive terminal command-line menus and user validation loops.
-- Game loop architectures (input, update, render).
-- Control algorithms for industrial embedded sensors and actuators.
+16. Edge Cases
+- Floating Point Loop Counters: Never use `float` as a loop counter (`for (float f = 0.0f; f != 1.0f; f += 0.1f)`) because rounding errors prevent exact equality matches, resulting in an infinite loop.
+- Unsigned Decrement Underflow: Writing `for (unsigned int i = 10; i >= 0; i--)` loops infinitely because unsigned integers wrap to `UINT_MAX` when decremented below 0.
 
-11. Common Mistakes
-1. Using assignment `=` instead of equality `==` in if statement: `if (x = 5)` assigns 5 to x and always evaluates to True.
-2. Missing `break` in switch statements: Causes unintentional fall-through into following cases.
-3. Infinite loops due to missing update statements: `while (i < 10) { printf("%d", i); }` (missing `i++`).
-4. Off-by-one boundary errors: Using `i <= size` instead of `i < size` when iterating zero-indexed structures.
-5. Dangling else ambiguity: In nested `if` statements without braces, `else` binds to the closest preceding `if`.
+17. Best Practices
+- Keep loop nesting depth to 3 levels or fewer; refactor deeper nests into separate functions.
+- Always include a `default` case in every `switch` statement to catch corrupt or unexpected enum states.
+- Label intentional fall-through with `/* fallthrough */` or `[[fallthrough]];` (C23).
 
-12. Edge Cases
-- Loop counter integer overflow: If an unsigned char counter loop runs `for (unsigned char i = 0; i <= 255; i++)`, `i` wraps to 0 after 255, producing an infinite loop.
-- Floating-point loop termination: `for (float f = 0.0f; f != 1.0f; f += 0.1f)` may never terminate due to floating-point rounding errors.
+18. Performance Considerations
+- Branch Prediction: Modern CPUs use branch prediction tables. Sorting input arrays prior to branch evaluation can yield a 3x to 6x speedup by eliminating branch mispredictions in tight loops.
+- Loop Invariant Code Motion: Optimizing compilers hoist calculations that do not change inside the loop body outside the loop.
 
-13. Best Practices
-- Always enclose conditional and loop bodies in braces `{ ... }`, even for single statements.
-- Avoid using `goto` for general logic; restrict its usage to centralized multi-resource cleanup in error-handling paths.
-- Keep loop bodies concise; extract complex inner operations into helper functions.
-- Prefer `for` loops when iteration bounds are known; prefer `while` when waiting for external conditions.
+19. Security Considerations
+- Infinite Loops: User-controlled input in loop condition without upper-bound termination checks causes Denial of Service (DoS) CPU lockups.
 
-14. Performance Considerations
-- Compilers convert dense switch cases into jump tables ($O(1)$ dispatch) rather than cascading linear comparisons ($O(N)$).
-- Order condition checks in `if` ladders so the most statistically frequent condition is evaluated first.
-- Move invariant computations outside loop bodies (loop-invariant code motion).
+20. Memory Considerations
+- Stack Consumption in Deep Loops: Declaring large arrays inside loop bodies can consume stack memory if the compiler cannot reuse stack frame slots.
 
-15. Comparison with Related Concepts
-- While vs Do-While: `while` checks condition before execution (0 or more executions); `do-while` checks condition after execution (1 or more executions).
-- Switch vs Else-If: `switch` only works on integer/char constants; `else-if` supports arbitrary boolean relational expressions.
+21. Comparison with Related Concepts
+- While vs Do-While: `while` checks before executing (0 to N iterations); `do-while` executes once before checking (1 to N iterations).
+- Switch vs Else-If Ladder: `switch` uses $O(1)$ jump tables for dense integers; `else-if` evaluates sequentially in $O(N)$ time.
 
-16. Debugging Tips
-- Print loop indices and state variables on every iteration during diagnosis.
-- Use conditional breakpoints in GDB: `break 45 if i == 50`.
-- Watch variables in GDB to trace when a loop counter unexpectedly changes.
+22. Frequently Asked Questions
+Q: Is `goto` completely prohibited in C?
+A: No. While arbitrary spaghetti jumps are discouraged, using `goto` exclusively for forward-jumping structured error unwinding in multi-resource functions is a standard C industry best practice.
 
-17. Interview Questions and Concept Checks
-1. When is case fall-through useful in a switch-case statement?
-   - When multiple case values share identical execution logic (e.g., grouping lowercase and uppercase characters).
-2. What is the difference between `break` and `continue`?
-3. How does short-circuit evaluation prevent null pointer dereferencing in `if (ptr != NULL && *ptr > 0)`?
-   - If `ptr == NULL`, the first condition is false; C never evaluates `*ptr`, avoiding a segmentation fault.
+Q: Can a `switch` statement evaluate strings in C?
+A: No. C `switch` expressions strictly require integral types (`int`, `char`, `enum`). To branch on strings, use `strcmp()` in an `else-if` ladder.
 
-18. Summary
-Control flow structures form the decision-making engine of C programs. Proper utilization of branching statements and loops combined with defensive boundary checking ensures deterministic, maintainable, and high-performance program execution.
+23. Interview Questions
+Beginner:
+Q: What happens if you omit the `break` keyword in a `switch` case?
+A: Execution falls through into the code of subsequent cases unconditionally until a `break` statement or the end of the `switch` block is encountered.
+
+Intermediate:
+Q: Explain how short-circuit evaluation can be used for safety.
+A: In an expression like `if (ptr != NULL && *ptr == 42)`, if `ptr` is `NULL`, the left operand is false, and the right operand `*ptr` is never evaluated, safely preventing a null pointer dereference segmentation fault.
+
+Advanced:
+Q: How does a compiler implement a jump table for a `switch` statement in assembly?
+A: The compiler generates an array of code memory addresses corresponding to each case block. At runtime, the switch value is bounds-checked and used as an index into the table, executing an indirect jump `jmp [table + index*8]` in $O(1)$ constant time.
+
+24. Exam Questions
+Short-Answer: What is the result of `int x = 0; if (x++) printf("True"); else printf("False");`? (Output: False; post-increment yields 0 before incrementing).
+Medium-Answer: Rewrite a nested `if-else` validation routine into a structured `goto cleanup` pattern.
+Long-Answer: Analyze how CPU branch prediction affects loop performance and explain the difference between jump tables and linear comparisons.
+
+25. Practice Questions
+1. Write a menu-driven banking CLI supporting Deposit, Withdraw, and Check Balance using `switch-case` and input validation loops.
+2. Implement binary search on a sorted integer array using a `while` loop.
+
+26. Summary
+Control flow structures direct program execution paths. Mastering boolean logic, short-circuit semantics, jump-table-backed `switch` statements, iterative loop bounds, and defensive error cleanup idioms is essential for writing high-performance C software.
+
+27. Key Takeaways
+- Short-circuit evaluation (`&&`, `||`) protects against null pointers and illegal bounds.
+- `switch` compiles to $O(1)$ jump tables for dense integer cases.
+- Never use unsigned loop counters in decrementing loops checking `>= 0`.
+- The `goto cleanup` idiom is the standard pattern for centralized resource deallocation.

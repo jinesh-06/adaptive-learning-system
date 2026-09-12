@@ -1,196 +1,319 @@
-COURSE: python
-TOPIC: advanced_topics
-LEVEL: advanced
+COURSE: PYTHON
+TOPIC: ADVANCED_TOPICS
+LEVEL: ADVANCED
 SOURCE: python_advanced_topics.txt
 
-TITLE: Advanced Python: Iterators, Metaclasses, Context Managers, Regex, Type Hints, Dataclasses, Concurrency, and Memory Management
+TITLE: Mastering Advanced Python: Metaclasses, Dataclasses, Type Hints, Asyncio, and GIL
 
 1. Introduction
-Advanced Python covers the architectural foundations that power enterprise libraries, high-performance backends, and asynchronous frameworks. This domain includes the formal Iterator Protocol (__iter__, __next__), custom Context Managers (__enter__, __exit__ and contextlib), runtime and static Type Hints (PEP 484, typing module), declarative Dataclasses (PEP 557), Regular Expressions (<re>), asynchronous I/O with Async/Await (<asyncio>), multi-processing vs multi-threading, and CPython Memory Management & Garbage Collection (reference counting and cyclic generational GC).
+Advanced Python programming demands a deep comprehension of the language's internal execution mechanics, runtime metaprogramming, modern static type analysis, asynchronous concurrency (`asyncio`), and the architectural constraints of the Global Interpreter Lock (GIL). Through tools like Dataclasses (PEP 557), Type Annotations (PEP 484), Metaclasses, Context Managers, Threading vs Multiprocessing, and Async/Await event loops, engineers can construct enterprise-grade, high-throughput, and type-safe systems that fully exploit modern CPU and network architectures.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Implement custom iterable and iterator classes adhering to the Iterator Protocol.
-- Build class-based and generator-based context managers with @contextlib.contextmanager.
-- Apply static type hints, generics, unions, and optional types validated by tools like MyPy.
-- Implement concise, declarative data models using @dataclass.
-- Parse, search, and validate complex text patterns using regular expressions (<re>).
-- Differentiate between I/O-bound concurrency (asyncio, threading) and CPU-bound parallelism (multiprocessing).
-- Implement asynchronous coroutines and gather concurrent tasks using asyncio.
-- Understand CPython memory management: reference counting, cyclic garbage collection (gc module), and the GIL.
+- Master Static Type Hinting using `typing` (`Union`, `Optional`, `Callable`, `TypeVar`, `Generic`).
+- Implement boilerplate-free domain models using `@dataclass` with default factories and immutability (`frozen=True`).
+- Understand Metaclasses, class creation interceptors (`__new__`, `__init_subclass__`), and runtime validation.
+- Understand the Global Interpreter Lock (GIL) and differentiate CPU-bound vs I/O-bound concurrency models.
+- Implement asynchronous event loops using `asyncio`, coroutines (`async def`), `await`, and `asyncio.gather`.
+- Differentiate Threading, Multiprocessing, and Asynchronous I/O paradigms.
 
-3. Core Concepts
-- Iterator Protocol: Objects implementing __iter__() returning an iterator, and iterators implementing __next__() raising StopIteration upon exhaustion.
-- Context Manager Protocol: Objects implementing __enter__() and __exit__() for deterministic resource setup and teardown.
-- Type Hints: Non-enforced type annotations providing static analysis, IDE autocompletion, and schema validation.
-- Dataclasses: Class decorator automatically synthesizing __init__, __repr__, __eq__, and hashing methods.
-- GIL (Global Interpreter Lock): CPython lock allowing only one thread to execute Python bytecode at a time.
-- Memory Management: Automatic memory reclamation using primary reference counting supported by a three-generation cyclic garbage collector.
+3. Prerequisites
+- Mastery of Python fundamentals, functions, OOP, decorators, and data structures.
 
-4. Detailed Explanation
-4.1 The Iterator Protocol
-class CountDown:
-    def __init__(self, start): self.current = start
-    def __iter__(self): return self
-    def __next__(self):
-        if self.current <= 0: raise StopIteration
-        val = self.current; self.current -= 1; return val
+4. Core Concepts
+- Metaclass: The "class of a class". Metaclasses define how classes themselves are constructed and validated at import time.
+- Type Hints: Non-enforced runtime annotations enabling static type checkers (Mypy, Pyright) to catch type errors before execution.
+- Dataclass: A decorator that automatically generates `__init__`, `__repr__`, `__eq__`, and comparison dunder methods on classes.
+- Global Interpreter Lock (GIL): A mutex in CPython that prevents multiple native OS threads from executing Python bytecode simultaneously.
+- Asynchronous Event Loop: Single-threaded cooperative multitasking model where coroutines yield control (`await`) during I/O wait states.
 
-4.2 Context Managers with contextlib
-from contextlib import contextmanager
-@contextmanager
-def temporary_flag(obj, attr, new_val):
-    old_val = getattr(obj, attr)
-    setattr(obj, attr, new_val)
-    try:
-        yield
-    finally:
-        setattr(obj, attr, old_val)
+5. Detailed Theory
+5.1 Modern Type Annotations (`typing` module)
+Python type hints provide static type safety without altering runtime semantics:
+```python
+from typing import Optional, Callable
 
-4.3 Dataclasses (PEP 557)
+def fetch_user(user_id: int) -> Optional[dict[str, str]]:
+    if user_id <= 0:
+        return None
+    return {"name": "Alice", "role": "Admin"}
+```
+- Generic Types (`TypeVar`, `Generic[T]`): Enables reusable type-safe container classes.
+- Union Types (Python 3.10+): `int | str` replaces `Union[int, str]`.
+- Optional Types (Python 3.10+): `str | None` replaces `Optional[str]`.
+
+5.2 Dataclasses (PEP 557)
+`@dataclass` eliminates verbose `__init__` boilerplate:
+```python
 from dataclasses import dataclass, field
-@dataclass(frozen=True)
-class DocumentChunk:
-    chunk_id: str
-    text: str
-    tokens: int = field(default=0)
 
-4.4 Concurrency Models
-- asyncio: Single-threaded cooperative multitasking using an event loop; ideal for high-concurrency network I/O.
-- threading: Native OS threads; best for I/O-bound blocking calls; constrained by GIL for CPU tasks.
-- multiprocessing: Spawns separate Python processes, each with its own interpreter and memory space, bypassing the GIL for CPU-intensive tasks.
+@dataclass(frozen=True, order=True)
+class StudentRecord:
+    id: int
+    name: str
+    skills: list[str] = field(default_factory=list)
+```
+- `frozen=True`: Makes instances immutable and hashable (usable as set items or dict keys).
+- `default_factory`: Prevents mutable default argument sharing across instances.
 
-5. Syntax
-5.1 Async/Await Syntax
-import asyncio
+5.3 Metaclasses and `__init_subclass__`
+When Python defines a class, it calls `type.__new__(metaclass, name, bases, attrs)`:
+- Metaclasses intercept class definition to enforce API rules (e.g., verifying abstract methods or registering plugins).
+- `__init_subclass__` (Python 3.6+): A lightweight, modern alternative to metaclasses for validating subclasses upon inheritance.
 
-async def fetch_data(task_id: int) -> dict:
-    await asyncio.sleep(0.01) # Non-blocking async sleep
-    return {"id": task_id, "status": "success"}
+5.4 Concurrency Models & The GIL
+1. Multithreading (`threading`):
+   - Multiple OS threads sharing the same memory address space.
+   - Constrained by CPython's GIL: Only 1 thread executes Python bytecode at a time.
+   - Ideal for: I/O-bound tasks (file I/O, network requests). Ineffective for CPU-bound computation.
+2. Multiprocessing (`multiprocessing`):
+   - Multiple separate Python processes, each with its own independent memory space and GIL.
+   - Ideal for: CPU-bound numerical math, image processing, machine learning.
+3. Asynchronous I/O (`asyncio`):
+   - Single-threaded event loop managing thousands of cooperative coroutines via non-blocking I/O.
+   - Ideal for: Ultra-high-concurrency network servers (WebSockets, microservices).
 
-async def main():
-    results = await asyncio.gather(fetch_data(1), fetch_data(2))
-    print(results)
+6. Syntax
+- Dataclass: `@dataclass class Model: id: int; name: str`
+- Async Function: `async def fetch(): await asyncio.sleep(1)`
+- Gather Tasks: `results = await asyncio.gather(t1(), t2())`
+- Type Generic: `T = TypeVar('T')`
 
-asyncio.run(main())
-
-5.2 Regular Expressions
-import re
-pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-is_valid_email = bool(re.match(pattern, "user@domain.com"))
-
-6. Basic Examples
-Example 6.1: Dataclasses with Field Defaults and Immutability
+7. Basic Examples (Beginner Level)
+```python
 from dataclasses import dataclass, field
-from typing import List
+from typing import Optional
 
-@dataclass(order=True)
-class CourseModule:
-    sort_index: int = field(init=False, repr=False)
-    course_name: str
-    level: str
-    credits: int = 3
-    topics: List[str] = field(default_factory=list)
+@dataclass
+class Book:
+    title: str
+    author: str
+    price: float
+    isbn: Optional[str] = None
+    tags: list[str] = field(default_factory=list)
 
-    def __post_init__(self):
-        # Determine sort order by credits
-        self.sort_index = self.credits
+    def apply_discount(self, percent: float):
+        self.price *= (1.0 - percent / 100.0)
 
-m1 = CourseModule("Python Programming", "Beginner", 4, ["Basics", "Data Structures"])
-m2 = CourseModule("Advanced C++", "Advanced", 5, ["Templates", "Concurrency"])
+book1 = Book("Fluent Python", "Luciano Ramalho", 49.99, "978-1491946008", ["python", "advanced"])
+book2 = Book("Fluent Python", "Luciano Ramalho", 49.99, "978-1491946008", ["python", "advanced"])
 
-print(f"Module 1: {m1}")
-print(f"m1 < m2: {m1 < m2}") # True because 4 < 5
+print("--- Dataclass Output ---")
+print(f"Book representation: {book1}")
+print(f"Automatic Value Equality (book1 == book2): {book1 == book2}")
+book1.apply_discount(10)
+print(f"Price after 10% discount: ${book1.price:.2f}")
+```
+Expected Output:
+```
+--- Dataclass Output ---
+Book representation: Book(title='Fluent Python', author='Luciano Ramalho', price=49.99, isbn='978-1491946008', tags=['python', 'advanced'])
+Automatic Value Equality (book1 == book2): True
+Price after 10% discount: $44.99
+```
 
-7. Intermediate Examples
-Example 7.1: Regular Expressions for Log Extraction
-import re
+8. Intermediate Examples (Subclass Validation with __init_subclass__ and Generics)
+```python
+from typing import TypeVar, Generic
 
-log_entries = [
-    "2026-09-12 14:32:10 [INFO] User 101 logged in successfully.",
-    "2026-09-12 14:33:05 [ERROR] Database timeout on query: SELECT * FROM users.",
-    "2026-09-12 14:34:20 [WARN] High memory usage: 89% capacity."
-]
+# 1. Class Validation via __init_subclass__
+class PluginBase:
+    def __init_subclass__(cls, plugin_name: str, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not hasattr(cls, "execute") or not callable(getattr(cls, "execute")):
+            raise TypeError(f"Plugin class '{cls.__name__}' must implement an 'execute()' method!")
+        cls.plugin_name = plugin_name
+        print(f"[REGISTRY] Registered plugin: '{plugin_name}' ({cls.__name__})")
 
-log_pattern = re.compile(r"^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>[A-Z]+)\] (?P<message>.+)$")
+class AudioPlugin(PluginBase, plugin_name="audio_processor"):
+    def execute(self):
+        print("Processing audio buffer...")
 
-print("--- Parsed Log Entries ---")
-for entry in log_entries:
-    match = log_pattern.match(entry)
-    if match:
-        data = match.groupdict()
-        print(f"Time: {data['timestamp']} | Level: {data['level']:<5} | Msg: {data['message']}")
+# 2. Generic Stack Container
+T = TypeVar('T')
 
-8. Advanced Examples
-Example 8.1: Asyncio Task Gathering and Benchmark
+class GenericStack(Generic[T]):
+    def __init__(self):
+        self._items: list[T] = []
+
+    def push(self, item: T):
+        self._items.append(item)
+
+    def pop(self) -> T:
+        if not self._items:
+            raise IndexError("pop from empty stack")
+        return self._items.pop()
+
+int_stack = GenericStack[int]()
+int_stack.push(10)
+int_stack.push(20)
+print(f"Popped from GenericStack: {int_stack.pop()}")
+```
+Expected Output:
+```
+[REGISTRY] Registered plugin: 'audio_processor' (AudioPlugin)
+Popped from GenericStack: 20
+```
+
+9. Advanced Examples (Asyncio Concurrent Coroutines and Async Context Managers)
+```python
 import asyncio
 import time
 
-async def async_worker(worker_id: int, delay: float) -> str:
-    await asyncio.sleep(delay)
-    return f"Worker {worker_id} completed in {delay}s"
+async def fetch_api_data(service_name: str, delay: float) -> dict:
+    print(f"[{service_name}] Request dispatched...")
+    await asyncio.sleep(delay) # Non-blocking asynchronous pause
+    print(f"[{service_name}] Response received ({delay}s).")
+    return {"service": service_name, "status": "200 OK", "latency_ms": delay * 1000}
 
-async def run_concurrent_tasks():
+async def main_async():
     start = time.perf_counter()
-    tasks = [
-        async_worker(1, 0.05),
-        async_worker(2, 0.03),
-        async_worker(3, 0.04)
-    ]
-    results = await asyncio.gather(*tasks)
-    duration = time.perf_counter() - start
-    print(f"All {len(results)} async tasks completed in {duration:.4f}s (Concurrent execution!)")
+    print("--- Dispatching Asyncio Concurrent Tasks ---")
+
+    # Run tasks concurrently in event loop
+    results = await asyncio.gather(
+        fetch_api_data("AuthService", 0.05),
+        fetch_api_data("CatalogService", 0.03),
+        fetch_api_data("PaymentService", 0.04)
+    )
+
+    elapsed = time.perf_counter() - start
+    print(f"\nAll API services responded in {elapsed*1000:.2f} ms total!")
     for res in results:
-        print(f"  -> {res}")
+        print(f"  Result: {res}")
 
-asyncio.run(run_concurrent_tasks())
+if __name__ == "__main__":
+    asyncio.run(main_async())
+```
+Expected Output:
+```
+--- Dispatching Asyncio Concurrent Tasks ---
+[AuthService] Request dispatched...
+[CatalogService] Request dispatched...
+[PaymentService] Request dispatched...
+[CatalogService] Response received (0.03s).
+[PaymentService] Response received (0.04s).
+[AuthService] Response received (0.05s).
 
-9. Code Explanation
-In Example 7.1:
-- Named capture groups (?P<name>...) allow regex results to be extracted directly as a dictionary via match.groupdict(), providing clean structured parsing.
-In Example 8.1:
-- asyncio.gather(*tasks) runs all 3 coroutines concurrently on the event loop. The total elapsed time is approximately the duration of the slowest worker (~0.05s) rather than the sequential sum (0.12s).
+All API services responded in 52.30 ms total!
+  Result: {'service': 'CatalogService', 'status': '200 OK', 'latency_ms': 30.0}
+  Result: {'service': 'PaymentService', 'status': '200 OK', 'latency_ms': 40.0}
+  Result: {'service': 'AuthService', 'status': '200 OK', 'latency_ms': 50.0}
+```
 
-10. Practical Use Cases
-- High-throughput asynchronous web APIs (FastAPI).
-- ETL log parsing and unstructured text extraction with regular expressions.
-- CPU-intensive parallel data science preprocessing using multiprocessing.Pool.
-- Diagnostic memory leak tracking in long-running services using the gc module.
+10. Line-by-Line Code Explanation
+- `async def fetch_api_data(...)`: Declares an asynchronous coroutine function.
+- `await asyncio.sleep(delay)`: Yields control back to the event loop. The single OS thread immediately switches to execute other ready coroutines instead of blocking.
+- `await asyncio.gather(...)`: Schedules multiple coroutines concurrently, awaiting until all have resolved and returning an ordered list of their results.
 
-11. Common Mistakes
-1. Using mutable defaults in dataclasses directly (topics: list = [] fails; use default_factory=list).
-2. Calling synchronous blocking operations (e.g., time.sleep() or synchronous file I/O) inside async coroutines, blocking the entire event loop (use await asyncio.sleep()).
-3. Expecting Python multithreading to speed up CPU-bound tasks (the GIL forces single-core execution; use multiprocessing).
-4. Creating cyclic references in objects with custom __del__ methods in legacy Python versions.
+11. Practical Programming Problems
+Problem 1: Concurrent Web Scraper Engine with Asyncio Semaphore
+Implement an asynchronous worker pool that limits concurrent HTTP requests to at most $N=2$ simultaneous connections using `asyncio.Semaphore`.
+```python
+import asyncio
 
-12. Edge Cases
-- Unclosed coroutines: Creating a coroutine object without awaiting it raises RuntimeWarning: coroutine was never awaited.
-- Regex catastrophic backtracking on ambiguous nested quantifiers.
+async def fetch_with_rate_limit(sem: asyncio.Semaphore, url_id: int):
+    async with sem: # Acquire semaphore slot
+        print(f"[FETCHING] URL {url_id} active...")
+        await asyncio.sleep(0.02)
+        print(f"[DONE] URL {url_id} finished.")
+        return f"Content of URL {url_id}"
 
-13. Best Practices
-- Use type hints and validate code with MyPy or Pyright.
-- Prefer @dataclass over manually writing __init__, __repr__, and __eq__.
-- Use asyncio for high-volume network I/O; use multiprocessing for CPU-bound computations.
-- Utilize @contextmanager for lightweight resource wrappers.
+async def run_scraper():
+    sem = asyncio.Semaphore(2) # Max 2 concurrent tasks
+    tasks = [fetch_with_rate_limit(sem, i) for i in range(1, 5)]
+    results = await asyncio.gather(*tasks)
+    print(f"Scraped {len(results)} pages.")
 
-14. Performance Considerations
-- multiprocessing incurs inter-process communication (IPC) serialization overhead; batch data to minimize IPC transfers.
-- Disable cyclic garbage collection (gc.disable()) during time-critical batch tasks if no cyclic references exist.
+asyncio.run(run_scraper())
+```
+Complexity: Time $O(N / \text{concurrency})$, Space $O(N)$ tasks.
 
-15. Comparison with Related Concepts
-- Threading vs Asyncio: Threading relies on OS preemptive scheduling; Asyncio uses single-threaded cooperative multitasking via coroutines.
+12. Real-World Applications
+- High-Performance Web Servers (FastAPI, Tornado): Handling 50,000+ concurrent WebSocket and HTTP connections per instance via `asyncio`.
+- Machine Learning Model Serialization: Using `@dataclass` and `pydantic` for strict data validation in ML inference pipelines.
+- Distributed Computing (Celery, Ray): Spawning worker processes to bypass the GIL for heavy numerical tasks.
 
-16. Debugging Tips
-- Enable asyncio debug mode: asyncio.run(main(), debug=True) to identify slow coroutines blocking the event loop.
-- Use tracemalloc to trace memory allocation spikes and identify memory leaks.
+13. Common Mistakes
+- Calling Blocking I/O inside Async Coroutines: Calling `time.sleep()` or synchronous `requests.get()` blocks the entire single-threaded event loop, halting all other coroutines! Use `asyncio.sleep()` or `httpx.AsyncClient`.
+- Forgetting to `await` Coroutines: Calling `async_func()` without `await` returns an un-executed coroutine object and issues a `RuntimeWarning: coroutine was never awaited`.
+- Mutable Defaults in Dataclasses: Writing `items: list = []` raises `ValueError: mutable default is not allowed`. Always use `field(default_factory=list)`.
 
-17. Interview Questions and Concept Checks
-1. How does Python's Garbage Collector handle reference cycles?
-   - While reference counting immediately frees objects whose count drops to zero, the generational garbage collector periodically scans memory using a pointer-tracking graph to detect and reclaim isolated cycles of unreachable objects.
-2. What is the difference between asyncio and threading in Python?
-   - asyncio is cooperative and single-threaded, eliminating race conditions on shared memory without locks; threading uses preemptive OS threads that run concurrently on I/O but are bound by the GIL for CPU tasks.
-3. What does @dataclass(frozen=True) do?
-   - It makes the dataclass immutable (mutating fields raises FrozenInstanceError) and automatically generates a hash method __hash__() so instances can be used as set elements or dictionary keys.
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```python
+# Bug: Calling coroutine without await
+async def fetch(): return "data"
+async def main():
+    val = fetch() # RuntimeWarning: coroutine 'fetch' was never awaited
+    print(val) # Prints <coroutine object fetch at 0x...>
+```
+CORRECT VERSION:
+```python
+async def main():
+    val = await fetch() # Correct: awaits result
+    print(val) # Prints "data"
+```
 
-18. Summary
-Advanced Python provides the modern toolset required to build enterprise-grade, concurrent, and high-performance applications. Mastering dataclasses, regex, type hints, async/await, and CPython memory architecture empowers developers to architect robust, scalable software.
+15. Debugging Techniques
+- Asyncio Debug Mode: Enable with `asyncio.run(main(), debug=True)` to log slow coroutines blocking the event loop for more than 100ms.
+- Static Type Checking: Run `mypy --strict script.py` to identify type violations before runtime.
+
+16. Edge Cases
+- Unhandled Exceptions in `asyncio.gather()`: By default, if one task raises an exception, `gather` re-raises it immediately. Use `return_exceptions=True` to collect exceptions as result values.
+- Thread-Safety in Asyncio: `asyncio` is single-threaded; sharing coroutines across multiple OS threads requires `loop.call_soon_threadsafe()`.
+
+17. Best Practices
+- Use `@dataclass(frozen=True)` for immutable value objects.
+- Use `asyncio` for I/O-bound concurrency; use `multiprocessing` for CPU-bound parallelism.
+- Always annotate function parameters with modern type hints (`int | None`).
+
+18. Performance Considerations
+- Asynchronous Concurrency: Thousands of coroutines consume mere megabytes of memory compared to the massive stack allocations of thousands of OS threads.
+
+19. Security Considerations
+- Metaclass Injection: Ensure dynamic class creation using `type()` does not construct classes from unvalidated user input.
+
+20. Memory Considerations
+- Coroutine Memory: A suspended coroutine object consumes only ~1KB of memory, enabling scalability to 100,000+ concurrent connections.
+
+21. Comparison with Related Concepts
+- Threading vs Asyncio: Threading uses preemptive OS thread scheduling with GIL contention; Asyncio uses cooperative single-threaded event-loop scheduling.
+- Multiprocessing vs Threading: Multiprocessing uses separate processes with separate memory spaces to achieve true multi-core parallelism.
+
+22. Frequently Asked Questions
+Q: What is the Global Interpreter Lock (GIL) and why does it exist in CPython?
+A: The GIL is a mutex that protects CPython's internal memory management and reference counting structures from concurrent access, ensuring thread safety for C extensions at the cost of restricting pure Python threads to a single CPU core.
+
+Q: How does `asyncio` achieve concurrency on a single thread?
+A: `asyncio` uses an event loop with non-blocking OS I/O notifications (such as `epoll` or `kqueue`). When a coroutine awaits an I/O operation, the event loop registers the socket and immediately switches execution to another ready coroutine.
+
+23. Interview Questions
+Beginner:
+Q: What is the purpose of Python's `@dataclass` decorator?
+A: `@dataclass` automatically generates standard boilerplate methods (such as `__init__`, `__repr__`, `__eq__`) based on class variable type annotations.
+
+Intermediate:
+Q: Explain the difference between `async def` and regular `def`.
+A: A regular `def` executes synchronously and returns its value immediately. An `async def` defines a coroutine function; calling it returns a coroutine object that must be `await`ed or scheduled on an event loop to execute.
+
+Advanced:
+Q: When would you choose `multiprocessing` over `asyncio` or `threading`?
+A: Choose `multiprocessing` for CPU-intensive, computationally heavy workloads (e.g., image processing, encryption, machine learning) because it spawns independent processes with separate GILs, utilizing all physical CPU cores simultaneously. Choose `asyncio` for high-concurrency I/O-bound network/socket services.
+
+24. Exam Questions
+Short-Answer: What keyword pauses coroutine execution until an asynchronous operation completes? (`await`).
+Medium-Answer: Explain why `time.sleep()` should never be called inside an `asyncio` coroutine.
+Long-Answer: Design an asynchronous rate-limited job processor utilizing `asyncio.Queue` and worker coroutines.
+
+25. Practice Questions
+1. Implement an immutable `@dataclass(frozen=True)` representing an HTTP Request with validation in `__post_init__`.
+2. Write an asynchronous web status checker using `asyncio` checking 10 endpoints concurrently.
+
+26. Summary
+Advanced Python programming leverages static type hints, dataclass domain modeling, metaclass validation, and asynchronous event loops. Mastering concurrency models and the GIL enables engineers to design high-throughput, modern enterprise software.
+
+27. Key Takeaways
+- Use Dataclasses to eliminate boilerplate domain class code.
+- Use `asyncio` for high-throughput non-blocking I/O concurrency.
+- Use `multiprocessing` to bypass the GIL for CPU-bound parallel computation.
+- Type hints enable compile-time verification with static analysis tools like Mypy.

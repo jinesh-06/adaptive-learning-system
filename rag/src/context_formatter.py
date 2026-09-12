@@ -1,6 +1,14 @@
 """
 Context Formatter module for the RAG pipeline.
 Converts retrieved document chunks into clean, structured context strings for Member 3's Gemini / LLM consumption.
+Output format per chunk:
+COURSE: <COURSE>
+TOPIC: <TOPIC>
+LEVEL: <LEVEL>
+SOURCE: <SOURCE>
+SECTION: <SECTION>
+
+[content]
 """
 
 from typing import List, Dict, Any, Optional
@@ -9,22 +17,23 @@ from typing import List, Dict, Any, Optional
 def format_context(
     retrieved_documents: List[Dict[str, Any]],
     include_metadata: bool = True,
-    separator: str = "\n---\n"
+    separator: str = "\n\n---\n\n"
 ) -> str:
     """
     Format a list of retrieved chunks into a clean, LLM-ready context block.
 
     Structure per chunk:
-    COURSE: <COURSE>
-    TOPIC: <TOPIC>
-    LEVEL: <LEVEL>
-    SOURCE: <SOURCE>
+    COURSE: C
+    TOPIC: POINTERS
+    LEVEL: BEGINNER
+    SOURCE: c_pointers_memory.txt
+    SECTION: Pointer Basics
 
     [Relevant educational content]
 
     Args:
         retrieved_documents: List of retrieved chunk dictionaries from retrieve_documents().
-        include_metadata: Whether to prepend COURSE, TOPIC, LEVEL, SOURCE headers.
+        include_metadata: Whether to prepend COURSE, TOPIC, LEVEL, SOURCE, SECTION headers.
         separator: String delimiter separating consecutive chunks.
 
     Returns:
@@ -41,11 +50,10 @@ def format_context(
         course = doc.get("course", "general").upper()
         topic = doc.get("topic", "general").replace("_", " ").upper()
         level = doc.get("level", "intermediate").upper()
-        chunk_id = doc.get("chunk_id", f"chunk_{idx}")
-        similarity = doc.get("similarity")
+        section = doc.get("section", "General Content").strip()
 
         if include_metadata:
-            header = f"COURSE: {course}\nTOPIC: {topic}\nLEVEL: {level}\nSOURCE: {source}"
+            header = f"COURSE: {course}\nTOPIC: {topic}\nLEVEL: {level}\nSOURCE: {source}\nSECTION: {section}"
             block = f"{header}\n\n{text}"
         else:
             block = text
@@ -102,16 +110,26 @@ def format_rag_prompt(
 if __name__ == "__main__":
     sample_docs = [
         {
-            "chunk_id": "python_data_structures_001",
-            "source": "python_data_structures.txt",
-            "course": "python",
-            "topic": "data_structures",
-            "level": "intermediate",
+            "chunk_id": "c_pointers_memory_001",
+            "source": "c_pointers_memory.txt",
+            "course": "c",
+            "topic": "pointers_memory",
+            "level": "beginner",
+            "section": "Pointer Basics",
             "similarity": 0.88,
-            "text": "Lists in Python are dynamic, mutable arrays storing references to heap objects."
+            "text": "A pointer is a variable that stores the memory address of another variable."
+        },
+        {
+            "chunk_id": "c_pointers_memory_012",
+            "source": "c_pointers_memory.txt",
+            "course": "c",
+            "topic": "pointers_memory",
+            "level": "intermediate",
+            "section": "Pointer Arithmetic",
+            "similarity": 0.81,
+            "text": "Pointer arithmetic in C accounts for the size of the underlying data type automatically."
         }
     ]
     formatted = format_context(sample_docs)
     print("Formatted Context Output:\n")
     print(formatted)
-

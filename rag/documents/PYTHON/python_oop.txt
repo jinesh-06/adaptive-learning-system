@@ -1,170 +1,179 @@
-COURSE: python
-TOPIC: oop
-LEVEL: intermediate
+COURSE: PYTHON
+TOPIC: OOP
+LEVEL: INTERMEDIATE
 SOURCE: python_oop.txt
 
-TITLE: Python Object-Oriented Programming: Classes, Inheritance, Polymorphism, Magic Methods, and Properties
+TITLE: Deep Python Object-Oriented Programming, Metaclasses, Magic Methods, and Inheritance MRO
 
 1. Introduction
-Python is an inherently object-oriented language that supports class-based abstractions, encapsulation, single and multiple inheritance, method resolution order (MRO), polymorphism, property decorators (@property), and special dunder (double underscore) magic methods. In Python, classes themselves are first-class runtime objects (instances of type), enabling dynamic class mutation and metaprogramming. Understanding Python OOP enables software engineers to model complex domain entities, write idiomatic object interfaces, override standard operator behaviors, and implement clean enterprise design patterns.
+Object-Oriented Programming (OOP) in Python provides an expressive, highly flexible paradigm for modeling complex software domains, structuring stateful abstractions, and managing inheritance relationships. Python's object model is fundamentally dynamic: classes are themselves first-class objects (instances of `type`), attributes are stored in dynamic dictionaries (`__dict__`), and method resolution across complex multi-inheritance graphs is resolved deterministically via C3 Linearization (Method Resolution Order, MRO). Understanding classes, instance vs class attributes, classmethods, staticmethods, properties (`@property`), magic methods (dunder methods), operator overloading, and composition is essential for advanced Python systems engineering.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Define classes, instantiate objects, and initialize instance attributes via __init__().
-- Differentiate between instance attributes, class-level attributes, instance methods, @classmethod, and @staticmethod.
-- Implement single, multiple, and multilevel inheritance hierarchies using super().
-- Understand the C3 Linearization algorithm and Method Resolution Order (cls.__mro__).
-- Apply encapsulation conventions (public, protected _var, private name-mangled __var).
-- Implement managed attributes using the @property getter, setter, and deleter decorators.
-- Master special magic methods (__str__, __repr__, __len__, __getitem__, __eq__, __add__).
-- Compare composition ('has-a') and inheritance ('is-a') architectures.
+- Master class creation, constructor initialization (`__init__`), and the `self` reference.
+- Distinguish between instance attributes (`self.attr`) and class-level attributes (`Class.attr`).
+- Master method types: instance methods, `@classmethod` (receiving `cls`), and `@staticmethod`.
+- Implement clean encapsulation using private name mangling (`__private`) and `@property` getters/setters.
+- Master Multiple Inheritance and inspect the Method Resolution Order (`Class.mro()`).
+- Implement operator overloading and object protocols using Dunder Magic Methods (`__str__`, `__repr__`, `__eq__`, `__len__`, `__getitem__`, `__add__`).
 
-3. Core Concepts
-- Class vs Instance: A class is the blueprint residing in module namespace; an instance is an allocated object containing an __dict__ dictionary of its own unique instance attributes.
-- Self Reference: The explicit first parameter self passed to instance methods binding the invoking instance.
-- Method Resolution Order (MRO): The deterministic linear order in which Python searches parent classes for methods and attributes.
-- Duck Typing: 'If it walks like a duck and quacks like a duck, it is a duck.' Interfaces are defined by behavior (methods present), not explicit type hierarchies.
-- Dunder Methods: Hook methods with double underscores that integrate user classes with Python's built-in operators, protocols, and string conversions.
+3. Prerequisites
+- Proficiency in Python fundamentals, functions, closures, and data structures.
 
-4. Detailed Explanation
-4.1 Class and Method Types
-- Instance Methods: Accept self as first parameter; access and mutate individual instance state.
-- Class Methods (@classmethod): Accept cls as first parameter; access or mutate class-level state or serve as alternative factory constructors.
-- Static Methods (@staticmethod): Do not accept self or cls; isolated utility functions bound to the class namespace.
+4. Core Concepts
+- Class as Object: In Python, classes are runtime objects created by the default metaclass `type`.
+- Dunder (Double Underscore) Methods: Special hook methods defined by the Python data model that allow user classes to integrate with built-in language operators.
+- C3 Linearization: The deterministic algorithm Python uses to compute the Method Resolution Order (MRO) for multiple inheritance hierarchies.
+- Property Decorator (`@property`): Syntactic abstraction allowing methods to be accessed like attributes while executing validation logic behind the scenes.
+- Duck Typing: "If it walks like a duck and quacks like a duck, it's a duck." Python inspects object capabilities at runtime rather than enforcing rigid nominal type hierarchies.
 
-4.2 Inheritance and super()
-- super().__init__(*args) delegates initialization to the next class in the MRO chain.
-- Multiple Inheritance: class Derived(BaseA, BaseB): pass. Python uses C3 linearization to resolve diamond structures without duplicating parent calls.
+5. Detailed Theory
+5.1 Instance vs Class Attributes and Namespaces
+- Instance Attributes: Stored in the instance's unique `self.__dict__`. Unique to each object.
+- Class Attributes: Stored in `Class.__dict__`. Shared by ALL instances of the class.
+- Attribute Lookup Order: Python first searches the instance's `__dict__`; if not found, it searches the class's `__dict__`, then searches up the inheritance tree via MRO.
 
-4.3 Encapsulation & Name Mangling
-- Single underscore _attribute: Conventional hint indicating protected/internal use.
-- Double underscore __attribute: Private attribute; Python transforms name to _ClassName__attribute to prevent accidental subclass collision (name mangling).
+5.2 Methods: Instance, Class, and Static
+1. Instance Method: Takes `self` as the first argument. Can access and mutate both instance and class state.
+2. Class Method (`@classmethod`): Takes `cls` as the first argument. Can access and mutate class-level state. Commonly used for alternative constructor factories.
+3. Static Method (`@staticmethod`): Does not receive `self` or `cls`. Pure utility function grouped logically inside the class namespace.
 
-4.4 Properties (@property)
-Allows method execution behind intuitive attribute access syntax:
-@property
-def radius(self): return self._radius
-@radius.setter
-def radius(self, value):
-    if value < 0: raise ValueError("Radius must be positive")
-    self._radius = value
+5.3 Multiple Inheritance and Method Resolution Order (MRO)
+When resolving `super()` calls and inherited methods across multiple parent classes:
+- Python uses C3 Linearization to produce a linear, monotonic inheritance chain without duplicate evaluations.
+- `super()` does not simply call the parent class; it calls the *next class in the MRO chain* of the calling instance.
+- Inspect MRO at runtime: `print(MyClass.__mro__)` or `MyClass.mro()`.
 
-4.5 Essential Magic Methods
-- __str__(self): Human-readable string representation (for end users via print() or str()).
-- __repr__(self): Unambiguous formal representation (for developers/debugging).
-- __eq__(self, other): Implements ==.
-- __len__(self): Implements len().
-- __getitem__(self, key): Implements indexing obj[key].
+5.4 Magic Dunder Methods (The Python Data Model)
+- Representation: `__repr__(self)` (unambiguous developer representation) vs `__str__(self)` (user-friendly string).
+- Arithmetic Operators: `__add__`, `__sub__`, `__mul__`, `__truediv__`.
+- Comparison Operators: `__eq__`, `__lt__`, `__le__`, `__gt__`, `__ge__`.
+- Container Protocol: `__len__`, `__getitem__`, `__setitem__`, `__delitem__`, `__contains__`.
+- Context Managers: `__enter__`, `__exit__`.
 
-5. Syntax
-5.1 Class Structure with Methods and Properties
-class Student:
-    school_name = "Tech Academy" # Class attribute
+6. Syntax
+- Class Definition:
+  ```python
+  class Account:
+      bank_name = "Global Bank"  # Class attribute
+      def __init__(self, owner: str, balance: float = 0.0):
+          self.owner = owner     # Instance attribute
+          self._balance = balance
+  ```
+- Property:
+  ```python
+  @property
+  def balance(self) -> float:
+      return self._balance
+  ```
 
-    def __init__(self, name: str, gpa: float):
-        self.name = name         # Instance attribute
-        self._gpa = gpa          # Protected attribute
-
-    @property
-    def gpa(self) -> float:
-        return self._gpa
-
-    @classmethod
-    def create_honor_student(cls, name: str):
-        return cls(name, 4.0)
-
-    @staticmethod
-    def is_passing(score: float) -> bool:
-        return score >= 60.0
-
-6. Basic Examples
-Example 6.1: Basic Class, Encapsulation, and Magic Methods
+7. Basic Examples (Beginner Level)
+```python
 class BankAccount:
-    def __init__(self, account_id: str, initial_balance: float = 0.0):
-        self.account_id = account_id
-        self._balance = max(0.0, initial_balance)
+    bank_name = "Apex Financial" # Class attribute
 
-    def deposit(self, amount: float) -> None:
+    def __init__(self, account_holder: str, initial_deposit: float = 0.0):
+        self.account_holder = account_holder # Instance attribute
+        self._balance = max(0.0, initial_deposit)
+
+    def deposit(self, amount: float):
         if amount > 0:
             self._balance += amount
-            print(f"Deposited ${amount:.2f}. Balance: ${self._balance:.2f}")
+            print(f"Deposited ${amount:.2f}. New Balance: ${self._balance:.2f}")
 
     def withdraw(self, amount: float) -> bool:
         if 0 < amount <= self._balance:
             self._balance -= amount
             print(f"Withdrew ${amount:.2f}. Remaining: ${self._balance:.2f}")
             return True
-        print("Withdrawal failed. Insufficient funds.")
+        print(f"Withdrawal of ${amount:.2f} failed: Insufficient funds.")
         return False
 
-    def __str__(self) -> str:
-        return f"BankAccount({self.account_id}, Balance: ${self._balance:.2f})"
+    def get_balance(self) -> float:
+        return self._balance
 
-    def __repr__(self) -> str:
-        return f"BankAccount(account_id='{self.account_id}', initial_balance={self._balance})"
+# Instantiate objects
+acc1 = BankAccount("Alice", 500.0)
+acc2 = BankAccount("Bob", 100.0)
 
-acc = BankAccount("ACT-404", 250.0)
-acc.deposit(100.0)
-acc.withdraw(50.0)
-print(str(acc))
-print(repr(acc))
+print(f"Account 1 ({acc1.account_holder}): ${acc1.get_balance():.2f}")
+acc1.deposit(150.0)
+acc1.withdraw(700.0)
+print(f"Both accounts belong to bank: {BankAccount.bank_name}")
+```
+Expected Output:
+```
+Account 1 (Alice): $500.00
+Deposited $150.00. New Balance: $650.00
+Withdrawal of $700.00 failed: Insufficient funds.
+Both accounts belong to bank: Apex Financial
+```
 
-7. Intermediate Examples
-Example 7.1: Inheritance, Polymorphism, and Super
-class Employee:
-    def __init__(self, name: str, base_salary: float):
-        self.name = name
-        self.base_salary = base_salary
+8. Intermediate Examples (Properties, Classmethods, and Encapsulation)
+```python
+class Temperature:
+    def __init__(self, celsius: float = 0.0):
+        self._celsius = celsius
 
-    def calculate_pay(self) -> float:
-        return self.base_salary
+    # Property Getter
+    @property
+    def celsius(self) -> float:
+        return self._celsius
 
-    def get_role_description(self) -> str:
-        return f"{self.name} (General Employee)"
+    # Property Setter with Validation
+    @celsius.setter
+    def celsius(self, value: float):
+        if value < -273.15:
+            raise ValueError("Temperature cannot fall below absolute zero (-273.15°C)!")
+        self._celsius = value
 
-class Developer(Employee):
-    def __init__(self, name: str, base_salary: float, tech_stack: list[str]):
-        super().__init__(name, base_salary)
-        self.tech_stack = tech_stack
+    @property
+    def fahrenheit(self) -> float:
+        return (self._celsius * 9 / 5) + 32
 
-    def calculate_pay(self) -> float:
-        # Developers receive a 10% tech bonus
-        return self.base_salary * 1.10
+    # Alternative Constructor Factory
+    @classmethod
+    def from_fahrenheit(cls, f_value: float):
+        c_value = (f_value - 32) * 5 / 9
+        return cls(c_value)
 
-    def get_role_description(self) -> str:
-        return f"{self.name} - Developer specializing in {', '.join(self.tech_stack)}"
+    # Static Utility Method
+    @staticmethod
+    def is_freezing(c_value: float) -> bool:
+        return c_value <= 0.0
 
-class Manager(Employee):
-    def __init__(self, name: str, base_salary: float, bonus: float):
-        super().__init__(name, base_salary)
-        self.bonus = bonus
+temp1 = Temperature(25.0)
+print(f"Temp: {temp1.celsius:.1f}°C -> {temp1.fahrenheit:.1f}°F")
 
-    def calculate_pay(self) -> float:
-        return self.base_salary + self.bonus
+temp2 = Temperature.from_fahrenheit(98.6)
+print(f"Body Temp from Fahrenheit: {temp2.celsius:.1f}°C")
+print(f"Is 0°C freezing? {Temperature.is_freezing(0.0)}")
+```
+Expected Output:
+```
+Temp: 25.0°C -> 77.0°F
+Body Temp from Fahrenheit: 37.0°C
+Is 0°C freezing? True
+```
 
-# Polymorphic processing
-staff: list[Employee] = [
-    Developer("Marcus", 90000, ["Python", "C++"]),
-    Manager("Elena", 110000, 20000),
-    Employee("David", 60000)
-]
-
-for emp in staff:
-    print(f"{emp.get_role_description()} -> Total Pay: ${emp.calculate_pay():,.2f}")
-
-8. Advanced Examples
-Example 8.1: Vector2D with Operator Overloading and Custom Sequence Protocol
+9. Advanced Examples (Magic Methods Operator Overloading and Multiple Inheritance MRO)
+```python
 class Vector2D:
     def __init__(self, x: float, y: float):
         self.x = float(x)
         self.y = float(y)
 
-    def __add__(self, other: "Vector2D") -> "Vector2D":
+    def __repr__(self) -> str:
+        return f"Vector2D({self.x}, {self.y})"
+
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y})"
+
+    def __add__(self, other: 'Vector2D') -> 'Vector2D':
         if not isinstance(other, Vector2D):
             return NotImplemented
         return Vector2D(self.x + other.x, self.y + other.y)
 
-    def __mul__(self, scalar: float) -> "Vector2D":
+    def __mul__(self, scalar: float) -> 'Vector2D':
         return Vector2D(self.x * scalar, self.y * scalar)
 
     def __eq__(self, other: object) -> bool:
@@ -172,74 +181,180 @@ class Vector2D:
             return False
         return self.x == other.x and self.y == other.y
 
-    def __repr__(self) -> str:
-        return f"Vector2D({self.x}, {self.y})"
+    def __abs__(self) -> float:
+        return (self.x**2 + self.y**2) ** 0.5
 
-    def __len__(self) -> int:
-        return 2
+# Multiple Inheritance Hierarchy (Diamond Pattern)
+class BaseService:
+    def execute(self):
+        print("BaseService: core execution logic")
 
-    def __getitem__(self, index: int) -> float:
-        if index == 0: return self.x
-        if index == 1: return self.y
-        raise IndexError("Vector2D index out of range (must be 0 or 1)")
+class LoggingService(BaseService):
+    def execute(self):
+        print("[LOG] Starting execution...")
+        super().execute()
+        print("[LOG] Execution completed.")
 
+class AuthValidationService(BaseService):
+    def execute(self):
+        print("[AUTH] User authentication verified.")
+        super().execute()
+
+class ApplicationService(LoggingService, AuthValidationService):
+    def execute(self):
+        print("=== Application Gateway Invocation ===")
+        super().execute()
+
+print("--- Vector2D Operator Overloading ---")
 v1 = Vector2D(3, 4)
 v2 = Vector2D(1, 2)
 v3 = v1 + v2
-scaled = v1 * 2
-
-print(f"v1: {v1}, v2: {v2}")
 print(f"v1 + v2 = {v3}")
-print(f"v1 * 2  = {scaled}")
-print(f"v1[0] = {v1[0]}, v1[1] = {v1[1]}")
-print(f"v1 == Vector2D(3, 4): {v1 == Vector2D(3, 4)}")
+print(f"v1 * 3  = {v1 * 3}")
+print(f"Magnitude |v1| = {abs(v1)}")
 
-9. Code Explanation
-In Example 7.1:
-- super().__init__(name, base_salary) in Developer and Manager avoids duplicating the initialization logic of Employee.
-- The polymorphic loop for emp in staff: calls calculate_pay() dynamically without checking the concrete subclass type (dynamic dispatch).
-In Example 8.1:
-- __add__ and __mul__ overload arithmetic operators + and *.
-- __getitem__ makes instances of Vector2D indexable via square brackets (v1[0]), seamlessly implementing Python's sequence protocol.
+print("\n--- Multiple Inheritance MRO Inspection ---")
+app = ApplicationService()
+app.execute()
+print(f"\nMRO Chain: {[cls.__name__ for cls in ApplicationService.mro()]}")
+```
+Expected Output:
+```
+--- Vector2D Operator Overloading ---
+v1 + v2 = (4.0, 6.0)
+v1 * 3  = (9.0, 12.0)
+Magnitude |v1| = 5.0
 
-10. Practical Use Cases
-- ORM (Object-Relational Mapping) models in frameworks like SQLAlchemy and Django.
-- Game entity component hierarchies and vector math engines.
-- Custom container implementations adhering to standard Python protocols (Iterable, Sequence, Mapping).
+--- Multiple Inheritance MRO Inspection ---
+=== Application Gateway Invocation ===
+[LOG] Starting execution...
+[AUTH] User authentication verified.
+BaseService: core execution logic
+[LOG] Execution completed.
 
-11. Common Mistakes
-1. Forgetting self as the first parameter in instance method definitions: causes TypeError: method() takes 0 positional arguments but 1 was given.
-2. Defining mutable default values as class attributes (shared across all instances instead of unique to each instance).
-3. Overriding __eq__ without implementing __hash__, making instances unhashable and unable to be stored in sets or as dict keys.
-4. Calling super() with explicit class names incorrectly in Python 3 (use zero-argument super()).
+MRO Chain: ['ApplicationService', 'LoggingService', 'AuthValidationService', 'BaseService', 'object']
+```
 
-12. Edge Cases
-- Returning NotImplemented from binary dunder methods (__add__, __sub__) signals Python to fall back to the right-hand operand's reflected method (__radd__).
-- Metaclass conflict in complex multiple inheritance hierarchies.
+10. Line-by-Line Code Explanation
+- `def __add__(self, other)`: Implements operator overloading for the `+` operator. If `other` is not a `Vector2D`, returning `NotImplemented` allows Python to try `other.__radd__(self)`.
+- `super().execute()`: Traverses the next class in the C3 Linearization MRO chain. In `ApplicationService`, `super()` in `LoggingService` dispatches to `AuthValidationService`, ensuring cooperative multiple inheritance without duplicate execution.
 
-13. Best Practices
-- Always implement both __str__ and __repr__ for custom classes.
-- Use @property for getters and setters instead of writing Java-style get_value() and set_value().
-- Favor composition over inheritance when objects only need to share utility functionality.
-- Use @dataclass (Python 3.7+) for boilerplate-heavy data-holding classes.
+11. Practical Programming Problems
+Problem 1: Custom Collection Class with Sequence Protocol
+Implement a custom `Polynomial` class supporting indexing, length, addition, and evaluation.
+```python
+class Polynomial:
+    def __init__(self, *coefficients: float):
+        # Stored in ascending order of degree: c0 + c1*x + c2*x^2
+        self.coeffs = list(coefficients)
 
-14. Performance Considerations
-- Use __slots__ = ('x', 'y') to prevent the creation of per-instance __dict__ dictionaries, drastically reducing memory footprint when instantiating millions of small objects.
+    def __repr__(self) -> str:
+        terms = [f"{c}x^{i}" for i, c in enumerate(self.coeffs) if c != 0]
+        return " + ".join(terms) if terms else "0"
 
-15. Comparison with Related Concepts
-- Python Classes vs C++ Classes: Python classes are dynamic runtime dictionary objects; all methods are virtual by default; access control is conventional rather than compiler-enforced.
+    def __len__(self) -> int:
+        return len(self.coeffs)
 
-16. Debugging Tips
-- Inspect an object's runtime attribute dictionary using vars(obj) or obj.__dict__.
-- Check class hierarchy search order using ClassName.mro() or ClassName.__mro__.
+    def __getitem__(self, degree: int) -> float:
+        return self.coeffs[degree] if degree < len(self.coeffs) else 0.0
 
-17. Interview Questions and Concept Checks
-1. What is the difference between __str__ and __repr__ in Python?
-   - __str__ is intended to provide a friendly, human-readable string for end users; __repr__ should provide an unambiguous developer-oriented representation that could ideally be evaluated with eval().
-2. How does super() resolve methods in multiple inheritance?
-   - It searches the parent classes according to the class's Method Resolution Order (MRO) calculated via the C3 Linearization algorithm.
-3. What is the purpose of __slots__ in a Python class?
-   - It restricts allowed attributes to a fixed tuple of names, preventing the allocation of a dynamic __dict__ per instance and saving significant RAM.
+    def evaluate(self, x: float) -> float:
+        return sum(c * (x**i) for i, c in enumerate(self.coeffs))
 
-18. Summary
-Object-Oriented Programming in Python provides clean abstraction and dynamic flexibility. Mastering class structures, inheritance, polymorphism, properties, and magic methods enables engineers to build expressive, maintainable, and pythonic software architectures.
+p = Polynomial(3, 2, 5) # 3 + 2x + 5x^2
+print(f"Polynomial: {p}")
+print(f"Degree 2 coefficient: {p[2]}")
+print(f"Evaluate at x=2: {p.evaluate(2)}")
+```
+Complexity: Time $O(N)$ evaluation, Space $O(N)$.
+
+12. Real-World Applications
+- Web Framework ORMs (SQLAlchemy, Django): Translating Python class attributes into database table schemas.
+- Data Science (Pandas DataFrames): Custom `__getitem__` and `__getattr__` slice and column accessors.
+- GUI Applications: Component inheritance trees managing UI rendering events.
+
+13. Common Mistakes
+- Mutating Class Attributes via Instances: Writing `self.class_attr = 5` creates an instance attribute shadowing the class attribute rather than modifying the shared class variable.
+- Calling `super().__init__()` with Mismatched Signatures in Multiple Inheritance: Breaks cooperative MRO chains.
+- Missing `self` in Method Signatures: Raises `TypeError: method() takes 0 positional arguments but 1 was given`.
+
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```python
+# Bug: Missing self parameter
+class Worker:
+    def do_work(): # Missing self!
+        print("Working...")
+w = Worker()
+w.do_work() # TypeError: do_work() takes 0 positional arguments but 1 was given
+```
+CORRECT VERSION:
+```python
+class Worker:
+    def do_work(self): # Correct
+        print("Working...")
+```
+
+15. Debugging Techniques
+- Inspect Instance Dictionaries: `print(obj.__dict__)` to inspect all currently bound instance attributes.
+- Inspect Class Hierarchy: `print(Class.mro())` to diagnose method dispatch ordering issues.
+
+16. Edge Cases
+- Name Mangling: Attributes prefixed with double underscores (`__secret`) are renamed internally to `_ClassName__secret` to prevent accidental subclass shadowing.
+- `__slots__` Optimization: Declaring `__slots__ = ('name', 'age')` suppresses the creation of `__dict__`, saving significant memory across millions of small instances.
+
+17. Best Practices
+- Use `@property` for getters and setters instead of writing Java-style `get_x()`/`set_x()` methods.
+- Follow the Rule of Single Responsibility for classes.
+- Prefer composition over inheritance when behavior can be delegated.
+
+18. Performance Considerations
+- Memory Savings with `__slots__`: Eliminates dynamic `__dict__` dictionary overhead, slashing memory consumption by 40% to 60% in large-scale object pools.
+
+19. Security Considerations
+- Arbitrary Attribute Injection: Python allows adding attributes dynamically at runtime. Use `__slots__` or `@dataclass(frozen=True)` to enforce strict schemas.
+
+20. Memory Considerations
+- Circular References in Objects: Instances referencing each other with backpointers require cyclic garbage collection for cleanup.
+
+21. Comparison with Related Concepts
+- `__repr__` vs `__str__`: `__repr__` is for developers (unambiguous, matches code syntax); `__str__` is for end users (readable format).
+- `@classmethod` vs `@staticmethod`: `@classmethod` receives the class object `cls`; `@staticmethod` receives no implicit first argument.
+
+22. Frequently Asked Questions
+Q: What is the purpose of `__init__` vs `__new__`?
+A: `__new__` is the actual constructor that allocates and returns the new object instance; `__init__` is the initializer that receives the newly created instance and sets up attributes.
+
+Q: How does private encapsulation work in Python?
+A: Python uses naming conventions. A single underscore `_var` indicates protected/internal use by convention. A double underscore `__var` triggers name mangling to prevent subclass collisions.
+
+23. Interview Questions
+Beginner:
+Q: What is the purpose of the `self` parameter in Python class methods?
+A: `self` represents the instance of the class on which the method is called, allowing explicit access to instance attributes and other methods.
+
+Intermediate:
+Q: Explain the difference between `@classmethod` and `@staticmethod`.
+A: `@classmethod` receives the class object `cls` as its first parameter and can modify class-level state or serve as an alternative constructor. `@staticmethod` receives no implicit first parameter (`self` or `cls`) and acts as a plain function placed inside the class namespace.
+
+Advanced:
+Q: What is Method Resolution Order (MRO) and how does C3 Linearization resolve multiple inheritance?
+A: MRO is the order in which Python searches parent classes for attributes and methods. C3 Linearization guarantees two properties: 1) Children precede their parents, and 2) The relative order of parent classes listed in class definitions is preserved across the entire hierarchy, avoiding duplicate lookups and resolving diamond patterns monotonically.
+
+24. Exam Questions
+Short-Answer: What built-in method returns the list of classes in method resolution order? (`Class.mro()`).
+Medium-Answer: Explain how `@property` allows refactoring attribute access without breaking public API contracts.
+Long-Answer: Design an immutable, hashable 3D Point class supporting equality, string representation, and addition using dunder magic methods.
+
+25. Practice Questions
+1. Implement a `Matrix` class supporting 2D indexing via `__getitem__` and matrix multiplication via `__matmul__` (`@` operator).
+2. Create an abstract base class `DatabaseConnector` using the `abc` module enforcing `connect()` and `disconnect()` methods.
+
+26. Summary
+Object-Oriented Programming in Python provides dynamic, expressive domain abstractions. By mastering constructors, properties, dunder methods, multiple inheritance MRO, and cooperative `super()` dispatch, developers can architect scalable, maintainable Python systems.
+
+27. Key Takeaways
+- Use `@property` for clean attribute encapsulation.
+- Dunder methods integrate custom objects seamlessly with Python syntax (`+`, `len()`, `str()`).
+- `super()` follows the C3 Linearization MRO chain in multiple inheritance.
+- Use `__slots__` to optimize memory footprints in large object collections.

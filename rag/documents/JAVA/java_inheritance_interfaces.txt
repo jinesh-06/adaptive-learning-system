@@ -1,253 +1,392 @@
-COURSE: java
-TOPIC: inheritance_interfaces
-LEVEL: intermediate
+COURSE: JAVA
+TOPIC: INHERITANCE_INTERFACES
+LEVEL: INTERMEDIATE
 SOURCE: java_inheritance_interfaces.txt
 
-TITLE: Java Inheritance, Polymorphism, Abstract Classes, and Interfaces: Dynamic Dispatch, Default Methods, and Object Methods
+TITLE: Deep Java Inheritance, Interfaces, Dynamic Method Dispatch, and Object Contracts
 
 1. Introduction
-Inheritance and interfaces are the core mechanisms in Java for achieving code reuse, subtyping, and polymorphic behavior. In Java, a class can extend at most one superclass (single implementation inheritance) using the `extends` keyword, while it can implement multiple `interface` definitions using the `implements` keyword. At runtime, the JVM uses **Dynamic Method Dispatch** (late binding) to resolve overridden methods based on the actual heap object type. Furthermore, every class in Java implicitly inherits from the universal root class `java.lang.Object`, inheriting core contract methods (`equals()`, `hashCode()`, `toString()`, `clone()`, `finalize()`). Understanding abstract classes, interface evolution with `default` and `static` methods, and the `equals`/`hashCode` contract is essential for professional Java engineering.
+Inheritance and interfaces provide the architectural scaffolding for polymorphism, subtyping, API contracts, and code reuse in the Java programming language. Java strictly enforces Single Class Inheritance (`extends`) to eliminate the complexities of multiple inheritance, while allowing a class to implement multiple Interfaces (`implements`) for behavioral abstraction. Dynamic Method Dispatch is resolved at runtime through virtual method tables (vtables) in the JVM. Understanding abstract classes, interface evolution (default and static interface methods), `@Override` semantics, the `super` reference, and foundational `java.lang.Object` contracts (`equals`, `hashCode`, `toString`) is vital for building extensible enterprise frameworks.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Master single class inheritance with `extends` and constructor delegation with `super(...)`.
-- Override methods safely using the `@Override` annotation.
-- Understand Dynamic Method Dispatch and runtime polymorphism.
-- Implement abstract classes with `abstract` methods to define partial templates.
-- Define pure interface contracts and implement multiple interfaces on a single class.
-- Utilize Java 8+ interface `default` methods, `static` methods, and private interface methods (Java 9+).
-- Master the `java.lang.Object` class contracts: `equals()`, `hashCode()`, and `toString()`.
-- Resolve multiple interface default method conflicts (the Diamond problem in interfaces).
+- Master single class inheritance with `extends`, `super()`, and superclass method invocation.
+- Understand Dynamic Method Dispatch (runtime polymorphism) and `@Override` annotation semantics.
+- Differentiate Abstract Classes (`abstract class`) from Interfaces (`interface`).
+- Master Modern Java Interface features: Default methods (`default`), static methods, and private helper methods.
+- Implement Multiple Interface inheritance and resolve interface default method naming conflicts.
+- Master the `java.lang.Object` contract: proper symmetric/transitive `equals()` and consistent `hashCode()`.
 
-3. Core Concepts
-- Single Class Inheritance: Java prohibits multiple class inheritance (`class C extends A, B` is illegal) to eliminate the state-level diamond problem.
-- Interfaces: Abstract types specifying behavior contracts that implementing classes must satisfy.
-- Dynamic Method Dispatch: Mechanism by which a call to an overridden method is resolved at runtime rather than compile time.
-- Abstract Class vs Interface: Abstract classes can maintain mutable instance state and constructors; interfaces define behavior contracts and support multiple implementation inheritance.
-- The `equals()` and `hashCode()` Contract: If two objects are equal according to `equals()`, they MUST produce the identical integer `hashCode()`.
+3. Prerequisites
+- Proficiency in Java fundamentals, methods, and OOP class design.
 
-4. Detailed Explanation
-4.1 Dynamic Method Dispatch
-When invoking `Base obj = new Derived(); obj.display();`:
-1. Compile-time: The compiler checks that `display()` exists in class `Base`.
-2. Runtime: The JVM inspects the actual object type in the heap (`Derived`) and invokes `Derived.display()`.
+4. Core Concepts
+- Subtyping ("is-a"): A subclass inherits member variables and methods from its superclass, establishing a subtype hierarchy.
+- Dynamic Method Dispatch: The mechanism where a call to an overridden method is resolved at runtime based on the actual object instance on the heap, not the reference type.
+- Abstract Class: A class that cannot be instantiated directly and may contain both abstract methods (without bodies) and concrete implemented methods with state.
+- Interface: A pure behavioral contract. Since Java 8/9, interfaces can also contain default methods (`default`), static methods, and private helper methods.
+- Object Contract: Overriding `equals()` requires consistently overriding `hashCode()` so that equal objects always produce identical hashcodes for hash collections (`HashMap`, `HashSet`).
 
-4.2 Abstract Classes
-- Cannot be instantiated directly with `new`.
-- Can contain both concrete methods with bodies and `abstract` methods without bodies.
-- Used when subclasses share common implementation code and internal state.
+5. Detailed Theory
+5.1 Dynamic Method Dispatch and the JVM `invokevirtual` Opcode
+In Java, all non-static, non-final, non-private methods are virtual by default:
+- Calling `parentRef.display()` emits the `invokevirtual` bytecode instruction.
+- At runtime, the JVM inspects the object's class metadata in the Metaspace (via its class vtable pointer) and executes the most specific subclass implementation.
 
-4.3 Interfaces and Default Methods
-- All interface fields are implicitly `public static final` (constants).
-- All standard interface methods are implicitly `public abstract`.
-- Java 8 introduced `default` methods allowing interfaces to add new methods with default implementations without breaking existing implementers:
-  public interface Logger {
-      void log(String msg);
-      default void logError(String msg) { log("[ERROR] " + msg); }
-  }
+5.2 Abstract Classes vs Interfaces
+| Feature | Abstract Class | Interface |
+| :--- | :--- | :--- |
+| Inheritance | Single inheritance (`extends`) | Multiple inheritance (`implements`) |
+| State / Fields | Can have instance variables (`private int x;`) | Public static final constants only |
+| Constructors | Has constructors (called via `super()`) | No constructors |
+| Default Logic | Concrete methods with full state access | Default methods (`default`) without state |
+| Speed | Slightly faster direct vtable offset | Interface table lookup (`invokeinterface`) |
 
-4.4 The Object Class Contract
-1. `equals(Object obj)`: Reflexive, symmetric, transitive, consistent, and `x.equals(null)` returns `false`.
-2. `hashCode()`: Used by `HashMap`, `HashSet`, and `Hashtable` to distribute objects into buckets. Failing to override `hashCode` alongside `equals` breaks hash collections.
+5.3 Modern Interface Evolution (Java 8, 9+)
+- Default Methods (`default void log() { ... }`): Allows adding new methods to interfaces without breaking existing implementing classes.
+- Static Interface Methods (`static void helper() { ... }`): Utility methods bound to the interface namespace.
+- Private Interface Methods (Java 9+): Shared helper routines encapsulated inside the interface file.
 
-5. Syntax
-5.1 Interface and Abstract Class Implementation
-public interface Payable {
-    double calculatePayment();
-}
+5.4 The `equals()` and `hashCode()` Contract
+From `java.lang.Object`:
+1. `equals()` must be:
+   - Reflexive: `x.equals(x)` is true.
+   - Symmetric: `x.equals(y) == y.equals(x)`.
+   - Transitive: If `x.equals(y)` and `y.equals(z)`, then `x.equals(z)`.
+   - Consistent: Multiple calls return the same result if fields are unchanged.
+   - Null-safe: `x.equals(null)` is false.
+2. `hashCode()` Contract:
+   - If `x.equals(y)` is true, `x.hashCode() == y.hashCode()` MUST be true.
+   - If `x.equals(y)` is false, hashcodes do not have to be distinct (though distinct hashcodes improve HashMap performance).
 
-public abstract class Employee implements Payable {
-    protected String name;
-    public Employee(String name) { this.name = name; }
-    public abstract String getRole();
-}
+6. Syntax
+- Class Inheritance: `public class Dog extends Animal { ... }`
+- Interface Implementation: `public class Circle implements Shape, Drawable { ... }`
+- Interface Default Method: `default void print() { System.out.println("Default"); }`
+- Calling Super: `super.makeSound();`
 
-public class SalariedEmployee extends Employee {
-    private double salary;
-    public SalariedEmployee(String name, double salary) {
-        super(name);
-        this.salary = salary;
-    }
-    @Override
-    public double calculatePayment() { return salary; }
-    @Override
-    public String getRole() { return "Salaried Full-Time"; }
-}
-
-6. Basic Examples
-Example 6.1: Basic Inheritance and Super Constructor Delegation
-package com.learning.interfaces;
-
+7. Basic Examples (Beginner Level)
+```java
+// Base Class
 class Animal {
-    protected String species;
+    protected String name;
 
-    public Animal(String species) {
-        this.species = species;
+    public Animal(String name) {
+        this.name = name;
     }
 
     public void makeSound() {
-        System.out.println(species + " makes a generic animal sound.");
+        System.out.println(name + " makes an unspecified sound.");
     }
 }
 
+// Subclasses with Method Overriding
 class Dog extends Animal {
-    private String breed;
-
-    public Dog(String breed) {
-        super("Canine");
-        this.breed = breed;
+    public Dog(String name) {
+        super(name); // Invoke superclass constructor
     }
 
     @Override
     public void makeSound() {
-        System.out.println(breed + " barks: Woof! Woof!");
+        System.out.println(name + " barks: Woof! Woof!");
     }
 }
 
-public class InheritanceBasicDemo {
-    public static void main(String[] args) {
-        Animal myPet = new Dog("Golden Retriever");
-        myPet.makeSound(); // Dynamic dispatch calls Dog.makeSound()
-    }
-}
-
-7. Intermediate Examples
-Example 7.1: Multiple Interface Implementation and Default Methods
-package com.learning.interfaces;
-
-interface Printable {
-    void print();
-    default void printWatermark() {
-        System.out.println("[WATERMARK] Confidential Document");
-    }
-}
-
-interface Exportable {
-    byte[] exportToBytes();
-}
-
-class FinancialReport implements Printable, Exportable {
-    private String reportData;
-
-    public FinancialReport(String data) {
-        this.reportData = data;
+class Cat extends Animal {
+    public Cat(String name) {
+        super(name);
     }
 
     @Override
-    public void print() {
-        System.out.println("Printing Financial Report: " + reportData);
+    public void makeSound() {
+        System.out.println(name + " meows: Meow!");
+    }
+}
+
+public class InheritanceBasics {
+    public static void main(String[] args) {
+        // Polymorphic reference assignment
+        Animal a1 = new Dog("Buddy");
+        Animal a2 = new Cat("Luna");
+
+        a1.makeSound(); // Dispatches dynamically to Dog::makeSound
+        a2.makeSound(); // Dispatches dynamically to Cat::makeSound
+    }
+}
+```
+Expected Output:
+```
+Buddy barks: Woof! Woof!
+Luna meows: Meow!
+```
+
+8. Intermediate Examples (Interfaces, Default Methods, and Conflict Resolution)
+```java
+interface Audible {
+    void playAudio();
+
+    // Default Method (Java 8+)
+    default void checkAudioDriver() {
+        System.out.println("[AUDIBLE] Audio driver is operational.");
+    }
+}
+
+interface Visual {
+    void renderGraphics();
+
+    default void checkAudioDriver() {
+        System.out.println("[VISUAL] Audio-visual sync driver check.");
+    }
+}
+
+// Resolving Multiple Interface Default Method Conflicts
+class MediaPlayer implements Audible, Visual {
+    @Override
+    public void playAudio() {
+        System.out.println("Streaming high-fidelity audio...");
     }
 
     @Override
-    public byte[] exportToBytes() {
-        return reportData.getBytes();
+    public void renderGraphics() {
+        System.out.println("Rendering 1080p 60fps video frames...");
+    }
+
+    // Must explicitly resolve conflicting default method!
+    @Override
+    public void checkAudioDriver() {
+        System.out.println("Resolving driver conflict in MediaPlayer:");
+        Audible.super.checkAudioDriver(); // Explicitly invoke Audible default implementation
     }
 }
 
-public class InterfaceDemo {
+public class InterfaceDeepDive {
     public static void main(String[] args) {
-        FinancialReport report = new FinancialReport("Q3 2026 Earnings: +15% Growth");
-        report.print();
-        report.printWatermark(); // Inherited default method
+        MediaPlayer player = new MediaPlayer();
+        player.playAudio();
+        player.renderGraphics();
+        player.checkAudioDriver();
     }
 }
+```
+Expected Output:
+```
+Streaming high-fidelity audio...
+Rendering 1080p 60fps video frames...
+Resolving driver conflict in MediaPlayer:
+[AUDIBLE] Audio driver is operational.
+```
 
-8. Advanced Examples
-Example 8.1: Complete and Robust equals() and hashCode() Implementation
-package com.learning.interfaces;
-
+9. Advanced Examples (Complete Object Contract: equals, hashCode, and toString)
+```java
 import java.util.Objects;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Student {
+public class StudentProfile {
     private final int studentId;
-    private final String email;
-    private String fullName;
+    private final String fullName;
+    private final String major;
 
-    public Student(int id, String email, String fullName) {
+    public StudentProfile(int id, String name, String major) {
         this.studentId = id;
-        this.email = email;
-        this.fullName = fullName;
+        this.fullName = name;
+        this.major = major;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true; // Reference equality
-        if (o == null || getClass() != o.getClass()) return false; // Exact class match
-        Student student = (Student) o;
-        return studentId == student.studentId && Objects.equals(email, student.email);
+        // 1. Check reference identity
+        if (this == o) return true;
+        // 2. Check null and exact class type
+        if (o == null || getClass() != o.getClass()) return false;
+        // 3. Cast and compare significant fields
+        StudentProfile that = (StudentProfile) o;
+        return studentId == that.studentId &&
+               Objects.equals(fullName, that.fullName) &&
+               Objects.equals(major, that.major);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(studentId, email); // Consistent with equals
+        // Use java.util.Objects.hash for composite hashing
+        return Objects.hash(studentId, fullName, major);
     }
 
     @Override
     public String toString() {
-        return String.format("Student[ID=%d, Email=%s, Name=%s]", studentId, email, fullName);
+        return "StudentProfile[ID=" + studentId + ", Name='" + fullName + "', Major='" + major + "']";
     }
 
     public static void main(String[] args) {
-        Student s1 = new Student(101, "marcus@academy.edu", "Marcus Vance");
-        Student s2 = new Student(101, "marcus@academy.edu", "Marcus Vance");
+        StudentProfile s1 = new StudentProfile(101, "Alice", "Computer Science");
+        StudentProfile s2 = new StudentProfile(101, "Alice", "Computer Science");
+        StudentProfile s3 = new StudentProfile(102, "Bob", "Data Science");
 
-        Set<Student> enrolled = new HashSet<>();
-        enrolled.add(s1);
-        enrolled.add(s2);
+        System.out.println("s1.equals(s2): " + s1.equals(s2)); // true
+        System.out.println("s1.hashCode() == s2.hashCode(): " + (s1.hashCode() == s2.hashCode())); // true
 
-        System.out.printf("s1.equals(s2): %b%n", s1.equals(s2)); // true
-        System.out.printf("s1.hashCode() == s2.hashCode(): %b%n", s1.hashCode() == s2.hashCode()); // true
-        System.out.printf("HashSet Size: %d (Successfully deduplicated!)%n", enrolled.size()); // 1
+        // Testing HashSet duplicate elimination
+        Set<StudentProfile> studentSet = new HashSet<>();
+        studentSet.add(s1);
+        studentSet.add(s2); // Duplicate! Rejected by HashSet!
+        studentSet.add(s3);
+
+        System.out.println("\nHashSet Contents (Size: " + studentSet.size() + "):");
+        for (StudentProfile s : studentSet) {
+            System.out.println("  " + s);
+        }
+    }
+}
+```
+Expected Output:
+```
+s1.equals(s2): true
+s1.hashCode() == s2.hashCode(): true
+
+HashSet Contents (Size: 2):
+  StudentProfile[ID=101, Name='Alice', Major='Computer Science']
+  StudentProfile[ID=102, Name='Bob', Major='Data Science']
+```
+
+10. Line-by-Line Code Explanation
+- `Audible.super.checkAudioDriver();`: Disambiguation syntax. When two implemented interfaces declare the exact same default method signature, the implementing class MUST override the method and explicitly choose which interface implementation to call using `InterfaceName.super.method()`.
+- `Objects.hash(...)`: Combines individual field hash codes using prime multiplier $31$, guaranteeing consistent hash code distribution for hash table collections.
+
+11. Practical Programming Problems
+Problem 1: Payment Gateway Strategy Pattern using Interfaces
+Implement a polymorphic payment processing pipeline supporting CreditCard, PayPal, and Crypto.
+```java
+interface PaymentStrategy {
+    boolean pay(double amount);
+}
+
+class CreditCardPayment implements PaymentStrategy {
+    private String cardNumber;
+    public CreditCardPayment(String card) { this.cardNumber = card; }
+    public boolean pay(double amount) {
+        System.out.printf("Paid $%.2f via Credit Card (%s)\n", amount, cardNumber.substring(cardNumber.length()-4));
+        return true;
     }
 }
 
-9. Code Explanation
-In Example 6.1:
-- `super("Canine")` invokes the parent constructor of `Animal`.
-- `myPet` is declared as type `Animal` but holds an instance of `Dog`. When `myPet.makeSound()` is called, JVM late binding dynamically dispatches execution to `Dog.makeSound()`.
-In Example 8.1:
-- `Objects.equals(email, student.email)` safely checks equality without throwing `NullPointerException`.
-- Overriding both `equals` and `hashCode` ensures that `HashSet` correctly identifies `s1` and `s2` as duplicate keys and deduplicates them properly.
+class CryptoPayment implements PaymentStrategy {
+    private String walletAddress;
+    public CryptoPayment(String wallet) { this.walletAddress = wallet; }
+    public boolean pay(double amount) {
+        System.out.printf("Paid $%.2f via Crypto Wallet (%s...)\n", amount, walletAddress.substring(0, 6));
+        return true;
+    }
+}
 
-10. Practical Use Cases
-- Service-Repository architectures in enterprise Spring Boot (`StudentService -> StudentServiceImpl`).
-- Event-driven listener architectures (`ActionListener`, `EventListener`).
-- Value objects and database entity equality checks in distributed microservices.
+class ShoppingCart {
+    public void checkout(PaymentStrategy strategy, double total) {
+        strategy.pay(total);
+    }
+}
 
-11. Common Mistakes
-1. Overriding `equals()` without overriding `hashCode()`, causing objects to be lost or duplicated in `HashMap` and `HashSet`.
-2. Using `implements` for classes or `extends` for interfaces with classes.
-3. Forgetting that `super(...)` must be the first line in a subclass constructor.
-4. Calling overridden methods in superclass constructors before the subclass has finished initializing its own fields.
+public class StrategyDemo {
+    public static void main(String[] args) {
+        ShoppingCart cart = new ShoppingCart();
+        cart.checkout(new CreditCardPayment("1234567890123456"), 120.50);
+        cart.checkout(new CryptoPayment("0x71C...89A"), 450.00);
+    }
+}
+```
+Complexity: Time $O(1)$, Space $O(1)$.
 
-12. Edge Cases
-- Interface Diamond Problem with default methods: If class `C` implements both `InterfaceA` and `InterfaceB` which declare the identical `default void run()` method, the compiler forces class `C` to explicitly override `run()` to resolve the ambiguity (`InterfaceA.super.run()`).
+12. Real-World Applications
+- Spring Framework: Dependency Injection relying on interface contracts (`@Autowired UserRepository repository`).
+- JDBC Drivers: `java.sql.Connection` and `java.sql.Statement` are standard interfaces implemented by Oracle, MySQL, and PostgreSQL drivers.
+- Java Collections Framework: `List`, `Set`, `Map` interfaces decoupling algorithms from underlying implementations.
 
-13. Best Practices
-- Always use the `@Override` annotation when overriding methods.
-- Prefer interfaces over abstract classes for defining API contracts (Program to an interface, not an implementation).
-- Keep interfaces focused (Interface Segregation Principle - ISP).
-- Always use `Objects.equals()` and `Objects.hash()` when generating `equals` and `hashCode`.
+13. Common Mistakes
+- Overriding `equals()` without `hashCode()`: Causes objects to be lost inside `HashMap` or `HashSet` because equal objects end up in different hash buckets.
+- Missing `@Override` Annotation: Renaming a base method or having slightly mismatched parameters creates an accidental overload rather than an override.
+- Overusing Inheritance over Composition: Creating rigid, deeply nested inheritance hierarchies (Fragile Base Class problem).
 
-14. Performance Considerations
-- Dynamic Method Dispatch is optimized by the JVM HotSpot compiler using polymorphic inline caching (vtable / itable caching) and method devirtualization when only one implementing subclass is loaded.
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```java
+// Bug: Overriding equals with wrong signature
+public class Item {
+    int id;
+    public boolean equals(Item other) { // BAD: Overloads equals instead of overriding Object.equals(Object)!
+        return this.id == other.id;
+    }
+}
+```
+CORRECT VERSION:
+```java
+public class Item {
+    int id;
+    @Override
+    public boolean equals(Object other) { // Correct: overrides Object.equals
+        if (other instanceof Item item) return this.id == item.id;
+        return false;
+    }
+}
+```
 
-15. Comparison with Related Concepts
-- Abstract Class vs Interface (Java 8+): Abstract classes can have state (instance variables) and constructors; Interfaces cannot have state and provide pure behavior contracts.
+15. Debugging Techniques
+- IDE Equals/HashCode Generators: Use IntelliJ/Eclipse/VSCode generators or Lombok (`@EqualsAndHashCode`) to generate bug-free object contracts.
+- Bytecode Verification: Use `javap -c ClassName` to inspect `invokevirtual` vs `invokeinterface` opcodes.
 
-16. Debugging Tips
-- Inspect dynamic object runtime types using `obj.getClass().getName()`.
-- Use `instanceof` with Java 16+ pattern matching: `if (obj instanceof Student s) { System.out.println(s.getName()); }`.
+16. Edge Cases
+- Dynamic Dispatch in Constructors: Calling an overridable method inside a superclass constructor invokes the derived class method *before* derived fields are initialized (yielding null or zero values).
+- Pattern Matching for `instanceof` (Java 16+): `if (obj instanceof Student s)` automatically tests type and casts in a single statement.
 
-17. Interview Questions and Concept Checks
-1. What happens if you override `equals()` but forget to override `hashCode()`?
-   - Two equal objects will produce different hash codes, causing `HashSet` and `HashMap` to store duplicate entries in different hash buckets, breaking collection contracts.
-2. Why does Java not support multiple class inheritance?
-   - To eliminate the Deadly Diamond of Death problem where ambiguous state and multiple copies of base instance variables create structural conflicts.
-3. What is the difference between an abstract class and an interface in modern Java?
-   - An abstract class can have instance fields, constructors, and private methods; an interface can only have static constants, public abstract methods, default methods, and static methods.
+17. Best Practices
+- Always use the `@Override` annotation on overriding methods.
+- Always implement both `equals()` and `hashCode()` together.
+- Favor composition over inheritance.
+- Design interfaces with single responsibilities (SOLID Interface Segregation Principle).
 
-18. Summary
-Inheritance and interfaces provide the structural backbone for polymorphic, decoupled, and testable Java systems. Understanding dynamic dispatch, default methods, and the `equals`/`hashCode` contract is essential for building scalable applications.
+18. Performance Considerations
+- Monomorphic vs Polymorphic Inlining: If the JIT compiler observes that an interface call is only ever invoked on a single concrete class (Monomorphic), it de-virtualizes and inlines the call completely.
+
+19. Security Considerations
+- Malicious Method Overriding: Prevent subclasses from overriding critical security checks by marking methods as `final`.
+
+20. Memory Considerations
+- VTable Memory: Every class loaded into the JVM Metaspace maintains a virtual method table pointer array for fast method lookup.
+
+21. Comparison with Related Concepts
+- Abstract Class vs Interface: Abstract class allows stateful fields and constructor chaining; Interface allows multiple inheritance and clean API decoupling.
+- Overloading vs Overriding: Overloading is compile-time in the same class; Overriding is runtime in a subclass.
+
+22. Frequently Asked Questions
+Q: Can an interface implement another interface?
+A: No, an interface cannot implement another interface, but it can EXTEND one or more interfaces (`interface C extends A, B`).
+
+Q: Why does Java not support multiple class inheritance?
+A: To prevent the Diamond Problem (ambiguity regarding which parent method implementation or member variable to inherit).
+
+23. Interview Questions
+Beginner:
+Q: What is the purpose of the `@Override` annotation?
+A: `@Override` informs the compiler that the annotated method is intended to override a method declared in a superclass or interface. If the signature does not match, compilation fails with an error.
+
+Intermediate:
+Q: What happens if you override `equals()` but do not override `hashCode()`?
+A: Equal objects may produce different hash codes. When stored in a hash-based collection (`HashMap`, `HashSet`), they will map to different hash buckets, causing `map.get(key)` to fail and duplicates to be inserted into sets.
+
+Advanced:
+Q: How does Dynamic Method Dispatch work under the hood in the JVM?
+A: The JVM uses Virtual Method Tables (vtables) located in the Metaspace. Each class has a vtable pointing to its method implementations. When `invokevirtual` is executed, the JVM loads the object's vtable and performs an indirect jump via the method offset index in constant $O(1)$ time.
+
+24. Exam Questions
+Short-Answer: What keyword allows an interface to provide a default method implementation? (`default`).
+Medium-Answer: Explain the contract between `equals()` and `hashCode()` in Java.
+Long-Answer: Design an extensible Plugin architecture utilizing interfaces, abstract base classes, and default methods.
+
+25. Practice Questions
+1. Create an abstract `Employee` hierarchy (`SalariedEmployee`, `HourlyEmployee`) with abstract `calculatePay()` methods.
+2. Implement a complete `Book` class properly overriding `equals`, `hashCode`, `toString`, and `Comparable<Book>`.
+
+26. Summary
+Inheritance and interfaces establish the object-oriented structure of Java applications. Mastering dynamic method dispatch, modern interface default methods, multiple interface resolution, and the fundamental `equals`/`hashCode` contract allows developers to build robust, extensible enterprise software.
+
+27. Key Takeaways
+- Java supports single class inheritance and multiple interface implementation.
+- Overridden methods are dispatched dynamically at runtime via JVM vtables.
+- Always override `equals()` and `hashCode()` together.
+- Use interface default methods to evolve APIs without breaking backward compatibility.

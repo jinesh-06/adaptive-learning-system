@@ -21,10 +21,10 @@ class RAGConfig:
     documents_dir: Path = field(default_factory=lambda: RAG_DIR / "documents")
     chroma_db_dir: Path = field(default_factory=lambda: RAG_DIR / "chroma_db")
 
-    # Document Chunking Settings (500-1000 characters target, 100-200 characters overlap)
-    chunk_size: int = 750
-    chunk_overlap: int = 150
-    min_chunk_length: int = 60
+    # Document Chunking Settings (600-1200 characters target, 100-250 characters overlap)
+    chunk_size: int = 900
+    chunk_overlap: int = 180
+    min_chunk_length: int = 80
 
     # Embedding Model Settings
     embedding_model_name: str = "all-MiniLM-L6-v2"

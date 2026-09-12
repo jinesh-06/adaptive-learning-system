@@ -67,6 +67,7 @@ class VectorStore:
                 "course": chunk.course,
                 "topic": chunk.topic,
                 "level": chunk.level,
+                "section": getattr(chunk, "section", "General"),
                 "chunk_id": chunk.chunk_id,
                 "chunk_index": chunk.chunk_index,
                 "char_length": chunk.char_length,

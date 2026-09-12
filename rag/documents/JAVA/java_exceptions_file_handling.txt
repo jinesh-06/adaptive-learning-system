@@ -1,0 +1,346 @@
+COURSE: JAVA
+TOPIC: EXCEPTIONS_FILE_HANDLING
+LEVEL: INTERMEDIATE
+SOURCE: java_exceptions_file_handling.txt
+
+TITLE: Deep Java Exception Handling, Resource Management, NIO.2 File Systems, and Serialization
+
+1. Introduction
+Enterprise Java applications require rigorous, exception-safe error handling and high-throughput file stream I/O. Java's exception model uniquely categorizes runtime failures into Checked Exceptions (enforced at compile time) and Unchecked Exceptions (runtime programming bugs). For resource management, Java provides the Try-With-Resources statement backed by the `java.lang.AutoCloseable` interface to guarantee deterministic deallocation of OS resources. Modern Java file manipulation is powered by the NIO.2 (`java.nio.file`) API (`Path`, `Files`, `FileSystem`), high-speed buffered character streams (`BufferedReader`, `BufferedWriter`), and binary Object Serialization.
+
+2. Learning Objectives
+- Master the Java Exception hierarchy: `Throwable` -> `Error` vs `Exception` (Checked vs Unchecked/`RuntimeException`).
+- Master `try`, `catch`, `finally`, multi-catch blocks, and exception re-throwing with `throw` and `throws`.
+- Implement robust automatic resource management using Try-With-Resources (`AutoCloseable`).
+- Design domain-specific custom checked and unchecked exception classes.
+- Master modern NIO.2 file handling: `Path`, `Paths`, `Files` (`readString`, `writeString`, `lines`, `copy`, `delete`).
+- Implement high-performance buffered stream processing (`BufferedReader`, `BufferedWriter`, `Scanner`).
+- Understand Object Serialization (`Serializable`, `transient`, `serialVersionUID`).
+
+3. Prerequisites
+- Proficiency in Java fundamentals, OOP, classes, and collections.
+
+4. Core Concepts
+- Checked Exception: Subclasses of `Exception` (excluding `RuntimeException`) that the compiler forces callers to explicitly handle with `try-catch` or declare in the method signature with `throws` (e.g., `IOException`, `SQLException`).
+- Unchecked Exception (`RuntimeException`): Exceptions resulting from logic or API bugs that do not require explicit declaration (e.g., `NullPointerException`, `IllegalArgumentException`).
+- `Error`: Fatal JVM system failures that applications should not attempt to catch (e.g., `OutOfMemoryError`, `StackOverflowError`).
+- Try-With-Resources: Automatic resource management construct that automatically closes all declared resources implementing `AutoCloseable` in reverse order.
+- NIO.2 (`java.nio.file`): Modern non-blocking and path-based file I/O framework replacing legacy `java.io.File`.
+
+5. Detailed Theory
+5.1 The Java Exception Hierarchy
+```
+Throwable
+|-- Error (Fatal JVM conditions: OutOfMemoryError, StackOverflowError)
+`-- Exception (Application exceptions)
+    |-- RuntimeException (Unchecked: NullPointerException, IndexOutOfBoundsException)
+    `-- (Checked Exceptions: IOException, SQLException, ClassNotFoundException)
+```
+
+5.2 Try-With-Resources and `AutoCloseable`
+Prior to Java 7, closing files in a `finally` block required nested try-catch boilerplate prone to error suppression.
+Try-With-Resources:
+```java
+try (BufferedReader reader = Files.newBufferedReader(path);
+     BufferedWriter writer = Files.newBufferedWriter(outPath)) {
+    // Both reader and writer are guaranteed to close cleanly!
+}
+```
+Suppressed Exceptions: If an exception is thrown in the `try` block AND during `close()`, the `close()` exception is attached to the primary exception as a Suppressed Exception (`e.getSuppressed()`).
+
+5.3 Modern NIO.2 File Operations (`java.nio.file`)
+- `Path`: Immutable object representing a hierarchical file system path (`Path.of("dir", "file.txt")`).
+- `Files` Utility Methods:
+  - `Files.exists(path)`, `Files.createDirectories(path)`
+  - `Files.readString(path, StandardCharsets.UTF_8)` (Java 11+)
+  - `Files.writeString(path, content, StandardOpenOption.CREATE, StandardOpenOption.APPEND)`
+  - `Files.lines(path)`: Streams lines lazily as a `Stream<String>`.
+  - `Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING)`
+
+5.4 Object Serialization & `transient`
+- `Serializable`: Marker interface enabling an object graph to be converted to binary bytes via `ObjectOutputStream`.
+- `serialVersionUID`: Unique version hash verifying that the sender and receiver of serialized objects have compatible classes.
+- `transient`: Field modifier preventing sensitive fields (e.g., `transient String password;`) from being written during serialization.
+
+6. Syntax
+- Try-With-Resources: `try (StreamClass res = new StreamClass()) { ... }`
+- Multi-Catch: `catch (IOException | SQLException e) { ... }`
+- Custom Exception: `public class CustomException extends Exception { ... }`
+- Path Reading: `String text = Files.readString(Path.of("file.txt"));`
+
+7. Basic Examples (Beginner Level)
+```java
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Files;
+
+public class ExceptionBasics {
+    public static void main(String[] args) {
+        Path tempPath = Path.of("temp_log.txt");
+
+        try {
+            // Write string using NIO.2
+            Files.writeString(tempPath, "2026-09-12 [INFO] Java NIO.2 System Active\n");
+            System.out.println("File written successfully.");
+
+            // Read string using NIO.2
+            String content = Files.readString(tempPath);
+            System.out.println("File Content:\n" + content);
+
+        } catch (IOException e) {
+            System.err.println("I/O Error occurred: " + e.getMessage());
+        } finally {
+            try {
+                Files.deleteIfExists(tempPath);
+                System.out.println("Cleaned up temporary file.");
+            } catch (IOException ignored) {}
+        }
+    }
+}
+```
+Expected Output:
+```
+File written successfully.
+File Content:
+2026-09-12 [INFO] Java NIO.2 System Active
+
+Cleaned up temporary file.
+```
+
+8. Intermediate Examples (Custom Checked Exception Hierarchy and Try-With-Resources)
+```java
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.io.IOException;
+
+// Custom Checked Domain Exception
+class ValidationException extends Exception {
+    private final String fieldName;
+
+    public ValidationException(String fieldName, String message) {
+        super("Validation failed on field '" + fieldName + "': " + message);
+        this.fieldName = fieldName;
+    }
+
+    public String getFieldName() { return fieldName; }
+}
+
+public class TryWithResourcesDemo {
+    public static void processUserData(String rawInput) throws ValidationException {
+        // Try-with-resources reading memory stream
+        try (BufferedReader reader = new BufferedReader(new StringReader(rawInput))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) {
+                    throw new ValidationException("line", "Empty lines not allowed in input!");
+                }
+                System.out.println("Processed valid line: " + line);
+            }
+        } catch (IOException e) {
+            System.err.println("Stream read failure: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        String validData = "User=Alice\nRole=Admin";
+        String invalidData = "User=Bob\n\nRole=Guest";
+
+        try {
+            System.out.println("--- Processing Valid Data ---");
+            processUserData(validData);
+
+            System.out.println("\n--- Processing Invalid Data ---");
+            processUserData(invalidData);
+
+        } catch (ValidationException e) {
+            System.err.println("[CAUGHT DOMAIN ERROR] " + e.getMessage());
+            System.err.println("Faulty Field: " + e.getFieldName());
+        }
+    }
+}
+```
+Expected Output:
+```
+--- Processing Valid Data ---
+Processed valid line: User=Alice
+Processed valid line: Role=Admin
+
+--- Processing Invalid Data ---
+Processed valid line: User=Bob
+[CAUGHT DOMAIN ERROR] Validation failed on field 'line': Empty lines not allowed in input!
+Faulty Field: line
+```
+
+9. Advanced Examples (Object Serialization, Transient Fields, and NIO.2 File Streaming)
+```java
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Files;
+
+class UserCredentials implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private String username;
+    private transient String secretPassword; // Will NOT be serialized!
+    private int accessLevel;
+
+    public UserCredentials(String user, String pwd, int level) {
+        this.username = user;
+        this.secretPassword = pwd;
+        this.accessLevel = level;
+    }
+
+    @Override
+    public String toString() {
+        return "UserCredentials[user=" + username + ", pwd=" + secretPassword + ", level=" + accessLevel + "]";
+    }
+}
+
+public class AdvancedSerializationDemo {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        Path binFile = Path.of("credentials.ser");
+        UserCredentials userOut = new UserCredentials("admin_user", "SuperSecret123!", 9);
+
+        // Serialize Object to File
+        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(binFile))) {
+            oos.writeObject(userOut);
+            System.out.println("Serialized Object to " + binFile);
+        }
+
+        // Deserialize Object from File
+        UserCredentials userIn;
+        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(binFile))) {
+            userIn = (UserCredentials) ois.readObject();
+            System.out.println("Deserialized Object: " + userIn);
+            System.out.println("Notice secretPassword is null due to 'transient' modifier!");
+        }
+
+        Files.deleteIfExists(binFile);
+    }
+}
+```
+Expected Output:
+```
+Serialized Object to credentials.ser
+Deserialized Object: UserCredentials[user=admin_user, pwd=null, level=9]
+Notice secretPassword is null due to 'transient' modifier!
+```
+
+10. Line-by-Line Code Explanation
+- `try (ObjectOutputStream oos = new ObjectOutputStream(...))`: Try-with-resources statement. Automatically flushes and closes the underlying binary stream upon completion.
+- `private transient String secretPassword;`: The `transient` keyword marks sensitive fields to be omitted during Java binary serialization, preventing passwords or encryption keys from being persisted to disk.
+
+11. Practical Programming Problems
+Problem 1: Stream-Based Log File Keyword Frequency Counter
+Stream a multi-gigabyte log file using `Files.lines()` and count occurrences of "ERROR" without loading the file into memory.
+```java
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.io.IOException;
+import java.util.stream.Stream;
+
+public class LogAnalyzer {
+    public static long countErrors(Path logPath) throws IOException {
+        try (Stream<String> lines = Files.lines(logPath)) {
+            return lines.filter(line -> line.contains("ERROR")).count();
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        Path p = Path.of("test_app.log");
+        Files.writeString(p, "INFO Ok\nERROR Disk full\nWARN Memory high\nERROR Socket drop\n");
+
+        System.out.println("Total ERROR lines found: " + countErrors(p));
+        Files.deleteIfExists(p);
+    }
+}
+```
+Complexity: Time $O(N)$ lines, Space $O(1)$ stream memory.
+
+12. Real-World Applications
+- Web Application Frameworks (Spring Boot): Translating controller exceptions into structured `@ExceptionHandler` JSON responses.
+- Big Data Pipelines: Streaming massive dataset files line-by-line using `Files.lines()`.
+- Enterprise Messaging: Serializing transactional payload objects across JMS message brokers.
+
+13. Common Mistakes
+- Catching `Throwable` or `Error`: Catching `Error` prevents the JVM from terminating on fatal conditions like `OutOfMemoryError`.
+- Forgetting `try-with-resources` on `Files.lines()`: `Files.lines()` opens an underlying file handle that MUST be enclosed in a `try-with-resources` block to prevent OS file descriptor leaks.
+- Swallowing Exceptions Silently: Empty `catch (Exception e) {}` hides critical bugs.
+
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```java
+// Bug: Leaking file descriptor with Files.lines()
+Stream<String> stream = Files.lines(path); // LEAK: Stream is never closed!
+```
+CORRECT VERSION:
+```java
+try (Stream<String> stream = Files.lines(path)) {
+    stream.forEach(System.out::println); // Guaranteed safe closure
+}
+```
+
+15. Debugging Techniques
+- Inspect Suppressed Exceptions: Use `e.getSuppressed()` to view exceptions thrown during resource closure.
+- Exception Stack Traces: Use `e.printStackTrace()` or logging frameworks (SLF4J/Logback).
+
+16. Edge Cases
+- File System Case Sensitivity: Windows NTFS is case-insensitive; Linux ext4 is case-sensitive. Always maintain consistent path casing.
+- Atomic File Moves: Use `Files.move(src, dst, StandardCopyOption.ATOMIC_MOVE)` for atomic file replacements.
+
+17. Best Practices
+- Always use Try-With-Resources for all streams and database connections.
+- Use NIO.2 (`Path`, `Files`) instead of the legacy `java.io.File`.
+- Document checked exceptions in Javadoc with `@throws`.
+
+18. Performance Considerations
+- Buffered I/O: Always wrap raw streams in `BufferedReader` or `BufferedInputStream` to minimize expensive OS disk system call context switches.
+
+19. Security Considerations
+- Insecure Deserialization: Never deserialize untrusted `ObjectInputStream` payloads from open networks (major remote code execution risk).
+
+20. Memory Considerations
+- Streaming Large Files: `Files.lines()` streams lines lazily, maintaining a microscopic memory footprint on 100GB files.
+
+21. Comparison with Related Concepts
+- Checked vs Unchecked Exceptions: Checked are enforced at compile time for recoverable conditions; Unchecked are runtime exceptions for programming errors.
+- `java.io.File` vs `java.nio.file.Path`: `File` is legacy, limited, and throws poor error messages; `Path` is modern, robust, and supports symbolic links, atomic moves, and file attributes.
+
+22. Frequently Asked Questions
+Q: What is the purpose of `AutoCloseable`?
+A: `AutoCloseable` is an interface with a `void close() throws Exception` method. Any object implementing it can be used in a Try-With-Resources statement for automatic cleanup.
+
+Q: What is `serialVersionUID`?
+A: It is a unique version identifier for `Serializable` classes. If a class definition changes without updating `serialVersionUID`, deserialization throws `InvalidClassException`.
+
+23. Interview Questions
+Beginner:
+Q: What is the difference between `final`, `finally`, and `finalize`?
+A: `final` is a keyword to declare constants, prevent method overriding, or prevent class extension. `finally` is a block in exception handling that always executes for cleanup. `finalize()` is a deprecated method in `Object` historically invoked by the garbage collector before object reclamation.
+
+Intermediate:
+Q: What is Try-With-Resources and how does it handle suppressed exceptions?
+A: Try-With-Resources automatically closes all resources declared in its header that implement `AutoCloseable`. If an exception occurs in the `try` block and another in `close()`, the `try` exception is thrown and the `close()` exception is attached as a Suppressed Exception accessible via `getSuppressed()`.
+
+Advanced:
+Q: Explain the difference between Checked and Unchecked exceptions and the architectural rationale behind both.
+A: Checked exceptions (subclasses of `Exception` excluding `RuntimeException`) represent recoverable runtime conditions (e.g., missing network connection or missing file) that callers are mandated to handle at compile time. Unchecked exceptions (`RuntimeException`) represent unrecoverable programmer errors (e.g., `NullPointerException`, `IndexOutOfBoundsException`) that should be fixed by code corrections rather than defensive catching.
+
+24. Exam Questions
+Short-Answer: What interface must a class implement to be used in a Try-With-Resources statement? (`java.lang.AutoCloseable`).
+Medium-Answer: Explain why sensitive fields like passwords should be marked `transient` in Java.
+Long-Answer: Design an exception-safe transaction management utility that reads a batch of records from a CSV file, validates each record against business rules, and writes valid records to a database with rollback on error.
+
+25. Practice Questions
+1. Create a custom `ResourceConnection` implementing `AutoCloseable` that logs opening and closing, verifying behavior in a try-with-resources block.
+2. Write a program that searches a directory recursively for all `.log` files and merges their contents into a single summary file using NIO.2.
+
+26. Summary
+Java exception handling and NIO.2 file streams provide enterprise-grade reliability and performance. By mastering checked vs unchecked exceptions, Try-With-Resources, `AutoCloseable`, and modern `Path`/`Files` APIs, developers can build resilient, leak-free applications.
+
+27. Key Takeaways
+- Always use Try-With-Resources for automatic stream and connection cleanup.
+- Differentiate checked exceptions (recoverable) from unchecked exceptions (programming bugs).
+- Use NIO.2 (`Path`, `Files`) for modern, robust file manipulation.
+- Use `transient` to protect sensitive fields during serialization.

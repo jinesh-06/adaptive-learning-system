@@ -1,217 +1,329 @@
-COURSE: c
-TOPIC: arrays_strings
-LEVEL: intermediate
+COURSE: C
+TOPIC: ARRAYS_STRINGS
+LEVEL: INTERMEDIATE
 SOURCE: c_arrays_strings.txt
 
-TITLE: C Arrays and Strings: Contiguous Memory, Multi-Dimensional Arrays, Null Termination, and String Manipulation
+TITLE: Deep C Arrays, Multidimensional Storage, Pointer Decay, and Safe String Manipulation
 
 1. Introduction
-Arrays and strings are fundamental data structures in C representing contiguous sequences of elements in memory. An array stores fixed-size homogeneous elements accessed via zero-based indices. Unlike languages with native string objects, C represents strings as one-dimensional character arrays terminated by a special null character (`'\0'`). Understanding the layout of contiguous memory, pointer-array duality, multidimensional matrix indexing, and standard string manipulation functions from `<string.h>` is vital for efficient data manipulation and avoiding critical security vulnerabilities such as buffer overflows.
+Arrays and strings are fundamental data storage structures in C. An array is a contiguous, fixed-size sequence of elements of homogeneous data type allocated in memory. In C, strings are not a distinct built-in primitive type, but rather character arrays terminated by a null byte (`'\0'`). Because C does not perform automatic runtime bounds checking and passes arrays by decaying them into raw memory pointers, a deep understanding of memory layouts, pointer arithmetic equivalence, `<string.h>` library mechanics, buffer overflow vulnerabilities, and safe input parsing is critical for systems programming.
 
 2. Learning Objectives
-By studying this module, learners will:
-- Understand contiguous memory layout, declaration, initialization, and indexing of 1D arrays.
-- Declare, initialize, and traverse multi-dimensional 2D and 3D arrays (matrices).
-- Implement fundamental searching (linear, binary) and sorting (bubble, insertion, selection) on arrays.
-- Understand array decay mechanics when passing arrays into functions.
-- Master null-terminated strings (`'\0'`), character array buffers, and string literals.
-- Safely utilize standard library string functions from `<string.h>` (`strlen`, `strcpy`, `strncpy`, `strcat`, `strncat`, `strcmp`, `strncmp`, `strchr`, `strstr`).
-- Identify and prevent buffer overflow vulnerabilities, off-by-one errors, and unterminated string bugs.
+- Master array declaration, initialization syntax, contiguous memory indexing, and memory byte calculation.
+- Understand array-to-pointer decay and why `sizeof(array)` differs inside versus outside function parameters.
+- Analyze multidimensional arrays, row-major memory layouts, matrix flattening arithmetic, and variable-length arrays (VLAs).
+- Master null-terminated C strings (`char[]`), string literal memory placement (`.rodata`), and pointer vs array string semantics.
+- Evaluate standard string manipulation functions (`strlen`, `strcpy`, `strncpy`, `strcat`, `strcmp`, `strchr`, `strstr`, `strtok`).
+- Implement secure string handling patterns to prevent stack buffer overflows and off-by-one null terminator bugs.
 
-3. Core Concepts
-- Contiguous Allocation: Elements are stored sequentially in adjacent memory addresses without padding between identical primitives.
-- Pointer Arithmetic Relationship: For array `arr`, `arr[i]` is syntactically equivalent to `*(arr + i)`.
-- Null Terminator (`'\0'`): ASCII code 0 used by C string routines to identify the end of a string in memory.
-- String Literals: Immutable character sequences stored in the read-only data segment (`.rodata`).
-- Safe vs Unsafe Functions: Prefer bounded functions (`strncpy`, `strncat`, `snprintf`) over unbounded functions (`strcpy`, `strcat`, `gets`).
+3. Prerequisites
+- Proficiency in C fundamentals, data types, control flow, loops, and basic pointers.
 
-4. Detailed Explanation
-4.1 One-Dimensional Arrays
-- Declaration: `int scores[10];` allocates `10 * sizeof(int)` bytes on the stack.
-- Zero-indexed: Valid indices range from `0` to `size - 1`. C does not perform runtime array bounds checking.
+4. Core Concepts
+- Contiguous Memory Allocation: Array elements are stored in adjacent memory addresses with zero padding between primitive elements.
+- Array Decay: In most expressions (except when operand of `sizeof` or `&`), an array name evaluates to a pointer to its first element (`&arr[0]`).
+- Null-Terminated Strings: Strings are sequences of characters ending with ASCII byte 0 (`'\0'`). All string algorithms iterate until encountering this null sentinel byte.
+- Row-Major Order: 2D arrays are flattened in memory row by row. `matrix[row][col]` maps to linear offset `row * NUM_COLS + col`.
 
-4.2 Multi-Dimensional Arrays
-- In memory, 2D arrays are stored in Row-Major Order (row by row sequentially).
-- Index formula for `arr[R][C]`: Address = `BaseAddress + (r * C + c) * sizeof(element)`.
+5. Detailed Theory
+5.1 Array Memory Layout and Pointer Equivalence
+For an array declared as `int arr[5] = {10, 20, 30, 40, 50};`:
+- The memory address of element `arr[i]` is computed by:
+  $$	ext{Address}(arr[i]) = 	ext{Base Address}(arr) + (i 	imes 	ext{sizeof}(	ext{int}))$$
+- Pointer Arithmetic Equivalence:
+  The indexing expression `arr[i]` is strictly syntactic sugar for `*(arr + i)`.
+  Because addition is commutative, `*(arr + i) == *(i + arr) == i[arr]`.
 
-4.3 Character Arrays and Strings
-- Character array: `char name[6] = {'H', 'e', 'l', 'l', 'o', '\0'};`
-- String literal initialization: `char name[] = "Hello";` (compiler automatically appends the 6th byte `'\0'`).
-- String pointer to literal: `const char *str = "Hello";` points to read-only memory; attempting to mutate `str[0] = 'h'` causes a Segmentation Fault.
+5.2 Array-to-Pointer Decay in Functions
+When an array is passed to a function:
+```c
+void print_array(int arr[], size_t size); // Equivalent to: void print_array(int *arr, size_t size);
+```
+The compiler decays the array into a pointer to its first element. Inside `print_array`, `sizeof(arr)` evaluates to `sizeof(int*)` (8 bytes on 64-bit systems), NOT the total byte size of the array. Hence, the array size MUST be passed as an explicit parameter.
 
-4.4 Standard String Functions (`<string.h>`)
-- `strlen(s)`: Counts characters up to (excluding) `'\0'`.
-- `strcpy(dest, src)` / `strncpy(dest, src, n)`: Copies source string into destination buffer.
-- `strcat(dest, src)` / `strncat(dest, src, n)`: Appends source string onto end of destination buffer.
-- `strcmp(s1, s2)` / `strncmp(s1, s2, n)`: Lexicographically compares two strings (returns 0 if equal, <0 if s1 < s2, >0 if s1 > s2).
-- `strchr(s, c)`: Returns pointer to first occurrence of character `c` in string `s`.
-- `strstr(haystack, needle)`: Returns pointer to first occurrence of substring `needle` in `haystack`.
+5.3 Multidimensional Arrays
+A 2D array `int matrix[3][4]` is stored as 3 contiguous rows of 4 integers:
+- `sizeof(matrix)` = $3 	imes 4 	imes 4 = 48$ bytes.
+- When passing a 2D array to a function, the column dimension MUST be specified so the compiler can compute row offsets:
+  `void process_matrix(int matrix[][4], int rows);`
 
-5. Syntax
-5.1 Array Declaration & Traversal
-int numbers[5] = {10, 20, 30, 40, 50};
-for (int i = 0; i < 5; i++) {
-    printf("%d ", numbers[i]);
-}
+5.4 C Strings and Null-Termination Mechanics
+A string literal `"Hello"` has type `const char[6]` (5 letters + 1 null byte `'\0'`).
+- Array Initialization (Mutable on Stack):
+  `char str[] = "Hello";` -> Allocates 6 bytes on the stack, copies "Hello\0" into it. Can be modified: `str[0] = 'h';`.
+- Pointer to String Literal (Immutable in `.rodata`):
+  `char *str = "Hello";` -> Points to read-only text memory. Modifying `str[0] = 'h';` causes a segmentation fault (`SIGSEGV`).
 
-5.2 2D Matrix Declaration
-int matrix[2][3] = {
-    {1, 2, 3},
-    {4, 5, 6}
-};
+5.5 String Library Functions (`<string.h>`)
+- `size_t strlen(const char *s)`: Counts characters until `'\0'` (excluding the null byte). $O(N)$ time.
+- `char *strcpy(char *dest, const char *src)`: Copies characters including `'\0'`. UNSAFE if `dest` buffer is smaller than `src`.
+- `char *strncpy(char *dest, const char *src, size_t n)`: Copies at most `n` bytes. If `src` has length $\ge n$, `dest` is NOT null-terminated!
+- `int strcmp(const char *s1, const char *s2)`: Lexicographically compares two strings. Returns $<0$ if $s1 < s2$, $0$ if equal, $>0$ if $s1 > s2$.
+- `char *strchr(const char *s, int c)`: Finds first occurrence of character `c`.
+- `char *strstr(const char *haystack, const char *needle)`: Finds substring.
+- `char *strtok(char *str, const char *delim)`: Tokenizes string by replacing delimiters with `'\0'`. Modifies input in-place.
 
-5.3 Safe String Operations
-char dest[32];
-strncpy(dest, "Sample text", sizeof(dest) - 1);
-dest[sizeof(dest) - 1] = '\0'; // Ensure null termination
+6. Syntax
+- 1D Array: `type name[SIZE];`
+- 2D Array: `type name[ROWS][COLS];`
+- String Declaration: `char name[BUFFER_SIZE] = "initial_text";`
+- Safe Input: `fgets(buffer, sizeof(buffer), stdin);`
 
-6. Basic Examples
-Example 6.1: Array Traversal and Statistics
-#include <stdio.h>
-
-int main(void) {
-    int data[] = {12, 45, 67, 23, 89, 34};
-    int n = sizeof(data) / sizeof(data[0]);
-
-    int sum = 0;
-    int max = data[0];
-    int min = data[0];
-
-    for (int i = 0; i < n; i++) {
-        sum += data[i];
-        if (data[i] > max) max = data[i];
-        if (data[i] < min) min = data[i];
-    }
-
-    printf("Count: %d | Sum: %d | Avg: %.2f\n", n, sum, (double)sum / n);
-    printf("Min: %d | Max: %d\n", min, max);
-    return 0;
-}
-
-Example 6.2: String Inspection and Character Counting
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-
-int main(void) {
-    char sentence[] = "C Programming in 2026!";
-    int vowels = 0, digits = 0, spaces = 0;
-
-    for (int i = 0; sentence[i] != '\0'; i++) {
-        char ch = tolower((unsigned char)sentence[i]);
-        if (ch == 'a' || ch == 'e' || ch == 'i' || ch == 'o' || ch == 'u') {
-            vowels++;
-        } else if (isdigit((unsigned char)sentence[i])) {
-            digits++;
-        } else if (isspace((unsigned char)sentence[i])) {
-            spaces++;
-        }
-    }
-
-    printf("Length: %zu\n", strlen(sentence));
-    printf("Vowels: %d | Digits: %d | Spaces: %d\n", vowels, digits, spaces);
-    return 0;
-}
-
-7. Intermediate Examples
-Example 7.1: Matrix Multiplication
-#include <stdio.h>
-
-#define N 2
-
-void multiply_matrices(int A[N][N], int B[N][N], int C[N][N]) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            C[i][j] = 0;
-            for (int k = 0; k < N; k++) {
-                C[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-}
-
-int main(void) {
-    int A[N][N] = {{1, 2}, {3, 4}};
-    int B[N][N] = {{5, 6}, {7, 8}};
-    int C[N][N];
-
-    multiply_matrices(A, B, C);
-
-    printf("Result Matrix C:\n");
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            printf("%4d ", C[i][j]);
-        }
-        printf("\n");
-    }
-    return 0;
-}
-
-8. Advanced Examples
-Example 8.1: Safe Custom String Tokenizer
+7. Basic Examples (Beginner Level)
+```c
 #include <stdio.h>
 #include <string.h>
 
 int main(void) {
-    char input_log[] = "2026-09-12,ERROR,DatabaseTimeout,Node-4";
-    const char delimiter[] = ",";
+    // Array declaration and initialization
+    int scores[5] = { 88, 92, 79, 95, 84 };
+    int total_score = 0;
 
-    printf("Parsing CSV log entry:\n");
-    char *token = strtok(input_log, delimiter);
-    int field_idx = 1;
+    printf("Array elements: ");
+    for (int i = 0; i < 5; i++) {
+        printf("%d ", scores[i]);
+        total_score += scores[i];
+    }
+    printf("\nAverage score: %.2f\n", (double)total_score / 5.0);
+
+    // Basic String
+    char greeting[32] = "Hello";
+    strcat(greeting, ", World!");
+    printf("Greeting string: %s (Length: %zu chars)\n", greeting, strlen(greeting));
+
+    return 0;
+}
+```
+Expected Output:
+```
+Array elements: 88 92 79 95 84 
+Average score: 87.60
+Greeting string: Hello, World! (Length: 13 chars)
+```
+
+8. Intermediate Examples (Multidimensional Matrix Operations and String Tokenization)
+```c
+#include <stdio.h>
+#include <string.h>
+
+#define ROWS 2
+#define COLS 3
+
+void print_matrix(const int mat[ROWS][COLS]) {
+    for (int r = 0; r < ROWS; r++) {
+        printf("[ ");
+        for (int c = 0; c < COLS; c++) {
+            printf("%3d ", mat[r][c]);
+        }
+        printf("]\n");
+    }
+}
+
+void parse_csv_line(char *csv_line) {
+    printf("Parsing CSV line: \"%s\"\n", csv_line);
+    const char *delimiters = ",\n";
+    char *token = strtok(csv_line, delimiters);
+    int column_idx = 1;
 
     while (token != NULL) {
-        printf("  Field %d: %s\n", field_idx++, token);
-        token = strtok(NULL, delimiter);
+        printf("  Column %d: %s\n", column_idx++, token);
+        token = strtok(NULL, delimiters);
     }
-    return 0;
 }
 
-9. Code Explanation
-In Example 7.1:
-- Matrix multiplication multiplies each element of row $i$ from matrix $A$ by each corresponding element of column $j$ from matrix $B$, accumulating into $C[i][j]$.
-- Complexity is $O(N^3)$. Row-major access order on $A[i][k]$ maintains CPU cache friendliness.
-In Example 8.1:
-- `strtok()` modifies the input string in-place by writing `'\0'` characters at delimiter positions. Subsequent calls pass `NULL` to continue scanning the original buffer.
+int main(void) {
+    int matrix[ROWS][COLS] = {
+        { 10, 20, 30 },
+        { 40, 50, 60 }
+    };
 
-10. Practical Use Cases
-- High-performance matrix mathematics in image processing and computer graphics.
-- Network protocol parsing (splitting HTTP headers, parsing CSV and JSON payloads).
-- Command line argument parsing and configuration file processing.
+    printf("2D Matrix Contents:\n");
+    print_matrix(matrix);
 
-11. Common Mistakes
-1. Out-of-bounds array access: Accessing `arr[10]` on a 10-element array (`arr[0]` to `arr[9]`) leads to buffer overrun and stack corruption.
-2. Forgetting string null-terminator: `char str[5] = "Hello";` lacks room for `'\0'`, causing downstream string operations to read past buffer bounds into garbage memory.
-3. Using `gets()`: Never use `gets()` because it cannot prevent buffer overflows; always use `fgets()`.
-4. Comparing strings with `==`: `if (str1 == str2)` compares pointer addresses, not string text contents (use `strcmp(str1, str2) == 0`).
+    char log_entry[] = "2026-09-12,INFO,AuthService,User login successful";
+    parse_csv_line(log_entry);
 
-12. Edge Cases
-- Empty string: A string with `str[0] == '\0'` has length 0.
-- Destination buffer smaller than source string during concatenation (`strcat`).
+    return 0;
+}
+```
+Expected Output:
+```
+2D Matrix Contents:
+[  10  20  30 ]
+[  40  50  60 ]
+Parsing CSV line: "2026-09-12,INFO,AuthService,User login successful"
+  Column 1: 2026-09-12
+  Column 2: INFO
+  Column 3: AuthService
+  Column 4: User login successful
+```
 
-13. Best Practices
-- Always calculate array length dynamically using `sizeof(arr) / sizeof(arr[0])` in the scope where array is declared.
-- Allocate `strlen(str) + 1` bytes when creating dynamic memory buffers for strings to accommodate the null terminator.
-- Use `snprintf` for formatted string creation to guarantee buffer bounds.
+9. Advanced Examples (Safe String Copy and Bounds-Checked Buffer Manipulation)
+```c
+#include <stdio.h>
+#include <stdbool.h>
+#include <stddef.h>
 
-14. Performance Considerations
-- Access multidimensional arrays in Row-Major order (outer loop over rows, inner loop over columns) to exploit spatial locality in the CPU cache.
-- Avoid repeated calls to `strlen(str)` inside loop condition checks: `for (int i = 0; i < strlen(s); i++)` turns an $O(N)$ loop into $O(N^2)$. Cache the length before the loop.
+// Safe string copy guaranteed to null-terminate and prevent overflow
+bool safe_str_copy(char *dest, size_t dest_capacity, const char *src) {
+    if (dest == NULL || src == NULL || dest_capacity == 0) {
+        return false;
+    }
 
-15. Comparison with Related Concepts
-- C Strings vs C++ `std::string`: C strings are raw character buffers requiring manual memory management and bounds safety; `std::string` provides dynamic resizing, automated memory management, and exception safety.
+    size_t i = 0;
+    while (i < dest_capacity - 1 && src[i] != '\0') {
+        dest[i] = src[i];
+        i++;
+    }
+    dest[i] = '\0'; // Always guarantee null termination
 
-16. Debugging Tips
-- Use Valgrind: `valgrind --leak-check=full ./program` to catch out-of-bounds memory reads and writes.
-- Compile with `-fsanitize=bounds` to catch array index violations during development.
+    // Return true if entire src was copied; false if truncation occurred
+    return (src[i] == '\0');
+}
 
-17. Interview Questions and Concept Checks
-1. What is the difference between `char str[] = "Hello";` and `char *str = "Hello";`?
-   - `char str[]` creates a mutable array on the stack initialized with "Hello". `char *str` creates a pointer pointing to a read-only string literal in the `.rodata` segment.
-2. How does `strcmp("apple", "banana")` behave?
-   - It returns a negative integer because 'a' (ASCII 97) is smaller than 'b' (ASCII 98).
-3. Why does `sizeof` on an array parameter inside a function return the pointer size rather than the array length?
-   - In C, array parameters decay to pointers when passed to functions.
+int main(void) {
+    char small_buffer[8];
+    const char *long_text = "Supercalifragilistic";
 
-18. Summary
-Arrays and strings are foundational C constructs. Mastery of contiguous memory layouts, pointer-array equivalence, null termination, and defensive string manipulation enables developers to write robust, efficient, and secure software.
+    bool fully_copied = safe_str_copy(small_buffer, sizeof(small_buffer), long_text);
+    printf("Copied into 8-byte buffer: \"%s\" (Truncated: %s)\n", 
+           small_buffer, fully_copied ? "No" : "Yes");
+
+    char adequate_buffer[32];
+    const char *short_text = "Safe C Code";
+    fully_copied = safe_str_copy(adequate_buffer, sizeof(adequate_buffer), short_text);
+    printf("Copied into 32-byte buffer: \"%s\" (Truncated: %s)\n", 
+           adequate_buffer, fully_copied ? "No" : "Yes");
+
+    return 0;
+}
+```
+Expected Output:
+```
+Copied into 8-byte buffer: "Superca" (Truncated: Yes)
+Copied into 32-byte buffer: "Safe C Code" (Truncated: No)
+```
+
+10. Line-by-Line Code Explanation
+- `bool safe_str_copy(...)`: Accepts target buffer, total buffer capacity (including null byte), and source string.
+- `while (i < dest_capacity - 1 && src[i] != '\0')`: Copies at most `dest_capacity - 1` characters, reserving the final slot for `'\0'`.
+- `dest[i] = '\0';`: Guarantees null-termination even if the source string was longer than the target capacity.
+- `return (src[i] == '\0');`: Informs the caller whether string truncation occurred.
+
+11. Practical Programming Problems
+Problem 1: In-Place String Reversal
+Write an efficient function to reverse a null-terminated string in-place using two-pointer swapping.
+```c
+#include <stdio.h>
+#include <string.h>
+
+void reverse_string(char *str) {
+    if (str == NULL) return;
+    int left = 0;
+    int right = (int)strlen(str) - 1;
+    while (left < right) {
+        char temp = str[left];
+        str[left] = str[right];
+        str[right] = temp;
+        left++;
+        right--;
+    }
+}
+
+int main(void) {
+    char message[] = "Adaptive Learning Engine";
+    printf("Original: \"%s\"\n", message);
+    reverse_string(message);
+    printf("Reversed: \"%s\"\n", message);
+    return 0;
+}
+```
+Complexity: Time $O(N)$, Space $O(1)$.
+
+12. Real-World Applications
+- Web Servers & HTTP Parsers: Parsing HTTP request headers (`GET /index.html HTTP/1.1`) using string tokenization and character searching.
+- Image Processing: Storing 2D pixel grids in contiguous 1D/2D arrays and applying convolution matrix kernels.
+- Cryptography: Managing cryptographic salt buffers, hashes, and hexadecimal string encodings.
+
+13. Common Mistakes
+- Using `gets()`: `gets()` provides no buffer bounds limit and is so dangerous it was completely removed from the C11 standard. Always use `fgets()`.
+- Forgetting the Null Terminator in Buffer Size: Allocating `char str[5]` for `"hello"` (5 characters) leaves no room for `'\0'`, leading to out-of-bounds reads during `printf("%s")`.
+- Calling `strtok()` on Read-Only String Literals: `strtok` mutates the input string by writing `\0` over delimiters. Calling it on a string literal causes a `SIGSEGV`.
+
+14. Common Errors and Error Messages
+INCORRECT EXAMPLE:
+```c
+// Bug: Buffer overflow with strcpy
+char buffer[5];
+strcpy(buffer, "Extremely Long Text"); // STACK SMASHING / BUFFER OVERFLOW
+```
+CORRECT VERSION:
+```c
+char buffer[32];
+strncpy(buffer, "Extremely Long Text", sizeof(buffer) - 1);
+buffer[sizeof(buffer) - 1] = '\0';
+```
+
+15. Debugging Techniques
+- AddressSanitizer: Compile with `gcc -fsanitize=address -g main.c` to catch stack and global buffer overflows instantly with line numbers.
+- Valgrind: Run `valgrind ./program` to detect uninitialized string reads.
+
+16. Edge Cases
+- Empty String `""`: Contains 1 byte: the null terminator (`str[0] == '\0'`). `strlen("") == 0`.
+- Missing Null Terminator: Passing an un-terminated `char` array to `strlen()` causes the function to scan through adjacent stack memory until it encounters an arbitrary 0 byte or crashes with `SIGSEGV`.
+
+17. Best Practices
+- Always use `fgets(buffer, sizeof(buffer), stdin)` instead of `scanf("%s", buffer)` for string input.
+- Always explicitly allocate $N + 1$ bytes for a string of length $N$ to store the null terminator.
+- Use `snprintf(buffer, sizeof(buffer), "format %s", val)` for safe formatted string composition.
+
+18. Performance Considerations
+- Cache Line Locality: Accessing 2D arrays row-by-row (`matrix[r][c]`) follows memory layout and achieves near 100% cache hits. Accessing column-by-column (`matrix[c][r]`) causes cache thrashing and runs up to 10x slower on large matrices.
+
+19. Security Considerations
+- Stack Smashing: Buffer overflows allow overwriting function return addresses, enabling arbitrary code execution (CWE-120). Always use bounds-checking functions.
+
+20. Memory Considerations
+- Array Decay Loses Size Info: A function receiving an array cannot determine its length via `sizeof`. Size must be tracked and passed separately.
+
+21. Comparison with Related Concepts
+- C Strings vs C++ `std::string`: C strings are raw memory buffers with manual memory and termination management; `std::string` is an automatic RAII object that manages capacity and stores length in $O(1)$.
+- 1D Flattened Array vs Array of Pointers (`char**`): A 1D flattened array has zero pointer overhead and perfect cache locality; an array of pointers involves extra memory allocation and pointer indirection overhead.
+
+22. Frequently Asked Questions
+Q: Why does `sizeof("hello")` return 6?
+A: String literals include the hidden trailing null terminator byte `'\0'`, giving 5 characters + 1 null byte = 6 bytes.
+
+Q: Is `strtok()` thread-safe?
+A: No. `strtok()` maintains internal static state to track position across calls. Use the POSIX thread-safe reentrant variant `strtok_r()` for multi-threaded programs.
+
+23. Interview Questions
+Beginner:
+Q: What is the difference between `char str[] = "text";` and `char *str = "text";`?
+A: `char str[]` allocates an array on the stack and copies the characters into it, allowing in-place modification. `char *str` points directly to a read-only string literal in the `.rodata` segment, and attempting to modify it causes undefined behavior (segmentation fault).
+
+Intermediate:
+Q: Explain how array-to-pointer decay works in C.
+A: When an array is used in an expression (other than `sizeof` or `&`), its name evaluates to a pointer to its first element (`&arr[0]`). When passed to a function, only this pointer is copied, losing original array size metadata.
+
+Advanced:
+Q: How does `snprintf` guarantee null termination, and how should its return value be checked for truncation?
+A: `snprintf(buf, size, fmt, ...)` writes at most `size - 1` characters and always appends `'\0'`. It returns the total number of characters that *would* have been written if `size` were unlimited. If `return_val >= size`, truncation occurred.
+
+24. Exam Questions
+Short-Answer: What is the output of `printf("%c", *"hello" + 1);`? (Output: 'i', because `*"hello"` is 'h' (ASCII 104), and $104 + 1 = 105$ ('i')).
+Medium-Answer: Write a function to check if a string is a palindrome ignoring case.
+Long-Answer: Explain row-major order memory layout for 2D arrays, derive the linear index formula, and explain why traversing columns first hurts cache performance.
+
+25. Practice Questions
+1. Implement a custom version of `strlen`, `strcpy`, and `strcmp` without including `<string.h>`.
+2. Write a function to remove all duplicate characters from a string in $O(N)$ time using a boolean lookup table.
+
+26. Summary
+Arrays provide fast contiguous memory storage, while C strings rely on null-terminated character arrays. Understanding pointer decay, 2D row-major layouts, safe string manipulation functions, and buffer overflow prevention is essential for robust C programming.
+
+27. Key Takeaways
+- Arrays decay to pointers when passed to functions; always pass array size explicitly.
+- Strings require $N + 1$ bytes for $N$ characters to store the terminating `'\0'`.
+- Never use `gets()` or unbounded `strcpy()`; use `fgets()` and `snprintf()`.
+- Access 2D arrays in row-major order for optimal CPU cache utilization.
