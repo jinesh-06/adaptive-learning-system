@@ -1,0 +1,218 @@
+COURSE: python
+TOPIC: file_handling
+LEVEL: intermediate
+SOURCE: python_file_handling.txt
+
+TITLE: Python File Handling: Streams, Context Managers (with), JSON, CSV, and Pathlib
+
+1. Introduction
+File handling and persistent I/O operations are indispensable capabilities for reading configurations, ingesting datasets, writing logs, and serializing structured application state. Python provides a clean, unified file stream abstraction via the built-in open() function, standard context managers (with statement), the modern object-oriented file-system library <pathlib>, and specialized serialization modules for <json> and <csv>. Understanding file modes, encoding standards (UTF-8), streaming large files lazily, context manager mechanics, and structured serialization is essential for building robust data pipelines and storage layers.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Open, read, write, and append to files safely using open() and the with statement.
+- Distinguish between text modes ('r', 'w', 'a') and binary modes ('rb', 'wb').
+- Understand why UTF-8 encoding must always be specified explicitly (encoding='utf-8').
+- Read files using .read(), .readline(), .readlines(), and direct line-by-line streaming iteration.
+- Implement object-oriented file path operations using pathlib.Path.
+- Serialize and deserialize structured data using the json module (json.dump, json.load, json.dumps, json.loads).
+- Read and write delimited tabular datasets using the csv module (csv.reader, csv.writer, csv.DictReader, csv.DictWriter).
+- Handle file system errors gracefully (FileNotFoundError, PermissionError, JSONDecodeError).
+
+3. Core Concepts
+- Context Manager (with open(...) as f:): Guarantees that the underlying file descriptor is closed automatically upon exiting the block, even if an unhandled exception occurs.
+- Lazy Line Iteration: Iterating directly over a file object for line in f: reads lines on-demand, preventing high memory usage on large multi-gigabyte files.
+- Pathlib: Modern object-oriented path manipulation replacing legacy os.path strings.
+- Serialization: Converting in-memory Python objects (dicts, lists) into disk-storable formats (JSON text, binary bytes).
+
+4. Detailed Explanation
+4.1 File Modes
+- 'r': Read text (default). Fails if file does not exist.
+- 'w': Write text. Creates or overwrites/truncates existing file.
+- 'a': Append text. Writes to end of file without truncation.
+- 'r+': Read and write text.
+- 'rb' / 'wb': Binary mode for non-text assets (images, compiled models, pickle files).
+
+4.2 Explicit Encoding
+Always pass encoding='utf-8' to open() to prevent operating-system dependent encoding bugs (e.g., Windows CP1252 vs Linux UTF-8).
+
+4.3 Pathlib (from pathlib import Path)
+- Construct path: p = Path('data') / 'raw' / 'dataset.txt'
+- Check existence: p.exists(), p.is_file(), p.is_dir()
+- Read/Write shortcut: text = p.read_text(encoding='utf-8'), p.write_text('content', encoding='utf-8')
+- Directory scanning: p.glob('*.txt'), p.rglob('*.py')
+
+4.4 JSON and CSV Processing
+- JSON: json.dump(obj, file_handle, indent=2) writes to file; data = json.load(file_handle) reads from file.
+- CSV: csv.DictReader(file_handle) parses each line into a dictionary mapping column headers to cell values.
+
+5. Syntax
+5.1 Context Manager File Reading
+with open("data.txt", "r", encoding="utf-8") as file:
+    for line in file:
+        print(line.strip())
+
+5.2 Pathlib and JSON Serialization
+import json
+from pathlib import Path
+
+file_path = Path("config.json")
+config_data = {"version": "2.0", "engine": "RAG"}
+
+# Write JSON
+file_path.write_text(json.dumps(config_data, indent=2), encoding="utf-8")
+
+# Read JSON
+loaded_config = json.loads(file_path.read_text(encoding="utf-8"))
+
+6. Basic Examples
+Example 6.1: Writing and Reading Text Files Safely
+from pathlib import Path
+
+def demonstrate_text_io():
+    out_file = Path("sample_notes.txt")
+
+    # 1. Write lines
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write("Line 1: Adaptive Learning Engine\n")
+        f.write("Line 2: RAG Pipeline Knowledge Base\n")
+        f.write("Line 3: Cognitive Load Awareness\n")
+
+    print(f"Wrote text to {out_file.name}")
+
+    # 2. Lazy stream reading
+    print("Reading file line by line:")
+    with open(out_file, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, start=1):
+            print(f"  [{line_num}] {line.strip()}")
+
+    # Cleanup
+    if out_file.exists():
+        out_file.unlink()
+
+demonstrate_text_io()
+
+7. Intermediate Examples
+Example 7.1: CSV DictReader and DictWriter
+import csv
+from pathlib import Path
+
+def process_csv_dataset():
+    csv_file = Path("students.csv")
+    students = [
+        {"id": 101, "name": "Marcus", "gpa": 3.9},
+        {"id": 102, "name": "Elena", "gpa": 3.7},
+        {"id": 103, "name": "David", "gpa": 3.2}
+    ]
+
+    # 1. Write CSV
+    with open(csv_file, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["id", "name", "gpa"])
+        writer.writeheader()
+        writer.writerows(students)
+
+    # 2. Read and filter CSV
+    print(f"Reading student records from {csv_file.name}:")
+    with open(csv_file, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            gpa = float(row["gpa"])
+            status = "Honors" if gpa >= 3.5 else "Standard"
+            print(f"  Student: {row['name']:<10} | GPA: {gpa:.2f} ({status})")
+
+    # Cleanup
+    if csv_file.exists():
+        csv_file.unlink()
+
+process_csv_dataset()
+
+8. Advanced Examples
+Example 8.1: JSON Configuration Manager and Directory Traversal
+import json
+from pathlib import Path
+
+class ConfigManager:
+    def __init__(self, config_path: Path):
+        self.path = config_path
+        self.data = self._load()
+
+    def _load(self) -> dict:
+        if not self.path.exists():
+            return {}
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as err:
+            print(f"Warning: Corrupt config file: {err}")
+            return {}
+
+    def save(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.path, "w", encoding="utf-8") as f:
+            json.dump(self.data, f, indent=4)
+
+    def set(self, key: str, value: any) -> None:
+        self.data[key] = value
+        self.save()
+
+config_file = Path("test_scratch") / "app_config.json"
+cfg = ConfigManager(config_file)
+cfg.set("rag_model", "all-MiniLM-L6-v2")
+cfg.set("top_k", 5)
+
+print(f"Saved Config Data: {cfg.data}")
+
+# Cleanup
+if config_file.exists():
+    config_file.unlink()
+    if config_file.parent.exists():
+        config_file.parent.rmdir()
+
+9. Code Explanation
+In Example 7.1:
+- csv.DictWriter writes dictionary records directly to disk. The parameter newline='' prevents blank line insertion on Windows operating systems.
+In Example 8.1:
+- ConfigManager encapsulates file reading and writing behind a clean interface. self.path.parent.mkdir(parents=True, exist_ok=True) automatically creates any missing parent directories before writing.
+
+10. Practical Use Cases
+- Ingesting raw educational text files into RAG embedding vector stores.
+- Managing application settings, database credentials, and model hyperparameters in JSON.
+- Exporting analytics reports and user activity logs into CSV format.
+
+11. Common Mistakes
+1. Forgetting to close files when not using with statements, leaking OS file handles.
+2. Reading entire multi-gigabyte files into memory via f.read() instead of streaming lines via for line in f:.
+3. Omitting encoding='utf-8', leading to UnicodeDecodeError when processing international characters on Windows.
+4. Omitting newline='' in csv operations on Windows, causing extra blank rows.
+
+12. Edge Cases
+- Reading a file that is concurrently being modified by another OS process.
+- Truncating a file when opening in 'w' mode before reading existing contents.
+
+13. Best Practices
+- Always use with open(...) context managers.
+- Always specify encoding='utf-8'.
+- Use pathlib.Path over legacy string path manipulations (os.path.join).
+- Check file existence using path.exists() or catch FileNotFoundError.
+
+14. Performance Considerations
+- Streaming large files line-by-line keeps memory footprint at O(1) constant overhead regardless of file size.
+- For high-performance binary serialization in Python, use pickle (internal) or msgpack/protobuf (cross-language) instead of raw text.
+
+15. Comparison with Related Concepts
+- pathlib.Path vs os.path: pathlib provides an intuitive, object-oriented API with operator overloading (/ operator joins paths) whereas os.path operates on raw strings.
+
+16. Debugging Tips
+- Check file permissions and absolute paths using Path(filename).resolve().
+- Validate JSON payloads using online linters or Python's json.loads in interactive mode.
+
+17. Interview Questions and Concept Checks
+1. Why is the with statement preferred when opening files in Python?
+   - The with statement utilizes the context manager protocol (__enter__ and __exit__), guaranteeing that f.close() is called automatically upon block exit even if an exception is raised.
+2. What happens if you call open('file.txt', 'w') on an existing file?
+   - The file is immediately truncated to 0 bytes, erasing all previous content before any write operations occur.
+3. How does for line in file: process files efficiently?
+   - It utilizes Python's file iterator to stream lines lazily using an internal buffer, avoiding loading the entire file into memory at once.
+
+18. Summary
+File handling in Python is intuitive and robust when utilizing context managers, explicit encodings, Pathlib, and standard serialization libraries. These tools ensure memory safety, data integrity, and clean cross-platform I/O operations.

@@ -1,0 +1,196 @@
+COURSE: python
+TOPIC: advanced_topics
+LEVEL: advanced
+SOURCE: python_advanced_topics.txt
+
+TITLE: Advanced Python: Iterators, Metaclasses, Context Managers, Regex, Type Hints, Dataclasses, Concurrency, and Memory Management
+
+1. Introduction
+Advanced Python covers the architectural foundations that power enterprise libraries, high-performance backends, and asynchronous frameworks. This domain includes the formal Iterator Protocol (__iter__, __next__), custom Context Managers (__enter__, __exit__ and contextlib), runtime and static Type Hints (PEP 484, typing module), declarative Dataclasses (PEP 557), Regular Expressions (<re>), asynchronous I/O with Async/Await (<asyncio>), multi-processing vs multi-threading, and CPython Memory Management & Garbage Collection (reference counting and cyclic generational GC).
+
+2. Learning Objectives
+By studying this module, learners will:
+- Implement custom iterable and iterator classes adhering to the Iterator Protocol.
+- Build class-based and generator-based context managers with @contextlib.contextmanager.
+- Apply static type hints, generics, unions, and optional types validated by tools like MyPy.
+- Implement concise, declarative data models using @dataclass.
+- Parse, search, and validate complex text patterns using regular expressions (<re>).
+- Differentiate between I/O-bound concurrency (asyncio, threading) and CPU-bound parallelism (multiprocessing).
+- Implement asynchronous coroutines and gather concurrent tasks using asyncio.
+- Understand CPython memory management: reference counting, cyclic garbage collection (gc module), and the GIL.
+
+3. Core Concepts
+- Iterator Protocol: Objects implementing __iter__() returning an iterator, and iterators implementing __next__() raising StopIteration upon exhaustion.
+- Context Manager Protocol: Objects implementing __enter__() and __exit__() for deterministic resource setup and teardown.
+- Type Hints: Non-enforced type annotations providing static analysis, IDE autocompletion, and schema validation.
+- Dataclasses: Class decorator automatically synthesizing __init__, __repr__, __eq__, and hashing methods.
+- GIL (Global Interpreter Lock): CPython lock allowing only one thread to execute Python bytecode at a time.
+- Memory Management: Automatic memory reclamation using primary reference counting supported by a three-generation cyclic garbage collector.
+
+4. Detailed Explanation
+4.1 The Iterator Protocol
+class CountDown:
+    def __init__(self, start): self.current = start
+    def __iter__(self): return self
+    def __next__(self):
+        if self.current <= 0: raise StopIteration
+        val = self.current; self.current -= 1; return val
+
+4.2 Context Managers with contextlib
+from contextlib import contextmanager
+@contextmanager
+def temporary_flag(obj, attr, new_val):
+    old_val = getattr(obj, attr)
+    setattr(obj, attr, new_val)
+    try:
+        yield
+    finally:
+        setattr(obj, attr, old_val)
+
+4.3 Dataclasses (PEP 557)
+from dataclasses import dataclass, field
+@dataclass(frozen=True)
+class DocumentChunk:
+    chunk_id: str
+    text: str
+    tokens: int = field(default=0)
+
+4.4 Concurrency Models
+- asyncio: Single-threaded cooperative multitasking using an event loop; ideal for high-concurrency network I/O.
+- threading: Native OS threads; best for I/O-bound blocking calls; constrained by GIL for CPU tasks.
+- multiprocessing: Spawns separate Python processes, each with its own interpreter and memory space, bypassing the GIL for CPU-intensive tasks.
+
+5. Syntax
+5.1 Async/Await Syntax
+import asyncio
+
+async def fetch_data(task_id: int) -> dict:
+    await asyncio.sleep(0.01) # Non-blocking async sleep
+    return {"id": task_id, "status": "success"}
+
+async def main():
+    results = await asyncio.gather(fetch_data(1), fetch_data(2))
+    print(results)
+
+asyncio.run(main())
+
+5.2 Regular Expressions
+import re
+pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+is_valid_email = bool(re.match(pattern, "user@domain.com"))
+
+6. Basic Examples
+Example 6.1: Dataclasses with Field Defaults and Immutability
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass(order=True)
+class CourseModule:
+    sort_index: int = field(init=False, repr=False)
+    course_name: str
+    level: str
+    credits: int = 3
+    topics: List[str] = field(default_factory=list)
+
+    def __post_init__(self):
+        # Determine sort order by credits
+        self.sort_index = self.credits
+
+m1 = CourseModule("Python Programming", "Beginner", 4, ["Basics", "Data Structures"])
+m2 = CourseModule("Advanced C++", "Advanced", 5, ["Templates", "Concurrency"])
+
+print(f"Module 1: {m1}")
+print(f"m1 < m2: {m1 < m2}") # True because 4 < 5
+
+7. Intermediate Examples
+Example 7.1: Regular Expressions for Log Extraction
+import re
+
+log_entries = [
+    "2026-09-12 14:32:10 [INFO] User 101 logged in successfully.",
+    "2026-09-12 14:33:05 [ERROR] Database timeout on query: SELECT * FROM users.",
+    "2026-09-12 14:34:20 [WARN] High memory usage: 89% capacity."
+]
+
+log_pattern = re.compile(r"^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>[A-Z]+)\] (?P<message>.+)$")
+
+print("--- Parsed Log Entries ---")
+for entry in log_entries:
+    match = log_pattern.match(entry)
+    if match:
+        data = match.groupdict()
+        print(f"Time: {data['timestamp']} | Level: {data['level']:<5} | Msg: {data['message']}")
+
+8. Advanced Examples
+Example 8.1: Asyncio Task Gathering and Benchmark
+import asyncio
+import time
+
+async def async_worker(worker_id: int, delay: float) -> str:
+    await asyncio.sleep(delay)
+    return f"Worker {worker_id} completed in {delay}s"
+
+async def run_concurrent_tasks():
+    start = time.perf_counter()
+    tasks = [
+        async_worker(1, 0.05),
+        async_worker(2, 0.03),
+        async_worker(3, 0.04)
+    ]
+    results = await asyncio.gather(*tasks)
+    duration = time.perf_counter() - start
+    print(f"All {len(results)} async tasks completed in {duration:.4f}s (Concurrent execution!)")
+    for res in results:
+        print(f"  -> {res}")
+
+asyncio.run(run_concurrent_tasks())
+
+9. Code Explanation
+In Example 7.1:
+- Named capture groups (?P<name>...) allow regex results to be extracted directly as a dictionary via match.groupdict(), providing clean structured parsing.
+In Example 8.1:
+- asyncio.gather(*tasks) runs all 3 coroutines concurrently on the event loop. The total elapsed time is approximately the duration of the slowest worker (~0.05s) rather than the sequential sum (0.12s).
+
+10. Practical Use Cases
+- High-throughput asynchronous web APIs (FastAPI).
+- ETL log parsing and unstructured text extraction with regular expressions.
+- CPU-intensive parallel data science preprocessing using multiprocessing.Pool.
+- Diagnostic memory leak tracking in long-running services using the gc module.
+
+11. Common Mistakes
+1. Using mutable defaults in dataclasses directly (topics: list = [] fails; use default_factory=list).
+2. Calling synchronous blocking operations (e.g., time.sleep() or synchronous file I/O) inside async coroutines, blocking the entire event loop (use await asyncio.sleep()).
+3. Expecting Python multithreading to speed up CPU-bound tasks (the GIL forces single-core execution; use multiprocessing).
+4. Creating cyclic references in objects with custom __del__ methods in legacy Python versions.
+
+12. Edge Cases
+- Unclosed coroutines: Creating a coroutine object without awaiting it raises RuntimeWarning: coroutine was never awaited.
+- Regex catastrophic backtracking on ambiguous nested quantifiers.
+
+13. Best Practices
+- Use type hints and validate code with MyPy or Pyright.
+- Prefer @dataclass over manually writing __init__, __repr__, and __eq__.
+- Use asyncio for high-volume network I/O; use multiprocessing for CPU-bound computations.
+- Utilize @contextmanager for lightweight resource wrappers.
+
+14. Performance Considerations
+- multiprocessing incurs inter-process communication (IPC) serialization overhead; batch data to minimize IPC transfers.
+- Disable cyclic garbage collection (gc.disable()) during time-critical batch tasks if no cyclic references exist.
+
+15. Comparison with Related Concepts
+- Threading vs Asyncio: Threading relies on OS preemptive scheduling; Asyncio uses single-threaded cooperative multitasking via coroutines.
+
+16. Debugging Tips
+- Enable asyncio debug mode: asyncio.run(main(), debug=True) to identify slow coroutines blocking the event loop.
+- Use tracemalloc to trace memory allocation spikes and identify memory leaks.
+
+17. Interview Questions and Concept Checks
+1. How does Python's Garbage Collector handle reference cycles?
+   - While reference counting immediately frees objects whose count drops to zero, the generational garbage collector periodically scans memory using a pointer-tracking graph to detect and reclaim isolated cycles of unreachable objects.
+2. What is the difference between asyncio and threading in Python?
+   - asyncio is cooperative and single-threaded, eliminating race conditions on shared memory without locks; threading uses preemptive OS threads that run concurrently on I/O but are bound by the GIL for CPU tasks.
+3. What does @dataclass(frozen=True) do?
+   - It makes the dataclass immutable (mutating fields raises FrozenInstanceError) and automatically generates a hash method __hash__() so instances can be used as set elements or dictionary keys.
+
+18. Summary
+Advanced Python provides the modern toolset required to build enterprise-grade, concurrent, and high-performance applications. Mastering dataclasses, regex, type hints, async/await, and CPython memory architecture empowers developers to architect robust, scalable software.

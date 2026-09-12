@@ -1,0 +1,273 @@
+COURSE: java
+TOPIC: collections
+LEVEL: advanced
+SOURCE: java_collections.txt
+
+TITLE: Java Collections Framework: Hierarchy, Lists, Sets, Maps, Queues, Iterators, and Algorithmic Performance
+
+1. Introduction
+The **Java Collections Framework (JCF)** is an expansive, highly optimized architecture of interfaces, concrete implementations, and algorithmic utilities located within the `java.util` package. JCF standardizes the way groups of objects are stored, accessed, searched, and manipulated in memory. The framework cleanly separates data structure contracts (**Collection**, **List**, **Set**, **SortedSet**, **NavigableSet**, **Queue**, **Deque**, and standalone **Map**) from their underlying algorithmic implementations (**ArrayList**, **LinkedList**, **HashSet**, **TreeSet**, **LinkedHashSet**, **HashMap**, **TreeMap**, **LinkedHashMap**, **PriorityQueue**, **ArrayDeque**). Mastering the Java Collections Framework, Big-O algorithmic complexities ($O(1)$ vs $O(\log N)$ vs $O(N)$), generics type safety, iterators, `Comparable` vs `Comparator` custom ordering, and performance selection criteria is critical for engineering production-grade Java software.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master the JCF interface hierarchy: `Iterable -> Collection -> List / Set / Queue / Deque` and the independent `Map` hierarchy.
+- Select the optimal List implementation: contiguous dynamic array `ArrayList` vs node-based `LinkedList`.
+- Master Set implementations: unordered $O(1)$ `HashSet`, insertion-ordered `LinkedHashSet`, and Red-Black tree $O(\log N)$ sorted `TreeSet`.
+- Master Map implementations: hash table $O(1)$ `HashMap`, insertion-ordered `LinkedHashMap`, and sorted $O(\log N)$ `TreeMap`.
+- Implement FIFO queues and double-ended queues using `ArrayDeque` and heap-based `PriorityQueue`.
+- Traverse collections safely using `Iterator`, `ListIterator`, and fail-fast mechanics (`ConcurrentModificationException`).
+- Order custom domain objects using natural ordering (`Comparable<T>`) and external custom comparator strategies (`Comparator<T>`).
+- Apply utility algorithms from `java.util.Collections` (sort, binarySearch, reverse, shuffle, unmodifiableCollection, synchronizedCollection).
+- Analyze Big-O time and space complexity across all major collection operations.
+
+3. Core Concepts
+- Collection Interface: Root contract for homogeneous groups of objects supporting `.add()`, `.remove()`, `.contains()`, `.size()`, `.clear()`.
+- Map Interface: Key-Value mapping data structure (does NOT extend `Collection`). Keys must be unique and hashable.
+- Generics (`List<T>`, `Map<K,V>`): Compile-time type safety preventing `ClassCastException` via type erasure.
+- Fail-Fast Iterators: Iterators that detect structural modifications made during traversal and immediately throw `ConcurrentModificationException`.
+- Natural Ordering vs Comparator: `Comparable.compareTo()` defines intrinsic ordering; `Comparator.compare()` defines pluggable extrinsic sorting strategies.
+
+4. Detailed Explanation
+4.1 The List Hierarchy (`java.util.List`)
+- `ArrayList`: Backed by a dynamic resizable Object array. $O(1)$ random access (`get(i)`), amortized $O(1)$ append (`add()`), $O(N)$ arbitrary insertion/deletion. Best for search-heavy and read-mostly workloads.
+- `LinkedList`: Doubly-linked node list implementing both `List` and `Deque`. $O(1)$ head/tail insertion, $O(N)$ random access. Consumes extra memory for node pointers (`prev`, `next`).
+
+4.2 The Set Hierarchy (`java.util.Set`)
+- `HashSet`: Backed by an internal `HashMap`. $O(1)$ average add, remove, and contains operations. Unordered.
+- `LinkedHashSet`: Maintains a doubly-linked list across hash buckets to guarantee insertion-order iteration.
+- `TreeSet`: Backed by a Red-Black Tree (`NavigableMap`). Elements sorted in natural or custom Comparator order. $O(\log N)$ time for add, remove, contains.
+
+4.3 The Map Hierarchy (`java.util.Map`)
+- `HashMap`: Array of buckets (linked list chaining transitioning to balanced Red-Black Trees when bucket length $\ge 8$ since Java 8). $O(1)$ average get/put.
+- `LinkedHashMap`: Maintains insertion order (or access order for LRU caches).
+- `TreeMap`: Red-Black tree maintaining keys in sorted order. $O(\log N)$ get, put, remove.
+
+4.4 The Queue & Deque Hierarchy
+- `ArrayDeque`: Resizable circular array implementation of `Deque`. Faster than `Stack` and `LinkedList` for LIFO and FIFO queues.
+- `PriorityQueue`: Binary min-heap ordering elements by natural priority or custom Comparator ($O(\log N)$ offer/poll, $O(1)$ peek).
+
+5. Syntax
+5.1 Collection Initialization and Generics
+import java.util.*;
+
+List<String> list = new ArrayList<>();
+Set<Integer> uniqueSet = new HashSet<>();
+Map<String, Double> prices = new HashMap<>();
+Queue<String> queue = new ArrayDeque<>();
+
+5.2 Custom Comparator Syntax
+Comparator<Student> gpaComparator = Comparator
+        .comparingDouble(Student::getGpa).reversed()
+        .thenComparing(Student::getName);
+
+6. Basic Examples
+Example 6.1: ArrayList, Set, and Map Operations
+package com.learning.collections;
+
+import java.util.*;
+
+public class BasicCollectionsDemo {
+    public static void main(String[] args) {
+        // 1. List
+        List<String> courses = new ArrayList<>();
+        courses.add("C Programming");
+        courses.add("C++ Core");
+        courses.add("Python Engine");
+        courses.add("Java Enterprise");
+        System.out.printf("List Size: %d | 3rd Item: %s%n", courses.size(), courses.get(2));
+
+        // 2. Set (Deduplication)
+        Set<String> tags = new HashSet<>(Arrays.asList("RAG", "AI", "RAG", "Learning", "AI"));
+        System.out.printf("Unique Tags (Set): %s%n", tags);
+
+        // 3. Map (Key-Value)
+        Map<String, Integer> courseCredits = new HashMap<>();
+        courseCredits.put("C", 3);
+        courseCredits.put("C++", 4);
+        courseCredits.put("Python", 4);
+        courseCredits.put("Java", 4);
+
+        System.out.println("Course Credits Map:");
+        for (Map.Entry<String, Integer> entry : courseCredits.entrySet()) {
+            System.out.printf("  Course: %-8s -> Credits: %d%n", entry.getKey(), entry.getValue());
+        }
+    }
+}
+
+Example 6.2: Safe Removal using Iterator
+package com.learning.collections;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public class SafeIteratorRemoval {
+    public static void main(String[] args) {
+        List<Integer> scores = new ArrayList<>(List.of(45, 88, 92, 58, 76, 33, 95));
+
+        System.out.printf("Before Filter: %s%n", scores);
+
+        // Safe removal using Iterator.remove()
+        Iterator<Integer> it = scores.iterator();
+        while (it.hasNext()) {
+            int score = it.next();
+            if (score < 60) {
+                it.remove(); // Safely removes without ConcurrentModificationException
+            }
+        }
+
+        System.out.printf("After Filter (Passing >= 60): %s%n", scores);
+    }
+}
+
+7. Intermediate Examples
+Example 7.1: PriorityQueue for Task Scheduling and Min-Heap Top-K
+package com.learning.collections;
+
+import java.util.PriorityQueue;
+
+class Task implements Comparable<Task> {
+    private String title;
+    private int priority; // Lower number = higher priority
+
+    public Task(String title, int priority) {
+        this.title = title;
+        this.priority = priority;
+    }
+
+    @Override
+    public int compareTo(Task other) {
+        return Integer.compare(this.priority, other.priority);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("[Priority %d] %s", priority, title);
+    }
+}
+
+public class PriorityQueueDemo {
+    public static void main(String[] args) {
+        PriorityQueue<Task> taskQueue = new PriorityQueue<>();
+        taskQueue.offer(new Task("Generate RAG Embeddings", 2));
+        taskQueue.offer(new Task("System Critical Kernel Panic", 1));
+        taskQueue.offer(new Task("Update UI Theme", 5));
+        taskQueue.offer(new Task("Ingest Java Documents", 3));
+
+        System.out.println("Processing tasks in priority order:");
+        while (!taskQueue.isEmpty()) {
+            System.out.printf("  Executing -> %s%n", taskQueue.poll());
+        }
+    }
+}
+
+8. Advanced Examples
+Example 8.1: Multi-Attribute Sorting with Comparable and Comparator
+package com.learning.collections;
+
+import java.util.*;
+
+public class StudentLeaderboard {
+    public static class StudentRecord implements Comparable<StudentRecord> {
+        private int id;
+        private String name;
+        private double gpa;
+
+        public StudentRecord(int id, String name, double gpa) {
+            this.id = id;
+            this.name = name;
+            this.gpa = gpa;
+        }
+
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public double getGpa() { return gpa; }
+
+        @Override
+        public int compareTo(StudentRecord o) {
+            return Integer.compare(this.id, o.id); // Natural order: by ID
+        }
+
+        @Override
+        public String toString() {
+            return String.format("ID: %-4d | Name: %-10s | GPA: %.2f", id, name, gpa);
+        }
+    }
+
+    public static void main(String[] args) {
+        List<StudentRecord> roster = new ArrayList<>(List.of(
+                new StudentRecord(105, "Marcus", 3.85),
+                new StudentRecord(101, "Elena", 3.95),
+                new StudentRecord(103, "David", 3.85),
+                new StudentRecord(102, "Aria", 4.00)
+        ));
+
+        // 1. Natural Sort (by ID)
+        Collections.sort(roster);
+        System.out.println("--- Sorted by Natural Order (ID) ---");
+        roster.forEach(System.out::println);
+
+        // 2. Custom Comparator Sort: GPA descending, then Name ascending
+        roster.sort(Comparator
+                .comparingDouble(StudentRecord::getGpa).reversed()
+                .thenComparing(StudentRecord::getName)
+        );
+
+        System.out.println("
+--- Leaderboard (Highest GPA First) ---");
+        roster.forEach(System.out::println);
+    }
+}
+
+9. Code Explanation
+In Example 6.2:
+- Modifying a collection directly inside an enhanced for-loop (`scores.remove(s)`) alters the internal modification count `modCount`, causing the iterator to detect concurrent modification and throw `ConcurrentModificationException`. Calling `iterator.remove()` updates the iterator's expected modCount in sync, safely deleting the item.
+In Example 8.1:
+- `Comparator.comparingDouble(...).reversed().thenComparing(...)` builds a fluent, multi-criteria comparator chain that cleanly handles tie-breaking.
+
+10. Practical Use Cases
+- In-memory search indexing, caching, and document retrieval in RAG backends.
+- Job queuing and asynchronous task scheduling with `PriorityQueue` and `ArrayDeque`.
+- Leaderboards, sorted dictionaries, and range-query indices using `TreeSet` and `TreeMap`.
+
+11. Common Mistakes
+1. Modifying a collection inside a for-each loop instead of using `Iterator.remove()` or `collection.removeIf(...)`.
+2. Using `LinkedList` thinking it is faster for insertions, without realizing that finding the insertion index takes $O(N)$ traversal.
+3. Using mutable objects as `HashMap` keys and mutating their fields, which changes their hash code and makes them unretrievable.
+4. Using legacy synchronized collections (`Vector`, `Hashtable`) instead of modern `ArrayList`, `HashMap`, or `ConcurrentHashMap`.
+
+12. Edge Cases
+- Storing `null` keys/values: `HashMap` allows one `null` key; `TreeMap` and `PriorityQueue` throw `NullPointerException` if `null` is inserted.
+
+13. Best Practices
+- Always declare variables by their Interface type (`List<String> list = new ArrayList<>();`).
+- Initialize `ArrayList` and `HashMap` with anticipated initial capacities (`new ArrayList<>(1000)`) to eliminate dynamic resizing reallocations.
+- Use `Collections.unmodifiableList(...)` or `List.copyOf(...)` (Java 10+) to return immutable views.
+
+14. Performance Considerations (Big-O Complexity Matrix)
+| Structure | Access | Search | Insertion | Deletion |
+|---|---|---|---|---|
+| ArrayList | $O(1)$ | $O(N)$ | $O(1)$ amortized | $O(N)$ |
+| LinkedList | $O(N)$ | $O(N)$ | $O(1)$ head/tail | $O(1)$ at node |
+| HashSet | N/A | $O(1)$ avg | $O(1)$ avg | $O(1)$ avg |
+| TreeSet | N/A | $O(\log N)$ | $O(\log N)$ | $O(\log N)$ |
+| HashMap | $O(1)$ avg | $O(1)$ avg | $O(1)$ avg | $O(1)$ avg |
+| TreeMap | $O(\log N)$ | $O(\log N)$ | $O(\log N)$ | $O(\log N)$ |
+| ArrayDeque | $O(1)$ ends | $O(N)$ | $O(1)$ ends | $O(1)$ ends |
+
+15. Comparison with Related Concepts
+- `Comparable` vs `Comparator`: `Comparable` implements `compareTo()` inside the domain class (Single natural order); `Comparator` implements `compare()` externally (Multiple flexible sorting strategies).
+
+16. Debugging Tips
+- Inspect collection contents easily in debuggers or print using `System.out.println(collection)`.
+
+17. Interview Questions and Concept Checks
+1. How does Java 8+ `HashMap` resolve high hash collisions within a single bucket?
+   - When a bucket exceeds 8 elements (TREEIFY_THRESHOLD) and table capacity is $\ge 64$, the bucket linked list converts into a balanced Red-Black Tree, improving lookup from $O(N)$ to $O(\log N)$.
+2. Why is `ArrayDeque` generally preferred over `Stack` and `LinkedList` for queue and stack implementations?
+   - `ArrayDeque` allocates contiguous circular arrays with no node pointer overhead and without the thread synchronization penalties of legacy `Stack`.
+3. What is the difference between `fail-fast` and `fail-safe` iterators?
+   - Fail-fast iterators throw `ConcurrentModificationException` immediately upon detecting structural modifications; fail-safe iterators (e.g. `CopyOnWriteArrayList`) iterate over a clone of the collection without throwing exceptions.
+
+18. Summary
+The Java Collections Framework provides an indispensable set of generic, high-performance data structures. Selecting the proper container based on lookup requirements, ordering guarantees, and asymptotic time complexity ensures optimal application throughput and memory efficiency.

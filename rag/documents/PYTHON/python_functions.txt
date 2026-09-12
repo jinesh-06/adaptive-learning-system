@@ -1,0 +1,200 @@
+COURSE: python
+TOPIC: functions
+LEVEL: intermediate
+SOURCE: python_functions.txt
+
+TITLE: Python Functions: Arguments, Scope (LEGB), First-Class Functions, Lambdas, Decorators, and Generators
+
+1. Introduction
+Functions are the fundamental units of modularity, abstraction, and code reuse in Python. In Python, functions are **first-class citizens**, meaning they can be passed as arguments to other functions, returned as values from functions, assigned to variables, and stored in data structures. Python provides an extraordinarily flexible parameter system supporting positional arguments, keyword arguments, default values, variable-length positional arguments (`*args`), variable-length keyword arguments (`**kwargs`), and keyword-only arguments. Furthermore, Python functions support lexical scoping (the LEGB rule), closures, higher-order functions, functional transformations (`map`, `filter`), function decorators, and lazy generators (`yield`).
+
+2. Learning Objectives
+By studying this module, learners will:
+- Define and invoke functions using `def` with type hints and docstrings (PEP 257).
+- Master positional, keyword, default, `*args`, and `**kwargs` argument passing.
+- Understand the LEGB (Local, Enclosing, Global, Built-in) variable scope hierarchy.
+- Utilize `global` and `nonlocal` keywords appropriately and identify anti-patterns.
+- Treat functions as first-class objects (passing, returning, storing).
+- Implement anonymous lambda expressions and higher-order functions (`map`, `filter`, `reduce`).
+- Author custom function decorators with and without arguments.
+- Build lazy generator functions using `yield` and understand memory advantages.
+
+3. Core Concepts
+- First-Class Functions: Functions are objects (instances of `types.FunctionType`).
+- LEGB Rule: Python resolves variable names by searching: Local -> Enclosing (nested functions) -> Global (module) -> Built-in.
+- Mutable Default Argument Trap: Default argument expressions are evaluated once at function definition time, NOT at invocation time.
+- Closures: An inner function that retains access to variables from its enclosing lexical scope even after the outer function has finished executing.
+- Decorators: Higher-order functions that wrap another function to extend or modify its behavior without altering its source code.
+- Generators: Functions that maintain execution state between calls using `yield`, producing values on demand.
+
+4. Detailed Explanation
+4.1 Parameter Types and Signatures
+- Positional: `def f(a, b)`
+- Default: `def f(a, b=10)`
+- Variable Positional (`*args`): Gathers extra positional arguments into a `tuple`.
+- Variable Keyword (`**kwargs`): Gathers extra keyword arguments into a `dict`.
+- Keyword-Only Parameters (after `*`): `def f(a, *, key_only=True)`.
+
+4.2 The LEGB Scope Hierarchy
+1. Local (L): Names defined inside the active function body.
+2. Enclosing (E): Names in enclosing parent functions (closures).
+3. Global (G): Names defined at the top level of the current module file.
+4. Built-in (B): Pre-assigned names in the Python builtins module (`len`, `range`, `print`).
+
+4.3 Decorators
+A decorator `@my_decorator` syntax is syntactic sugar for:
+`func = my_decorator(func)`
+Using `functools.wraps` preserves the original function's name, docstring, and annotations.
+
+4.4 Generators and `yield`
+When a function contains `yield`, calling it returns a generator iterator object. Each call to `next(gen)` executes code until the next `yield` expression is reached.
+
+5. Syntax
+5.1 Function with Full Parameter Variety
+def configure_engine(model: str, *flags, timeout: int = 30, **options) -> dict:
+    """Docstring explaining function purpose."""
+    return {
+        "model": model,
+        "flags": flags,
+        "timeout": timeout,
+        "options": options
+    }
+
+5.2 Decorator Pattern
+from functools import wraps
+
+def audit_log(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"[AUDIT] Calling {func.__name__}")
+        result = func(*args, **kwargs)
+        print(f"[AUDIT] Finished {func.__name__}")
+        return result
+    return wrapper
+
+6. Basic Examples
+Example 6.1: Flexible Arguments with *args and **kwargs
+def calculate_metrics(base_score: float, *bonuses: float, **metadata) -> float:
+    total = base_score + sum(bonuses)
+    print(f"Metadata received: {metadata}")
+    print(f"Total calculated score: {total}")
+    return total
+
+calculate_metrics(85.0, 5.0, 2.5, 3.0, student="Marcus", course="Python")
+
+Example 6.2: Lambda and Higher-Order Functions
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# Filter even numbers
+evens = list(filter(lambda x: x % 2 == 0, numbers))
+# Square numbers
+squares = list(map(lambda x: x ** 2, evens))
+
+print(f"Original: {numbers}")
+print(f"Evens:    {evens}")
+print(f"Squares:  {squares}")
+
+7. Intermediate Examples
+Example 7.1: Function Execution Timing Decorator
+import time
+from functools import wraps
+
+def measure_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        duration = (time.perf_counter() - start) * 1000
+        print(f"[Timer] Function '{func.__name__}' executed in {duration:.4f} ms")
+        return result
+    return wrapper
+
+@measure_time
+def compute_sum_of_squares(limit: int) -> int:
+    return sum(i * i for i in range(limit))
+
+total = compute_sum_of_squares(500000)
+print(f"Sum result: {total}")
+
+Example 7.2: Closure with Nonlocal Counter
+def make_counter(start_val: int = 0):
+    current = start_val
+    def increment(step: int = 1) -> int:
+        nonlocal current
+        current += step
+        return current
+    return increment
+
+counter_a = make_counter(10)
+print("Counter A:", counter_a())  # 11
+print("Counter A:", counter_a(5)) # 16
+
+8. Advanced Examples
+Example 8.1: Infinite Generator for Fibonacci Sequence and Prime Stream
+def fibonacci_generator():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+def generate_even_fibs(limit_count: int):
+    fib_gen = fibonacci_generator()
+    even_fibs = []
+    
+    while len(even_fibs) < limit_count:
+        val = next(fib_gen)
+        if val % 2 == 0:
+            even_fibs.append(val)
+            
+    return even_fibs
+
+print("First 6 even Fibonacci numbers:", generate_even_fibs(6))
+
+9. Code Explanation
+In Example 7.1:
+- `@measure_time` wraps `compute_sum_of_squares`.
+- `@wraps(func)` preserves original function metadata. The wrapper records start and end timestamps using `time.perf_counter()`, printing the execution latency before returning the result.
+In Example 8.1:
+- `fibonacci_generator` produces an infinite sequence of numbers lazily in $O(1)$ memory. The generator suspends execution at `yield a` and resumes exactly where it left off upon the next `next()` call.
+
+10. Practical Use Cases
+- Authentication and logging middleware in web frameworks (Flask, FastAPI).
+- Memory-efficient large file stream processing and infinite dataset generation in ML.
+- Memoization and caching decorators (`functools.lru_cache`).
+
+11. Common Mistakes
+1. Mutable Default Arguments: `def append_to(item, target=[])` -> `target` is shared across ALL calls! Always use `target=None` and initialize `if target is None: target = []`.
+2. Forgetting `@wraps(func)` in decorators, wiping out docstrings and changing `__name__` to `'wrapper'`.
+3. Overusing `global` variables instead of passing parameters and returning results.
+4. Attempting to modify an enclosing variable inside a closure without the `nonlocal` declaration.
+
+12. Edge Cases
+- Exceeding recursion limit: Python default recursion depth is 1000 (`sys.getrecursionlimit()`). Deep recursion raises `RecursionError`.
+- Exhausted generators: Calling `next()` on a finished generator raises `StopIteration`.
+
+13. Best Practices
+- Always use type hints (PEP 484) and descriptive docstrings (PEP 257).
+- Keep functions small, pure (stateless where possible), and focused on a single responsibility.
+- Use `functools.lru_cache` to memoize expensive recursive or mathematical functions.
+
+14. Performance Considerations
+- Generators consume $O(1)$ auxiliary memory regardless of sequence size, preventing `MemoryError` when processing gigabytes of data.
+- Built-in functions (`sum`, `min`, `max`, `any`, `all`) written in C execute faster than manual Python loops.
+
+15. Comparison with Related Concepts
+- Generator vs List Comprehension: List comprehension `[x for x in r]` eagerly builds a full list in memory ($O(N)$); generator expression `(x for x in r)` computes values lazily on-demand ($O(1)$ memory).
+
+16. Debugging Tips
+- Inspect function closures and free variables using `func.__closure__` and `func.__code__.co_freevars`.
+- Use Python's `inspect` standard module to programmatically inspect argument signatures.
+
+17. Interview Questions and Concept Checks
+1. Explain the "Mutable Default Argument" pitfall in Python and how to fix it.
+   - Default parameter expressions are evaluated once when the function is defined, making mutable objects like `[]` or `{}` shared across all subsequent invocations. Fix by using `None` as the default value and initializing a new instance inside the body.
+2. What does the `nonlocal` keyword do?
+   - It allows a nested function to rebind variables in an outer enclosing (non-global) function scope.
+3. What is the difference between `return` and `yield`?
+   - `return` terminates function execution and returns a value; `yield` produces a value and suspends function state, allowing it to resume on subsequent `next()` calls.
+
+18. Summary
+Functions in Python provide immense expressive power through first-class status, flexible argument packing, closure mechanisms, decorators, and lazy generators. Mastery of these features enables developers to write clean, modular, and high-performance Python code.

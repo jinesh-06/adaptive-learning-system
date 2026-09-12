@@ -1,0 +1,248 @@
+COURSE: cpp
+TOPIC: advanced_topics
+LEVEL: advanced
+SOURCE: cpp_advanced_topics.txt
+
+TITLE: Advanced C++: Templates, Metaprogramming, Exception Handling, Modern C++ Features, and Concurrency Basics
+
+1. Introduction
+Advanced C++ explores generic metaprogramming, robust exception handling, modern language features (C++11 through C++20), and multithreaded concurrency. Templates allow writing type-agnostic blueprints for functions and classes evaluated entirely at compile time. Modern C++ standard revisions introduce language-level concurrency (`std::thread`, `std::mutex`, `std::async`), compile-time evaluation (`constexpr`, `consteval`), type deduction (`auto`, `decltype`), and Concepts (C++20). Mastering these advanced topics enables software engineers to write highly generic, blazing-fast, and concurrency-safe applications.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master function templates and class templates with single and multiple generic parameters.
+- Understand template specialization (full and partial) and SFINAE / Concepts basics.
+- Implement structured exception handling (`try`, `catch`, `throw`, `std::exception` hierarchy, `noexcept`).
+- Utilize modern C++ features: `auto`, `decltype`, range-based for loops, structured bindings, `constexpr`.
+- Understand thread creation and lifecycle management with `std::thread` and `std::jthread`.
+- Synchronize shared multithreaded resources using `std::mutex`, `std::lock_guard`, and `std::unique_lock`.
+- Execute asynchronous tasks and retrieve futures using `std::async` and `std::future`.
+- Avoid data races, deadlocks, and unhandled exception crashes.
+
+3. Core Concepts
+- Generic Programming: Writing algorithms and data structures independently of specific underlying data types.
+- Template Metaprogramming: Executing computations, type transformations, and validations at compile time.
+- Exception Safety Guarantees: Basic Guarantee, Strong Guarantee (rollback semantics), and Nothrow Guarantee (`noexcept`).
+- Concurrency vs Parallelism: Concurrency manages multiple execution flows simultaneously; parallelism executes them across multiple CPU cores.
+- Data Race: Undefined behavior occurring when two threads access the same memory location concurrently and at least one write occurs without synchronization.
+
+4. Detailed Explanation
+4.1 Function and Class Templates
+- Function template:
+  template <typename T>
+  T get_max(T a, T b) { return (a > b) ? a : b; }
+- Class template:
+  template <typename T, size_t Capacity>
+  class FixedStack { T buffer[Capacity]; ... };
+
+4.2 Exception Handling Hierarchy
+Standard exceptions derive from `std::exception` (`<stdexcept>`):
+- `std::runtime_error`
+- `std::invalid_argument`
+- `std::out_of_range`
+- `std::bad_alloc`
+Always catch exceptions by `const &` to prevent object slicing:
+`catch (const std::exception &e) { std::cerr << e.what(); }`
+
+4.3 Modern C++ Features
+- `constexpr`: Evaluated at compile-time if inputs are constants.
+- Structured Bindings (C++17): `auto [x, y] = point;`
+- Concepts (C++20): Type constraints on template parameters (`template <std::integral T>`).
+
+4.4 Concurrency (`<thread>`, `<mutex>`, `<future>`)
+- `std::thread t(worker_func, args...)`: Spawns a native OS thread. Must be `.join()`ed or `.detach()`ed.
+- `std::mutex`: Mutual exclusion lock preventing concurrent access.
+- `std::lock_guard<std::mutex>`: RAII wrapper acquiring mutex on construction and unlocking on destruction.
+- `std::async(std::launch::async, func)`: Runs task in background and returns `std::future<T>`.
+
+5. Syntax
+5.1 Class Template Syntax
+template <typename T>
+class Box {
+private:
+    T value;
+public:
+    Box(T val) : value(val) {}
+    T get() const { return value; }
+};
+
+5.2 Thread Synchronization
+#include <mutex>
+std::mutex mtx;
+void thread_safe_increment(int &val) {
+    std::lock_guard<std::mutex> lock(mtx);
+    val++;
+}
+
+6. Basic Examples
+Example 6.1: Generic Function Template and Class Template
+#include <iostream>
+#include <string>
+
+template <typename T>
+T clamp_value(T val, T min_val, T max_val) {
+    if (val < min_val) return min_val;
+    if (val > max_val) return max_val;
+    return val;
+}
+
+template <typename K, typename V>
+class KeyValuePair {
+public:
+    K key;
+    V value;
+    KeyValuePair(K k, V v) : key(k), value(v) {}
+    void print() const {
+        std::cout << "Key: " << key << " -> Value: " << value << "
+";
+    }
+};
+
+int main() {
+    std::cout << "Clamped int:    " << clamp_value(15, 0, 10) << "
+";
+    std::cout << "Clamped double: " << clamp_value(3.14, 0.0, 5.0) << "
+";
+
+    KeyValuePair<std::string, int> pair("Score", 100);
+    pair.print();
+    return 0;
+}
+
+Example 6.2: Exception Handling and Custom Exception
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+class DatabaseConnectionException : public std::runtime_error {
+public:
+    DatabaseConnectionException(const std::string &msg)
+        : std::runtime_error("Database Connection Failure: " + msg) {}
+};
+
+double divide(double num, double den) {
+    if (den == 0.0) {
+        throw std::invalid_argument("Division by zero error.");
+    }
+    return num / den;
+}
+
+int main() {
+    try {
+        std::cout << "10 / 2 = " << divide(10.0, 2.0) << "
+";
+        std::cout << "10 / 0 = " << divide(10.0, 0.0) << "
+";
+    } catch (const std::invalid_argument &e) {
+        std::cerr << "[Exception Caught] " << e.what() << "
+";
+    }
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Multithreading and Thread-Safe Mutex Lock Guard
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <mutex>
+
+std::mutex counter_mutex;
+int global_counter = 0;
+
+void increment_counter(int iterations) {
+    for (int i = 0; i < iterations; ++i) {
+        std::lock_guard<std::mutex> lock(counter_mutex);
+        global_counter++;
+    }
+}
+
+int main() {
+    int iterations = 10000;
+    std::thread t1(increment_counter, iterations);
+    std::thread t2(increment_counter, iterations);
+
+    t1.join();
+    t2.join();
+
+    std::cout << "Expected Counter: " << iterations * 2 << "
+";
+    std::cout << "Actual Counter:   " << global_counter << "
+";
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Asynchronous Futures with std::async
+#include <iostream>
+#include <future>
+#include <chrono>
+
+int perform_heavy_computation(int base, int multiplier) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Simulate async work
+    return base * multiplier;
+}
+
+int main() {
+    std::cout << "Spawning async computation worker...
+";
+    std::future<int> result_future = std::async(std::launch::async, perform_heavy_computation, 42, 10);
+
+    std::cout << "Main thread continuing other tasks...
+";
+
+    // Wait and retrieve result
+    int answer = result_future.get();
+    std::cout << "Async Computation Result: " << answer << "
+";
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- Two threads concurrently execute `increment_counter`. Without `std::lock_guard<std::mutex>`, interleaved memory operations on `global_counter++` cause data races and lost updates. The mutex guarantees atomic mutual exclusion.
+In Example 8.1:
+- `std::async` schedules `perform_heavy_computation` on a worker thread pool. The main thread continues execution uninterrupted until `.get()` blocks to retrieve the computed integer.
+
+10. Practical Use Cases
+- High-performance numeric matrix math and generic algorithm libraries (Eigen, Boost).
+- Asynchronous file/network I/O in distributed microservices.
+- Multi-core game engine physics simulation and render dispatch.
+
+11. Common Mistakes
+1. Forgetting to `.join()` or `.detach()` a `std::thread`, causing `std::terminate` to abort the application on destruction.
+2. Catching exceptions by value (`catch (std::exception e)`), causing object slicing and loss of derived error diagnostics.
+3. Deadlocks caused by acquiring multiple mutexes in inconsistent orders across different threads.
+4. Throwing exceptions inside destructors (causes immediate `std::terminate` if another exception is already active).
+
+12. Edge Cases
+- Calling `.get()` twice on the same `std::future` (throws `std::future_error`).
+- Data races on non-atomic boolean flags (use `std::atomic<bool>`).
+
+13. Best Practices
+- Always catch exceptions by `const &`.
+- Use `std::lock_guard` or `std::unique_lock` for mutex management (RAII).
+- Mark functions `noexcept` when they are guaranteed never to throw (enables move optimizations in STL).
+- Prefer `std::jthread` (C++20) for automatic joining on destruction.
+
+14. Performance Considerations
+- Mutex contention degrades multithreaded scalability; use atomic operations (`std::atomic<T>`) for simple counters or lock-free data structures.
+- Template metaprogramming shifts computation from runtime to compile-time, producing zero runtime overhead.
+
+15. Comparison with Related Concepts
+- C++ Templates vs Java Generics: C++ templates generate distinct optimized machine code for each type instantiation (monomorphization); Java uses type erasure to share bytecode.
+
+16. Debugging Tips
+- Compile with `-fsanitize=thread` (ThreadSanitizer) to catch multithreaded data races during runtime testing.
+- Inspect template instantiation errors starting from the top error frame.
+
+17. Interview Questions and Concept Checks
+1. What is SFINAE (Substitution Failure Is Not An Error) in C++ templates?
+   - A compiler rule stating that if a template substitution results in an invalid type or expression, the overload is silently discarded rather than causing a compilation failure.
+2. What is the difference between `std::lock_guard` and `std::unique_lock`?
+   - `std::lock_guard` is a lightweight non-movable RAII wrapper; `std::unique_lock` supports manual unlocking, deferred locking, condition variable waits, and moving.
+3. Why should exceptions never escape from a destructor?
+   - If a destructor throws an exception during stack unwinding caused by another exception, C++ invokes `std::terminate()`, instantly crashing the process.
+
+18. Summary
+Advanced C++ features—templates, exception safety, and modern concurrency—provide unmatched control, safety, and performance. Mastering these topics equips engineers to build high-scale, robust, and concurrent software systems.

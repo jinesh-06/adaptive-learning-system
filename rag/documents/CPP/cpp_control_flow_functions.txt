@@ -1,0 +1,219 @@
+COURSE: cpp
+TOPIC: control_flow_functions
+LEVEL: beginner
+SOURCE: cpp_control_flow_functions.txt
+
+TITLE: C++ Control Flow and Functions: Branching, Overloading, Default Arguments, Inline Functions, and Lambdas
+
+1. Introduction
+Control flow constructs and functions form the operational core of any C++ program. C++ enhances traditional procedural flow mechanisms with features such as function overloading, default parameter values, inline expansion, reference parameter passing, constexpr functions, and anonymous lambda expressions. Mastering these constructs allows software engineers to design concise, expressive, and highly optimized control logic.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master conditional statements (`if`, `if-else`, `switch`) including C++17 `if with initializer`.
+- Implement counter-controlled (`for`), conditional (`while`, `do-while`), and range-based `for` loops.
+- Define and declare C++ functions with return types, parameters, and prototypes.
+- Apply Function Overloading based on parameter counts and types (name mangling).
+- Utilize default parameter values correctly in function declarations.
+- Understand `inline` function mechanics and compiler optimization heuristics.
+- Implement recursive algorithms with proper base case guards.
+- Construct modern C++ lambda expressions with capture clauses (`[]`), parameter lists, and return types.
+
+3. Core Concepts
+- Function Overloading: Multiple functions sharing the identical name with distinct parameter signatures.
+- Name Mangling: Compiler encoding of function signatures into unique assembly symbol names.
+- Default Arguments: Trailing function parameters pre-assigned fallback values in declarations.
+- Inline Functions: Suggestion to compiler to replace function calls with inline machine code.
+- Range-Based For Loops: Syntactic abstraction iterating over any container supporting `begin()` and `end()`.
+- Lambda Expressions: Anonymous function objects capable of capturing variables from enclosing scopes.
+
+4. Detailed Explanation
+4.1 C++17 If with Initializer
+Syntax: `if (init_statement; condition)`
+Scoping variables strictly within the conditional block:
+if (auto it = map.find(key); it != map.end()) {
+    std::cout << it->second;
+}
+
+4.2 Function Overloading Rules
+Overloading is resolved at compile-time based on:
+- Number of parameters.
+- Data types of parameters.
+- Order of parameter types.
+- Const-qualification of parameters.
+Note: Functions cannot be overloaded based on return type alone.
+
+4.3 Default Arguments
+- Must be specified from right to left in the parameter list.
+- Should be declared in the header (.h) prototype, not repeated in the definition (.cpp).
+
+4.4 Inline and Constexpr Functions
+- `inline`: Replaces call site with body to eliminate call stack overhead.
+- `constexpr`: Guarantees evaluation at compile time if arguments are constant expressions.
+
+4.5 Lambda Expressions
+Syntax: `[capture_clause](parameters) -> return_type { body }`
+Captures:
+- `[]`: No variables captured.
+- `[&]`: Capture all enclosing automatic variables by reference.
+- `[=]`: Capture all enclosing automatic variables by value (copy).
+- `[x, &y]`: Capture `x` by value, `y` by reference.
+
+5. Syntax
+5.1 Range-Based For Loop
+for (const auto &item : container) {
+    std::cout << item << " ";
+}
+
+5.2 Lambda Expression
+auto square = [](int x) -> int {
+    return x * x;
+};
+int result = square(6); // 36
+
+6. Basic Examples
+Example 6.1: Range-Based Loop and If with Initializer
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 25, 30, 45, 50};
+
+    // Range-based for loop
+    std::cout << "Even numbers: ";
+    for (int n : numbers) {
+        if (n % 2 == 0) {
+            std::cout << n << " ";
+        }
+    }
+    std::cout << "
+";
+
+    // C++17 If with initializer
+    if (int count = numbers.size(); count > 3) {
+        std::cout << "Container has " << count << " elements (Satisfies threshold).
+";
+    }
+    return 0;
+}
+
+Example 6.2: Function Overloading
+#include <iostream>
+#include <string>
+
+void display_info(int id) {
+    std::cout << "User ID: " << id << "
+";
+}
+
+void display_info(const std::string &username) {
+    std::cout << "Username: " << username << "
+";
+}
+
+void display_info(int id, const std::string &role) {
+    std::cout << "User ID: " << id << " | Role: " << role << "
+";
+}
+
+int main() {
+    display_info(101);
+    display_info("Alexandria");
+    display_info(102, "System Administrator");
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Default Arguments and Inline Math Functions
+#include <iostream>
+
+inline double calculate_total(double price, double tax_rate = 0.08, double discount = 0.0) {
+    return (price - discount) * (1.0 + tax_rate);
+}
+
+int main() {
+    std::cout << "Standard item: $" << calculate_total(100.0) << "
+";
+    std::cout << "Custom tax:    $" << calculate_total(100.0, 0.12) << "
+";
+    std::cout << "Discounted:    $" << calculate_total(100.0, 0.08, 15.0) << "
+";
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Lambda Expressions and STL Algorithms
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> scores = {75, 88, 92, 64, 98, 82};
+    int passing_grade = 80;
+
+    // Count elements above threshold using lambda with capture
+    int honor_students = std::count_if(scores.begin(), scores.end(), [passing_grade](int s) {
+        return s >= passing_grade;
+    });
+
+    std::cout << "Students with grade >= " << passing_grade << ": " << honor_students << "
+";
+
+    // In-place sorting with custom lambda comparator (descending order)
+    std::sort(scores.begin(), scores.end(), [](int a, int b) {
+        return a > b;
+    });
+
+    std::cout << "Ranked scores: ";
+    for (int s : scores) std::cout << s << " ";
+    std::cout << "
+";
+
+    return 0;
+}
+
+9. Code Explanation
+In Example 8.1:
+- `[passing_grade](int s)` captures the local variable `passing_grade` by value into the lambda's closure object.
+- `std::sort` accepts an anonymous predicate `[](int a, int b) { return a > b; }` to sort the vector in descending order without writing a standalone comparator function.
+
+10. Practical Use Cases
+- Event-driven UI click callbacks and custom comparator predicates in STL algorithms.
+- Mathematical physics kernels using `constexpr` and `inline` functions.
+- Clean resource-scoped lookup using C++17 `if with initializer`.
+
+11. Common Mistakes
+1. Specifying default arguments in both function prototype and definition, causing compilation redefinition error.
+2. Non-trailing default arguments: `void func(int a = 1, int b)` is illegal; default arguments must be rightmost.
+3. Ambiguous function overloads: `void f(int)` and `void f(double)` called with `f(5.0f)` or `f(0)`.
+4. Accidental heavy copying in range-for loops: Using `for (auto item : container)` instead of `for (const auto &item : container)`.
+
+12. Edge Cases
+- Capturing local references by `[&]` in a lambda whose lifetime outlives the enclosing function scope (leads to dangling references).
+- Inline functions with large bodies leading to instruction cache bloat.
+
+13. Best Practices
+- Prefer range-based for loops for container traversal.
+- Pass complex objects by `const &` in function parameters and lambda captures.
+- Use lambdas for short, local callback logic rather than cluttering global scope with single-use functions.
+
+14. Performance Considerations
+- Modern compilers inline lambdas and function objects much more aggressively than raw C function pointers, resulting in superior runtime vectorization and optimization.
+
+15. Comparison with Related Concepts
+- Function Overloading vs Function Templates: Overloading provides custom implementations for discrete types; templates generate code from a single generic blueprint.
+
+16. Debugging Tips
+- Trace lambda invocations by setting breakpoints directly inside lambda bodies in GDB.
+- Check compiler error logs carefully when overload resolution fails.
+
+17. Interview Questions and Concept Checks
+1. Can functions in C++ be overloaded based on return type alone?
+   - No, because the compiler cannot determine the intended overload at the call site if the return value is discarded or ignored.
+2. What does the capture clause `[=, &x]` signify in a C++ lambda?
+   - It captures variable `x` by reference, and captures all other referenced local automatic variables by value.
+3. What is the benefit of a `constexpr` function in modern C++?
+   - It allows calculations to be executed at compile time if inputs are known constants, eliminating runtime latency.
+
+18. Summary
+C++ enhances procedural control flow with type-safe overloading, default parameters, inline optimizations, and expressive lambda closures, providing both syntactic elegance and maximum runtime performance.

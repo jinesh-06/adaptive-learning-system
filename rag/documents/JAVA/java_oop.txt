@@ -1,0 +1,265 @@
+COURSE: java
+TOPIC: oop
+LEVEL: intermediate
+SOURCE: java_oop.txt
+
+TITLE: Java Object-Oriented Programming: Classes, Encapsulation, Constructors, Keywords (this, static, final), and Relationships
+
+1. Introduction
+Java is fundamentally built upon Object-Oriented Programming (OOP) principles. In Java, real-world domain entities are modeled as classes that encapsulate state (attributes/fields) and behavior (methods). Java enforces strict access control through access modifiers (`public`, `private`, `protected`, default package-private), enforces clean object lifecycles via constructors, and provides structural control keywords: `this` (current instance), `static` (class-level scope), and `final` (immutability and non-overridability). Mastering Java OOP enables software architects to design modular, decoupled, and secure enterprise software architectures.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Define classes, instantiate objects using `new`, and manage heap references.
+- Implement strict encapsulation via private fields and public getter/setter accessors.
+- Master constructor mechanics: default, parameterized, copy constructors, and constructor chaining with `this(...)`.
+- Understand the role and applications of the `this` reference keyword.
+- Differentiate instance fields/methods from `static` class fields, static methods, and static initializer blocks.
+- Apply the `final` keyword to variables (constants), methods (non-overridable), and classes (non-extendable).
+- Model structural object relationships: Association, Aggregation ("has-a" weak), and Composition ("has-a" strong).
+- Implement clean domain models adhering to Java enterprise conventions (JavaBeans / POJOs).
+
+3. Core Concepts
+- Encapsulation: Binding data and manipulating methods together while restricting direct external access to internal state representation.
+- Constructor Chaining: Invoking another constructor within the same class using `this(args...)` as the very first statement.
+- Static Scope: Static variables and methods belong to the Class itself (loaded in Metaspace/Class data), shared across all instances.
+- Immutability with `final`:
+  - `final variable`: Value cannot be reassigned once initialized.
+  - `final method`: Method cannot be overridden by subclasses.
+  - `final class`: Class cannot be extended (e.g., `java.lang.String`).
+- Composition vs Aggregation: Composition implies ownership where child lifecycle depends on parent; Aggregation implies a shared reference without ownership.
+
+4. Detailed Explanation
+4.1 Access Modifiers Matrix
+- `private`: Accessible only within the declaring class.
+- (default / package-private): Accessible only within the same package.
+- `protected`: Accessible within the same package and by subclasses in other packages.
+- `public`: Accessible everywhere from any package.
+
+4.2 The `this` Keyword
+- Disambiguates instance fields from shadowed parameter names: `this.name = name;`.
+- Constructor delegation: `this(name, 0.0);` invokes another constructor in the same class.
+- Passing the current instance as a callback parameter: `listener.register(this);`.
+
+4.3 Static Members & Initialization
+- `static` methods cannot access non-static instance fields or use `this`.
+- Static Initializer Block (`static { ... }`): Executes once when the class is first loaded by the ClassLoader.
+
+4.4 Immutability & Defensive Copying
+When creating immutable classes (or using `final` fields pointing to mutable objects like `Date` or `int[]`), always return defensive copies in getter methods to prevent external mutation.
+
+5. Syntax
+5.1 Encapsulated Class Structure
+package com.learning.oop;
+
+public class Product {
+    private final String sku;
+    private String name;
+    private double price;
+
+    public Product(String sku, String name, double price) {
+        this.sku = sku;
+        this.name = name;
+        this.price = Math.max(0.0, price);
+    }
+
+    public String getSku() { return sku; }
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public void setPrice(double price) {
+        if (price >= 0) this.price = price;
+    }
+}
+
+6. Basic Examples
+Example 6.1: BankAccount with Encapsulation and Constructor Chaining
+package com.learning.oop;
+
+public class BankAccount {
+    private static int totalAccountsCreated = 0; // Static class variable
+
+    private final String accountNumber;
+    private String accountHolder;
+    private double balance;
+
+    // Parameterized constructor
+    public BankAccount(String accountNumber, String accountHolder, double initialBalance) {
+        this.accountNumber = accountNumber;
+        this.accountHolder = accountHolder;
+        this.balance = Math.max(0.0, initialBalance);
+        totalAccountsCreated++;
+    }
+
+    // Chained constructor delegating with default balance
+    public BankAccount(String accountNumber, String accountHolder) {
+        this(accountNumber, accountHolder, 0.0);
+    }
+
+    public void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            System.out.printf("[%s] Deposited $%.2f. New Balance: $%.2f%n", accountNumber, amount, balance);
+        }
+    }
+
+    public boolean withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            System.out.printf("[%s] Withdrew $%.2f. Remaining: $%.2f%n", accountNumber, amount, balance);
+            return true;
+        }
+        System.out.printf("[%s] Withdrawal of $%.2f failed.%n", accountNumber, amount);
+        return false;
+    }
+
+    public static int getTotalAccountsCreated() {
+        return totalAccountsCreated;
+    }
+
+    public double getBalance() { return balance; }
+    public String getAccountNumber() { return accountNumber; }
+}
+
+7. Intermediate Examples
+Example 7.1: Composition and Aggregation (Department, Professor, Course)
+package com.learning.oop;
+
+import java.util.ArrayList;
+import java.util.List;
+
+class Professor {
+    private String name;
+    public Professor(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+
+class Course {
+    private String code;
+    private String title;
+    private Professor instructor; // Aggregation (Course uses an existing Professor)
+
+    public Course(String code, String title, Professor instructor) {
+        this.code = code;
+        this.title = title;
+        this.instructor = instructor;
+    }
+
+    public void display() {
+        System.out.printf("Course: %s - %s | Instructor: %s%n", code, title, instructor.getName());
+    }
+}
+
+public class Department {
+    private String deptName;
+    private List<Course> courses; // Composition (Department manages its courses)
+
+    public Department(String deptName) {
+        this.deptName = deptName;
+        this.courses = new ArrayList<>();
+    }
+
+    public void addCourse(String code, String title, Professor prof) {
+        courses.add(new Course(code, title, prof));
+    }
+
+    public void listAllCourses() {
+        System.out.printf("--- Department of %s ---%n", deptName);
+        for (Course c : courses) {
+            c.display();
+        }
+    }
+
+    public static void main(String[] args) {
+        Professor profSmith = new Professor("Dr. Alan Smith");
+        Department csDept = new Department("Computer Science");
+
+        csDept.addCourse("CS101", "Intro to Java", profSmith);
+        csDept.addCourse("CS201", "Data Structures", profSmith);
+
+        csDept.listAllCourses();
+    }
+}
+
+8. Advanced Examples
+Example 8.1: Singleton Pattern using Static Instance and Private Constructor
+package com.learning.oop;
+
+public class DatabaseConnectionPool {
+    // Eagerly initialized thread-safe singleton instance
+    private static final DatabaseConnectionPool INSTANCE = new DatabaseConnectionPool();
+
+    private boolean isConnected;
+
+    // Private constructor prevents external instantiation
+    private DatabaseConnectionPool() {
+        this.isConnected = true;
+        System.out.println("[DatabaseConnectionPool] Connection pool initialized.");
+    }
+
+    public static DatabaseConnectionPool getInstance() {
+        return INSTANCE;
+    }
+
+    public void executeQuery(String sql) {
+        if (isConnected) {
+            System.out.printf("Executing SQL Query: [%s]%n", sql);
+        }
+    }
+
+    public static void main(String[] args) {
+        DatabaseConnectionPool pool1 = DatabaseConnectionPool.getInstance();
+        DatabaseConnectionPool pool2 = DatabaseConnectionPool.getInstance();
+
+        System.out.printf("pool1 == pool2: %b (Same singleton instance)%n", pool1 == pool2);
+        pool1.executeQuery("SELECT * FROM student_records;");
+    }
+}
+
+9. Code Explanation
+In Example 6.1:
+- `this(accountNumber, accountHolder, 0.0)` demonstrates constructor chaining, reducing duplicate initialization code.
+- `totalAccountsCreated` is `static`, meaning a single shared integer counter is incremented across every `BankAccount` instance created in the JVM.
+In Example 8.1:
+- The Singleton pattern restricts instantiation to a single global instance by combining a `private` constructor with a `public static final` instance accessor.
+
+10. Practical Use Cases
+- Domain entities in Spring Data / JPA / Hibernate ORM frameworks.
+- Singleton configuration managers and thread-safe connection pools.
+- DTO (Data Transfer Object) and Builder patterns for REST API payloads.
+
+11. Common Mistakes
+1. Calling instance variables or instance methods inside a `static` method: causes `Cannot make a static reference to the non-static field`.
+2. Calling `this(...)` anywhere other than the very first line of a constructor.
+3. Making fields `public` instead of `private` with getters and setters, breaking encapsulation.
+4. Assuming `final` makes an object's internal fields immutable (it only prevents reassigning the reference variable itself).
+
+12. Edge Cases
+- Recursive constructor invocation: Calling `this()` inside `this()` creates compile-time `Recursive constructor invocation` error.
+- Returning direct references to mutable `Date` or `List` fields in getters (allows callers to mutate private state).
+
+13. Best Practices
+- Keep all fields `private` unless package or subclass access is explicitly needed.
+- Mark immutable parameters and constants as `final`.
+- Always provide meaningful parameterized constructors.
+- Follow the JavaBean naming convention for getters (`getAge()`, `isEnrolled()`) and setters (`setAge(...)`).
+
+14. Performance Considerations
+- Static utility methods (like `Math.sqrt`) avoid heap allocation overhead because no instance creation is required.
+- Marking classes or methods `final` allows the JVM JIT compiler to perform aggressive method inlining and devirtualization.
+
+15. Comparison with Related Concepts
+- Composition vs Inheritance: Composition ("has-a") offers looser coupling and runtime flexibility; Inheritance ("is-a") creates tight compile-time coupling.
+
+16. Debugging Tips
+- Implement a clear `toString()` method in every class to display object state easily during debugging.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between a `static` variable and an instance variable?
+   - An instance variable belongs to an individual object instance allocated on the heap; a `static` variable belongs to the Class itself, shared across all instances.
+2. What are the three distinct usages of the `final` keyword in Java?
+   - Applied to a variable: makes it a constant (cannot be reassigned); applied to a method: prevents method overriding in subclasses; applied to a class: prevents class inheritance.
+3. What is Constructor Chaining and how is it implemented?
+   - Constructor chaining is calling one constructor from another within the same class using `this(parameters)` as the first line of the constructor body.
+
+18. Summary
+Object-Oriented Programming is the foundational architectural pillar of Java. Mastering encapsulation, constructors, static scopes, final immutability, and object composition allows developers to build robust, modular, and enterprise-ready systems.

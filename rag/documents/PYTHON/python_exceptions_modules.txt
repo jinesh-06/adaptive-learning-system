@@ -1,0 +1,194 @@
+COURSE: python
+TOPIC: exceptions_modules
+LEVEL: intermediate
+SOURCE: python_exceptions_modules.txt
+
+TITLE: Python Exception Handling, Custom Exceptions, Modules, Packages, and Environments
+
+1. Introduction
+Robust software engineering requires graceful handling of runtime errors and modular organization of code across files and packages. Python provides a structured exception handling system based on the try, except, else, and finally blocks, allowing programs to recover from unexpected errors without crashing. Alongside exception handling, Python's module and package system allows developers to decompose codebases into reusable namespaces, managed via import statements, package __init__.py initializers, and entry-point guards (if __name__ == '__main__':). Understanding error hierarchies, custom exceptions, module resolution paths (sys.path), virtual environments (venv), and dependency management (pip) is vital for building production software.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master structured exception handling with try, except, else, and finally.
+- Understand the standard Python BaseException and Exception class hierarchy.
+- Raise built-in exceptions (raise ValueError(...)) and define custom domain exceptions.
+- Implement exception chaining using raise ... from ... (PEP 3134).
+- Structure multi-file Python projects into modules (.py) and packages (folders with __init__.py).
+- Master import mechanics: import module, from module import name, relative imports, and aliases (as).
+- Understand the role of __name__ and the if __name__ == '__main__': execution guard.
+- Manage isolated project dependencies using virtual environments (venv) and requirements.txt.
+
+3. Core Concepts
+- Exception: An event triggered during program execution that disrupts the normal flow of instructions.
+- EAFP Principle: 'Easier to Ask for Forgiveness than Permission'—idiomatic Python prefers attempting operations inside try-except blocks over pre-checking conditions (LBYL: 'Look Before You Leap').
+- Finally Block: A block guaranteed to execute regardless of whether an exception occurred, was caught, or was re-raised.
+- Module: A single .py file containing Python definitions, functions, and executable statements.
+- Package: A directory containing a collection of modules and an __init__.py file.
+- Module Search Path (sys.path): The ordered list of directories Python searches when resolving import statements.
+
+4. Detailed Explanation
+4.1 The Exception Handling Lifecycle
+1. try: Code that might raise an exception.
+2. except SpecificException as e: Catches matching exception types; handles error.
+3. else: Executes only if NO exceptions were raised in the try block.
+4. finally: Cleanup code that ALWAYS runs (closing files, releasing locks, closing sockets).
+
+4.2 The Exception Hierarchy
+- BaseException (Root)
+  - KeyboardInterrupt, SystemExit, GeneratorExit
+  - Exception (Standard application errors inherit from this)
+    - ArithmeticError (ZeroDivisionError, OverflowError)
+    - LookupError (IndexError, KeyError)
+    - ValueError
+    - TypeError
+    - OSError (FileNotFoundError, PermissionError, TimeoutError)
+
+4.3 Custom Exceptions
+Define custom domain exceptions by subclassing Exception:
+class ServiceUnavailableError(Exception):
+    def __init__(self, service_name: str, retry_after: int = 5):
+        super().__init__(f"Service '{service_name}' is unavailable. Retry after {retry_after}s.")
+        self.service_name = service_name
+        self.retry_after = retry_after
+
+4.4 Module Execution Guard (__name__ == '__main__')
+When a script is executed directly (python app.py), Python assigns __name__ = "__main__". When imported by another module (import app), __name__ = "app".
+
+5. Syntax
+5.1 Complete Try-Except-Else-Finally Structure
+try:
+    file = open("data.txt", "r")
+    content = file.read()
+except FileNotFoundError as err:
+    print(f"File error: {err}")
+else:
+    print(f"Read {len(content)} characters successfully.")
+finally:
+    print("Execution completed.")
+
+5.2 Package Directory Layout
+my_project/
+├── my_package/
+│   ├── __init__.py
+│   ├── core.py
+│   └── utils.py
+├── requirements.txt
+└── main.py
+
+6. Basic Examples
+Example 6.1: Catching Multiple Specific Exceptions
+def parse_integer_ratio(num_str: str, den_str: str) -> float | None:
+    try:
+        numerator = int(num_str)
+        denominator = int(den_str)
+        result = numerator / denominator
+    except ValueError as val_err:
+        print(f"[ValueError] Input must be valid integers: {val_err}")
+        return None
+    except ZeroDivisionError:
+        print("[ZeroDivisionError] Denominator cannot be zero.")
+        return None
+    else:
+        print(f"Calculated ratio: {result:.4f}")
+        return result
+    finally:
+        print("Calculation attempt finished.\n")
+
+parse_integer_ratio("10", "2")
+parse_integer_ratio("10", "0")
+parse_integer_ratio("ten", "2")
+
+7. Intermediate Examples
+Example 7.1: Custom Exception Hierarchy and Exception Chaining
+class DatabaseError(Exception):
+    pass
+
+class RecordNotFoundError(DatabaseError):
+    def __init__(self, table: str, record_id: int):
+        super().__init__(f"Record with ID {record_id} not found in table '{table}'.")
+        self.table = table
+        self.record_id = record_id
+
+def fetch_user_record(user_id: int) -> dict:
+    simulated_db = {101: {"name": "Marcus", "role": "Admin"}}
+    try:
+        return simulated_db[user_id]
+    except KeyError as raw_err:
+        # Exception chaining using 'from'
+        raise RecordNotFoundError("users", user_id) from raw_err
+
+try:
+    user = fetch_user_record(999)
+except RecordNotFoundError as e:
+    print(f"Caught Domain Exception: {e}")
+    print(f"Original underlying cause: {e.__cause__}")
+
+8. Advanced Examples
+Example 8.1: Clean Modular Structure and Entry Point
+def compute_metrics(data: list[float]) -> dict:
+    if not data:
+        raise ValueError("Cannot compute metrics on empty dataset.")
+    return {
+        "mean": sum(data) / len(data),
+        "min": min(data),
+        "max": max(data)
+    }
+
+def main():
+    print("--- Running Module Diagnostics ---")
+    sample_data = [12.5, 45.2, 88.0, 23.4]
+    results = compute_metrics(sample_data)
+    print(f"Calculated Metrics: {results}")
+
+if __name__ == "__main__":
+    main()
+
+9. Code Explanation
+In Example 7.1:
+- RecordNotFoundError inherits from DatabaseError, allowing callers to catch either specific errors or all database-related issues uniformly.
+- raise RecordNotFoundError(...) from raw_err explicitly chains the low-level KeyError into the high-level domain exception, preserving the full traceback for root-cause debugging.
+In Example 8.1:
+- The if __name__ == '__main__': pattern allows compute_metrics to be imported and reused by other modules without unintentionally executing the diagnostic main() routine.
+
+10. Practical Use Cases
+- API client error handling (mapping HTTP 404, 500 status codes to custom exceptions).
+- Database transaction rollback logic in web services.
+- Microservice configuration parsing and environment validation.
+
+11. Common Mistakes
+1. Using bare except: Catches KeyboardInterrupt and SystemExit, preventing users from terminating the program via Ctrl+C (always use except Exception:).
+2. Catching exceptions silently without logging or re-raising (except Exception: pass), swallowing critical bugs.
+3. Placing code that does not raise exceptions inside the try block (keep try blocks minimal; put success handling in else).
+4. Circular imports: Module A imports Module B while Module B imports Module A at top level.
+
+12. Edge Cases
+- Exception raised inside a finally block suppresses the original exception from the try block.
+- sys.exit() in a try block still triggers the finally block before exiting.
+
+13. Best Practices
+- Define a custom base exception class for your library or application.
+- Use the else clause to clearly separate code that might fail from code that runs on success.
+- Isolate virtual environments for every project: python -m venv .venv.
+- Always freeze dependencies: pip freeze > requirements.txt.
+
+14. Performance Considerations
+- Entering a try block in modern Python 3.11+ (Zero-cost exception handling) has zero runtime overhead when no exception is thrown; cost is incurred only when unwinding stack upon an exception.
+
+15. Comparison with Related Concepts
+- EAFP vs LBYL: EAFP (try-except) avoids race conditions (Time-of-Check to Time-of-Use / TOCTOU bugs) in file systems and multi-threaded environments compared to LBYL (if os.path.exists(...)).
+
+16. Debugging Tips
+- Use traceback.print_exc() to inspect full stack traces programmatically.
+- Print sys.path to diagnose ModuleNotFoundError during import resolution.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between except Exception: and a bare except:?
+   - except Exception: catches all standard application errors, but allows system-exiting exceptions like KeyboardInterrupt and SystemExit to pass through; bare except: catches everything indiscriminately.
+2. Why is if __name__ == '__main__': used in Python scripts?
+   - To ensure that setup or execution code only runs when the file is invoked directly as a script, and not when it is imported as a module into another file.
+3. What is the difference between a Python module and a package?
+   - A module is a single .py file; a package is a directory containing modules and an __init__.py file providing a shared namespace.
+
+18. Summary
+Exception handling and modular packaging are pillars of dependable Python software. Mastering structured error handling, custom domain exceptions, clean module imports, and virtual environments ensures maintainable, scalable, and crash-resilient systems.

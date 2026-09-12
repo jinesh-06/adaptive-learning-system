@@ -1,0 +1,215 @@
+COURSE: java
+TOPIC: exceptions
+LEVEL: intermediate
+SOURCE: java_exceptions.txt
+
+TITLE: Java Exception Handling: Checked vs Unchecked Exceptions, Try-With-Resources, and Best Practices
+
+1. Introduction
+Exception handling in Java provides a robust, object-oriented mechanism for intercepting runtime anomalies and maintaining normal application execution flow. Java partitions throwables into three fundamental branches deriving from `java.lang.Throwable`: **Errors** (catastrophic JVM-level failures), **Checked Exceptions** (recoverable compile-time checked errors deriving from `Exception`), and **Unchecked Exceptions** (runtime logic errors deriving from `RuntimeException`). Java provides structured keywords (`try`, `catch`, `finally`, `throw`, `throws`), multi-catch blocks, custom domain exceptions, and modern **try-with-resources** (`AutoCloseable`) for automated resource management. Understanding exception hierarchies, clean propagation, and defensive error design is crucial for enterprise Java reliability.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Understand the complete `Throwable` hierarchy (`Error`, `Exception`, `RuntimeException`).
+- Master the architectural difference between Checked and Unchecked (Runtime) exceptions.
+- Implement structured exception handling with `try`, `catch`, `finally`, and multi-catch (`catch (ExA | ExB e)`).
+- Declare thrown exceptions in method signatures using `throws` and signal errors using `throw`.
+- Utilize modern try-with-resources (`AutoCloseable`) for automatic file/socket/connection cleanup.
+- Design and implement custom business domain exceptions.
+- Apply exception chaining using `initCause()` and `new CustomException("msg", cause)`.
+- Avoid anti-patterns (swallowing exceptions, catching `Throwable`, empty catch blocks).
+
+3. Core Concepts
+- Throwable Hierarchy:
+  - `Error`: Serious hardware/JVM failures (e.g., `OutOfMemoryError`, `StackOverflowError`). Applications should not catch Errors.
+  - `Exception` (Checked): Conditions that a well-written application should anticipate and recover from (e.g., `IOException`, `SQLException`). Enforced at compile-time.
+  - `RuntimeException` (Unchecked): Programming logic bugs (e.g., `NullPointerException`, `IndexOutOfBoundsException`, `IllegalArgumentException`). Not checked at compile-time.
+- Try-With-Resources: Java 7+ construct ensuring that any resource implementing `java.lang.AutoCloseable` is closed automatically at block exit.
+- Multi-Catch Block: Consolidates handling of multiple unrelated exceptions in a single catch block (`catch (IOException | SQLException e)`).
+
+4. Detailed Explanation
+4.1 Checked vs Unchecked Philosophy
+- Checked Exceptions represent external environment failures outside program control (missing file, network drop). The compiler requires handling via `try-catch` or declaring `throws`.
+- Unchecked Exceptions represent internal code defects that should be fixed programmatically (null check, array bounds).
+
+4.2 Try-With-Resources Mechanics
+Any class implementing `AutoCloseable` can be managed automatically:
+try (BufferedReader br = new BufferedReader(new FileReader("data.txt"))) {
+    return br.readLine();
+} // br.close() is guaranteed to execute automatically
+
+4.3 Custom Exceptions
+Create custom domain exceptions by extending `Exception` (for checked) or `RuntimeException` (for unchecked):
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) { super(message); }
+    public ResourceNotFoundException(String message, Throwable cause) { super(message, cause); }
+}
+
+5. Syntax
+5.1 Try-Catch-Finally with Multi-Catch
+try {
+    // Risky operations
+} catch (IOException | SQLException e) {
+    logger.error("I/O or Database Failure", e);
+} finally {
+    // Cleanup code
+}
+
+5.2 Try-With-Resources
+try (FileInputStream fis = new FileInputStream("in.dat");
+     FileOutputStream fos = new FileOutputStream("out.dat")) {
+    fos.write(fis.readAllBytes());
+}
+
+6. Basic Examples
+Example 6.1: Basic Checked Exception Handling with Try-Catch-Finally
+package com.learning.exceptions;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+public class BasicExceptionHandling {
+    public static void readFileContents(String filePath) {
+        Scanner scanner = null;
+        try {
+            File file = new File(filePath);
+            scanner = new Scanner(file);
+            System.out.printf("--- Contents of %s ---%n", filePath);
+            while (scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
+            }
+        } catch (FileNotFoundException e) {
+            System.err.printf("[ERROR] Target file '%s' was not found: %s%n", filePath, e.getMessage());
+        } finally {
+            if (scanner != null) {
+                scanner.close();
+                System.out.println("[CLEANUP] Scanner stream closed successfully.");
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        readFileContents("non_existent_file.txt");
+    }
+}
+
+7. Intermediate Examples
+Example 7.1: Try-With-Resources and Multi-Catch
+package com.learning.exceptions;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class TryWithResourcesDemo {
+    public static int countValidNumericLines(String filename) {
+        int validCount = 0;
+
+        // Try-with-resources automatically closes BufferedReader
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                try {
+                    Double.parseDouble(line.trim());
+                    validCount++;
+                } catch (NumberFormatException nfe) {
+                    System.err.printf("Skipping non-numeric entry: '%s'%n", line);
+                }
+            }
+        } catch (IOException e) {
+            System.err.printf("[I/O Failure] Could not read file: %s%n", e.getMessage());
+        }
+
+        return validCount;
+    }
+
+    public static void main(String[] args) {
+        countValidNumericLines("metrics.csv");
+    }
+}
+
+8. Advanced Examples
+Example 8.1: Custom Business Exception Hierarchy and Exception Chaining
+package com.learning.exceptions;
+
+class PaymentGatewayException extends Exception {
+    private final String transactionId;
+
+    public PaymentGatewayException(String message, String transactionId, Throwable cause) {
+        super(String.format("[%s] %s", transactionId, message), cause);
+        this.transactionId = transactionId;
+    }
+
+    public String getTransactionId() { return transactionId; }
+}
+
+public class PaymentProcessor {
+    public static void processPayment(String txId, double amount) throws PaymentGatewayException {
+        try {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("Payment amount must be strictly positive.");
+            }
+            // Simulate payment gateway failure
+            throw new java.net.ConnectException("Connection timed out to Visa Network.");
+        } catch (java.net.ConnectException | IllegalArgumentException e) {
+            // Exception chaining: wraps underlying root cause into domain exception
+            throw new PaymentGatewayException("Payment gateway transaction rejected", txId, e);
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            processPayment("TX-998822", 150.00);
+        } catch (PaymentGatewayException e) {
+            System.err.println("Caught Domain Exception: " + e.getMessage());
+            System.err.println("Root Cause: " + e.getCause().getClass().getName() + " - " + e.getCause().getMessage());
+        }
+    }
+}
+
+9. Code Explanation
+In Example 7.1:
+- `try (BufferedReader reader = ...)` eliminates the `finally` block boilerplate, automatically invoking `reader.close()` upon normal completion or when an exception occurs.
+In Example 8.1:
+- `PaymentGatewayException` wraps the low-level `ConnectException` into a higher-level domain exception using `super(message, cause)`, preserving the root cause stack trace for logging and auditing.
+
+10. Practical Use Cases
+- REST API Global Exception Handlers (`@ControllerAdvice` in Spring Boot mapping exceptions to HTTP 400/404/500 JSON payloads).
+- Database connection lifecycle management and automatic rollback triggers.
+- File system ETL ingestion pipelines.
+
+11. Common Mistakes
+1. Catching `Exception` or `Throwable` broadly, accidentally intercepting unchecked bugs like `NullPointerException` or `OutOfMemoryError`.
+2. Swallowing exceptions: `catch (Exception e) {}` leaving zero diagnostic logs.
+3. Throwing generic `new Exception()`, forcing callers to catch raw base exceptions.
+4. Logging an exception and then re-throwing it (causes duplicate logs in caller layers).
+
+12. Edge Cases
+- Suppressed Exceptions: If both the `try` block and the automatic `close()` method throw exceptions in try-with-resources, the `close()` exception is attached to the primary exception as a Suppressed Exception (`e.getSuppressed()`).
+
+13. Best Practices
+- Prefer unchecked (Runtime) exceptions for general application logic to keep API signatures clean.
+- Always use try-with-resources when handling I/O streams, database connections, or socket channels.
+- Include actionable context messages and parameter values in exception messages.
+- Always preserve the root cause when wrapping exceptions (`throw new CustomException("msg", rootCause)`).
+
+14. Performance Considerations
+- Instantiating exceptions is computationally non-trivial because the JVM populates the full stack trace (`fillInStackTrace()`); avoid using exceptions for standard control flow branching.
+
+15. Comparison with Related Concepts
+- Java Checked Exceptions vs C++ / Python Exceptions: C++ and Python have only unchecked runtime exceptions; Java is unique in enforcing compile-time checked exceptions.
+
+16. Debugging Tips
+- Inspect nested causes using `e.getCause()` or print the complete stack trace via `e.printStackTrace()`.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between Checked and Unchecked Exceptions in Java?
+   - Checked exceptions (inheriting from `Exception` but not `RuntimeException`) are verified at compile-time, requiring explicit handling or declaration; Unchecked exceptions (inheriting from `RuntimeException`) represent programming errors and are not verified at compile-time.
+2. How does Try-With-Resources differ from a traditional Try-Catch-Finally block?
+   - Try-with-resources automatically closes all declared `AutoCloseable` resources in reverse order of declaration, cleanly handling suppressed exceptions without verbose nested `finally` blocks.
+3. Can a `finally` block execute if `System.exit(0)` is called in the `try` block?
+   - No, calling `System.exit()` halts the JVM immediately, bypassing any remaining `finally` blocks.
+
+18. Summary
+Exception handling in Java provides compile-time safety and runtime fault tolerance. Mastering checked vs unchecked exceptions, try-with-resources, custom domain exceptions, and exception chaining ensures clean, reliable, and enterprise-grade software.

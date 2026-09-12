@@ -1,0 +1,251 @@
+COURSE: c
+TOPIC: fundamentals
+LEVEL: beginner
+SOURCE: c_fundamentals.txt
+
+TITLE: C Fundamentals: Architecture, Compilation, Syntax, Types, and Operators
+
+1. Introduction
+The C programming language is a procedural, general-purpose programming language developed by Dennis Ritchie at Bell Labs between 1969 and 1973. Renowned for its efficiency, low-level memory manipulation capabilities, and minimal runtime overhead, C serves as the foundational language for modern operating systems (including Linux, macOS, and Windows kernels), embedded firmware, device drivers, system utilities, and runtime environments of higher-level languages like Python and Java. Understanding C fundamentals provides software engineers with an intimate mental model of hardware architecture, processor execution cycles, and memory management.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Understand the complete compilation lifecycle from source code to executable binary.
+- Master the anatomical structure of a C program, header files, and the entry point main().
+- Differentiate between keywords, identifiers, literals, variables, and constants.
+- Understand primitive data types (int, float, double, char, void), type modifiers (signed, unsigned, short, long), and memory representations.
+- Apply implicit type coercion and explicit type casting safely.
+- Utilize standard input and output streams using formatted I/O (printf, scanf) with precise format specifiers.
+- Master arithmetic, relational, logical, assignment, increment/decrement, bitwise, and conditional operators along with precedence and associativity rules.
+- Identify and avoid common beginner syntax, semantic, and undefined behavior pitfalls.
+
+3. Core Concepts
+- Compilation Pipeline: Preprocessing -> Compilation -> Assembly -> Linking.
+- Header Inclusion: Preprocessor directive #include inserting declarations from standard or user libraries.
+- The main() Entry Point: Standard signature int main(int argc, char *argv[]) or int main(void).
+- Identifiers and Reserved Keywords: 32 standard C89 keywords and naming conventions.
+- Data Representation: Fixed-width binary representations, two's complement for signed integers, IEEE 754 for floating points.
+- Operators and Expressions: Evaluation orders, short-circuit evaluation, side effects, and sequence points.
+
+4. Detailed Explanation
+4.1 The C Compilation Process
+The translation of human-readable C source code (.c) into machine-executable binary (.exe or ELF) progresses through four distinct stages:
+1. Preprocessing (cpp):
+   - Expands macros (#define).
+   - Inlines header files (#include).
+   - Strips comments (/* ... */ and //).
+   - Handles conditional compilation (#ifdef, #ifndef, #endif).
+   - Output: Preprocessed source (.i).
+2. Compilation (cc1):
+   - Performs lexical analysis, parsing, semantic analysis, and optimization.
+   - Translates preprocessed code into target assembly language instructions.
+   - Output: Assembly file (.s).
+3. Assembly (as):
+   - Converts assembly mnemonic instructions into relocatable machine code.
+   - Generates object files (.o or .obj) containing symbol tables.
+4. Linking (ld):
+   - Resolves external references, connects function calls to static or dynamic library code (like libc), and resolves symbols across multiple object files.
+   - Output: Final executable binary.
+
+4.2 Program Structure and main()
+Every standalone C program requires an entry function named main. In standard C99/C11, main must return an integer status code to the host environment (0 indicating successful execution, non-zero indicating an error code).
+
+4.3 Data Types and Type Modifiers
+C provides primary primitive types:
+- char: Exactly 1 byte (at least 8 bits), capable of holding a character code from the ASCII set.
+- int: Standard integer representation matching the host machine word size (typically 4 bytes on 32/64-bit systems).
+- float: Single-precision floating point (IEEE 754, typically 4 bytes, ~6-7 decimal digits precision).
+- double: Double-precision floating point (IEEE 754, typically 8 bytes, ~15-17 decimal digits precision).
+- void: Represents absence of value or untyped memory pointer.
+
+Type Modifiers:
+- signed / unsigned: Controls whether the most significant bit represents sign or magnitude.
+- short / long / long long: Adjusts the storage size and numerical range.
+
+4.4 Operators, Precedence, and Associativity
+- Arithmetic: +, -, *, /, % (modulus requires integer operands).
+- Relational: ==, !=, <, <=, >, >= (evaluates to integer 1 for true, 0 for false).
+- Logical: && (AND), || (OR), ! (NOT). Features short-circuit evaluation.
+- Bitwise: & (AND), | (OR), ^ (XOR), ~ (NOT), << (left shift), >> (right shift). Operates directly on bit patterns.
+- Assignment: =, +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=.
+- Increment/Decrement: Pre-increment (++x) modifies then evaluates; Post-increment (x++) evaluates then modifies.
+- Conditional / Ternary: condition ? expr1 : expr2.
+- sizeof: Compile-time operator returning size in bytes of a type or expression (type size_t).
+
+5. Syntax
+5.1 Basic Program Structure
+#include <stdio.h>
+
+int main(void) {
+    /* Statements */
+    return 0;
+}
+
+5.2 Formatted I/O Syntax
+printf("Format string with specifiers: %d, %f, %s", int_val, float_val, str_val);
+scanf("%d %f", &int_var, &float_var);
+
+Format Specifiers:
+- %d or %i : signed decimal integer
+- %u : unsigned decimal integer
+- %f : floating-point decimal
+- %lf : double floating-point decimal
+- %c : single character
+- %s : null-terminated string
+- %x / %X : hexadecimal integer
+- %p : pointer memory address
+- %zu : size_t integer
+
+6. Basic Examples
+Example 6.1: Hello World with Formatted Output
+#include <stdio.h>
+
+int main(void) {
+    int student_id = 101;
+    float gpa = 3.85f;
+    char grade = 'A';
+
+    printf("Student Record:\n");
+    printf("ID: %d | Grade: %c | GPA: %.2f\n", student_id, grade, gpa);
+    return 0;
+}
+
+Example 6.2: Basic Arithmetic and User Input
+#include <stdio.h>
+
+int main(void) {
+    int num1, num2;
+    printf("Enter two integers separated by space: ");
+    if (scanf("%d %d", &num1, &num2) == 2) {
+        printf("Sum: %d\n", num1 + num2);
+        printf("Difference: %d\n", num1 - num2);
+        printf("Product: %d\n", num1 * num2);
+        if (num2 != 0) {
+            printf("Quotient: %d, Remainder: %d\n", num1 / num2, num1 % num2);
+        } else {
+            printf("Division by zero is undefined.\n");
+        }
+    }
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Bitwise Manipulation and Masking
+#include <stdio.h>
+
+void print_binary(unsigned char num) {
+    for (int i = 7; i >= 0; i--) {
+        unsigned char bit = (num >> i) & 1;
+        printf("%u", bit);
+    }
+    printf("\n");
+}
+
+int main(void) {
+    unsigned char flags = 0b00000101; // Flags 0 and 2 set
+    printf("Initial flags: ");
+    print_binary(flags);
+
+    // Set bit 3
+    flags |= (1 << 3);
+    printf("After setting bit 3: ");
+    print_binary(flags);
+
+    // Clear bit 0
+    flags &= ~(1 << 0);
+    printf("After clearing bit 0: ");
+    print_binary(flags);
+
+    // Toggle bit 2
+    flags ^= (1 << 2);
+    printf("After toggling bit 2: ");
+    print_binary(flags);
+
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Type Conversions, Integer Promotion, and Floating Point Representation
+#include <stdio.h>
+#include <limits.h>
+
+int main(void) {
+    // Integer promotion demonstration
+    char a = 100;
+    char b = 27;
+    // a * b is promoted to int during calculation before narrowing
+    char c = (char)(a * b); // 2700 overflows signed 8-bit char (-128 to 127)
+    int correct_product = a * b;
+
+    printf("Narrowed char product: %d\n", c);
+    printf("Correct int product: %d\n", correct_product);
+
+    // Explicit casting for precision preservation
+    int sum = 17;
+    int count = 5;
+    double exact_average = (double)sum / count;
+    printf("Exact Average: %.4f\n", exact_average);
+
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- `(1 << n)` shifts the integer 1 left by n positions, generating a bitmask with only the n-th bit high.
+- Bitwise OR `flags |= mask` asserts the designated bit without mutating other bits.
+- Bitwise AND with inverted mask `flags &= ~mask` clears the targeted bit.
+- Bitwise XOR `flags ^= mask` inverts the current state of the bit.
+In Example 8.1:
+- Operands of type char or short undergo automatic integer promotion to int in arithmetic expressions.
+- Performing `sum / count` between two integers yields integer division (3), discarding the fractional component (0.4). Casting `(double)sum` coerces the numerator into a double, forcing floating-point division.
+
+10. Practical Use Cases
+- Microcontroller register configuration using bitmasks (GPIO pin setting/clearing).
+- High-throughput network packet header parsing.
+- Fast mathematical routines in graphics engines and digital signal processing (DSP).
+- Operating system system call wrappers.
+
+11. Common Mistakes
+1. Forgetting address-of operator (&) in scanf: `scanf("%d", num)` instead of `scanf("%d", &num)`. Causes memory write to an arbitrary address (Segmentation Fault).
+2. Integer division truncation: `float ratio = 1 / 2;` evaluates to `0.0f` because `1 / 2` evaluates as integer 0 before assignment.
+3. Uninitialized variables: Local automatic variables contain indeterminate stack garbage.
+4. Chained relational operators: `if (5 < x < 10)` parses as `(5 < x) < 10`, which compares boolean 0 or 1 with 10 (always true).
+5. Semicolon after if condition: `if (x == 5); { ... }` executes the block unconditionally.
+
+12. Edge Cases
+- Integer overflow with signed types leads to undefined behavior in C.
+- Division by zero or modulo by zero crashes the program with SIGFPE.
+- Floating-point inaccuracy: `0.1 + 0.2 != 0.3` due to binary base-2 floating-point representation.
+
+13. Best Practices
+- Always check the return value of `scanf` to ensure expected items were successfully matched.
+- Initialize all variables upon declaration.
+- Use explicit type casting when performing arithmetic across different precision types.
+- Use `<stdint.h>` exact-width integer types (`int32_t`, `uint8_t`, `uint64_t`) for portable system code.
+- Enable compiler warnings: `-Wall -Wextra -Wpedantic`.
+
+14. Performance Considerations
+- Prefix increment (`++i`) avoids creating temporary copies compared to postfix in complex expressions.
+- Bitwise shifts (`x << 1`, `x >> 1`) are optimized by compilers for power-of-two multiplication/division.
+- Match data structures to native CPU register word sizes for fastest memory access.
+
+15. Comparison with Related Concepts
+- C vs C++: C is strictly procedural with no classes, namespaces, or function overloading; C++ provides OOP and generic templates while maintaining C backward compatibility.
+- C vs Python: C is statically typed and compiled directly to machine code with manual memory control; Python is dynamically typed, interpreted/bytecode-executed, and garbage collected.
+
+16. Debugging Tips
+- Compile with debugging symbols enabled: `gcc -g -Wall main.c -o main`.
+- Use GDB (GNU Debugger): `gdb ./main`, `break main`, `run`, `print var`, `step`.
+- AddressSanitizer: Compile with `gcc -fsanitize=address -g main.c` to catch stack/heap corruption.
+
+17. Interview Questions and Concept Checks
+1. Explain the difference between `#include <stdio.h>` and `#include "my_header.h"`.
+   - `<...>` searches system standard library include paths; `"..."` searches the local working directory first before falling back to system paths.
+2. What is the difference between `i++` and `++i` in terms of evaluation and side effects?
+3. What is the output of `printf("%d", sizeof('a'))` in C vs C++?
+   - In C, character constants like `'a'` have type `int` (sizeof is typically 4). In C++, `'a'` has type `char` (sizeof is 1).
+4. What happens when a signed integer overflows in C according to the ISO standard?
+   - Signed integer overflow is Undefined Behavior (UB), allowing compiler optimizations to assume it never occurs.
+
+18. Summary
+C fundamentals form the basis of systems programming. Mastery of data types, memory representations, the 4-stage compilation pipeline, formatted I/O, and operator precedence enables programmers to write robust, high-performance software with zero abstraction penalty.

@@ -1,0 +1,193 @@
+COURSE: python
+TOPIC: fundamentals
+LEVEL: beginner
+SOURCE: python_fundamentals.txt
+
+TITLE: Python Fundamentals: Architecture, Dynamic Typing, Primitive Types, Operators, and Formatted I/O
+
+1. Introduction
+Python is a high-level, interpreted, dynamically-typed, and garbage-collected programming language created by Guido van Rossum and released in 1991. Designed with an emphasis on code readability, developer productivity, and expressive syntax, Python follows the guiding philosophy of the Zen of Python (PEP 20: "Explicit is better than implicit", "Simple is better than complex"). Under the hood, standard CPython compiles source code into portable bytecode (.pyc), which is executed by the CPython Virtual Machine. Python is universally adopted in artificial intelligence, machine learning, data engineering, web backends, scientific computing, and test automation.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Understand Python interpreter execution model, bytecode compilation, and the CPython VM.
+- Master Python syntax rules, statement termination, comments, and mandatory indentation.
+- Understand dynamic typing, object references, and the `id()` and `type()` built-in functions.
+- Master fundamental primitive types (`int`, `float`, `complex`, `bool`, `str`, `NoneType`).
+- Perform explicit type casting and understand implicit coercion rules.
+- Master arithmetic, relational, logical, assignment, identity (`is`), and membership (`in`) operators.
+- Format console output using modern f-strings, `.format()`, and string interpolation.
+- Capture and validate user input via `input()` with appropriate type conversions.
+- Diagnose and resolve common syntax errors (`SyntaxError`, `IndentationError`, `TypeError`, `NameError`).
+
+3. Core Concepts
+- Everything is an Object: In Python, all values—integers, strings, functions, classes—are first-class heap objects with identity, type, and value.
+- Dynamic Typing: Variables are untyped reference labels pointing to typed heap objects.
+- Significant Whitespace: Block scoping is defined strictly by indentation levels (standard 4 spaces), eliminating curly braces.
+- Object Identity vs Equality: `==` tests value equivalence; `is` tests object identity (exact memory address / reference matching).
+- Immutability of Primitives: Numbers (`int`, `float`), booleans, strings, and tuples cannot be modified in-place; mutations produce new objects.
+
+4. Detailed Explanation
+4.1 The Python Runtime & Execution Model
+1. Source Code (`.py`): Human-readable Python instructions.
+2. Bytecode Generation: CPython compiles source into platform-independent bytecode instructions (`__pycache__/*.pyc`).
+3. Virtual Machine (PVM): CPython VM interprets bytecode instructions in a continuous execution loop.
+
+4.2 Variables and Dynamic Typing
+In Python: `x = 10`
+- An integer object with value `10` is allocated in memory.
+- The name `x` is bound to that object in the local namespace dictionary.
+- Reassigning `x = "hello"` simply points the label `x` to a new string object.
+
+4.3 Built-in Primitive Data Types
+- `int`: Arbitrary-precision signed integers (unbounded size in Python 3).
+- `float`: Double-precision IEEE 754 floating point numbers.
+- `complex`: Complex numbers represented as `real + imag*1j`.
+- `bool`: Boolean subtype of `int` (`True` == 1, `False` == 0).
+- `str`: Immutable UTF-8 / Unicode text sequence.
+- `NoneType`: Singleton object `None` representing absence of value.
+
+4.4 Operators
+- Arithmetic: `+`, `-`, `*`, `/` (always float division), `//` (floor division), `%` (modulo), `**` (exponentiation).
+- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`.
+- Logical: `and`, `or`, `not` (features short-circuit evaluation).
+- Identity: `is`, `is not` (checks whether two references point to the same memory object).
+- Membership: `in`, `not in` (checks existence within a sequence or container).
+
+4.5 Formatted String Literals (F-Strings - PEP 498)
+Introduced in Python 3.6, f-strings evaluate expressions directly inline:
+`f"Result: {value:.2f}"`
+
+5. Syntax
+5.1 Basic Program and F-String Formatting
+# Python 3 Program Structure
+name = "Adaptive Learner"
+score = 98.456
+print(f"Student: {name:<20} | Score: {score:.2f}%")
+
+5.2 Type Inspection and Casting
+val_str = "42"
+val_int = int(val_str)
+print(type(val_int), val_int)
+
+6. Basic Examples
+Example 6.1: Input, Calculation, and Output
+def main():
+    try:
+        user_name = input("Enter your name: ").strip()
+        birth_year_str = input("Enter your birth year: ")
+        birth_year = int(birth_year_str)
+
+        current_year = 2026
+        age = current_year - birth_year
+
+        print(f"Hello, {user_name}! In {current_year}, you are {age} years old.")
+    except ValueError as e:
+        print(f"Error: Invalid integer input - {e}")
+
+if __name__ == "__main__":
+    main()
+
+Example 6.2: Identity vs Equality
+def test_identity():
+    # Small integer caching (-5 to 256)
+    a = 250
+    b = 250
+    print(f"a == b: {a == b}") # True (values match)
+    print(f"a is b: {a is b}") # True (same cached object in CPython)
+
+    # Lists are mutable, separate heap allocations
+    list1 = [1, 2, 3]
+    list2 = [1, 2, 3]
+    print(f"list1 == list2: {list1 == list2}") # True (contents match)
+    print(f"list1 is list2: {list1 is list2}") # False (distinct heap objects)
+
+test_identity()
+
+7. Intermediate Examples
+Example 7.1: Advanced F-String Specifiers and Bitwise Operations
+def demonstrate_formatting():
+    number = 42
+    ratio = 0.85672
+
+    print(f"Decimal:      {number:d}")
+    print(f"Hexadecimal:  {number:#x}")
+    print(f"Binary:       {number:#010b}")
+    print(f"Percentage:   {ratio:.1%}")
+    print(f"Scientific:   {ratio:.3e}")
+
+    # Bitwise operations
+    flags = 0b00000101
+    mask = 1 << 3 # Bit 3
+    flags_set = flags | mask
+    print(f"Original: {flags:08b} -> Bit 3 set: {flags_set:08b}")
+
+demonstrate_formatting()
+
+8. Advanced Examples
+Example 8.1: Dynamic Introspection and Namespace Inspection
+def inspect_runtime_objects():
+    sample_int = 1000
+    sample_str = "RAG Module"
+
+    print("--- Object Introspection ---")
+    print(f"sample_int -> ID: {id(sample_int)} | Type: {type(sample_int)} | Size: {sample_int.__sizeof__()} bytes")
+    print(f"sample_str -> ID: {id(sample_str)} | Type: {type(sample_str)} | Size: {sample_str.__sizeof__()} bytes")
+
+    # Inspecting built-in attributes
+    print(f"Integer methods count: {len(dir(sample_int))}")
+    print(f"Is integer instance of int: {isinstance(sample_int, (int, float))}")
+
+inspect_runtime_objects()
+
+9. Code Explanation
+In Example 6.2:
+- CPython maintains an internal global cache for small integers between `-5` and `256`. Therefore, `a is b` evaluates to `True` for 250.
+- For `list1` and `list2`, two separate list objects are allocated on the heap; thus `list1 == list2` is `True` because their elements match, but `list1 is list2` is `False` because their memory addresses differ (`id(list1) != id(list2)`).
+In Example 7.1:
+- F-string format specifiers (`:#010b`, `:.1%`, `:.3e`) allow formatting integers into padded binary, percentages, and scientific notation natively.
+
+10. Practical Use Cases
+- Command-line utility scripts and automated tooling.
+- Data ingestion preprocessing and string normalization.
+- Configuration loading and environment variable parsing.
+
+11. Common Mistakes
+1. Mixing tabs and spaces for indentation, leading to `TabError` or `IndentationError`.
+2. Using `is` instead of `==` for string or large number value comparisons: `if name is "Alice"` is an anti-pattern.
+3. Forgetting that `input()` always returns a `str`, leading to `TypeError: can't multiply sequence by non-int of type 'float'`.
+4. Shadowing built-in names: `list = [1, 2, 3]` or `str = "text"`, breaking standard functions `list()` and `str()`.
+
+12. Edge Cases
+- Float precision representation: `0.1 + 0.2 != 0.3` (evaluates to `0.30000000000000004`). Use `math.isclose()` or `decimal.Decimal` for financial math.
+- Division by zero raises `ZeroDivisionError`.
+- Large integer exponentiation (`2 ** 100000`) consumes memory and CPU time without throwing overflow errors.
+
+13. Best Practices
+- Adhere to PEP 8 style guide: use 4 spaces per indentation level, `snake_case` for variables and functions.
+- Always use f-strings for string interpolation.
+- Compare singletons like `None` using identity operator: `if var is None:`.
+- Use explicit type casting wrapped in `try-except ValueError` blocks when parsing external user input.
+
+14. Performance Considerations
+- String concatenation with `+` in loops creates $O(N^2)$ temporary string allocations; use `''.join(list_of_strings)` for $O(N)$ speed.
+- Local variable lookups in Python bytecode are faster (`LOAD_FAST`) than global variable lookups (`LOAD_GLOBAL`).
+
+15. Comparison with Related Concepts
+- Python vs C: Python is dynamically typed, interpreted/bytecode-executed, and manages memory automatically via garbage collection; C is statically compiled with direct hardware memory management.
+- Python vs Java: Python uses significant whitespace and duck typing; Java requires strict class encapsulation and explicit static type declarations.
+
+16. Debugging Tips
+- Use the built-in debugger: `breakpoint()` (or `python -m pdb script.py`).
+- Inspect variables interactively using `type()`, `id()`, and `dir()`.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between `==` and `is` in Python?
+   - `==` checks for value equality by calling `__eq__()`; `is` checks for object identity (whether both variables point to the exact same memory address).
+2. Why are strings and integers immutable in Python?
+   - Immutability ensures thread safety, allows objects to be safely cached (e.g., small integer caching), and enables objects to produce stable hash codes for use as dictionary keys or set elements.
+3. What is the Global Interpreter Lock (GIL) in CPython?
+   - A mutex that prevents multiple native threads from executing Python bytecode simultaneously, ensuring thread-safe memory management within the CPython runtime.
+
+18. Summary
+Python fundamentals blend high-level expressiveness with clean readability. Mastering dynamic typing, object identity, primitive data representations, operators, and formatted I/O provides the foundation for advanced Python engineering and data-driven systems.

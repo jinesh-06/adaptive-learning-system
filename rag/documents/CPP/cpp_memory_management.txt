@@ -1,0 +1,246 @@
+COURSE: cpp
+TOPIC: memory_management
+LEVEL: advanced
+SOURCE: cpp_memory_management.txt
+
+TITLE: C++ Memory Management: RAII, Smart Pointers, Move Semantics, and Ownership
+
+1. Introduction
+Memory management in C++ represents a major evolution from raw pointer arithmetic to automated, deterministic, and exception-safe resource management. At the heart of modern C++ memory architecture is **RAII (Resource Acquisition Is Initialization)**, which ties resource lifetimes (heap memory, file handles, sockets, mutexes) directly to object scopes. Modern C++ (C++11 and beyond) introduces smart pointers (`std::unique_ptr`, `std::shared_ptr`, `std::weak_ptr`), rvalue references (`&&`), and move semantics (`std::move`). These tools eliminate manual calls to `delete`, prevent memory leaks, eliminate dangling pointers, and enable zero-copy resource transfers.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master the RAII (Resource Acquisition Is Initialization) design pattern.
+- Compare raw `new`/`delete` and `new[]`/`delete[]` with modern smart pointers.
+- Implement exclusive ownership using `std::unique_ptr` and `std::make_unique`.
+- Implement shared reference-counted ownership using `std::shared_ptr` and `std::make_shared`.
+- Break reference cycles and prevent memory leaks using `std::weak_ptr`.
+- Understand lvalues, rvalues, rvalue references (`Type &&`), and `std::move`.
+- Implement Move Constructors and Move Assignment Operators for zero-copy ownership transfer.
+- Apply the Rule of Zero, Rule of Three, and Rule of Five in resource-managing classes.
+
+3. Core Concepts
+- RAII: Resources are acquired in a constructor and automatically released in the destructor when the object goes out of scope.
+- `std::unique_ptr`: Lightweight smart pointer enforcing single exclusive ownership (cannot be copied, only moved).
+- `std::shared_ptr`: Smart pointer managing shared ownership via an atomic reference counter control block.
+- `std::weak_ptr`: Non-owning observer pointing to a `std::shared_ptr`-managed object without incrementing the reference count.
+- Move Semantics: "Stealing" resources from temporary or dying objects (rvalues) instead of performing deep memory duplication.
+- `std::move`: Unconditional static cast converting an lvalue into an rvalue to enable move construction/assignment.
+
+4. Detailed Explanation
+4.1 Smart Pointers (`<memory>`)
+1. `std::unique_ptr<T>`:
+   - Zero runtime overhead (same size as raw pointer).
+   - Prevents copy construction: `std::unique_ptr<int> p2 = p1;` (Compile Error).
+   - Ownership transferred via: `std::unique_ptr<int> p2 = std::move(p1);` (Leaves `p1` null).
+2. `std::shared_ptr<T>`:
+   - Allocates a control block storing reference count and weak count.
+   - Destroys managed object when reference count reaches 0.
+3. `std::weak_ptr<T>`:
+   - Used to break circular references (e.g., Parent -> Child -> Parent).
+   - Must be converted to `std::shared_ptr` via `.lock()` before dereferencing.
+
+4.2 Move Semantics and Rvalue References
+- Lvalue: An expression with an identifiable memory address (e.g., named variable `x`).
+- Rvalue: A temporary value or literal without a persistent memory address (e.g., `10 + 20`, `std::string("temp")`).
+- Rvalue reference (`T&&`): Binds to rvalues, allowing the constructor to take ownership of heap buffers directly.
+
+4.3 The Rule of Five
+If a class manually manages resources and defines any of the following, it should typically define all five:
+1. Destructor `~Class()`
+2. Copy Constructor `Class(const Class&)`
+3. Copy Assignment Operator `Class& operator=(const Class&)`
+4. Move Constructor `Class(Class&&) noexcept`
+5. Move Assignment Operator `Class& operator=(Class&&) noexcept`
+
+5. Syntax
+5.1 Smart Pointer Creation
+#include <memory>
+
+auto u_ptr = std::make_unique<int>(42);
+auto s_ptr = std::make_shared<std::string>("Shared Resource");
+std::weak_ptr<std::string> w_ptr = s_ptr;
+
+5.2 Move Constructor Signature
+class Buffer {
+    char *data;
+    size_t size;
+public:
+    Buffer(Buffer &&other) noexcept : data(other.data), size(other.size) {
+        other.data = nullptr;
+        other.size = 0;
+    }
+};
+
+6. Basic Examples
+Example 6.1: std::unique_ptr and std::make_unique
+#include <iostream>
+#include <memory>
+
+class Task {
+private:
+    int task_id;
+public:
+    Task(int id) : task_id(id) { std::cout << "Task " << task_id << " Created.
+"; }
+    ~Task() { std::cout << "Task " << task_id << " Destroyed.
+"; }
+    void execute() const { std::cout << "Executing Task " << task_id << "
+"; }
+};
+
+int main() {
+    std::cout << "Entering Scope:
+";
+    {
+        std::unique_ptr<Task> task1 = std::make_unique<Task>(101);
+        task1->execute();
+        // Ownership transfer
+        std::unique_ptr<Task> task2 = std::move(task1);
+        if (!task1) {
+            std::cout << "task1 is now NULL after std::move
+";
+        }
+        task2->execute();
+    } // task2 leaves scope here -> Task 101 automatically destroyed
+    std::cout << "Exited Scope.
+";
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Circular Reference Leak and Weak Pointer Resolution
+#include <iostream>
+#include <memory>
+
+struct Node {
+    int value;
+    std::shared_ptr<Node> next;
+    std::weak_ptr<Node> prev; // Using weak_ptr prevents circular reference leak
+
+    Node(int val) : value(val) { std::cout << "Node " << value << " Created
+"; }
+    ~Node() { std::cout << "Node " << value << " Destroyed
+"; }
+};
+
+int main() {
+    {
+        auto nodeA = std::make_shared<Node>(1);
+        auto nodeB = std::make_shared<Node>(2);
+
+        nodeA->next = nodeB;
+        nodeB->prev = nodeA; // Non-owning weak reference
+
+        std::cout << "nodeA use_count: " << nodeA.use_count() << "
+"; // 1
+        std::cout << "nodeB use_count: " << nodeB.use_count() << "
+"; // 2
+    } // Both nodes correctly destroyed
+    std::cout << "Scope exited successfully.
+";
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Full Move Semantics Implementation for Dynamic Memory Buffer
+#include <iostream>
+#include <utility>
+
+class MemoryBuffer {
+private:
+    int *data;
+    size_t size;
+
+public:
+    // Parameterized Constructor
+    MemoryBuffer(size_t n) : size(n), data(new int[n]) {
+        std::cout << "Allocated buffer of size " << size << "
+";
+    }
+
+    // Destructor
+    ~MemoryBuffer() {
+        delete[] data;
+        std::cout << "Buffer deallocated.
+";
+    }
+
+    // Move Constructor (Zero-copy transfer)
+    MemoryBuffer(MemoryBuffer &&other) noexcept : data(other.data), size(other.size) {
+        other.data = nullptr;
+        other.size = 0;
+        std::cout << "Move Constructor: Resource stolen.
+";
+    }
+
+    // Move Assignment Operator
+    MemoryBuffer& operator=(MemoryBuffer &&other) noexcept {
+        if (this != &other) {
+            delete[] data; // Free existing resource
+            data = other.data;
+            size = other.size;
+            other.data = nullptr;
+            other.size = 0;
+            std::cout << "Move Assignment: Resource transferred.
+";
+        }
+        return *this;
+    }
+
+    // Delete copy operations to enforce unique ownership
+    MemoryBuffer(const MemoryBuffer&) = delete;
+    MemoryBuffer& operator=(const MemoryBuffer&) = delete;
+};
+
+int main() {
+    MemoryBuffer buf1(1000000);
+    MemoryBuffer buf2 = std::move(buf1); // Move constructor invoked
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- If `prev` were a `std::shared_ptr`, `nodeA` and `nodeB` would each hold a reference to the other, keeping reference counts $\ge 1$ forever and causing a memory leak. Using `std::weak_ptr` breaks the cycle.
+In Example 8.1:
+- The Move Constructor simply transfers the raw pointer `data = other.data` and resets `other.data = nullptr` in $O(1)$ time, avoiding copying 1,000,000 integers.
+
+10. Practical Use Cases
+- High-performance asset management in game engines (textures, audio streams).
+- Network connection and socket wrappers ensuring automatic closure on disconnect.
+- Thread-safe shared caching systems.
+
+11. Common Mistakes
+1. Creating multiple independent `std::shared_ptr` instances from the same raw pointer (`std::shared_ptr<T>(raw_ptr)` called twice), creating two conflicting control blocks (double free).
+2. Using `std::move` on objects you still intend to read or use later.
+3. Forgetting `noexcept` on move constructors, causing STL containers like `std::vector` to fall back to slow copy constructors during resizing.
+
+12. Edge Cases
+- Dereferencing an expired `std::weak_ptr` without checking `w_ptr.lock()`.
+- Passing raw `this` pointer to a `std::shared_ptr` (use `std::enable_shared_from_this`).
+
+13. Best Practices
+- Prefer `std::make_unique` and `std::make_shared` over raw `new` expressions.
+- Adhere to the Rule of Zero: let standard smart pointers and containers manage resources automatically.
+- Pass smart pointers by `const std::unique_ptr<T>&` or `std::shared_ptr<T>` only when ownership semantics are involved; otherwise pass raw reference `T&`.
+
+14. Performance Considerations
+- `std::make_shared` allocates the object and control block in a single contiguous heap allocation, improving cache locality and halving allocator overhead.
+
+15. Comparison with Related Concepts
+- `std::unique_ptr` vs `std::shared_ptr`: `unique_ptr` has zero memory overhead and no atomic operations; `shared_ptr` requires a 16-byte footprint (pointer + control block) and atomic reference counting.
+
+16. Debugging Tips
+- Valgrind Memcheck verifies that RAII classes cleanly deallocate all memory.
+- Inspect `.use_count()` on shared pointers during debugging to identify unintended references.
+
+17. Interview Questions and Concept Checks
+1. What is RAII and why is it crucial for exception safety in C++?
+   - RAII ensures resources are released in destructors when an exception unwinds the stack, guaranteeing no resource leaks occur even during runtime failures.
+2. What happens when an object is moved via `std::move`?
+   - The object's internal resource pointers are transferred to the destination object, and the source object is left in a valid but unspecified (usually empty) state.
+3. How does `std::weak_ptr` prevent memory leaks in cyclic data structures?
+   - It references a shared object without incrementing its reference count, allowing the reference count to reach zero and free the memory when all `shared_ptr` owners go out of scope.
+
+18. Summary
+Modern C++ memory management combines RAII, smart pointers, and move semantics to achieve total memory safety, zero-copy efficiency, and deterministic destruction without garbage collection pauses.

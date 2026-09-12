@@ -1,0 +1,203 @@
+COURSE: python
+TOPIC: control_flow
+LEVEL: beginner
+SOURCE: python_control_flow.txt
+
+TITLE: Python Control Flow: Conditional Branching, While and For Loops, Comprehensions, Enumerate, and Zip
+
+1. Introduction
+Control flow structures determine the order of execution within a Python script or application. Python provides clean, readable syntax for decision making (`if`, `elif`, `else`), iteration (`while`, `for`), sequence manipulation (`range`, `enumerate`, `zip`), and jump control statements (`break`, `continue`, `pass`, `return`). Unlike many languages with C-style index-counter loops, Python's `for` loop is fundamentally an iterator loop (for-each) that traverses iterable objects (lists, tuples, strings, dictionaries, generators) natively. Understanding control flow constructs enables software developers to build responsive algorithms, data processing pipelines, and deterministic state logic.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Implement conditional branching using `if`, `elif`, `else`, and nested conditions.
+- Utilize the ternary conditional expression (`x if condition else y`).
+- Understand truthy and falsy values in Python (empty collections, zero, `None`).
+- Master `while` loops and the optional `while-else` construct.
+- Master `for` loops over iterables and utilize the `for-else` construct.
+- Apply helper functions: `range()`, `enumerate()`, `zip()`, `reversed()`, `sorted()`.
+- Control loop execution flow using `break`, `continue`, and `pass`.
+- Prevent infinite loops and optimize loop traversal patterns.
+
+3. Core Concepts
+- Truthiness: In Python, `0`, `0.0`, `""`, `[]`, `()`, `{}`, `set()`, and `None` evaluate to `False` in boolean contexts; all other objects evaluate to `True`.
+- Iterator Protocol: Python `for` loops call `iter(obj)` and repeatedly invoke `next()` until `StopIteration` is raised.
+- Loop `else` Clause: Executes only if the loop completes normally without encountering a `break` statement.
+- `enumerate(iterable, start=0)`: Yields pairs `(index, item)` during iteration.
+- `zip(*iterables)`: Aggregates elements from multiple iterables in lockstep until the shortest iterable is exhausted.
+
+4. Detailed Explanation
+4.1 Conditional Statements
+Syntax:
+if condition_a:
+    # block A
+elif condition_b:
+    # block B
+else:
+    # block C
+
+4.2 Conditional Expressions (Ternary Operator)
+`status = "Adult" if age >= 18 else "Minor"`
+
+4.3 While Loops
+Repeats while condition remains truthy:
+while count > 0:
+    count -= 1
+else:
+    print("Countdown complete")
+
+4.4 For Loops and Iterables
+Iterates directly over sequence elements:
+for item in sequence:
+    process(item)
+
+4.5 Useful Iteration Built-ins
+- `range(start, stop[, step])`: Generates arithmetic progressions lazily without allocating full memory lists.
+- `enumerate(collection)`: Provides running integer index alongside items.
+- `zip(list_a, list_b)`: Pairs elements: `[(a0, b0), (a1, b1), ...]`.
+
+5. Syntax
+5.1 If-Elif-Else and Ternary
+if score >= 90:
+    grade = 'A'
+elif score >= 80:
+    grade = 'B'
+else:
+    grade = 'C'
+
+category = "High" if score >= 85 else "Standard"
+
+5.2 For Loop with Enumerate and Zip
+for idx, item in enumerate(items, start=1):
+    print(f"{idx}. {item}")
+
+for name, score in zip(names, scores):
+    print(f"{name}: {score}")
+
+6. Basic Examples
+Example 6.1: Number Classification and Ternary Formatting
+def classify_number(n: int) -> str:
+    parity = "even" if n % 2 == 0 else "odd"
+    
+    if n > 0:
+        sign = "positive"
+    elif n < 0:
+        sign = "negative"
+    else:
+        return "The number is zero."
+        
+    return f"{n} is a {sign} {parity} integer."
+
+print(classify_number(14))
+print(classify_number(-7))
+print(classify_number(0))
+
+Example 6.2: While Loop Input Validation
+def get_positive_integer():
+    while True:
+        raw = input("Enter a positive integer: ")
+        if raw.isdigit() and int(raw) > 0:
+            return int(raw)
+        print("Invalid input. Please try again.")
+
+# val = get_positive_integer()
+
+7. Intermediate Examples
+Example 7.1: Parallel Iteration with Zip and Enumerate
+def process_student_records():
+    names = ["Alice", "Bob", "Charlie", "Diana"]
+    midterm_scores = [88, 92, 79, 95]
+    final_scores = [94, 89, 85, 98]
+
+    print("--- Student Grade Ledger ---")
+    for rank, (name, mid, fin) in enumerate(zip(names, midterm_scores, final_scores), start=1):
+        avg = (mid + fin) / 2.0
+        status = "Honors" if avg >= 90 else "Pass"
+        print(f"Rank #{rank}: {name:<10} | Mid: {mid} | Fin: {fin} | Avg: {avg:.1f} ({status})")
+
+process_student_records()
+
+Example 7.2: For-Else Prime Number Search
+def find_first_prime(numbers: list[int]) -> int | None:
+    for num in numbers:
+        if num < 2:
+            continue
+        for factor in range(2, int(num ** 0.5) + 1):
+            if num % factor == 0:
+                break # Not prime; break inner loop
+        else:
+            # Inner loop completed without break -> num is prime
+            print(f"Found prime number: {num}")
+            return num
+    print("No prime numbers found in collection.")
+    return None
+
+find_first_prime([4, 6, 8, 9, 11, 15])
+
+8. Advanced Examples
+Example 8.1: Matrix Transposition and State Machine
+def transpose_matrix(matrix: list[list[int]]) -> list[list[int]]:
+    # Transposing matrix using zip unpacking idiom
+    transposed = [list(col) for col in zip(*matrix)]
+    return transposed
+
+original_matrix = [
+    [1, 2, 3],
+    [4, 5, 6]
+]
+transposed_matrix = transpose_matrix(original_matrix)
+
+print("Original:")
+for r in original_matrix: print(r)
+print("Transposed:")
+for r in transposed_matrix: print(r)
+
+9. Code Explanation
+In Example 7.2:
+- The inner `for factor in range(...)` loop contains an `else:` block.
+- In Python, the `else` attached to a `for` loop executes ONLY if the loop completes all iterations without encountering a `break`. If a factor divides `num`, `break` executes, skipping the `else` block.
+In Example 8.1:
+- `zip(*matrix)` unpacks the rows `matrix[0]` and `matrix[1]` as separate arguments into `zip`, pairing matching column elements together in $O(M \times N)$ time.
+
+10. Practical Use Cases
+- User authentication and retry loops with exponential backoff.
+- Data alignment from multiple database columns or CSV streams using `zip`.
+- Searching datasets with `for-else` constructs to handle "item not found" conditions cleanly.
+
+11. Common Mistakes
+1. Modifying a list while iterating over it with a `for` loop (causes skipped elements due to shifting indices).
+2. Forgetting that `range(start, stop)` is exclusive of `stop` (`range(1, 5)` yields 1, 2, 3, 4).
+3. Misunderstanding `for-else`: expecting `else` to run when the condition is false, rather than when no `break` occurred.
+4. Using `zip` on sequences of unequal length without realizing that `zip` silently truncates to the shortest sequence (use `itertools.zip_longest` if truncation is undesirable).
+
+12. Edge Cases
+- Iterating over an empty sequence: `for` loop does not execute, but its `else` block runs immediately.
+- Passing step=0 to `range()` raises `ValueError: range() arg 3 must not be zero`.
+
+13. Best Practices
+- Prefer `for item in collection:` over indexed loops `for i in range(len(collection)):`.
+- Use `enumerate()` whenever both the index and the item are needed.
+- Keep loop bodies concise; refactor complex nested logic into helper functions.
+- Use `pass` as an explicit placeholder for empty blocks during structural prototyping.
+
+14. Performance Considerations
+- `range()` in Python 3 is a lazy sequence object generating integers on-demand in $O(1)$ memory.
+- List comprehensions and generator expressions execute in optimized C bytecode, running noticeably faster than manual `.append()` inside `for` loops.
+
+15. Comparison with Related Concepts
+- Python `for` vs C `for`: C `for` loops are index-controlled step loops; Python `for` loops are iterator-driven for-each loops operating over abstract iterable protocols.
+
+16. Debugging Tips
+- Trace loop variables using Python's `enumerate()` and logging statements.
+- Use `break` with defensive counter guards to prevent runaway `while` loops during development.
+
+17. Interview Questions and Concept Checks
+1. How does the `else` clause in a Python `for` loop differ from an `else` in an `if` statement?
+   - In a `for` loop, the `else` block executes only when the loop completes all iterations normally without hitting a `break` statement.
+2. What is the difference between `range(10)` and `list(range(10))` in terms of memory?
+   - `range(10)` creates a lazy generator-like object consuming $O(1)$ constant memory; `list(range(10))` instantiates all 10 integer objects in an $O(N)$ heap list.
+3. How do you safely iterate over a list while mutating it?
+   - Iterate over a shallow copy of the list: `for item in my_list.copy():` or construct a new filtered list using a comprehension.
+
+18. Summary
+Python control flow combines readable syntax with expressive iteration utilities. Mastering branching, iterables, `enumerate`, `zip`, and loop control ensures clean, idiomatic, and bug-free Python software.

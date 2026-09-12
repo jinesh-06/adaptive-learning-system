@@ -1,0 +1,259 @@
+COURSE: cpp
+TOPIC: oop
+LEVEL: intermediate
+SOURCE: cpp_oop.txt
+
+TITLE: C++ Object-Oriented Programming: Classes, Objects, Constructors, Encapsulation, Operator Overloading, and Composition
+
+1. Introduction
+Object-Oriented Programming (OOP) is a foundational programming paradigm in C++ that structures software around self-contained entities called objects. Objects encapsulate data (attributes) and executable functions (methods) that operate upon that data. C++ classes provide fine-grained control over access specifiers (`public`, `private`, `protected`), lifecycle management via constructors and destructors, explicit initialization lists, operator overloading, `friend` declarations, and object composition. Understanding OOP principles enables software engineers to model complex domain logic, build robust abstractions, and enforce strong data integrity.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Define C++ classes and instantiate stack and heap objects.
+- Master access specifiers (`public`, `private`, `protected`) for encapsulation.
+- Implement default, parameterized, copy, and move constructors alongside destructors.
+- Utilize member initializer lists to initialize `const` and reference members correctly.
+- Understand the implicit `this` pointer in non-static member functions.
+- Declare and utilize `static` member variables and static member functions.
+- Apply `friend` functions and friend classes for controlled external access.
+- Overload unary and binary operators (e.g., `+`, `==`, `<<`, `>>`, `=`).
+- Model object relationships through Composition (has-a) and Aggregation (uses-a).
+
+3. Core Concepts
+- Class vs Object: A class is a user-defined blueprint; an object is an instantiated memory instance of that blueprint.
+- Encapsulation: Hiding internal state representation and restricting direct external mutation through getter and setter interfaces.
+- Constructor / Destructor Lifecycle: Automated initialization upon object creation and deterministic resource cleanup upon object destruction (RAII).
+- Member Initializer List: Efficiently initializes class data members before entering the constructor body.
+- Operator Overloading: Giving custom types natural arithmetic, relational, and stream syntax.
+- Composition: Building complex types by embedding simpler objects as member attributes ("has-a" relationship).
+
+4. Detailed Explanation
+4.1 Class Structure and Access Modifiers
+- `private`: Accessible only by member functions and friend classes/functions. Default for `class`.
+- `public`: Accessible from any external code. Default for `struct`.
+- `protected`: Accessible by member functions, friends, and derived classes.
+
+4.2 Constructor Types
+- Default Constructor: `ClassName()` initializes objects when no arguments are supplied.
+- Parameterized Constructor: `ClassName(args...)` initializes objects with custom initial values.
+- Copy Constructor: `ClassName(const ClassName &other)` creates a deep copy of an existing instance.
+- Move Constructor (C++11): `ClassName(ClassName &&other) noexcept` transfers ownership of resources without copying.
+- Destructor: `~ClassName()` executes automatically when the object leaves its scope.
+
+4.3 The `this` Pointer
+Inside any non-static member function, `this` is a pointer pointing to the invoking object instance (`this->attribute`).
+
+4.4 Static Members
+- `static` variables: Shared across all instances of the class; initialized once in file scope.
+- `static` member functions: Can be called without an instance (`ClassName::func()`); cannot access non-static attributes.
+
+4.5 Operator Overloading
+Allows custom objects to interact with standard operators (`+`, `-`, `*`, `==`, `<<`):
+- Stream insertion operator must be overloaded as a non-member friend function:
+  `std::ostream& operator<<(std::ostream &os, const MyClass &obj);`
+
+5. Syntax
+5.1 Class Definition with Member Initializer List
+class Rectangle {
+private:
+    double width;
+    double height;
+
+public:
+    Rectangle(double w, double h) : width(w), height(h) {}
+    double get_area() const { return width * height; }
+};
+
+5.2 Operator Overloading
+class Complex {
+public:
+    double real, imag;
+    Complex(double r = 0, double i = 0) : real(r), imag(i) {}
+    
+    Complex operator+(const Complex &other) const {
+        return Complex(real + other.real, imag + other.imag);
+    }
+};
+
+6. Basic Examples
+Example 6.1: Encapsulation with BankAccount Class
+#include <iostream>
+#include <string>
+
+class BankAccount {
+private:
+    std::string account_number;
+    double balance;
+
+public:
+    BankAccount(const std::string &acc_num, double initial_balance)
+        : account_number(acc_num), balance(initial_balance >= 0 ? initial_balance : 0.0) {}
+
+    void deposit(double amount) {
+        if (amount > 0) {
+            balance += amount;
+            std::cout << "Deposited $" << amount << ". New balance: $" << balance << "
+";
+        }
+    }
+
+    bool withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            std::cout << "Withdrew $" << amount << ". Remaining balance: $" << balance << "
+";
+            return true;
+        }
+        std::cout << "Withdrawal of $" << amount << " failed. Insufficient funds.
+";
+        return false;
+    }
+
+    double get_balance() const { return balance; }
+};
+
+int main() {
+    BankAccount account("ACCT-90210", 500.0);
+    account.deposit(250.0);
+    account.withdraw(100.0);
+    account.withdraw(1000.0);
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Copy Constructor and Deep Copying
+#include <iostream>
+#include <cstring>
+
+class DynamicString {
+private:
+    char *buffer;
+    size_t length;
+
+public:
+    // Parameterized constructor
+    DynamicString(const char *str = "") {
+        length = std::strlen(str);
+        buffer = new char[length + 1];
+        std::strcpy(buffer, str);
+    }
+
+    // Copy Constructor (Deep Copy)
+    DynamicString(const DynamicString &other) {
+        length = other.length;
+        buffer = new char[length + 1];
+        std::strcpy(buffer, other.buffer);
+    }
+
+    // Destructor
+    ~DynamicString() {
+        delete[] buffer;
+    }
+
+    void display() const {
+        std::cout << "String: " << buffer << " (len: " << length << ")
+";
+    }
+};
+
+int main() {
+    DynamicString s1("Hello, C++ OOP");
+    DynamicString s2 = s1; // Deep copy constructor invoked
+    s1.display();
+    s2.display();
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Overloading Stream Operators and Arithmetic Operators
+#include <iostream>
+
+class Vector2D {
+private:
+    double x, y;
+
+public:
+    Vector2D(double x_val = 0.0, double y_val = 0.0) : x(x_val), y(y_val) {}
+
+    // Binary addition operator
+    Vector2D operator+(const Vector2D &rhs) const {
+        return Vector2D(x + rhs.x, y + rhs.y);
+    }
+
+    // Equality operator
+    bool operator==(const Vector2D &rhs) const {
+        return (x == rhs.x) && (y == rhs.y);
+    }
+
+    // Friend stream insertion operator
+    friend std::ostream& operator<<(std::ostream &os, const Vector2D &vec) {
+        os << "(" << vec.x << ", " << vec.y << ")";
+        return os;
+    }
+};
+
+int main() {
+    Vector2D v1(3.5, 2.0);
+    Vector2D v2(1.5, 4.0);
+    Vector2D v3 = v1 + v2;
+
+    std::cout << "v1: " << v1 << "
+";
+    std::cout << "v2: " << v2 << "
+";
+    std::cout << "v1 + v2 = " << v3 << "
+";
+    std::cout << "v1 == v2: " << (v1 == v2 ? "True" : "False") << "
+";
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- Default shallow copy would duplicate the pointer address `buffer`. When both `s1` and `s2` go out of scope, both destructors call `delete[] buffer` on the same address, causing a catastrophic Double Free crash. The custom copy constructor performs a deep copy by allocating distinct heap memory for `s2`.
+In Example 8.1:
+- `operator<<` is declared as a `friend` function because the left-hand operand is `std::ostream&`, not `Vector2D`. It returns a reference to `std::ostream` to enable chaining (`std::cout << a << b`).
+
+10. Practical Use Cases
+- Game engine entity components (Physics, Transform, Mesh).
+- Custom numeric types (BigInt, Complex numbers, Matrix classes).
+- GUI widgets and window management systems.
+
+11. Common Mistakes
+1. Forgetting to implement deep copy constructor and assignment operator when managing raw dynamic memory (violating Rule of Three).
+2. Modifying class attributes inside methods marked `const`.
+3. Doing heavy initialization logic in constructor body instead of member initializer list.
+4. Overloading operators unintuitively (e.g., making `+` modify the operand).
+
+12. Edge Cases
+- Self-assignment in copy assignment operators (`a = a;` must check `if (this != &other)` before freeing existing memory).
+- Exception thrown inside a constructor before completing initialization.
+
+13. Best Practices
+- Always use member initializer lists for constructor parameters.
+- Mark member functions `const` if they do not modify the object's state.
+- Adhere to the Rule of Three / Rule of Five / Rule of Zero when managing resources.
+- Make constructors accepting a single argument `explicit` to prevent unintended implicit type conversions (`explicit MyClass(int size)`).
+
+14. Performance Considerations
+- Pass objects by `const &` to avoid copy constructor invocation overhead.
+- In-class method definitions are automatically candidate for compiler inlining.
+
+15. Comparison with Related Concepts
+- Class vs Struct in C++: The ONLY difference is default visibility (`class` is private by default; `struct` is public by default). Both support methods, constructors, inheritance, and polymorphism.
+
+16. Debugging Tips
+- Add log statements in constructors and destructors to trace object lifecycles during execution.
+- Use AddressSanitizer to detect memory errors during constructor/destructor execution.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between a shallow copy and a deep copy?
+   - A shallow copy copies member values verbatim (including raw pointer addresses, sharing heap resources); a deep copy allocates independent duplicate memory for dynamically held resources.
+2. Why is a member initializer list required for `const` and reference class members?
+   - Because `const` and reference variables must be initialized upon declaration and cannot be assigned to inside the constructor body.
+3. What does the `explicit` keyword on a constructor prevent?
+   - It prevents the compiler from performing implicit type conversions when an argument of the constructor parameter type is passed where the class object is expected.
+
+18. Summary
+Object-Oriented Programming in C++ encapsulates data and operations into coherent class structures. Understanding constructors, member initializers, deep copying, and operator overloading is essential for building modular, robust, and expressive systems.

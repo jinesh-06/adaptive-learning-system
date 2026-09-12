@@ -1,0 +1,235 @@
+COURSE: java
+TOPIC: control_flow_methods
+LEVEL: beginner
+SOURCE: java_control_flow_methods.txt
+
+TITLE: Java Control Flow and Methods: Branching, Loops, Method Signatures, Overloading, Recursion, and Varargs
+
+1. Introduction
+Control flow structures and methods form the behavioral logic of Java applications. Java provides structured branching constructs (traditional `if-else`, modern `switch` expressions), iteration statements (`for`, enhanced for-each, `while`, `do-while`), jump control mechanisms (`break`, `continue`, `return`), and modular method definitions. In Java, methods encapsulate reusable computation within classes, supporting parameter passing (strictly **pass-by-value**), method signature overloading, variable-length arguments (varargs), and recursive self-invocation. Mastering these constructs allows developers to structure robust, readable, and highly maintainable business logic.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master conditional statements (`if`, `if-else`, nested conditions, `else-if` ladders).
+- Implement standard `switch` statements and modern Java 14+ enhanced `switch` expressions with arrow syntax (`->`).
+- Implement standard counter loops (`for`), enhanced for-each loops, pre-test (`while`), and post-test (`do-while`) loops.
+- Define static and instance methods with return types, parameter lists, and access modifiers.
+- Understand Java's strict **pass-by-value** evaluation strategy for both primitives and object references.
+- Implement Method Overloading based on parameter counts and types.
+- Master variable-length argument lists (`Type... varargs`).
+- Write recursive algorithms with strict base cases and analyze stack frame overhead.
+
+3. Core Concepts
+- Pass-by-Value: Java strictly passes all arguments by value. For primitive types, the actual value is copied; for objects, the reference address pointing to the heap object is copied.
+- Method Signature: Defined by method name and parameter types list (return type and access modifier are NOT part of the signature).
+- Method Overloading: Defining multiple methods in the same class sharing the same name but with different parameter lists.
+- Enhanced For-Each: Syntactic sugar iterating over any array or collection implementing `java.lang.Iterable`.
+- Enhanced Switch (Java 14+): Expression-based switch with arrow syntax (`->`) eliminating break statements and supporting direct return values.
+
+4. Detailed Explanation
+4.1 Branching & Modern Switch
+Java 14+ enhanced switch syntax:
+String dayType = switch (day) {
+    case MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY -> "Weekday";
+    case SATURDAY, SUNDAY -> "Weekend";
+    default -> "Invalid";
+};
+
+4.2 Pass-by-Value Mechanics
+- Primitive: Modifying parameter inside method modifies only the local copy on that stack frame.
+- Object Reference: Modifying fields of the passed object (`obj.setName(...)`) mutates the original object in the heap. Reassigning the reference itself (`obj = new Student(...)`) only alters the local stack pointer.
+
+4.3 Variable-Length Arguments (Varargs)
+Syntax: `public void logMessages(String prefix, String... messages)`
+- `messages` is treated as a `String[]` array inside the method.
+- Must be the last parameter in the method signature.
+
+4.4 Recursion
+Recursive methods must have:
+1. Base Case: Halts recursion without self-call.
+2. Recursive Step: Moves progress closer to the base case.
+
+5. Syntax
+5.1 Method Declaration and Overloading
+public class Calculator {
+    // Overload 1: Two ints
+    public int add(int a, int b) { return a + b; }
+
+    // Overload 2: Three ints
+    public int add(int a, int b, int c) { return a + b + c; }
+
+    // Overload 3: Double array via varargs
+    public double sum(double... values) {
+        double total = 0;
+        for (double v : values) total += v;
+        return total;
+    }
+}
+
+6. Basic Examples
+Example 6.1: Enhanced Switch and Loop Iteration
+package com.learning.control;
+
+public class GradeClassifier {
+    public static String getPerformanceFeedback(char grade) {
+        return switch (Character.toUpperCase(grade)) {
+            case 'A' -> "Exceptional Mastery";
+            case 'B' -> "Proficient Understanding";
+            case 'C' -> "Acceptable Performance";
+            case 'D' -> "Needs Improvement";
+            case 'F' -> "Failing / Remediation Required";
+            default  -> "Invalid Grade Identifier";
+        };
+    }
+
+    public static void main(String[] args) {
+        char[] sampleGrades = {'A', 'B', 'C', 'F', 'X'};
+
+        System.out.println("--- Grade Classification Ledger ---");
+        for (char g : sampleGrades) {
+            System.out.printf("Grade %c: %s%n", g, getPerformanceFeedback(g));
+        }
+    }
+}
+
+Example 6.2: Pass-by-Value Demonstration
+package com.learning.control;
+
+class Container {
+    int value;
+    Container(int v) { this.value = v; }
+}
+
+public class PassByValueDemo {
+    public static void modifyPrimitive(int num) {
+        num = 999; // Alters local stack copy only
+    }
+
+    public static void modifyObjectField(Container c) {
+        c.value = 500; // Mutates heap object field
+    }
+
+    public static void reassignObjectReference(Container c) {
+        c = new Container(1000); // Alters local reference pointer only
+    }
+
+    public static void main(String[] args) {
+        int x = 10;
+        modifyPrimitive(x);
+        System.out.printf("Primitive x after modifyPrimitive: %d%n", x); // 10
+
+        Container box = new Container(50);
+        modifyObjectField(box);
+        System.out.printf("Container value after modifyObjectField: %d%n", box.value); // 500
+
+        reassignObjectReference(box);
+        System.out.printf("Container value after reassignObjectReference: %d%n", box.value); // Still 500
+    }
+}
+
+7. Intermediate Examples
+Example 7.1: Varargs and Array Statistics
+package com.learning.control;
+
+public class MathUtilities {
+    public static double computeAverage(String label, double... numbers) {
+        if (numbers == null || numbers.length == 0) {
+            System.out.printf("[%s] No data points provided.%n", label);
+            return 0.0;
+        }
+
+        double sum = 0.0;
+        for (double n : numbers) {
+            sum += n;
+        }
+        double avg = sum / numbers.length;
+        System.out.printf("[%s] Count: %d | Sum: %.2f | Average: %.2f%n", label, numbers.length, sum, avg);
+        return avg;
+    }
+
+    public static void main(String[] args) {
+        computeAverage("Quiz Scores", 88.5, 92.0, 79.5, 95.0);
+        computeAverage("Single Sensor", 101.3);
+        computeAverage("Empty Test");
+    }
+}
+
+8. Advanced Examples
+Example 8.1: Tail-Recursive and Standard Recursive Fibonacci with Memoization
+package com.learning.control;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class FibonacciOptimization {
+    private static final Map<Integer, Long> memo = new HashMap<>();
+
+    public static long fibonacciMemoized(int n) {
+        if (n <= 0) return 0;
+        if (n == 1) return 1;
+
+        if (memo.containsKey(n)) {
+            return memo.get(n);
+        }
+
+        long result = fibonacciMemoized(n - 1) + fibonacciMemoized(n - 2);
+        memo.put(n, result);
+        return result;
+    }
+
+    public static void main(String[] args) {
+        int target = 45;
+        long startTime = System.nanoTime();
+        long fibValue = fibonacciMemoized(target);
+        long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+
+        System.out.printf("Fibonacci(%d) = %d (Computed in %d ms)%n", target, fibValue, durationMs);
+    }
+}
+
+9. Code Explanation
+In Example 6.2:
+- Java strictly copies reference addresses. In `modifyObjectField`, the copied reference points to the same heap object, so mutating `c.value` modifies the original object. In `reassignObjectReference`, assigning `c = new Container(...)` rebinds only the local reference on that stack frame, leaving the caller's reference unchanged.
+In Example 8.1:
+- Naive recursion for Fibonacci runs in exponential $O(2^N)$ time. By storing computed values in `memo` (`HashMap`), time complexity is reduced to linear $O(N)$.
+
+10. Practical Use Cases
+- Business rule engines evaluating transaction statuses with enhanced switches.
+- Mathematical and statistical utility libraries utilizing varargs and method overloading.
+- Graph traversal and hierarchical tree parsing using recursive algorithms.
+
+11. Common Mistakes
+1. Believing Java is pass-by-reference for objects: Attempting to swap two objects inside a `swap(Object a, Object b)` method fails because reference reassignments only affect local parameters.
+2. Placing varargs parameter anywhere other than the last position in the parameter list.
+3. Ambiguous method overloading: Defining `void test(int a, long b)` and `void test(long a, int b)` called with `test(10, 20)`.
+4. Missing base case in recursive methods, causing `StackOverflowError`.
+
+12. Edge Cases
+- Passing `null` to a varargs method: Java interprets it as a `null` array reference, potentially triggering a `NullPointerException` if not guarded with `if (numbers == null)`.
+
+13. Best Practices
+- Keep method lengths concise (Single Responsibility Principle).
+- Use enhanced switch expressions (`->`) to eliminate accidental fall-through bugs caused by missing `break` statements.
+- Prefer for-each loops whenever array or collection index manipulation is unnecessary.
+- Document public method contracts using Javadoc (`/** ... */`).
+
+14. Performance Considerations
+- Varargs methods instantiate an array on the heap under the hood for each invocation; in ultra-high-frequency performance-critical code, provide dedicated 1-arg, 2-arg, and 3-arg overloads before falling back to varargs.
+
+15. Comparison with Related Concepts
+- Java Pass-by-Value vs C++ Reference Parameters: C++ supports true reference parameters (`void swap(int &a, int &b)`) that allow mutating caller references; Java only passes reference addresses by value.
+
+16. Debugging Tips
+- Trace recursive activation records in IDE debugger call stack view.
+- Inspect variable scope and method parameters during breakpoint execution.
+
+17. Interview Questions and Concept Checks
+1. Is Java pass-by-value or pass-by-reference?
+   - Java is strictly pass-by-value. When an object is passed, the value of the object reference (its memory address) is passed by value.
+2. Can a method be overloaded by changing only its return type?
+   - No, the Java compiler uses the method name and parameter types list (method signature) for overload resolution. Return type alone is insufficient to resolve ambiguous calls.
+3. What is the benefit of the Java 14+ enhanced switch expression?
+   - It provides concise arrow syntax (`->`), prevents accidental fall-through without needing `break`, and can return values directly as an expression.
+
+18. Summary
+Java control flow and methods provide structured execution and modular decomposition. Deep comprehension of pass-by-value semantics, method overloading, enhanced switch expressions, and recursion allows software engineers to build reliable, high-performance logic.

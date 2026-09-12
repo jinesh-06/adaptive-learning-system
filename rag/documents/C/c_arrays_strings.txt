@@ -1,0 +1,217 @@
+COURSE: c
+TOPIC: arrays_strings
+LEVEL: intermediate
+SOURCE: c_arrays_strings.txt
+
+TITLE: C Arrays and Strings: Contiguous Memory, Multi-Dimensional Arrays, Null Termination, and String Manipulation
+
+1. Introduction
+Arrays and strings are fundamental data structures in C representing contiguous sequences of elements in memory. An array stores fixed-size homogeneous elements accessed via zero-based indices. Unlike languages with native string objects, C represents strings as one-dimensional character arrays terminated by a special null character (`'\0'`). Understanding the layout of contiguous memory, pointer-array duality, multidimensional matrix indexing, and standard string manipulation functions from `<string.h>` is vital for efficient data manipulation and avoiding critical security vulnerabilities such as buffer overflows.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Understand contiguous memory layout, declaration, initialization, and indexing of 1D arrays.
+- Declare, initialize, and traverse multi-dimensional 2D and 3D arrays (matrices).
+- Implement fundamental searching (linear, binary) and sorting (bubble, insertion, selection) on arrays.
+- Understand array decay mechanics when passing arrays into functions.
+- Master null-terminated strings (`'\0'`), character array buffers, and string literals.
+- Safely utilize standard library string functions from `<string.h>` (`strlen`, `strcpy`, `strncpy`, `strcat`, `strncat`, `strcmp`, `strncmp`, `strchr`, `strstr`).
+- Identify and prevent buffer overflow vulnerabilities, off-by-one errors, and unterminated string bugs.
+
+3. Core Concepts
+- Contiguous Allocation: Elements are stored sequentially in adjacent memory addresses without padding between identical primitives.
+- Pointer Arithmetic Relationship: For array `arr`, `arr[i]` is syntactically equivalent to `*(arr + i)`.
+- Null Terminator (`'\0'`): ASCII code 0 used by C string routines to identify the end of a string in memory.
+- String Literals: Immutable character sequences stored in the read-only data segment (`.rodata`).
+- Safe vs Unsafe Functions: Prefer bounded functions (`strncpy`, `strncat`, `snprintf`) over unbounded functions (`strcpy`, `strcat`, `gets`).
+
+4. Detailed Explanation
+4.1 One-Dimensional Arrays
+- Declaration: `int scores[10];` allocates `10 * sizeof(int)` bytes on the stack.
+- Zero-indexed: Valid indices range from `0` to `size - 1`. C does not perform runtime array bounds checking.
+
+4.2 Multi-Dimensional Arrays
+- In memory, 2D arrays are stored in Row-Major Order (row by row sequentially).
+- Index formula for `arr[R][C]`: Address = `BaseAddress + (r * C + c) * sizeof(element)`.
+
+4.3 Character Arrays and Strings
+- Character array: `char name[6] = {'H', 'e', 'l', 'l', 'o', '\0'};`
+- String literal initialization: `char name[] = "Hello";` (compiler automatically appends the 6th byte `'\0'`).
+- String pointer to literal: `const char *str = "Hello";` points to read-only memory; attempting to mutate `str[0] = 'h'` causes a Segmentation Fault.
+
+4.4 Standard String Functions (`<string.h>`)
+- `strlen(s)`: Counts characters up to (excluding) `'\0'`.
+- `strcpy(dest, src)` / `strncpy(dest, src, n)`: Copies source string into destination buffer.
+- `strcat(dest, src)` / `strncat(dest, src, n)`: Appends source string onto end of destination buffer.
+- `strcmp(s1, s2)` / `strncmp(s1, s2, n)`: Lexicographically compares two strings (returns 0 if equal, <0 if s1 < s2, >0 if s1 > s2).
+- `strchr(s, c)`: Returns pointer to first occurrence of character `c` in string `s`.
+- `strstr(haystack, needle)`: Returns pointer to first occurrence of substring `needle` in `haystack`.
+
+5. Syntax
+5.1 Array Declaration & Traversal
+int numbers[5] = {10, 20, 30, 40, 50};
+for (int i = 0; i < 5; i++) {
+    printf("%d ", numbers[i]);
+}
+
+5.2 2D Matrix Declaration
+int matrix[2][3] = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+5.3 Safe String Operations
+char dest[32];
+strncpy(dest, "Sample text", sizeof(dest) - 1);
+dest[sizeof(dest) - 1] = '\0'; // Ensure null termination
+
+6. Basic Examples
+Example 6.1: Array Traversal and Statistics
+#include <stdio.h>
+
+int main(void) {
+    int data[] = {12, 45, 67, 23, 89, 34};
+    int n = sizeof(data) / sizeof(data[0]);
+
+    int sum = 0;
+    int max = data[0];
+    int min = data[0];
+
+    for (int i = 0; i < n; i++) {
+        sum += data[i];
+        if (data[i] > max) max = data[i];
+        if (data[i] < min) min = data[i];
+    }
+
+    printf("Count: %d | Sum: %d | Avg: %.2f\n", n, sum, (double)sum / n);
+    printf("Min: %d | Max: %d\n", min, max);
+    return 0;
+}
+
+Example 6.2: String Inspection and Character Counting
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+int main(void) {
+    char sentence[] = "C Programming in 2026!";
+    int vowels = 0, digits = 0, spaces = 0;
+
+    for (int i = 0; sentence[i] != '\0'; i++) {
+        char ch = tolower((unsigned char)sentence[i]);
+        if (ch == 'a' || ch == 'e' || ch == 'i' || ch == 'o' || ch == 'u') {
+            vowels++;
+        } else if (isdigit((unsigned char)sentence[i])) {
+            digits++;
+        } else if (isspace((unsigned char)sentence[i])) {
+            spaces++;
+        }
+    }
+
+    printf("Length: %zu\n", strlen(sentence));
+    printf("Vowels: %d | Digits: %d | Spaces: %d\n", vowels, digits, spaces);
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Matrix Multiplication
+#include <stdio.h>
+
+#define N 2
+
+void multiply_matrices(int A[N][N], int B[N][N], int C[N][N]) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            C[i][j] = 0;
+            for (int k = 0; k < N; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+}
+
+int main(void) {
+    int A[N][N] = {{1, 2}, {3, 4}};
+    int B[N][N] = {{5, 6}, {7, 8}};
+    int C[N][N];
+
+    multiply_matrices(A, B, C);
+
+    printf("Result Matrix C:\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%4d ", C[i][j]);
+        }
+        printf("\n");
+    }
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Safe Custom String Tokenizer
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char input_log[] = "2026-09-12,ERROR,DatabaseTimeout,Node-4";
+    const char delimiter[] = ",";
+
+    printf("Parsing CSV log entry:\n");
+    char *token = strtok(input_log, delimiter);
+    int field_idx = 1;
+
+    while (token != NULL) {
+        printf("  Field %d: %s\n", field_idx++, token);
+        token = strtok(NULL, delimiter);
+    }
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- Matrix multiplication multiplies each element of row $i$ from matrix $A$ by each corresponding element of column $j$ from matrix $B$, accumulating into $C[i][j]$.
+- Complexity is $O(N^3)$. Row-major access order on $A[i][k]$ maintains CPU cache friendliness.
+In Example 8.1:
+- `strtok()` modifies the input string in-place by writing `'\0'` characters at delimiter positions. Subsequent calls pass `NULL` to continue scanning the original buffer.
+
+10. Practical Use Cases
+- High-performance matrix mathematics in image processing and computer graphics.
+- Network protocol parsing (splitting HTTP headers, parsing CSV and JSON payloads).
+- Command line argument parsing and configuration file processing.
+
+11. Common Mistakes
+1. Out-of-bounds array access: Accessing `arr[10]` on a 10-element array (`arr[0]` to `arr[9]`) leads to buffer overrun and stack corruption.
+2. Forgetting string null-terminator: `char str[5] = "Hello";` lacks room for `'\0'`, causing downstream string operations to read past buffer bounds into garbage memory.
+3. Using `gets()`: Never use `gets()` because it cannot prevent buffer overflows; always use `fgets()`.
+4. Comparing strings with `==`: `if (str1 == str2)` compares pointer addresses, not string text contents (use `strcmp(str1, str2) == 0`).
+
+12. Edge Cases
+- Empty string: A string with `str[0] == '\0'` has length 0.
+- Destination buffer smaller than source string during concatenation (`strcat`).
+
+13. Best Practices
+- Always calculate array length dynamically using `sizeof(arr) / sizeof(arr[0])` in the scope where array is declared.
+- Allocate `strlen(str) + 1` bytes when creating dynamic memory buffers for strings to accommodate the null terminator.
+- Use `snprintf` for formatted string creation to guarantee buffer bounds.
+
+14. Performance Considerations
+- Access multidimensional arrays in Row-Major order (outer loop over rows, inner loop over columns) to exploit spatial locality in the CPU cache.
+- Avoid repeated calls to `strlen(str)` inside loop condition checks: `for (int i = 0; i < strlen(s); i++)` turns an $O(N)$ loop into $O(N^2)$. Cache the length before the loop.
+
+15. Comparison with Related Concepts
+- C Strings vs C++ `std::string`: C strings are raw character buffers requiring manual memory management and bounds safety; `std::string` provides dynamic resizing, automated memory management, and exception safety.
+
+16. Debugging Tips
+- Use Valgrind: `valgrind --leak-check=full ./program` to catch out-of-bounds memory reads and writes.
+- Compile with `-fsanitize=bounds` to catch array index violations during development.
+
+17. Interview Questions and Concept Checks
+1. What is the difference between `char str[] = "Hello";` and `char *str = "Hello";`?
+   - `char str[]` creates a mutable array on the stack initialized with "Hello". `char *str` creates a pointer pointing to a read-only string literal in the `.rodata` segment.
+2. How does `strcmp("apple", "banana")` behave?
+   - It returns a negative integer because 'a' (ASCII 97) is smaller than 'b' (ASCII 98).
+3. Why does `sizeof` on an array parameter inside a function return the pointer size rather than the array length?
+   - In C, array parameters decay to pointers when passed to functions.
+
+18. Summary
+Arrays and strings are foundational C constructs. Mastery of contiguous memory layouts, pointer-array equivalence, null termination, and defensive string manipulation enables developers to write robust, efficient, and secure software.

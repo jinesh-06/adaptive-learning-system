@@ -1,0 +1,244 @@
+COURSE: java
+TOPIC: advanced_topics
+LEVEL: advanced
+SOURCE: java_advanced_topics.txt
+
+TITLE: Advanced Java: Generics, Lambdas, Streams API, Optional, Annotations, Multithreading, and JVM Memory Management
+
+1. Introduction
+Advanced Java encompasses functional programming paradigms, type-safe generics, declarative data streaming, concurrency architecture, and JVM internals. Introduced in Java 8 and expanded through modern LTS releases (Java 11, 17, 21), features such as **Lambda Expressions**, **Functional Interfaces** (`java.util.function`), the **Streams API** (`java.util.stream`), and `Optional<T>` transform Java from a purely imperative language into a modern hybrid functional-object-oriented platform. Concurrently, mastering Java Generics (type erasure, wildcards `? extends / ? super`), Multithreading (`Thread`, `Runnable`, `ExecutorService`, `synchronized`, `ReentrantLock`), and the JVM Memory Model (Heap, Metaspace, Garbage Collection generational collectors like G1 and ZGC) is essential for developing enterprise backends.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master Java Generics: Generic classes, generic methods, bounded type parameters, and wildcards (`? extends T`, `? super T` / PECS rule).
+- Implement Lambda Expressions and utilize standard Functional Interfaces (`Predicate`, `Function`, `Consumer`, `Supplier`).
+- Construct functional data transformation pipelines using the Java Streams API (`filter`, `map`, `flatMap`, `reduce`, `collect`, `groupingBy`).
+- Eliminate `NullPointerException` risks using the `Optional<T>` container.
+- Understand built-in and custom Java Annotations (`@Retention`, `@Target`).
+- Implement multithreading using `Thread`, `Runnable`, `Callable`, and `ExecutorService` thread pools.
+- Synchronize concurrent access using `synchronized` blocks, `volatile`, and `java.util.concurrent.locks.ReentrantLock`.
+- Inspect JVM memory architecture (Eden, Survivor, Tenured, Metaspace) and modern Garbage Collectors (G1GC, ZGC).
+
+3. Core Concepts
+- Type Erasure: Java generics exist only at compile time; compiler strips generic type parameters and inserts necessary casts into bytecode.
+- PECS Principle: "Producer Extends, Consumer Super"—use `? extends T` when reading data from a generic container; use `? super T` when writing data into it.
+- Streams API: Lazy, functional pipelines that process sequences of elements without mutating underlying data sources.
+- Functional Interface: An interface with exactly one abstract method (annotated with `@FunctionalInterface`), enabling lambda assignments.
+- Optional (`Optional<T>`): A container object representing the presence or absence of a non-null value.
+- Thread Synchronization: Ensuring mutual exclusion and memory visibility across CPU thread caches (`synchronized`, `volatile`).
+
+4. Detailed Explanation
+4.1 Java Generics & Wildcards
+- Generic Class: `class Box<T> { private T val; }`
+- Upper Bounded Wildcard (`? extends Number`): Read-only covariance (accepts `Integer`, `Double`, etc.).
+- Lower Bounded Wildcard (`? super Integer`): Write-safe contravariance (accepts `Integer`, `Number`, `Object`).
+
+4.2 Functional Interfaces and Streams
+Common Functional Interfaces:
+- `Predicate<T>`: `T -> boolean` (`test()`)
+- `Function<T, R>`: `T -> R` (`apply()`)
+- `Consumer<T>`: `T -> void` (`accept()`)
+- `Supplier<T>`: `() -> T` (`get()`)
+
+Stream Pipeline Lifecycle:
+1. Source: `collection.stream()`
+2. Intermediate Operations (Lazy): `.filter()`, `.map()`, `.sorted()`, `.distinct()`
+3. Terminal Operation (Eager execution): `.collect(Collectors.toList())`, `.reduce()`, `.forEach()`, `.count()`
+
+4.3 Multithreading & ExecutorService
+Directly creating raw `Thread` instances is discouraged in production. Use `ExecutorService`:
+ExecutorService executor = Executors.newFixedThreadPool(4);
+Future<Integer> future = executor.submit(() -> computeValue());
+executor.shutdown();
+
+4.4 JVM Memory Architecture
+- Heap Space:
+  - Young Generation: Eden Space (new objects) and two Survivor Spaces (S0, S1). Minor GC collects short-lived objects.
+  - Old / Tenured Generation: Long-lived objects promoted after surviving multiple GC cycles. Major / Full GC cleans Tenured.
+- Metaspace: Native memory storing class metadata, method bytecode, and static variables (replaces PermGen since Java 8).
+
+5. Syntax
+5.1 Streams API Pipeline
+List<String> names = students.stream()
+        .filter(s -> s.getGpa() >= 3.5)
+        .map(Student::getName)
+        .sorted()
+        .collect(Collectors.toList());
+
+5.2 Generic Method with Bounded Wildcard
+public static <T extends Number> double sumList(List<T> list) {
+    double sum = 0.0;
+    for (T n : list) sum += n.doubleValue();
+    return sum;
+}
+
+6. Basic Examples
+Example 6.1: Generics and Functional Interfaces
+package com.learning.advanced;
+
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class GenericsFunctionalDemo {
+    public static <T, R> R transformIfValid(T value, Predicate<T> validator, Function<T, R> transformer, R fallback) {
+        if (validator.test(value)) {
+            return transformer.apply(value);
+        }
+        return fallback;
+    }
+
+    public static void main(String[] args) {
+        Predicate<Integer> isPassing = score -> score >= 60;
+        Function<Integer, String> gradeConverter = score -> "Passed with score: " + score;
+
+        String res1 = transformIfValid(85, isPassing, gradeConverter, "Failed");
+        String res2 = transformIfValid(45, isPassing, gradeConverter, "Failed");
+
+        System.out.println(res1);
+        System.out.println(res2);
+    }
+}
+
+7. Intermediate Examples
+Example 7.1: Advanced Streams Pipeline: Grouping, Filtering, and Statistics
+package com.learning.advanced;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class StreamsPipelineDemo {
+    public static class CourseRecord {
+        private String course;
+        private String department;
+        private int enrollment;
+
+        public CourseRecord(String course, String dept, int enrollment) {
+            this.course = course;
+            this.department = dept;
+            this.enrollment = enrollment;
+        }
+
+        public String getCourse() { return course; }
+        public String getDepartment() { return department; }
+        public int getEnrollment() { return enrollment; }
+    }
+
+    public static void main(String[] args) {
+        List<CourseRecord> catalog = List.of(
+                new CourseRecord("CS101", "CS", 120),
+                new CourseRecord("CS201", "CS", 85),
+                new CourseRecord("MATH101", "Math", 150),
+                new CourseRecord("MATH201", "Math", 60),
+                new CourseRecord("PHYS101", "Physics", 95)
+        );
+
+        // Group courses by department and calculate total enrollment per department
+        Map<String, Integer> enrollmentByDept = catalog.stream()
+                .collect(Collectors.groupingBy(
+                        CourseRecord::getDepartment,
+                        Collectors.summingInt(CourseRecord::getEnrollment)
+                ));
+
+        System.out.println("--- Total Enrollment by Department ---");
+        enrollmentByDept.forEach((dept, total) ->
+                System.out.printf("Department: %-8s -> Total Students: %d%n", dept, total));
+    }
+}
+
+8. Advanced Examples
+Example 8.1: Concurrency with ExecutorService and Thread-Safe Mutex Lock
+package com.learning.advanced;
+
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class ThreadSafeCounter {
+    private int counter = 0;
+    private final ReentrantLock lock = new ReentrantLock();
+
+    public void increment() {
+        lock.lock(); // Explicit thread synchronization
+        try {
+            counter++;
+        } finally {
+            lock.unlock(); // Ensure lock release in finally
+        }
+    }
+
+    public int getCount() {
+        return counter;
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        ThreadSafeCounter sharedCounter = new ThreadSafeCounter();
+        int threadCount = 4;
+        int incrementsPerThread = 10000;
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                for (int j = 0; j < incrementsPerThread; j++) {
+                    sharedCounter.increment();
+                }
+                latch.countDown();
+            });
+        }
+
+        latch.await(); // Wait for all threads to finish
+        executor.shutdown();
+
+        System.out.printf("Expected Counter: %d%n", threadCount * incrementsPerThread);
+        System.out.printf("Actual Counter:   %d%n", sharedCounter.getCount());
+    }
+}
+
+9. Code Explanation
+In Example 7.1:
+- `catalog.stream().collect(Collectors.groupingBy(...))` partitions elements into sub-groups and downstream aggregates total enrollment in a single declarative, parallelizable pass.
+In Example 8.1:
+- `ReentrantLock` guarantees that only one thread modifies `counter++` at any given time, preventing lost updates. The `CountDownLatch` coordinates thread synchronization, blocking `main` until all worker tasks complete.
+
+10. Practical Use Cases
+- High-throughput parallel data processing pipelines using Parallel Streams (`.parallelStream()`).
+- Asynchronous API orchestration with `CompletableFuture` in Spring Boot microservices.
+- Multi-core background job execution pools (`ThreadPoolExecutor`).
+
+11. Common Mistakes
+1. Modifying source collections inside Stream operations (Streams should be functional and side-effect free).
+2. Calling `Optional.get()` without checking `Optional.isPresent()` (use `orElse()`, `orElseGet()`, or `orElseThrow()`).
+3. Failing to unlock a `ReentrantLock` in a `finally` block, causing permanent deadlocks.
+4. Using raw types (`List list = new ArrayList()`) instead of parameterized types (`List<String>`).
+
+12. Edge Cases
+- Parallel Stream overhead: For small datasets, thread coordination overhead in `parallelStream()` makes it slower than sequential streams.
+- Generic type erasure breaking reflection checks at runtime.
+
+13. Best Practices
+- Program functionally using Stream intermediate operations and collectors.
+- Return `Optional<T>` from search methods instead of returning `null`.
+- Prefer `ExecutorService` and high-level concurrency utilities (`java.util.concurrent`) over manual `Thread` instantiation.
+- Apply the PECS rule when writing generic library utilities.
+
+14. Performance Considerations
+- Use primitive stream specializations (`IntStream`, `LongStream`, `DoubleStream`) to eliminate boxing/unboxing overhead in numeric pipelines.
+- Modern G1GC (Garbage-First Garbage Collector) partitions the heap into equal-sized regions and collects regions with the most garbage first, maintaining predictable low latency.
+
+15. Comparison with Related Concepts
+- Stream vs Collection: A Collection is an in-memory data structure holding all its elements eagerly; a Stream is a lazy computation pipeline that computes elements on-demand.
+
+16. Debugging Tips
+- Use `.peek(System.out::println)` to inspect intermediate Stream elements during pipeline execution.
+- Analyze thread dumps via `jstack <pid>` to diagnose deadlocks or thread contention.
+
+17. Interview Questions and Concept Checks
+1. What is Type Erasure in Java Generics?
+   - Type erasure is the compile-time process where the Java compiler removes all generic type annotations, replacing them with their bounds (or `Object`) and inserting type casts, ensuring full backward compatibility with pre-Java 5 JVM bytecode.
+2. What is the difference between intermediate and terminal operations in the Streams API?
+   - Intermediate operations (e.g., `filter`, `map`) are lazy and return a new Stream without processing elements; terminal operations (e.g., `collect`, `forEach`, `reduce`) trigger the actual traversal and produce a final result or side-effect.
+3. How does the PECS rule guide the use of wildcards in Java Generics?
+   - "Producer Extends, Consumer Super": If a generic parameter produces/reads values of type T, use `? extends T`; if it consumes/writes values of type T, use `? super T`.
+
+18. Summary
+Advanced Java features—generics, functional streams, concurrency controls, and JVM garbage collection—enable developers to architect high-throughput, type-safe, and scalable enterprise applications.

@@ -1,0 +1,229 @@
+COURSE: cpp
+TOPIC: arrays_strings
+LEVEL: intermediate
+SOURCE: cpp_arrays_strings.txt
+
+TITLE: C++ Arrays, String Manipulation, and String Streams: std::array, std::vector, std::string, and String Streams
+
+1. Introduction
+Handling sequences of data and text processing is a core requirement in modern software engineering. While C++ retains backward compatibility with raw C-style arrays and null-terminated character strings, standard modern C++ provides safe, dynamic, and expressive abstractions through `<array>` (`std::array`), `<vector>` (`std::vector`), `<string>` (`std::string`), and `<sstream>` (`std::stringstream`). These standard library classes eliminate manual memory allocation, provide automatic bounds checking capabilities, manage dynamic capacity growth, and provide seamless interoperability with standard algorithms.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Differentiate between raw C-style arrays, fixed-size `std::array`, and dynamic `std::vector`.
+- Understand memory allocation and dynamic resizing mechanisms of `std::string`.
+- Master `std::string` member methods (length, append, find, substr, replace, erase).
+- Convert between C++ `std::string` and C-style `const char*` (`.c_str()`).
+- Implement string formatting, parsing, and numeric conversions using `std::stringstream`, `std::stoi`, and `std::to_string`.
+- Apply standard algorithms (`std::sort`, `std::reverse`, `std::find`) on strings and arrays.
+- Avoid common string manipulation bugs, memory leaks, and out-of-bounds index exceptions.
+
+3. Core Concepts
+- `std::array<T, N>`: Fixed-size stack-allocated contiguous container wrapping a C-style array with standard container interface.
+- `std::string`: Dynamic contiguous character container managing heap allocation, null termination, and Small String Optimization (SSO).
+- Small String Optimization (SSO): Technique where short strings (typically $\le 15-22$ bytes) are stored inline on the stack without heap allocation.
+- `std::stringstream`: Stream class enabling formatted reading and writing to in-memory string buffers.
+- Bounds Safety: Accessing via `.at(index)` throws `std::out_of_range` on invalid indices, whereas `operator[]` performs unchecked fast access.
+
+4. Detailed Explanation
+4.1 std::array vs Raw Array
+- Raw array `int arr[5];` decays to a pointer when passed to functions.
+- `std::array<int, 5> arr;` retains its size, can be passed by reference, copied by value, and provides `.size()`, `.begin()`, `.end()`, and `.at()`.
+
+4.2 std::string Operations
+- Concatenation: Operator `+` or `.append()`.
+- Search: `.find(substring)` returns index or `std::string::npos`.
+- Substring: `.substr(start_pos, length)`.
+- Modification: `.insert()`, `.erase()`, `.replace()`.
+- Conversion: `.c_str()` returns null-terminated `const char*`.
+
+4.3 Numeric Conversions and String Streams
+- Number to String: `std::to_string(123.45)`.
+- String to Number: `std::stoi()`, `std::stod()`, `std::stol()`.
+- Parsing tokens: `std::stringstream ss(str); std::string token; while (ss >> token) { ... }`.
+
+5. Syntax
+5.1 std::array and std::string
+#include <array>
+#include <string>
+
+std::array<int, 4> fixed_arr = {1, 2, 3, 4};
+std::string text = "Cognitive Load Aware RAG";
+std::string sub = text.substr(0, 9); // "Cognitive"
+
+5.2 std::stringstream Parsing
+#include <sstream>
+std::stringstream ss("101 3.85 Alice");
+int id; double gpa; std::string name;
+ss >> id >> gpa >> name;
+
+6. Basic Examples
+Example 6.1: std::string Search, Replace, and Substring
+#include <iostream>
+#include <string>
+
+int main() {
+    std::string document = "C++ is fast. C++ is powerful.";
+    std::cout << "Original: " << document << "
+";
+
+    // Find and Replace first occurrence
+    std::string target = "fast";
+    size_t pos = document.find(target);
+    if (pos != std::string::npos) {
+        document.replace(pos, target.length(), "ultra-fast");
+    }
+
+    std::cout << "Modified: " << document << "
+";
+    std::cout << "Substring (0 to 14): " << document.substr(0, 14) << "
+";
+    return 0;
+}
+
+Example 6.2: std::array Traversal and Bounds Check
+#include <iostream>
+#include <array>
+#include <stdexcept>
+
+int main() {
+    std::array<double, 4> temperatures = {98.6, 99.1, 101.3, 97.8};
+
+    std::cout << "Temperatures: ";
+    for (const auto &temp : temperatures) {
+        std::cout << temp << "F ";
+    }
+    std::cout << "
+";
+
+    // Safe bounds check
+    try {
+        std::cout << "Valid index 2: " << temperatures.at(2) << "
+";
+        std::cout << "Invalid index 10: " << temperatures.at(10) << "
+";
+    } catch (const std::out_of_range &e) {
+        std::cout << "Caught expected bounds exception: " << e.what() << "
+";
+    }
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: CSV Parsing using std::stringstream and getline
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <vector>
+
+struct StudentRecord {
+    int id;
+    std::string name;
+    double score;
+};
+
+int main() {
+    std::string csv_data = "101,John Doe,89.5\n102,Jane Smith,94.2\n103,Bob Johnson,76.8";
+    std::stringstream file_stream(csv_data);
+    std::string line;
+    std::vector<StudentRecord> records;
+
+    while (std::getline(file_stream, line)) {
+        if (line.empty()) continue;
+        std::stringstream line_stream(line);
+        std::string s_id, s_name, s_score;
+
+        if (std::getline(line_stream, s_id, ',') &&
+            std::getline(line_stream, s_name, ',') &&
+            std::getline(line_stream, s_score, ',')) {
+            records.push_back({std::stoi(s_id), s_name, std::stod(s_score)});
+        }
+    }
+
+    std::cout << "Parsed " << records.size() << " student records:
+";
+    for (const auto &rec : records) {
+        std::cout << "ID: " << rec.id << " | Name: " << rec.name << " | Score: " << rec.score << "
+";
+    }
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: String Manipulation with STL Algorithms
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include <cctype>
+
+int main() {
+    std::string input = "  Adaptive Learning RAG Pipeline 2026  ";
+
+    // 1. Convert to uppercase in-place
+    std::string upper_str = input;
+    std::transform(upper_str.begin(), upper_str.end(), upper_str.begin(), [](unsigned char c) {
+        return std::toupper(c);
+    });
+    std::cout << "Uppercase: [" << upper_str << "]
+";
+
+    // 2. Remove all spaces
+    std::string no_spaces = input;
+    no_spaces.erase(std::remove_if(no_spaces.begin(), no_spaces.end(), [](unsigned char c) {
+        return std::isspace(c);
+    }), no_spaces.end());
+    std::cout << "Stripped:  [" << no_spaces << "]
+";
+
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- `std::getline(file_stream, line)` extracts each line until `
+`.
+- `std::getline(line_stream, token, ',')` splits the string using the comma delimiter. `std::stoi` and `std::stod` convert string tokens into strongly-typed primitives.
+In Example 8.1:
+- The "Erase-Remove" idiom (`str.erase(std::remove_if(...), str.end())`) shifts matching characters to the end and resizes the string container in $O(N)$ linear time.
+
+10. Practical Use Cases
+- Text parsing for compiler tokenizers and JSON/CSV ingestion engines.
+- Safe buffer storage in networking applications without raw pointer management.
+- Log aggregation and formatted reporting.
+
+11. Common Mistakes
+1. Comparing strings using C-style `strcmp` when `str1 == str2` works natively for `std::string`.
+2. Storing pointers returned by `.c_str()` after the source `std::string` has been modified or destroyed (dangling pointer).
+3. Using `operator[]` without bounds checking, leading to silent memory corruption instead of catchable exceptions.
+4. Forgetting that `std::string::find` returns `std::string::npos` (not -1) on search failure.
+
+12. Edge Cases
+- Modifying a string while iterating over it with iterators (iterator invalidation).
+- Strings containing embedded null characters (`' '`), which `std::string` supports natively but C-string APIs truncate.
+
+13. Best Practices
+- Pass strings to read-only functions as `const std::string &` (or `std::string_view` in C++17).
+- Use `std::array` instead of C-style arrays when array size is constant.
+- Use `.at()` for index access when inputs originate from untrusted user sources.
+
+14. Performance Considerations
+- `std::string` Small String Optimization (SSO) prevents heap allocations for strings shorter than 15-22 bytes.
+- Call `.reserve(n)` on `std::string` before performing massive concatenations in loops to prevent repeated heap reallocations.
+
+15. Comparison with Related Concepts
+- `std::string` vs `char*`: `std::string` automatically manages memory, dynamically expands, and stores its length; `char*` requires manual memory allocation and null-terminator scanning ($O(N)$ `strlen`).
+
+16. Debugging Tips
+- Wrap index operations in `try-catch` blocks catching `std::out_of_range`.
+- Print `str.capacity()` alongside `str.size()` to inspect allocation behavior.
+
+17. Interview Questions and Concept Checks
+1. What is Small String Optimization (SSO) in modern C++ standard library implementations?
+   - SSO is an optimization where short string buffers are stored directly within the `std::string` stack object, avoiding dynamic heap allocation.
+2. What does `std::string::npos` represent?
+   - It is a static constant value (equal to `size_t(-1)`) returned by `std::string` search methods when no match is found.
+3. What is the Erase-Remove idiom in C++?
+   - A standard idiom combining `std::remove`/`std::remove_if` with container `.erase()` to delete elements matching a condition in linear time.
+
+18. Summary
+Modern C++ replaces unsafe C-style arrays and character pointers with type-safe, dynamic, and memory-managed abstractions (`std::array`, `std::string`, `std::stringstream`). Utilizing these standard containers eliminates buffer overflows while maintaining optimal execution performance.

@@ -1,0 +1,270 @@
+COURSE: python
+TOPIC: data_structures
+LEVEL: intermediate
+SOURCE: python_data_structures.txt
+
+TITLE: Python Data Structures: Lists, Tuples, Sets, Dictionaries, Collections Module, and Complexity
+
+1. Introduction
+Data structures are specialized formats for organizing, processing, retrieving, and storing data efficiently in memory. Python provides an exceptionally rich suite of built-in data structures: ordered and mutable dynamic arrays (**Lists**), immutable ordered sequences (**Tuples**), unique unordered collections (**Sets** / **Frozensets**), and highly optimized key-value hash maps (**Dictionaries**). Beyond primitives, the standard library `<collections>` module provides specialized data structures including `deque`, `Counter`, `defaultdict`, `OrderedDict`, and `namedtuple`. Understanding the internal implementations, algorithmic time complexities ($O(1)$ vs $O(N)$), mutability rules, hashability criteria, and performance trade-offs of these structures is paramount for engineering efficient, production-grade Python applications.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master list creation, indexing, negative indexing, slicing (`[start:stop:step]`), and list methods.
+- Implement list comprehensions with filtering and nested iterations.
+- Utilize tuples, tuple unpacking, single-element tuples, and understand immutability guarantees.
+- Perform set theory operations: union (`|`), intersection (`&`), difference (`-`), symmetric difference (`^`).
+- Master dictionaries, hash maps, key-value mutations, dictionary comprehensions, and views.
+- Understand mutability vs immutability, memory allocation overheads, and object hashability (`__hash__`).
+- Differentiate shallow copies (`copy.copy`) from deep copies (`copy.deepcopy`).
+- Implement stacks and queues using `collections.deque`.
+- Utilize specialized containers from `collections`: `Counter`, `defaultdict`, `namedtuple`.
+- Select the optimal data structure based on asymptotic time and space complexity.
+
+3. Core Concepts
+- Lists (`list`): Contiguous dynamic arrays of object pointers. $O(1)$ amortized append/pop, $O(N)$ arbitrary insertion/deletion.
+- Tuples (`tuple`): Fixed-size, immutable sequences. Lighter memory footprint, hashable if all elements are hashable.
+- Dictionaries (`dict`): Combined hash table and compact insertion-ordered array (since Python 3.6/3.7). $O(1)$ average key lookup, insertion, and deletion.
+- Sets (`set`): Hash-table-based collection of unique, hashable objects. $O(1)$ average membership testing (`in`).
+- Hashability: An object is hashable if it has an immutable hash value that never changes during its lifetime and can be compared to other objects (`__hash__()` and `__eq__()`).
+- Small Collection Optimizations: Over-allocation growth strategies in CPython (`list_resize`).
+
+4. Detailed Explanation
+4.1 Lists (Dynamic Arrays)
+- Memory: Contiguous array of 64-bit object memory addresses (pointers).
+- Slicing: `arr[start:stop:step]` returns a shallow copy of the sub-sequence.
+- Key Methods:
+  - `.append(x)`: $O(1)$ amortized append to end.
+  - `.extend(iterable)`: Appends elements from iterable.
+  - `.insert(index, x)`: $O(N)$ shifts subsequent elements.
+  - `.pop([index])`: $O(1)$ at end, $O(N)$ from front/middle.
+  - `.remove(x)`: $O(N)$ searches and removes first occurrence.
+  - `.sort(key=..., reverse=...)`: Timsort ($O(N \log N)$ worst-case, $O(N)$ best-case on partially sorted data).
+
+4.2 Tuples (Immutable Sequences)
+- Creation: `t = (1, 2, 3)`, single element requires trailing comma: `t = (42,)`.
+- Tuple Unpacking: `a, b, *rest = (1, 2, 3, 4, 5)` (`rest` becomes `[3, 4, 5]`).
+- Use Cases: Fixed records, dictionary keys, function multiple return values.
+
+4.3 Sets (Unique Hash Sets)
+- Mathematical Operations:
+  - Union: `A | B` or `A.union(B)`
+  - Intersection: `A & B` or `A.intersection(B)`
+  - Difference: `A - B` or `A.difference(B)`
+  - Symmetric Difference: `A ^ B` or `A.symmetric_difference(B)`
+  - Subset / Superset: `A <= B`, `A >= B`
+
+4.4 Dictionaries (Hash Maps)
+- Key requirements: Must be hashable (strings, numbers, tuples of hashables; NOT lists or dicts).
+- Key Methods:
+  - `.get(key, default)`: Safely returns value or fallback without raising `KeyError`.
+  - `.setdefault(key, default)`: Inserts key with default if not present.
+  - `.keys()`, `.values()`, `.items()`: Dynamic view objects.
+  - `.update(other_dict)`: Merges key-values.
+
+4.5 The `collections` Module
+- `deque`: Doubly linked list of blocks providing $O(1)$ appends and pops from both ends.
+- `Counter`: Dictionary subclass for counting hashable items.
+- `defaultdict`: Dictionary that automatically initializes missing keys using a factory function.
+- `namedtuple`: Factory function creating tuple subclasses with named fields.
+
+5. Syntax
+5.1 Comprehensions
+squares = [x**2 for x in range(10) if x % 2 == 0]
+word_lengths = {w: len(w) for w in ["rag", "python", "engine"]}
+unique_chars = {char.lower() for char in "Adaptive Learning"}
+
+5.2 Collections Module
+from collections import deque, Counter, defaultdict, namedtuple
+
+dq = deque([1, 2, 3], maxlen=5)
+counts = Counter("abracadabra")
+grouped = defaultdict(list)
+Point = namedtuple("Point", ["x", "y"])
+
+6. Basic Examples
+Example 6.1: List Slicing, Mutation, and Comprehensions
+def list_operations_demo():
+    numbers = [10, 20, 30, 40, 50, 60, 70, 80]
+
+    # Slicing operations
+    print(f"Original:        {numbers}")
+    print(f"First 3:         {numbers[:3]}")
+    print(f"Last 2:          {numbers[-2:]}")
+    print(f"Reversed:        {numbers[::-1]}")
+    print(f"Every 2nd item:  {numbers[::2]}")
+
+    # List comprehension with transformation and filter
+    filtered_squares = [n * n for n in numbers if n > 30]
+    print(f"Squares (> 30):  {filtered_squares}")
+
+list_operations_demo()
+
+Example 6.2: Dictionary Methods and Safe Lookups
+def dictionary_methods_demo():
+    user_profile = {
+        "id": 1001,
+        "username": "coder_pro",
+        "roles": ["admin", "developer"]
+    }
+
+    # Safe lookup
+    email = user_profile.get("email", "no-email-provided@domain.com")
+    print(f"Email: {email}")
+
+    # Dict iteration
+    print("User Attributes:")
+    for key, value in user_profile.items():
+        print(f"  {key:<12}: {value}")
+
+dictionary_methods_demo()
+
+7. Intermediate Examples
+Example 7.1: Set Operations for Fast Deduplication and Filtering
+def analyze_course_enrollments():
+    cs_students = {"Alice", "Bob", "Charlie", "David", "Elena"}
+    math_students = {"Charlie", "David", "Frank", "Grace"}
+
+    both = cs_students & math_students
+    only_cs = cs_students - math_students
+    all_unique = cs_students | math_students
+
+    print(f"Enrolled in Both CS and Math: {both}")
+    print(f"Enrolled ONLY in CS:          {only_cs}")
+    print(f"Total Unique Students:        {len(all_unique)} -> {all_unique}")
+
+analyze_course_enrollments()
+
+Example 7.2: Grouping with defaultdict and Counting with Counter
+from collections import defaultdict, Counter
+
+def process_transaction_logs():
+    transactions = [
+        ("Alice", "BUY", 150),
+        ("Bob", "BUY", 200),
+        ("Alice", "SELL", 50),
+        ("Charlie", "BUY", 300),
+        ("Alice", "BUY", 100),
+        ("Bob", "BUY", 50),
+    ]
+
+    # 1. Group transactions by customer
+    customer_history = defaultdict(list)
+    action_counter = Counter()
+
+    for customer, action, amount in transactions:
+        customer_history[customer].append((action, amount))
+        action_counter[action] += 1
+
+    print("--- Customer History ---")
+    for customer, history in customer_history.items():
+        total_spent = sum(amt for act, amt in history if act == "BUY")
+        print(f"{customer}: {history} | Total Bought: ${total_spent}")
+
+    print(f"
+Action Summary: {dict(action_counter)}")
+
+process_transaction_logs()
+
+8. Advanced Examples
+Example 8.1: Stack, Queue, and NamedTuple Implementation
+from collections import deque, namedtuple
+import copy
+
+StudentRecord = namedtuple("StudentRecord", ["id", "name", "gpa"])
+
+class TaskQueue:
+    def __init__(self, max_capacity: int = 100):
+        self._queue = deque(maxlen=max_capacity)
+
+    def enqueue(self, task_name: str) -> None:
+        self._queue.append(task_name)
+        print(f"Enqueued: '{task_name}' | Pending: {len(self._queue)}")
+
+    def dequeue(self) -> str | None:
+        if not self._queue:
+            print("Queue is empty.")
+            return None
+        task = self._queue.popleft() # O(1) FIFO removal
+        print(f"Dequeued: '{task}' | Remaining: {len(self._queue)}")
+        return task
+
+def shallow_vs_deep_copy_demo():
+    original = [1, [2, 3], {"key": "val"}]
+    shallow = copy.copy(original)
+    deep = copy.deepcopy(original)
+
+    # Mutate nested element
+    original[1].append(999)
+    original[2]["new"] = "added"
+
+    print("--- Copy Comparison ---")
+    print(f"Original: {original}")
+    print(f"Shallow:  {shallow}  (Nested objects mutated!)")
+    print(f"Deep:     {deep}     (Completely isolated!)")
+
+shallow_vs_deep_copy_demo()
+
+q = TaskQueue(5)
+q.enqueue("Task-A")
+q.enqueue("Task-B")
+q.dequeue()
+
+9. Code Explanation
+In Example 7.2:
+- `defaultdict(list)` automatically creates an empty `[]` upon first access of any new key, eliminating verbose `if key not in d: d[key] = []` boilerplate.
+- `Counter` aggregates frequency distributions in linear $O(N)$ time.
+In Example 8.1:
+- `collections.deque.popleft()` executes in $O(1)$ time by manipulating internal block node pointers, whereas `list.pop(0)` takes $O(N)$ time due to shifting all remaining elements in memory.
+- `copy.deepcopy()` recursively traverses and duplicates all nested compound objects, ensuring full data isolation.
+
+10. Practical Use Cases
+- High-throughput message queuing and BFS graph traversal using `deque`.
+- Inverted index search and text term-frequency matrices using `Counter` and `defaultdict`.
+- Fast deduplication and set membership filtering in RAG data pipelines.
+- Immutable data transfer objects (DTOs) using `namedtuple`.
+
+11. Common Mistakes
+1. Using `list.pop(0)` for FIFO queues: causes $O(N)$ memory shifting; use `collections.deque.popleft()` ($O(1)$).
+2. Using mutable objects (like lists) as dictionary keys or set elements: raises `TypeError: unhashable type: 'list'`.
+3. Creating 2D lists with multiplication: `grid = [[0] * 3] * 3` creates 3 references to the SAME inner list. Modifying `grid[0][0] = 1` mutates all 3 rows. Use list comprehension: `grid = [[0] * 3 for _ in range(3)]`.
+4. Misunderstanding shallow copy: `shallow_list = original_list[:]` copies outer pointers, but inner mutable lists remain shared.
+
+12. Edge Cases
+- Dictionary key collision handling: CPython uses open addressing with quadratic probing to resolve hash collisions.
+- Modifying a dictionary or set while iterating over it raises `RuntimeError: dictionary changed size during iteration`.
+
+13. Best Practices
+- Choose `tuple` over `list` when data is fixed and read-only (better memory efficiency and intent clarity).
+- Use `set` for membership testing (`if item in my_set:`) which is $O(1)$ average vs $O(N)$ for lists.
+- Use dict `.get()` with defaults to avoid try-except blocks for optional keys.
+- Use `namedtuple` or `dataclasses` instead of raw dictionaries for structured record schemas.
+
+14. Performance Considerations (Big-O Complexity Table)
+| Operation | List | Deque | Set | Dict |
+|---|---|---|---|---|
+| Index Access `[i]` | $O(1)$ | $O(N)$ (middle) | N/A | N/A |
+| Append (right) | $O(1)$ | $O(1)$ | $O(1)$ add | $O(1)$ set |
+| Append (left) | $O(N)$ | $O(1)$ | N/A | N/A |
+| Pop (right) | $O(1)$ | $O(1)$ | $O(1)$ pop | $O(1)$ pop |
+| Pop (left) | $O(N)$ | $O(1)$ | N/A | N/A |
+| Search / In | $O(N)$ | $O(N)$ | $O(1)$ | $O(1)$ (key) |
+
+15. Comparison with Related Concepts
+- List vs Tuple: Lists are mutable dynamic arrays; Tuples are immutable fixed-length records.
+- Set vs Frozenset: `set` is mutable (cannot be a dict key); `frozenset` is immutable and hashable (can be a dict key or member of another set).
+
+16. Debugging Tips
+- Print collection sizes and memory usage using `sys.getsizeof(collection)`.
+- Use `pprint` (`from pprint import pprint`) to inspect deeply nested dictionaries and JSON payloads legibly.
+
+17. Interview Questions and Concept Checks
+1. How does Python's dictionary maintain insertion order since Python 3.6+?
+   - CPython splits the dict into a dense array storing key-value pairs in insertion order and a sparse hash table array storing indices into the dense array.
+2. Why is `item in my_set` faster than `item in my_list`?
+   - Sets compute the hash of `item` to inspect its hash bucket directly in $O(1)$ average time, whereas lists perform a linear scan comparing elements sequentially in $O(N)$ time.
+3. What is the difference between `list.sort()` and `sorted(list)`?
+   - `list.sort()` mutates the list in-place and returns `None`; `sorted(list)` returns a brand-new sorted list while leaving the original input unchanged.
+
+18. Summary
+Python data structures provide an exceptionally versatile toolkit. Selecting the appropriate data structure—balancing ordered sequences, hash tables, and specialized collections—is critical for designing performant, memory-efficient, and maintainable software.

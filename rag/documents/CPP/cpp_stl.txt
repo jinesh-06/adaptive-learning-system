@@ -1,0 +1,232 @@
+COURSE: cpp
+TOPIC: stl
+LEVEL: advanced
+SOURCE: cpp_stl.txt
+
+TITLE: C++ Standard Template Library (STL): Containers, Iterators, Algorithms, and Adapters
+
+1. Introduction
+The Standard Template Library (STL) is a powerful, highly optimized collection of generic C++ template classes and algorithms. Built on the design philosophy of generic programming pioneered by Alexander Stepanov, the STL cleanly decouples data structures (containers) from computational operations (algorithms) through a unified bridge (iterators). The STL provides contiguous sequence containers (`std::vector`, `std::array`, `std::deque`), node-based sequence containers (`std::list`, `std::forward_list`), container adapters (`std::stack`, `std::queue`, `std::priority_queue`), ordered associative containers (`std::set`, `std::map`, `std::multiset`, `std::multimap`), unordered associative containers (`std::unordered_set`, `std::unordered_map`), and over 100 optimized algorithms (`std::sort`, `std::find`, `std::binary_search`, `std::accumulate`). Mastering the STL is essential for competitive programming, systems engineering, and modern enterprise software.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Understand the 4 core pillars of the STL: Containers, Iterators, Algorithms, and Functors/Lambdas.
+- Select the optimal sequence container (`vector`, `deque`, `list`, `array`) based on algorithmic complexity.
+- Master container adapters: LIFO `std::stack`, FIFO `std::queue`, and heap-based `std::priority_queue`.
+- Utilize ordered associative containers based on Red-Black self-balancing BSTs ($O(\log N)$ lookup).
+- Utilize unordered hash table containers based on buckets and hash functions ($O(1)$ average lookup).
+- Master STL iterator categories: input, output, forward, bidirectional, and random-access iterators.
+- Apply standard algorithms (`sort`, `stable_sort`, `find`, `count`, `reverse`, `accumulate`, `lower_bound`, `upper_bound`).
+- Write custom comparators for complex sorting, maps, and max/min-priority queues.
+- Solve real-world competitive programming and data-processing problems efficiently.
+
+3. Core Concepts
+- Containers: Generic data structures managing object storage and lifecycles.
+- Iterators: Pointer-like objects providing sequential or random-access traversal across container elements.
+- Algorithms: Container-agnostic template functions operating over iterator ranges `[begin, end)`.
+- Functors and Predicates: Callable objects and lambdas dictating sorting, filtering, and transformation logic.
+- Time Complexity Guarantees: The C++ standard mandates strict asymptotic complexity bounds on all STL operations.
+
+4. Detailed Explanation
+4.1 Sequence Containers
+- `std::vector`: Dynamic contiguous array. $O(1)$ amortized append (`push_back`), $O(1)$ random access (`[]`), $O(N)$ arbitrary insertion.
+- `std::deque`: Double-ended queue of fixed-size chunks. $O(1)$ `push_front` and `push_back`, $O(1)$ random access.
+- `std::list`: Doubly linked list. $O(1)$ insertion/deletion anywhere given an iterator, no random access ($O(N)$ traversal).
+
+4.2 Container Adapters
+- `std::stack`: LIFO adapter wrapping vector/deque (`push`, `pop`, `top`).
+- `std::queue`: FIFO adapter wrapping deque/list (`push`, `pop`, `front`, `back`).
+- `std::priority_queue`: Binary max-heap adapter (`push`, `pop`, `top`). Can be configured as a min-heap with `std::greater`.
+
+4.3 Associative Containers
+- Ordered (`std::set`, `std::map`): Implemented as Red-Black Trees. Elements sorted by key. Insertion, search, removal: $O(\log N)$.
+- Unordered (`std::unordered_set`, `std::unordered_map`): Implemented as Hash Tables. Insertion, search, removal: $O(1)$ average, $O(N)$ worst-case on heavy hash collisions.
+
+4.4 Algorithms Library (`<algorithm>`, `<numeric>`)
+- `std::sort(begin, end)`: Hybrid Introsort ($O(N \log N)$ worst-case).
+- `std::binary_search(begin, end, val)`: Returns boolean existence on sorted ranges.
+- `std::lower_bound` / `std::upper_bound`: Binary search returning iterators to first element $\ge$ or $>$ value.
+- `std::accumulate(begin, end, init)`: Sums range in $O(N)$.
+
+5. Syntax
+5.1 Vector and Map Initialization
+#include <vector>
+#include <map>
+#include <unordered_map>
+
+std::vector<int> vec = {5, 2, 8, 1, 9};
+std::map<std::string, int> phone_book;
+phone_book["Alice"] = 5551234;
+
+5.2 Priority Queue (Min-Heap)
+#include <queue>
+std::priority_queue<int, std::vector<int>, std::greater<int>> min_heap;
+
+6. Basic Examples
+Example 6.1: Vector Operations, Capacity, and Iterators
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> nums;
+    nums.reserve(10); // Pre-allocate memory to prevent reallocations
+
+    nums.push_back(40);
+    nums.push_back(10);
+    nums.push_back(30);
+    nums.push_back(20);
+
+    std::cout << "Original vector: ";
+    for (auto it = nums.begin(); it != nums.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << "
+";
+
+    std::sort(nums.begin(), nums.end());
+
+    std::cout << "Sorted vector:   ";
+    for (int val : nums) std::cout << val << " ";
+    std::cout << "
+";
+    return 0;
+}
+
+Example 6.2: Word Frequency Counter using std::unordered_map
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <unordered_map>
+
+int main() {
+    std::string text = "rag engine adaptive engine learning rag cognitive load";
+    std::stringstream ss(text);
+    std::string word;
+    std::unordered_map<std::string, int> freq_map;
+
+    while (ss >> word) {
+        freq_map[word]++;
+    }
+
+    std::cout << "Word Frequencies:
+";
+    for (const auto &[key, count] : freq_map) {
+        std::cout << "  " << key << " -> " << count << "
+";
+    }
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Priority Queue for Top-K Elements
+#include <iostream>
+#include <vector>
+#include <queue>
+
+int main() {
+    std::vector<int> stream = {50, 12, 85, 33, 99, 4, 76, 21};
+    int k = 3;
+
+    // Min-heap storing top k largest elements
+    std::priority_queue<int, std::vector<int>, std::greater<int>> min_heap;
+
+    for (int num : stream) {
+        min_heap.push(num);
+        if (min_heap.size() > k) {
+            min_heap.pop(); // Remove smallest among top candidates
+        }
+    }
+
+    std::cout << "Top " << k << " largest elements: ";
+    while (!min_heap.empty()) {
+        std::cout << min_heap.top() << " ";
+        min_heap.pop();
+    }
+    std::cout << "
+";
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Custom Struct Ordering in std::set and Custom Comparator
+#include <iostream>
+#include <set>
+#include <string>
+#include <algorithm>
+
+struct Student {
+    int id;
+    std::string name;
+    double gpa;
+
+    // Strict weak ordering comparator
+    bool operator<(const Student &other) const {
+        if (gpa != other.gpa) return gpa > other.gpa; // Higher GPA first
+        return id < other.id;                         // Tie-breaker: lower ID
+    }
+};
+
+int main() {
+    std::set<Student> honor_roll = {
+        {101, "Marcus", 3.85},
+        {102, "Elena", 3.95},
+        {103, "David", 3.85},
+        {104, "Aria", 4.00}
+    };
+
+    std::cout << "Honor Roll Leaderboard:
+";
+    for (const auto &st : honor_roll) {
+        std::cout << "GPA: " << st.gpa << " | ID: " << st.id << " | Name: " << st.name << "
+";
+    }
+    return 0;
+}
+
+9. Code Explanation
+In Example 7.1:
+- Maintaining a min-heap of size $K$ while iterating through $N$ items finds the top-$K$ largest elements in $O(N \log K)$ time and $O(K)$ space, outperforming full sorting ($O(N \log N)$).
+In Example 8.1:
+- `std::set` requires a strict weak ordering (`operator<`). The custom comparator prioritizes higher GPA first, then uses `id` as a deterministic tie-breaker.
+
+10. Practical Use Cases
+- High-frequency order books in trading (using `std::map` / `std::priority_queue`).
+- Graph search algorithms (Dijkstra's using `std::priority_queue`, BFS using `std::queue`, DFS using `std::stack`).
+- In-memory caching and deduplication (`std::unordered_set`).
+
+11. Common Mistakes
+1. Iterator Invalidation: Adding or deleting elements in a `std::vector` while iterating over it causes dangling iterators and segmentation faults.
+2. Using `operator[]` on a `std::map` when checking for key existence: `map["key"]` inserts a default value if the key is missing; use `map.find(key)` or `map.contains(key)` (C++20).
+3. Using `std::endl` in tight algorithm loops instead of `
+`.
+4. Writing custom comparators that violate strict weak ordering (must return `false` for equivalent elements `comp(a, a) == false`).
+
+12. Edge Cases
+- Calling `.front()` or `.top()` on an empty container (undefined behavior).
+- Hash collisions in `std::unordered_map` degrading performance from $O(1)$ to $O(N)$ on adversarial inputs.
+
+13. Best Practices
+- Call `vec.reserve(expected_size)` before inserting elements in bulk to prevent frequent heap reallocations.
+- Use structured binding `for (const auto &[key, val] : map)` (C++17) for clean map traversal.
+- Prefer `emplace_back` over `push_back` to construct objects in-place without temporary copies.
+
+14. Performance Considerations
+- `std::vector` is cache-friendly due to contiguous memory allocation; prefer `std::vector` over `std::list` even when doing insertions, unless node stability is strictly required.
+
+15. Comparison with Related Concepts
+- `std::map` vs `std::unordered_map`: `std::map` maintains sorted keys and guarantees $O(\log N)$ worst-case; `std::unordered_map` provides faster $O(1)$ average lookups but lacks sorted ordering.
+
+16. Debugging Tips
+- Compile with `-D_GLIBCXX_DEBUG` in GCC to enable comprehensive STL container boundary and iterator debugging checks.
+
+17. Interview Questions and Concept Checks
+1. What causes iterator invalidation in `std::vector`?
+   - Any insertion that causes the vector's `size` to exceed its `capacity` triggers a reallocation of the underlying contiguous buffer, invalidating all existing pointers, references, and iterators.
+2. Why is `std::vector` generally faster than `std::list` in practical benchmarks?
+   - Due to spatial locality: vector elements are adjacent in physical RAM, maximizing CPU L1/L2 cache line hits.
+3. How does `lower_bound` differ from `upper_bound`?
+   - `lower_bound` returns an iterator to the first element $\ge$ value; `upper_bound` returns an iterator to the first element strictly $>$ value.
+
+18. Summary
+The Standard Template Library is the bedrock of professional C++ programming. Mastering STL containers, iterators, and algorithms enables software engineers to produce concise, scalable, and high-performance solutions with minimal boilerplate.

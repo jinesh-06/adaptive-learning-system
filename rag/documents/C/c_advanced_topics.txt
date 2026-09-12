@@ -1,0 +1,214 @@
+COURSE: c
+TOPIC: advanced_topics
+LEVEL: advanced
+SOURCE: c_advanced_topics.txt
+
+TITLE: Advanced C: Preprocessor Directives, Macros, Multi-File Architecture, Command-Line Arguments, Memory Layout, and Undefined Behavior
+
+1. Introduction
+Beyond syntax and standard constructs lies the domain of advanced C systems programming. This domain encompasses preprocessor metaprogramming, multi-file modular architecture, compilation mechanics, linking and symbol visibility, command-line arguments, process memory layout, type qualifiers (`const`, `volatile`, `restrict`), and the critical study of Undefined Behavior (UB). Mastery of these advanced concepts separates novice programmers from systems engineers capable of building kernel drivers, high-performance engines, and cross-platform native software.
+
+2. Learning Objectives
+By studying this module, learners will:
+- Master preprocessor directives: `#include`, `#define`, parameterized macros, stringification (`#`), and token pasting (`##`).
+- Apply conditional compilation (`#ifdef`, `#ifndef`, `#if`, `#elif`, `#endif`) and header include guards.
+- Architect multi-file C programs with clear separation of declarations (.h) and definitions (.c).
+- Process command-line arguments using `argc` and `argv`.
+- Understand type qualifiers and linkage: `const`, `volatile`, `restrict`, `static`, `extern`.
+- Inspect the anatomical memory layout of a running C process (Text, Data, BSS, Heap, Stack).
+- Understand static and dynamic linking, shared libraries, and symbol resolution.
+- Identify and prevent undefined behavior (UB), sequence point violations, and portability traps.
+
+3. Core Concepts
+- Preprocessor Translation Phase: Textual substitution occurs prior to compilation without syntax or type awareness.
+- Include Guards: `#ifndef HEADER_H / #define HEADER_H ... #endif` preventing duplicate type declarations across translation units.
+- Process Memory Anatomy:
+  - Text: Executable machine code (read-only).
+  - Data Segment: Initialized global and static variables.
+  - BSS Segment: Uninitialized global and static variables (zero-filled by OS).
+  - Heap: Dynamically allocated memory (`malloc`).
+  - Stack: Local variables and function activation records.
+- Type Qualifiers:
+  - `volatile`: Informs compiler that variable value may change asynchronously (prevents aggressive compiler caching).
+  - `restrict`: Asserts that a pointer is the sole reference to a memory block, enabling vectorization optimizations.
+- Undefined Behavior (UB): Program states where the ISO C specification places no requirements, allowing crashes or unexpected optimization artifacts.
+
+4. Detailed Explanation
+4.1 Preprocessor Macros and Metaprogramming
+- Parameterized macros: `#define SQUARE(x) ((x) * (x))`
+  - Always enclose arguments and the outer expression in parentheses to prevent operator precedence bugs.
+- Stringification Operator (`#`): Converts macro parameter into a quoted string literal.
+- Token Pasting Operator (`##`): Concatenates two tokens into a single identifier during preprocessing.
+
+4.2 Multi-File Architecture and Linkage
+- Header files (`.h`): Contain type definitions, macros, and function prototypes (`extern` by default).
+- Source files (`.c`): Contain implementation code and internal static helper functions.
+- Build command: `gcc -Wall -Iinclude src/main.c src/utils.c -o app`
+
+4.3 Command-Line Arguments
+Signature: `int main(int argc, char *argv[])`
+- `argc`: Number of command-line arguments (including program executable path at `argv[0]`).
+- `argv`: Array of null-terminated string pointers.
+
+4.4 Type Qualifiers
+- `const`: Read-only semantics. `const int *p` (data immutable) vs `int *const p` (pointer immutable).
+- `volatile`: Required for hardware memory-mapped registers, signal handlers, and shared memory in multithreaded code.
+- `restrict` (C99): Guarantees no memory aliasing.
+
+5. Syntax
+5.1 Safe Macro Definition
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
+5.2 Header Include Guard
+#ifndef UTILS_H
+#define UTILS_H
+
+void compute_checksum(const char *data, int length);
+
+#endif /* UTILS_H */
+
+5.3 Command-Line Argument Processing
+int main(int argc, char *argv[]) {
+    for (int i = 0; i < argc; i++) {
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
+    return 0;
+}
+
+6. Basic Examples
+Example 6.1: Command-Line Argument Parser
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+    if (argc < 3) {
+        printf("Usage: %s <num1> <num2>\n", argv[0]);
+        return 1;
+    }
+
+    int val1 = atoi(argv[1]);
+    int val2 = atoi(argv[2]);
+    printf("Arguments received: %d and %d. Sum = %d\n", val1, val2, val1 + val2);
+    return 0;
+}
+
+Example 6.2: Preprocessor Stringification and Token Pasting
+#include <stdio.h>
+
+#define PRINT_EXPR(expr) printf(#expr " = %d\n", expr)
+#define MAKE_VAR_NAME(prefix, id) prefix##_##id
+
+int main(void) {
+    int MAKE_VAR_NAME(sensor, 101) = 45; // Creates variable sensor_101
+    PRINT_EXPR(sensor_101 * 2);           // Prints: sensor_101 * 2 = 90
+    return 0;
+}
+
+7. Intermediate Examples
+Example 7.1: Multi-File Program Structure
+// --- file: math_utils.h ---
+#ifndef MATH_UTILS_H
+#define MATH_UTILS_H
+
+double calculate_mean(const double *data, int n);
+
+#endif
+
+// --- file: math_utils.c ---
+#include "math_utils.h"
+
+double calculate_mean(const double *data, int n) {
+    if (n <= 0 || data == NULL) return 0.0;
+    double sum = 0.0;
+    for (int i = 0; i < n; i++) sum += data[i];
+    return sum / n;
+}
+
+// --- file: main.c ---
+#include <stdio.h>
+#include "math_utils.h"
+
+int main(void) {
+    double values[] = {10.5, 20.5, 30.0};
+    double mean = calculate_mean(values, 3);
+    printf("Calculated mean: %.2f\n", mean);
+    return 0;
+}
+
+8. Advanced Examples
+Example 8.1: Generic Type Printing Macro using C11 _Generic
+#include <stdio.h>
+
+#define print_type_value(X) _Generic((X), \
+    int: printf("Integer: %d\n", X), \
+    double: printf("Double: %.4f\n", X), \
+    char*: printf("String: %s\n", X), \
+    default: printf("Unknown type\n") \
+)
+
+int main(void) {
+    int i = 42;
+    double d = 3.14159;
+    char *s = "C11 Generic Dispatch";
+
+    print_type_value(i);
+    print_type_value(d);
+    print_type_value(s);
+    return 0;
+}
+
+9. Code Explanation
+In Example 6.2:
+- `#expr` turns the literal tokens passed to `PRINT_EXPR` into a quoted string literal.
+- `prefix##_##id` merges `sensor`, `_`, and `101` into the single token `sensor_101`.
+In Example 8.1:
+- C11 `_Generic` performs compile-time type matching based on the static type of expression `X`, routing to the appropriate branch without runtime overhead.
+
+10. Practical Use Cases
+- Cross-platform abstraction layers (compiling Linux vs Windows network sockets using `#ifdef _WIN32`).
+- Embedded device driver development using `volatile` registers.
+- High-performance numeric computing with `restrict` pointers allowing SIMD vectorization.
+- Plugin architectures with dynamic library loading (`dlopen`/`dlsym` on POSIX, `LoadLibrary`/`GetProcAddress` on Windows).
+
+11. Common Mistakes
+1. Macro side-effects with increment operators: `SQUARE(x++)` expands to `((x++) * (x++))`, incrementing `x` twice and producing undefined behavior.
+2. Missing parentheses in macro definitions: `#define MULTIPLY(a, b) a * b` -> `MULTIPLY(2 + 3, 4 + 5)` evaluates to `2 + 3 * 4 + 5 = 19` instead of 45.
+3. Defining variables in header files without `extern`: Causes multiple definition linker errors when included in multiple `.c` files.
+4. Casting away `const` and modifying read-only data (Undefined Behavior).
+
+12. Edge Cases
+- Undefined Behavior examples:
+  - Modifying string literals.
+  - Dereferencing NULL or dangling pointers.
+  - Signed integer overflow.
+  - Shifting an integer by more than its bit width.
+  - Violating sequence points (e.g., `i = i++ + 1`).
+
+13. Best Practices
+- Prefer `inline` functions and `enum` constants over parameterized macros whenever possible.
+- Always include header guards in every `.h` file.
+- Use `const` defensively for all pointer parameters that are not mutated.
+- Enable all compiler warning flags (`-Wall -Wextra -Wpedantic -Werror`).
+
+14. Performance Considerations
+- `restrict` allows compiler to avoid reloading data from memory between pointer dereferences.
+- Place hot variables in local scope to enable CPU register allocation.
+
+15. Comparison with Related Concepts
+- C Preprocessor vs C++ Templates: C preprocessor performs un-typed textual substitution; C++ templates perform type-safe AST code generation with full compiler diagnostics.
+
+16. Debugging Tips
+- Inspect preprocessor output: `gcc -E main.c` prints the fully expanded source code.
+- Inspect symbol tables: `nm app.o` or `objdump -t app.o`.
+- Use AddressSanitizer and UndefinedBehaviorSanitizer: `gcc -fsanitize=address,undefined -g main.c`.
+
+17. Interview Questions and Concept Checks
+1. What does the `volatile` keyword prevent the compiler from doing?
+   - It prevents the compiler from optimizing away reads or writes or caching the variable in a CPU register, forcing an explicit memory access on every reference.
+2. What is the BSS segment in program memory?
+   - The Block Started by Symbol (BSS) segment contains uninitialized global and static variables, which are initialized to zero by the operating system loader before `main()` executes.
+3. Why are header guards necessary in C multi-file projects?
+   - Header guards prevent duplicate declarations of structs, typedefs, and function prototypes when a header is transitively included multiple times.
+
+18. Summary
+Advanced C programming bridges software logic and computer architecture. By mastering the preprocessor, multi-file linking, process memory structure, and defensive coding against Undefined Behavior, developers unlock the full performance and expressive power of systems programming.

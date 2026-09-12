@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# ChromaDB persistence (can be rebuilt via python -m rag.src.ingest)
+chroma_db/
+*.sqlite3
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
