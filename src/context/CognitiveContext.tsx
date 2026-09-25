@@ -13,9 +13,12 @@ interface CognitiveContextType {
   contributingFactors: string[];
   unusualSignal: boolean;
   activeTopicId: string | null;
+  suggestedAdaptation: string | null;
+  pendingAdaptation: { targetMode: ContentMode; reason: string; suggestedAdaptation: string } | null;
   setActiveTopicId: (topicId: string) => void;
   updateFromFeedback: (feedback: any) => void;
   setContentModeManually: (mode: ContentMode) => void;
+  verifyAdaptation: (accept: boolean) => void;
 }
 
 const CognitiveContext = createContext<CognitiveContextType | undefined>(undefined);
@@ -31,20 +34,67 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   ]);
   const [unusualSignal, setUnusualSignal] = useState<boolean>(false);
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
+  const [suggestedAdaptation, setSuggestedAdaptation] = useState<string | null>(null);
+  const [pendingAdaptation, setPendingAdaptation] = useState<{
+    targetMode: ContentMode;
+    reason: string;
+    suggestedAdaptation: string;
+  } | null>(null);
 
   const updateFromFeedback = (feedback: any) => {
     if (!feedback) return;
-    if (feedback.cognitive_level) setCurrentLoad(feedback.cognitive_level);
     if (feedback.confidence !== undefined) setConfidence(feedback.confidence);
-    if (feedback.content_mode) setContentMode(feedback.content_mode);
     if (feedback.recommended_action) setRecommendedAction(feedback.recommended_action);
     if (feedback.reason) setReason(feedback.reason);
     if (feedback.contributing_factors) setContributingFactors(feedback.contributing_factors);
     if (feedback.unusual_completion?.is_unusual) setUnusualSignal(true);
+
+    const targetMode: ContentMode | undefined = feedback.content_mode;
+    const targetLoad: CognitiveLoadLevel | undefined = feedback.cognitive_level || feedback.cognitive_load;
+    const adaptationText = feedback.suggested_adaptation || (
+      targetLoad === 'HIGH'
+        ? 'Suggested Adaptation: Switch to Simplified mode with bite-sized micro-steps to reduce cognitive load.'
+        : targetLoad === 'LOW'
+        ? 'Suggested Adaptation: Switch to Concise mode to accelerate through fundamentals into advanced material.'
+        : null
+    );
+
+    if (adaptationText) {
+      setSuggestedAdaptation(adaptationText);
+    }
+
+    // Learner Agency: If the target mode differs from current, stage as a pending adaptation
+    if (targetMode && targetMode !== contentMode) {
+      setPendingAdaptation({
+        targetMode,
+        reason: feedback.reason || 'Telemetry signals suggest an adapted pacing.',
+        suggestedAdaptation: adaptationText || `Suggested Adaptation to ${targetMode} mode.`
+      });
+    } else if (targetLoad && !targetMode) {
+      const impliedMode: ContentMode = targetLoad === 'HIGH' ? 'SIMPLIFIED' : targetLoad === 'LOW' ? 'CONCISE' : 'BALANCED';
+      if (impliedMode !== contentMode) {
+        setPendingAdaptation({
+          targetMode: impliedMode,
+          reason: feedback.reason || 'Learning Signals indicate a shift in conceptual grasp.',
+          suggestedAdaptation: adaptationText || `Suggested Adaptation to ${impliedMode} mode.`
+        });
+      }
+    }
+  };
+
+  const verifyAdaptation = (accept: boolean) => {
+    if (accept && pendingAdaptation) {
+      setContentMode(pendingAdaptation.targetMode);
+      if (pendingAdaptation.targetMode === 'CONCISE') setCurrentLoad('LOW');
+      else if (pendingAdaptation.targetMode === 'SIMPLIFIED') setCurrentLoad('HIGH');
+      else setCurrentLoad('MEDIUM');
+    }
+    setPendingAdaptation(null);
   };
 
   const setContentModeManually = (mode: ContentMode) => {
     setContentMode(mode);
+    setPendingAdaptation(null);
     if (mode === 'CONCISE') setCurrentLoad('LOW');
     else if (mode === 'SIMPLIFIED') setCurrentLoad('HIGH');
     else setCurrentLoad('MEDIUM');
@@ -61,9 +111,12 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         contributingFactors,
         unusualSignal,
         activeTopicId,
+        suggestedAdaptation,
+        pendingAdaptation,
         setActiveTopicId,
         updateFromFeedback,
-        setContentModeManually
+        setContentModeManually,
+        verifyAdaptation
       }}
     >
       {children}

@@ -10,7 +10,10 @@ export const CognitiveLoadBanner: React.FC = () => {
     reason,
     contributingFactors,
     unusualSignal,
-    setContentModeManually
+    suggestedAdaptation,
+    pendingAdaptation,
+    setContentModeManually,
+    verifyAdaptation
   } = useCognitive();
 
   const getTheme = () => {
@@ -22,7 +25,7 @@ export const CognitiveLoadBanner: React.FC = () => {
           glow: 'text-emerald-400',
           badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
           icon: <Zap className="w-5 h-5 text-emerald-400" />,
-          title: 'Comfortable Cognitive State Detected (Low Difficulty)'
+          title: 'Comfortable Cognitive State Detected (Low Complexity)'
         };
       case 'HIGH':
         return {
@@ -48,7 +51,7 @@ export const CognitiveLoadBanner: React.FC = () => {
   const theme = getTheme();
 
   return (
-    <div className={`w-full rounded-2xl border p-4 bg-gradient-to-r ${theme.bg} ${theme.border} shadow-xl backdrop-blur-md mb-6 transition-all duration-300`}>
+    <div className={`w-full rounded-2xl border p-4 bg-gradient-to-r ${theme.bg} ${theme.border} shadow-xl backdrop-blur-md mb-6 transition-all duration-300 space-y-3`}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-700/50 shadow-inner">
@@ -56,6 +59,9 @@ export const CognitiveLoadBanner: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                Adaptive Learning Insight
+              </span>
               <h3 className={`text-sm font-bold ${theme.glow}`}>
                 {theme.title}
               </h3>
@@ -74,7 +80,7 @@ export const CognitiveLoadBanner: React.FC = () => {
 
             {contributingFactors && contributingFactors.length > 0 && (
               <div className="flex items-center gap-2 mt-2 flex-wrap text-[11px] text-slate-400">
-                <span className="text-slate-500 font-medium">Behavioral Telemetry Signals:</span>
+                <span className="text-slate-500 font-medium">Learning Signals:</span>
                 {contributingFactors.slice(0, 3).map((factor, idx) => (
                   <span
                     key={idx}
@@ -90,7 +96,7 @@ export const CognitiveLoadBanner: React.FC = () => {
 
         {/* Content Mode Switcher */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 shrink-0 border-t md:border-t-0 md:border-l border-slate-800/80 pt-3 md:pt-0 md:pl-4">
-          <span className="text-[11px] text-slate-400 font-medium">Adaptive Content Mode:</span>
+          <span className="text-[11px] text-slate-400 font-medium">Adapted Lesson Mode:</span>
           <div className="inline-flex rounded-xl p-1 bg-slate-900/90 border border-slate-800">
             {(['CONCISE', 'BALANCED', 'SIMPLIFIED'] as ContentMode[]).map(mode => (
               <button
@@ -108,6 +114,32 @@ export const CognitiveLoadBanner: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Learner Agency Verification Prompt */}
+      {pendingAdaptation && (
+        <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/40 p-3 rounded-xl">
+          <div className="flex items-center gap-2 text-xs">
+            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-slate-200 font-medium">
+              <strong className="text-cyan-300">Suggested Adaptation:</strong> {pendingAdaptation.suggestedAdaptation}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => verifyAdaptation(true)}
+              className="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-all shadow-md shadow-cyan-500/20"
+            >
+              Apply Adapted Lesson
+            </button>
+            <button
+              onClick={() => verifyAdaptation(false)}
+              className="px-2.5 py-1 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-400 text-xs transition-all"
+            >
+              Keep Current
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "python backend/main.py",
+    "start": "python backend/main.py",
+    "test:integration": "python backend/test_integration.py",
+    "test:llm": "python -m unittest llm.test_adaptive_generator",
+    "reindex:rag": "python -m rag.src.ingest"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
