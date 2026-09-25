@@ -11,6 +11,51 @@ from rag.src.embeddings import embed_query
 from rag.src.vector_store import get_vector_store, VectorStore
 
 
+TOPIC_SLUG_MAP: Dict[str, str] = {
+    # Python
+    "fundamentals": "fundamentals",
+    "top-py-fundamentals": "fundamentals",
+    "language fundamentals, datatypes & immutability": "fundamentals",
+    "1. python 3 architecture & standard runtime": "fundamentals",
+    "python 3 architecture & standard runtime": "fundamentals",
+    "top-py-operators-io": "fundamentals",
+    "operators & dynamic input/output statements": "fundamentals",
+    "control_flow": "control_flow",
+    "top-py-flow-control": "control_flow",
+    "flow control, conditionals & transfer statements": "control_flow",
+    "top-py-loops": "control_flow",
+    "loops, iteration constructs & pattern printing": "control_flow",
+    "data_structures": "data_structures",
+    "top-py-strings": "data_structures",
+    "in-depth string operations, slicing & algorithms": "data_structures",
+    "top-py-lists": "data_structures",
+    "list data structure, matrices & comprehensions": "data_structures",
+    "top-py-tuples-sets": "data_structures",
+    "tuples and sets data structures": "data_structures",
+    "top-py-dictionaries": "data_structures",
+    "dictionary data structure & hash tables": "data_structures",
+    "functions": "functions",
+    "top-py-functions": "functions",
+    "functions, parameters & scope (legb)": "functions",
+    "top-py-recursion": "functions",
+    "recursion and recursive thinking": "functions",
+    "exceptions_modules": "exceptions_modules",
+    "top-py-modules-regex": "exceptions_modules",
+    "modules, math, random & regular expressions": "exceptions_modules",
+    "file_handling": "file_handling",
+    "oop": "oop",
+    "advanced_topics": "advanced_topics",
+}
+
+
+def resolve_topic_slug(raw_topic: Optional[str]) -> Optional[str]:
+    """Map human topic titles or topic IDs to ChromaDB collection slugs."""
+    if not raw_topic or not raw_topic.strip():
+        return None
+    cleaned = raw_topic.strip().lower()
+    return TOPIC_SLUG_MAP.get(cleaned, cleaned)
+
+
 def retrieve_documents(
     query: str,
     top_k: int = 5,
@@ -23,48 +68,6 @@ def retrieve_documents(
     vector_store: Optional[VectorStore] = None,
     category: Optional[str] = None  # Backward compatibility alias for course
 ) -> List[Dict[str, Any]]:
-    """
-    Retrieve top-k relevant document chunks for a given query from ChromaDB.
-
-    Distance & Similarity Explanation:
-    ----------------------------------
-    ChromaDB is configured with cosine distance ('hnsw:space': 'cosine').
-    - Cosine Distance (d): Range [0, 2], where 0.0 means identical angle, 1.0 is orthogonal.
-    - Cosine Similarity (s): Computed as `1.0 - d` (higher is more similar).
-    - Threshold Filtering:
-      When `threshold` is provided (e.g. 0.35):
-      Chunks with `similarity < threshold` (or `distance > (1.0 - threshold)`) are rejected.
-
-    Adaptive Retrieval:
-    -------------------
-    When `learner_level` is provided (e.g., "beginner", "intermediate", "advanced"),
-    the retriever pulls extra candidates and prioritizes/ranks matching educational levels
-    higher while preserving relevant foundational or advanced context.
-
-    Args:
-        query: Natural language query or programming concept question.
-        top_k: Maximum number of chunks to return (e.g., 1, 3, 5, 10). Default is 5.
-        course: Optional course filter (e.g. "c", "cpp", "python", "java").
-        topic: Optional topic filter (e.g. "data_structures", "pointers_memory").
-        level: Optional hard difficulty level filter ("beginner", "intermediate", "advanced").
-        threshold: Optional minimum cosine similarity threshold (e.g. 0.35).
-        learner_level: Optional adaptive cognitive/learner level ("beginner", "intermediate", "advanced").
-        config: Optional custom RAGConfig.
-        vector_store: Optional pre-instantiated VectorStore.
-        category: Backward-compatible alias for course.
-
-    Returns:
-        List[Dict[str, Any]] containing:
-            - chunk_id: Unique chunk identifier
-            - text: Educational chunk content
-            - source: Source filename
-            - course: Programming course ('c', 'cpp', 'python', 'java')
-            - topic: Topic name
-            - level: Educational level ('beginner', 'intermediate', 'advanced')
-            - section: Section name
-            - distance: Cosine distance (lower = closer)
-            - similarity: Cosine similarity score (higher = closer)
-    """
     if not query or not query.strip():
         return []
 
@@ -78,12 +81,14 @@ def retrieve_documents(
     filter_course = course or category
     filter_conditions: List[Dict[str, Any]] = []
 
+    norm_course = None
     if filter_course and filter_course.strip():
         norm_course = normalize_course_name(filter_course)
         filter_conditions.append({"course": norm_course})
 
-    if topic and topic.strip():
-        filter_conditions.append({"topic": topic.strip().lower()})
+    norm_topic = resolve_topic_slug(topic)
+    if norm_topic:
+        filter_conditions.append({"topic": norm_topic})
 
     # Explicit hard filter on level if specified
     if level and level.strip():
@@ -96,7 +101,6 @@ def retrieve_documents(
         where_filter = {"$and": filter_conditions}
 
     # 3. Query ChromaDB for nearest neighbors
-    # Pull extra candidates if threshold or adaptive learner_level ranking is active
     fetch_k = top_k * 4 if (threshold is not None or learner_level is not None) else top_k
     try:
         results = vstore.query(
@@ -105,13 +109,37 @@ def retrieve_documents(
             where_filter=where_filter
         )
     except Exception as e:
-        # Graceful fallback if query fails (e.g., non-existent filter combination in ChromaDB)
         return []
 
     documents_list = results.get("documents", [[]])[0]
     metadatas_list = results.get("metadatas", [[]])[0]
     distances_list = results.get("distances", [[]])[0]
     ids_list = results.get("ids", [[]])[0]
+
+    # 4. Fallback search: If filtered search returned zero documents and topic was specified,
+    # retry without the strict topic filter so semantic search over the course finds relevant chunks
+    if not documents_list and norm_topic:
+        fallback_conditions: List[Dict[str, Any]] = []
+        if norm_course:
+            fallback_conditions.append({"course": norm_course})
+        if level and level.strip():
+            fallback_conditions.append({"level": level.strip().lower()})
+
+        fallback_where = fallback_conditions[0] if len(fallback_conditions) == 1 else (
+            {"$and": fallback_conditions} if len(fallback_conditions) > 1 else None
+        )
+        try:
+            fallback_results = vstore.query(
+                query_embedding=query_emb,
+                top_k=fetch_k,
+                where_filter=fallback_where
+            )
+            documents_list = fallback_results.get("documents", [[]])[0]
+            metadatas_list = fallback_results.get("metadatas", [[]])[0]
+            distances_list = fallback_results.get("distances", [[]])[0]
+            ids_list = fallback_results.get("ids", [[]])[0]
+        except Exception:
+            pass
 
     candidate_chunks: List[Dict[str, Any]] = []
 

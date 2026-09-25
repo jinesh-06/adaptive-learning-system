@@ -134,8 +134,13 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     try {
       const resp = await api.askAiAssistant({
         question: promptText,
-        language: 'python',
+        language: topic?.language || 'python',
         topic: topic?.title || 'Programming',
+        topic_id: topicId,
+        section_id: currentSection?.id,
+        section_title: currentSection?.title,
+        section_content: currentSection?.content,
+        code_context: currentSection?.code_snippet,
         cognitive_load: currentLoad,
         tutor_mode: mode
       });

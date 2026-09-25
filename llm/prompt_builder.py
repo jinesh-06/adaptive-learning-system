@@ -46,11 +46,25 @@ CRITICAL: The learner is currently cognitively overloaded and struggling. Your g
 """
 
 
+_TUTOR_MODE_DIRECTIVES = {
+    "EXPLAIN": "MODE [Explain this]: Provide a balanced, intuitive, and crystal-clear explanation of the core concept. Ground it directly in the lesson material.",
+    "SIMPLIFY": "MODE [Make it simpler]: Break down this concept into its simplest form using a friendly real-world analogy. Avoid complex technical jargon.",
+    "EXAMPLE": "MODE [Give an example]: Provide clean, self-contained, and well-commented Python 3 code examples directly illustrating this concept.",
+    "DEBUG": "MODE [Why is this wrong?]: Detail the most common bugs, syntax errors, and edge-case pitfalls students encounter with this topic, along with how to fix them.",
+    "HINT": "MODE [Show a hint]: Give a focused pedagogical hint or conceptual nudge that helps the learner reason through the concept without spoiling the complete answer.",
+    "QUIZ": "MODE [Quiz me]: Generate 1 conceptual practice multiple-choice question (with options A, B, C, D) testing this concept, followed by an explanation of the correct choice.",
+    "REVISE": "MODE [Summarize]: Provide a high-impact summary checklist of key takeaways, syntax patterns, and rules from this lesson.",
+    "ADVANCED": "MODE [Advanced deep dive]: Provide an advanced, rigorous technical breakdown detailing Python 3 internal mechanics, memory model, and performance characteristics."
+}
+
+
 def build_adaptive_prompt(
     question: str,
     retrieved_context: str,
     cognitive_load: Union[str, CognitiveLoadLevel],
     topic: Optional[str] = None,
+    tutor_mode: Optional[str] = None,
+    lesson_context: Optional[str] = None,
 ) -> str:
     """Construct an adaptive educational prompt for the Gemini model.
 
@@ -59,6 +73,8 @@ def build_adaptive_prompt(
         retrieved_context: Grounding context retrieved by RAG.
         cognitive_load: Cognitive load level (LOW, MEDIUM, HIGH).
         topic: Optional domain or topic name.
+        tutor_mode: Optional 8-contextual mode (EXPLAIN, SIMPLIFY, EXAMPLE, DEBUG, HINT, QUIZ, REVISE, ADVANCED).
+        lesson_context: Optional active lesson and section content snippet.
 
     Returns:
         str: Fully formatted prompt text.
@@ -74,25 +90,32 @@ def build_adaptive_prompt(
 
     topic_line = f"TOPIC / DOMAIN: {topic.strip()}\n" if topic and topic.strip() else ""
 
-    prompt = f"""You are an expert Adaptive Educational AI Tutor. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
+    mode_key = tutor_mode.strip().upper() if tutor_mode else ""
+    mode_directive = _TUTOR_MODE_DIRECTIVES.get(mode_key, "")
+    mode_section = f"ACTIVE TUTOR MODE:\n{mode_directive}\n" if mode_directive else ""
 
-STRICT GROUNDING RULES:
-1. Ground your explanation primarily on the RETRIEVED CONTEXT provided below.
-2. Do NOT invent or hallucinate facts that are unsupported by the retrieved context.
-3. If the retrieved context is missing, empty, or does not contain sufficient information to answer the question, clearly inform the student: "The available learning material is insufficient and does not contain enough information to address this question." Do not fabricate an answer.
+    lesson_section = f"CURRENT LESSON MATERIAL:\n{lesson_context.strip()}\n\n" if lesson_context and lesson_context.strip() else ""
+
+    prompt = f"""You are an expert Adaptive Educational AI Tutor helping a student learn Python 3. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
+
+STRICT GROUNDING & RUNTIME RULES:
+1. Ground your explanation primarily on the RETRIEVED CONTEXT and CURRENT LESSON MATERIAL provided below.
+2. The runtime environment is strictly Python 3 (standard CPython 3). Never reference Jython, JPython, or Java-based Python.
+3. Tailor your response directly to the student's active inquiry and requested TUTOR MODE.
+4. Only if the retrieved context and lesson material are completely empty or completely unrelated should you inform the student: "The available learning material is insufficient and does not contain enough information to address this question."
 
 {adaptation_instructions}
 
-{topic_line}STUDENT QUESTION:
+{mode_section}{topic_line}{lesson_section}STUDENT QUESTION / ACTION:
 {question.strip()}
 
-RETRIEVED CONTEXT:
+RETRIEVED KNOWLEDGE BASE CONTEXT:
 {retrieved_context.strip() if retrieved_context and retrieved_context.strip() else "[NO CONTEXT PROVIDED]"}
 
 COGNITIVE LOAD LEVEL:
 {level.value}
 
 INSTRUCTION:
-Generate an adaptive explanation that strictly follows the adaptation profile and grounding rules above.
+Generate an adaptive explanation in Python 3 that strictly follows the active tutor mode, adaptation profile, and grounding rules above.
 """
     return prompt

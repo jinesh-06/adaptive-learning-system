@@ -244,6 +244,10 @@ export const api = {
     question: string;
     language?: string;
     topic?: string;
+    topic_id?: string;
+    section_id?: string;
+    section_title?: string;
+    section_content?: string;
     cognitive_load?: string;
     tutor_mode?: string;
     level?: string;

@@ -49,6 +49,8 @@ def generate_adaptive_explanation(
     retrieved_context: str,
     cognitive_load: Union[str, CognitiveLoadLevel],
     topic: Optional[str] = None,
+    tutor_mode: Optional[str] = None,
+    lesson_context: Optional[str] = None,
     client: Optional[genai.Client] = None,
 ) -> Dict[str, Any]:
     """Generate an explanation adapted to the learner's cognitive load level using Gemini.
@@ -58,26 +60,12 @@ def generate_adaptive_explanation(
         retrieved_context: Knowledge context retrieved from the RAG module.
         cognitive_load: Cognitive load level ('LOW', 'MEDIUM', 'HIGH', case-insensitive).
         topic: Optional domain or topic classification.
+        tutor_mode: Optional 8 contextual modes (EXPLAIN, SIMPLIFY, etc.).
+        lesson_context: Optional active lesson and section content.
         client: Optional pre-configured Google GenAI client (for testing/customization).
 
     Returns:
-        Dict[str, Any]: Structured output conforming to AdaptiveResponse:
-            {
-                "success": bool,
-                "cognitive_load": str,
-                "question": str,
-                "explanation": str,
-                "adaptation": {
-                    "detail_level": str,
-                    "style": str,
-                    "examples": int
-                }
-            }
-            or on failure:
-            {
-                "success": false,
-                "error": str
-            }
+        Dict[str, Any]: Structured output conforming to AdaptiveResponse
     """
     # 1. Validate inputs and normalize cognitive load
     try:
@@ -86,6 +74,8 @@ def generate_adaptive_explanation(
             retrieved_context=retrieved_context,
             cognitive_load=cognitive_load,  # type: ignore[arg-type]
             topic=topic,
+            tutor_mode=tutor_mode,
+            lesson_context=lesson_context,
         )
     except (ValidationError, ValueError) as val_err:
         error_msg = str(val_err)
@@ -101,7 +91,7 @@ def generate_adaptive_explanation(
     adaptation_meta = _get_adaptation_metadata(req.cognitive_load)
 
     # 2. Handle empty or insufficient RAG context without hallucinating
-    if not req.retrieved_context.strip():
+    if not req.retrieved_context.strip() and not (req.lesson_context and req.lesson_context.strip()):
         logger.info("Empty RAG context provided for question: '%s'", req.question)
         return AdaptiveResponse(
             success=True,
@@ -117,6 +107,8 @@ def generate_adaptive_explanation(
         retrieved_context=req.retrieved_context,
         cognitive_load=req.cognitive_load,
         topic=req.topic,
+        tutor_mode=req.tutor_mode,
+        lesson_context=req.lesson_context,
     )
 
     # 4. Resolve Gemini Client

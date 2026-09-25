@@ -30,6 +30,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
 
     correct_count = 0
     feedback = []
+    review = []
 
     for q in questions:
         q_id = str(q.get("id"))
@@ -44,6 +45,17 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "user_answer": user_answer,
             "correct_answer": q.get("correct_index"),
             "explanation": q.get("explanation", "")
+        })
+
+        review.append({
+            "id": q_id,
+            "question": q.get("question", ""),
+            "options": q.get("options", []),
+            "correct_index": q.get("correct_index", 0),
+            "explanation": q.get("explanation", ""),
+            "difficulty": q.get("difficulty", "medium"),
+            "is_correct": is_correct,
+            "user_choice": user_answer
         })
 
     total = len(questions) if len(questions) > 0 else 1
@@ -68,20 +80,26 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "cognitive_load": ml_eval.get("cognitive_load")
     })
 
+    adaptive_feedback = {
+        "cognitive_level": ml_eval.get("cognitive_level"),
+        "cognitive_load": ml_eval.get("cognitive_load"),
+        "confidence": ml_eval.get("confidence"),
+        "content_mode": ml_eval.get("content_mode"),
+        "recommended_action": ml_eval.get("recommended_action"),
+        "reason": ml_eval.get("reason"),
+        "contributing_factors": ml_eval.get("contributing_factors"),
+        "unusual_completion": ml_eval.get("unusual_completion")
+    }
+
     return {
-        "score": correct_count,
+        "score": percentage,
+        "correct_count": correct_count,
+        "total_questions": len(questions),
         "total": total,
         "percentage": percentage,
         "passed": passed,
+        "review": review,
         "results": feedback,
-        "cognitive_insight": {
-            "cognitive_level": ml_eval.get("cognitive_level"),
-            "cognitive_load": ml_eval.get("cognitive_load"),
-            "confidence": ml_eval.get("confidence"),
-            "content_mode": ml_eval.get("content_mode"),
-            "recommended_action": ml_eval.get("recommended_action"),
-            "reason": ml_eval.get("reason"),
-            "contributing_factors": ml_eval.get("contributing_factors"),
-            "unusual_completion": ml_eval.get("unusual_completion")
-        }
+        "adaptive_feedback": adaptive_feedback,
+        "cognitive_insight": adaptive_feedback
     }

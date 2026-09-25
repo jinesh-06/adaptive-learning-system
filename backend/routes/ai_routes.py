@@ -15,6 +15,10 @@ class AskAiRequest(BaseModel):
     question: str
     language: Optional[str] = "python"
     topic: Optional[str] = None
+    topic_id: Optional[str] = None
+    section_id: Optional[str] = None
+    section_title: Optional[str] = None
+    section_content: Optional[str] = None
     cognitive_load: Optional[str] = "MEDIUM"
     tutor_mode: Optional[str] = None
     level: Optional[str] = None
@@ -39,6 +43,10 @@ async def ask_ai_assistant(payload: AskAiRequest, request: Request):
         cognitive_load=payload.cognitive_load or "MEDIUM",
         course=payload.language,
         topic=payload.topic,
+        topic_id=payload.topic_id,
+        section_id=payload.section_id,
+        section_title=payload.section_title,
+        section_content=payload.section_content,
         level=payload.level,
         tutor_mode=payload.tutor_mode,
         code_context=payload.code_context

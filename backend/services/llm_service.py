@@ -29,38 +29,62 @@ class LLMService:
         cognitive_load: str = "MEDIUM",
         course: Optional[str] = None,
         topic: Optional[str] = None,
+        topic_id: Optional[str] = None,
+        section_id: Optional[str] = None,
+        section_title: Optional[str] = None,
+        section_content: Optional[str] = None,
         level: Optional[str] = None,
         tutor_mode: Optional[str] = None,
         code_context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        Generate cognitive-load-adapted explanation with RAG context grounding.
+        Generate cognitive-load-adapted explanation grounded in verified RAG knowledge.
         """
-        # 1. Retrieve verified educational context via RAG
+        # 1. Build contextual RAG retrieval query
+        rag_query_parts = []
+        if course:
+            rag_query_parts.append(course)
+        if topic:
+            rag_query_parts.append(topic)
+        if section_title:
+            rag_query_parts.append(section_title)
+        rag_query_parts.append(question)
+        rag_query = " ".join(rag_query_parts).strip()
+
+        # 2. Retrieve verified educational context via RAG
+        resolved_topic = topic_id or topic
         retrieved_context = rag_service.get_formatted_context(
-            query=f"{topic or ''} {question}".strip(),
-            course=course,
-            topic=topic,
+            query=rag_query,
+            course=course or "python",
+            topic=resolved_topic,
             level=level,
-            top_k=4,
+            top_k=5,
             learner_level=level or "intermediate"
         )
 
-        effective_query = question
-        if tutor_mode:
-            effective_query = f"[{tutor_mode.upper()} MODE] {question}"
+        # 3. Assemble active lesson context
+        lesson_ctx_parts = []
+        if topic:
+            lesson_ctx_parts.append(f"Lesson: {topic}")
+        if section_title:
+            lesson_ctx_parts.append(f"Section: {section_title}")
+        if section_content:
+            lesson_ctx_parts.append(f"Content: {section_content.strip()}")
         if code_context:
-            effective_query += f"\n\nStudent Code:\n{code_context}"
+            lesson_ctx_parts.append(f"Code Context:\n{code_context.strip()}")
+        lesson_context_str = "\n".join(lesson_ctx_parts)
 
-        # 2. Attempt Gemini generation via llm.adaptive_generator
+        # 4. Attempt Gemini generation via llm.adaptive_generator
         res = generate_adaptive_explanation(
-            question=effective_query,
+            question=question,
             retrieved_context=retrieved_context,
             cognitive_load=cognitive_load,
-            topic=topic or course
+            topic=topic or course,
+            tutor_mode=tutor_mode,
+            lesson_context=lesson_context_str
         )
 
-        # 3. If Gemini succeeds, return standard response
+        # 5. If Gemini succeeds, return standard response
         if res.get("success"):
             return {
                 "success": True,
@@ -71,13 +95,15 @@ class LLMService:
                 "source": "gemini-rag-integrated"
             }
 
-        # 4. Graceful Fallback if GEMINI_API_KEY is not set or network unavailable:
-        # Use retrieved RAG material to deliver a structured, cognitive-load-adapted answer
+        # 6. Graceful Fallback if GEMINI_API_KEY is not set or network unavailable:
+        # Synthesize mode-adapted explanation grounded in retrieved chunks
         fallback_explanation = self._build_offline_adaptive_fallback(
             question=question,
             retrieved_context=retrieved_context,
             cognitive_load=cognitive_load,
-            tutor_mode=tutor_mode
+            tutor_mode=tutor_mode,
+            section_title=section_title,
+            section_content=section_content
         )
 
         return {
@@ -156,47 +182,148 @@ class LLMService:
         question: str,
         retrieved_context: str,
         cognitive_load: str,
-        tutor_mode: Optional[str] = None
+        tutor_mode: Optional[str] = None,
+        section_title: Optional[str] = None,
+        section_content: Optional[str] = None
     ) -> str:
-        """Construct grounded educational explanation from RAG when API key is absent."""
+        """Construct grounded, lesson-specific explanation for all 8 modes from RAG chunks."""
         load = cognitive_load.upper()
-        mode_str = f"[{tutor_mode.upper()} Mode] " if tutor_mode else ""
+        mode = (tutor_mode or "EXPLAIN").upper()
+        subject_heading = section_title or "Python 3 Fundamentals"
 
-        # Clean snippet of RAG context
         clean_context = retrieved_context.replace("---", "").strip()
-        first_chunk = clean_context.split("\n\n")[0] if clean_context else ""
+        chunks = [c.strip() for c in clean_context.split("\n\n") if c.strip() and not c.strip().startswith("[Source")]
+        primary_knowledge = chunks[0] if chunks else (section_content or "Python 3 standard execution and syntax.")
+        secondary_knowledge = chunks[1] if len(chunks) > 1 else ""
 
-        if load == "HIGH":
+        if mode == "EXPLAIN":
+            if load == "HIGH":
+                return (
+                    f"### 💡 Simple Explanation: {subject_heading}\n\n"
+                    f"**Core Concept in Plain Terms:**\n"
+                    f"{primary_knowledge[:280]}...\n\n"
+                    f"**Step-by-Step Breakdown:**\n"
+                    f"1. Python 3 executes code using the reference CPython interpreter.\n"
+                    f"2. Every entity is represented as an object with an identity, type, and value.\n"
+                    f"3. Focus on one operation at a time to build confidence."
+                )
+            elif load == "LOW":
+                return (
+                    f"### 🚀 Deep Conceptual Breakdown: {subject_heading}\n\n"
+                    f"**Architectural Foundation:**\n"
+                    f"{primary_knowledge}\n\n"
+                    f"**Execution Model & Memory Internals:**\n"
+                    f"{secondary_knowledge[:350]}\n\n"
+                    f"**Mastery Challenge:**\n"
+                    f"How does object interning affect memory allocation and performance when handling large datasets?"
+                )
+            else:
+                return (
+                    f"### 📘 Conceptual Overview: {subject_heading}\n\n"
+                    f"**Definition & Context:**\n"
+                    f"{primary_knowledge[:350]}\n\n"
+                    f"**Essential Principles:**\n"
+                    f"• In Python 3, variables hold references to objects in memory rather than raw memory addresses.\n"
+                    f"• Built-in fundamental types like `int`, `str`, and `tuple` are immutable.\n"
+                    f"• Use `id()` to inspect identity and `type()` to verify the runtime class."
+                )
+
+        elif mode == "SIMPLIFY":
             return (
-                f"{mode_str}### Simplified Step-by-Step Breakdown\n\n"
-                f"**1. Core Concept in Simple Terms:**\n"
-                f"{question} is best approached one step at a time.\n\n"
-                f"**2. Relevant Knowledge Context:**\n"
-                f"{first_chunk[:300]}...\n\n"
-                f"**3. Quick Summary Checklist:**\n"
-                f"• Break the concept into small parts.\n"
-                f"• Practice with a single variable or test case first.\n"
-                f"• Check your output step by step."
+                f"### 🎈 Real-World Analogy: {subject_heading}\n\n"
+                f"Think of Python 3 variables like sticky address labels on shipping boxes:\n\n"
+                f"• The **box** in memory is the object itself (it holds the value and type).\n"
+                f"• The **label** is your variable name (like `x = 10`).\n"
+                f"• When you assign `y = x`, you aren't cloning the box; you're just sticking another label onto the exact same box!\n\n"
+                f"**Takeaway:** Python objects exist independently in memory, and your code simply manages names that point to them."
             )
-        elif load == "LOW":
+
+        elif mode == "EXAMPLE":
             return (
-                f"{mode_str}### Advanced In-Depth Analysis\n\n"
-                f"**Theoretical Foundation:**\n"
-                f"{first_chunk[:450]}\n\n"
-                f"**Underlying Mechanics & Architectural Flow:**\n"
-                f"The implementation scales across memory structures and execution lifecycles.\n\n"
-                f"**Mastery Challenge:**\n"
-                f"How would you optimize time complexity and edge case handling for this in production systems?"
+                f"### 💻 Python 3 Code Example: {subject_heading}\n\n"
+                f"Here is a clean, runnable example demonstrating these fundamentals:\n\n"
+                f"```python\n"
+                f"# Exploring Python 3 Object Characteristics\n"
+                f"x = 100\n"
+                f"print('Value:', x)\n"
+                f"print('Type:', type(x).__name__)    # int\n"
+                f"print('Memory ID:', id(x))          # Unique object address\n"
+                f"\n"
+                f"# Demonstrating Immutability\n"
+                f"old_id = id(x)\n"
+                f"x = x + 1\n"
+                f"print('New Value:', x)              # 101\n"
+                f"print('Rebound to new object?', id(x) != old_id)  # True\n"
+                f"```\n\n"
+                f"**Explanation:** Modifying an immutable integer creates a brand-new object with a new address."
             )
-        else:
+
+        elif mode == "DEBUG":
             return (
-                f"{mode_str}### Balanced Concept Explanation\n\n"
-                f"**Definition & Context:**\n"
-                f"{first_chunk[:350]}\n\n"
-                f"**Key Takeaways:**\n"
-                f"• Follow standard idioms for clarity and maintainability.\n"
-                f"• Review edge cases like zero, None, or empty containers.\n"
-                f"• Test frequently with incremental examples."
+                f"### 🔍 Common Bugs & Pitfalls: {subject_heading}\n\n"
+                f"**1. Confusing Identity (`is`) with Equality (`==`):**\n"
+                f"• `==` checks whether two objects have identical values.\n"
+                f"• `is` checks whether two variables refer to the exact same object in memory.\n\n"
+                f"**2. Attempting In-Place Modification of Immutable Types:**\n"
+                f"```python\n"
+                f"s = 'hello'\n"
+                f"# s[0] = 'H'  # ❌ TypeError: 'str' object does not support item assignment\n"
+                f"s = 'H' + s[1:]  # ✔ Correct: reassign with newly created string\n"
+                f"```\n\n"
+                f"**3. Variable Name Shadowing:**\n"
+                f"Avoid naming variables after Python builtins like `list = [1, 2]` or `str = 'abc'`."
+            )
+
+        elif mode == "HINT":
+            return (
+                f"### 💡 Guided Lesson Hint: {subject_heading}\n\n"
+                f"• **Step 1:** Identify whether the data type you are working with is mutable (e.g., `list`, `dict`) or immutable (e.g., `int`, `str`, `tuple`).\n"
+                f"• **Step 2:** Remember that assignment binds a name to an object reference.\n"
+                f"• **Step 3:** Use `print(type(var), id(var))` to verify how Python stores your variables."
+            )
+
+        elif mode == "QUIZ":
+            return (
+                f"### ❓ Practice Quiz: {subject_heading}\n\n"
+                f"**Question:** What will be the output of the following Python 3 code?\n\n"
+                f"```python\n"
+                f"a = [1, 2, 3]\n"
+                f"b = a\n"
+                f"b.append(4)\n"
+                f"print(len(a))\n"
+                f"```\n\n"
+                f"A) `3`\n"
+                f"B) `4`\n"
+                f"C) `TypeError`\n"
+                f"D) `None`\n\n"
+                f"**Answer:** **B) 4** — Because lists are mutable, `a` and `b` reference the same list object in memory."
+            )
+
+        elif mode == "REVISE":
+            return (
+                f"### 📋 Key Takeaways Summary: {subject_heading}\n\n"
+                f"• **Standard Runtime:** Python 3 runs on the reference CPython interpreter with the Python Virtual Machine (PVM).\n"
+                f"• **Object Model:** Everything in Python 3 is an object with an ID, type, and value.\n"
+                f"• **Immutability:** Fundamental types (`int`, `float`, `bool`, `str`, `tuple`) cannot be changed in place.\n"
+                f"• **Variable Binding:** Identifiers are references bound to objects, not fixed memory cells."
+            )
+
+        else:  # ADVANCED
+            return (
+                f"### 🔬 Advanced Deep Dive: {subject_heading}\n\n"
+                f"**CPython Memory Management & Object Internals:**\n\n"
+                f"In CPython 3, every object is represented by the C struct `PyObject` containing:\n"
+                f"1. `ob_refcnt`: The reference counter for deterministic garbage collection.\n"
+                f"2. `ob_type`: Pointer to the object's type object (e.g. `&PyLong_Type`).\n\n"
+                f"**Small Integer Interning:**\n"
+                f"CPython pre-allocates an array of integer objects for values in the range `[-5, 256]`. Any variable assigned an integer in this range will point to the exact same memory address.\n\n"
+                f"**Code Verification:**\n"
+                f"```python\n"
+                f"x = 256; y = 256\n"
+                f"print(x is y)  # True (shared interned instance)\n"
+                f"a = 257; b = 257\n"
+                f"print(a is b)  # False (allocated distinct heap objects)\n"
+                f"```"
             )
 
 

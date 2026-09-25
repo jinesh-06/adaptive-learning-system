@@ -373,9 +373,9 @@
       "module_id": "mod-py-1",
       "title": "Language Fundamentals, Datatypes & Immutability",
       "order_index": 1,
-      "learning_objective": "Understand Python history, 11 core features, 6 flavours, 14 built-in datatypes, object identity (id/type), and immutability.",
+      "learning_objective": "Understand Python 3 architecture, standard CPython runtime, 14 built-in datatypes, object identity (id/type), and immutability.",
       "content_standard": "Python was created by Guido Van Rossum in 1989 and released in 1991. It is high-level, interpreted, and dynamically typed. All fundamental types (int, float, complex, bool, str) are immutable objects in memory.",
-      "content_low": "### ⚡ Fast-Track Summary\n- 11 features: simple, freeware, platform-independent (PVM), interpreted, dynamically typed, extensible, embedded, rich library.\n- Flavours: CPython (standard), Jython (JVM), IronPython (.NET), PyPy (JIT speed).\n- 14 types: int, float, complex, bool, str, bytes, bytearray, range, list, tuple, set, frozenset, dict, None.\n- Immutability: fundamental objects cannot be modified in place; `id(x)` reflects memory location; `is` checks address, `==` checks value.",
+      "content_low": "### ⚡ Fast-Track Summary\n- 11 features: simple, freeware, platform-independent (PVM), interpreted, dynamically typed, extensible, embedded, rich library.\n- Runtime: CPython 3 (standard reference), PyPy 3 (JIT speed), MicroPython (embedded).\n- 14 types: int, float, complex, bool, str, bytes, bytearray, range, list, tuple, set, frozenset, dict, None.\n- Immutability: fundamental objects cannot be modified in place; `id(x)` reflects memory location; `is` checks address, `==` checks value.",
       "content_medium": "### 📘 Standard Guide\nPython handles memory automatically via PVM. Identifiers cannot start with digits. Only 3 of 33 keywords are capitalized: `True`, `False`, `None`.\nBase conversions: `bin()`, `oct()`, `hex()`. Fundamental types are immutable: modifying a variable rebinds it to a new object.",
       "content_high": "### 🌱 Step-by-Step Breakdown\n1. **High-Level**: You don't worry about low-level memory allocation or pointers.\n2. **Dynamic Typing**: Write `x = 10` (integer) or `x = \"Hello\"` (string); Python determines types automatically.\n3. **Analogy**: Variables are sticky labels on boxes, not the boxes themselves!",
       "syntax": "# Base conversion\na = 15\nprint(bin(a)) # 0b1111\nprint(hex(a)) # 0xf\n\n# Identity vs Equality\nx = 256; y = 256\nprint(x is y) # True (object interning)",
@@ -385,20 +385,20 @@
       "sections": [
         {
           "id": "sec-py-fund-1",
-          "title": "1. Python Architecture & Flavours",
+          "title": "1. Python 3 Architecture & Standard Runtime",
           "order_index": 1,
-          "content": "Guido Van Rossum developed Python borrowing functional syntax from C, OOP from C++, and scripting from Perl/Shell. PyPy uses a JIT compiler inside the PVM for massive performance speedups.",
-          "code_snippet": "import sys\nprint(sys.version)",
+          "content": "Python 3 is the modern standard for Python development, executed by the reference CPython 3 interpreter. Guido Van Rossum designed Python with clear syntax, automatic memory management via the Python Virtual Machine (PVM), and rich standard libraries.",
+          "code_snippet": "import sys\nprint('Python Version:', sys.version)",
           "mini_check": {
-            "question": "Which flavour of Python runs on the Java Virtual Machine (JVM)?",
+            "question": "Which interpreter is the reference and standard implementation of Python 3?",
             "options": [
               "CPython",
-              "Jython",
-              "IronPython",
-              "PyPy"
+              "PyPy",
+              "MicroPython",
+              "ActivePython"
             ],
-            "correct_index": 1,
-            "explanation": "Jython (originally JPython) is designed to run seamlessly on the Java Virtual Machine."
+            "correct_index": 0,
+            "explanation": "CPython is the standard, reference implementation of Python 3 written in C."
           }
         },
         {

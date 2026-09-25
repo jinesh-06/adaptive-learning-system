@@ -30,47 +30,101 @@ class CodeSubmitRequest(BaseModel):
     pasteEvents: Optional[int] = 0
 
 
+import ast
+import subprocess
+
+DISALLOWED_MODULES = {
+    "os", "subprocess", "shutil", "socket", "pty", "commands",
+    "posix", "nt", "signal", "multiprocessing", "threading",
+    "ctypes", "winreg", "_winapi"
+}
+
+
 def execute_python_safely(code: str, custom_input: Optional[str] = None) -> Dict[str, Any]:
-    """Execute Python code in an isolated output buffer."""
-    old_stdout = sys.stdout
-    old_stderr = sys.stderr
-    redirected_output = io.StringIO()
-    redirected_error = io.StringIO()
-    sys.stdout = redirected_output
-    sys.stderr = redirected_error
-
+    """Execute Python 3 code in an isolated subprocess using the configured Python 3 interpreter."""
     start_time = time.time()
-    success = True
-    error_msg = None
 
+    # 1. Syntax & AST Validation
     try:
-        # Restricted builtins for safety
-        safe_globals = {
-            "__builtins__": {
-                k: v for k, v in __builtins__.items() if k not in ("eval", "exec", "open", "input", "__import__")
-            } if isinstance(__builtins__, dict) else {
-                k: getattr(__builtins__, k) for k in dir(__builtins__) if k not in ("eval", "exec", "open", "input", "__import__")
-            }
+        tree = ast.parse(code)
+    except SyntaxError as e:
+        elapsed = round(time.time() - start_time, 3)
+        msg = f"SyntaxError: {e.msg} (line {e.lineno})"
+        return {
+            "success": False,
+            "output": msg,
+            "error": msg,
+            "compilation_error": msg,
+            "execution_time": elapsed
         }
-        # Provide safe print and standard types
-        exec(code, safe_globals)
+
+    # 2. Security validation - disallow OS/system modification modules
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                root_mod = alias.name.split(".")[0]
+                if root_mod in DISALLOWED_MODULES:
+                    elapsed = round(time.time() - start_time, 3)
+                    msg = f"SecurityError: Importing '{root_mod}' is restricted in this educational Python 3 environment."
+                    return {
+                        "success": False,
+                        "output": msg,
+                        "error": msg,
+                        "compilation_error": msg,
+                        "execution_time": elapsed
+                    }
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                root_mod = node.module.split(".")[0]
+                if root_mod in DISALLOWED_MODULES:
+                    elapsed = round(time.time() - start_time, 3)
+                    msg = f"SecurityError: Importing '{root_mod}' is restricted in this educational Python 3 environment."
+                    return {
+                        "success": False,
+                        "output": msg,
+                        "error": msg,
+                        "compilation_error": msg,
+                        "execution_time": elapsed
+                    }
+
+    # 3. Execution via active Python 3 interpreter (sys.executable)
+    # -I: Isolated mode (ignores PYTHONPATH, PYTHONHOME, and cwd)
+    # -s: Don't add user site-directory to sys.path
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-I", "-s", "-c", code],
+            input=custom_input if custom_input is not None else "",
+            capture_output=True,
+            text=True,
+            timeout=5.0
+        )
+        elapsed = round(time.time() - start_time, 3)
+        success = (proc.returncode == 0)
+        output = proc.stdout if success else (proc.stdout + ("\n" if proc.stdout else "") + proc.stderr).strip()
+        error = proc.stderr.strip() if not success else None
+
+        return {
+            "success": success,
+            "output": output,
+            "error": error,
+            "execution_time": elapsed
+        }
+    except subprocess.TimeoutExpired:
+        elapsed = round(time.time() - start_time, 3)
+        return {
+            "success": False,
+            "output": "Execution timed out (5s limit exceeded)",
+            "error": "Execution timed out (5s limit exceeded)",
+            "execution_time": elapsed
+        }
     except Exception as e:
-        success = False
-        error_msg = str(e)
-    finally:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
-
-    elapsed = round(time.time() - start_time, 3)
-    stdout_val = redirected_output.getvalue()
-    stderr_val = redirected_error.getvalue()
-
-    return {
-        "success": success,
-        "output": stdout_val if success else f"{stdout_val}\nError: {error_msg}".strip(),
-        "error": error_msg or (stderr_val if not success else None),
-        "execution_time": elapsed
-    }
+        elapsed = round(time.time() - start_time, 3)
+        return {
+            "success": False,
+            "output": f"Execution error: {str(e)}",
+            "error": str(e),
+            "execution_time": elapsed
+        }
 
 
 @router.get("/topics/{topic_id}/coding")
@@ -86,13 +140,18 @@ async def run_code(payload: CodeRunRequest):
             "success": res["success"],
             "stdout": res["output"],
             "stderr": res["error"] or "",
-            "execution_time_seconds": res["execution_time"]
+            "compilation_error": res.get("compilation_error"),
+            "execution_time_seconds": res["execution_time"],
+            "execution_time_ms": int(res["execution_time"] * 1000),
+            "status": "PASSED" if res["success"] else "RUNTIME_ERROR"
         }
     return {
         "success": True,
         "stdout": f"[Execution emulated for {payload.language.upper()}]\nOutput generated successfully.",
         "stderr": "",
-        "execution_time_seconds": 0.05
+        "execution_time_seconds": 0.05,
+        "execution_time_ms": 50,
+        "status": "PASSED"
     }
 
 
@@ -126,6 +185,7 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
         test_results.append({
             "test_case": 1,
             "passed": exec_result["success"],
+            "actual": exec_result["output"].strip(),
             "output": exec_result["output"]
         })
 
@@ -153,13 +213,21 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
         "cognitive_load": ml_eval.get("cognitive_load")
     })
 
+    is_overall_pass = exec_result["success"] and (passed_tests == total_tests)
+
     return {
-        "success": exec_result["success"] and (passed_tests == total_tests),
+        "success": is_overall_pass,
+        "is_passed": is_overall_pass,
+        "status": "PASSED" if is_overall_pass else "FAILED",
         "passed_tests": passed_tests,
         "total_tests": total_tests,
         "test_results": test_results,
+        "details": test_results,
         "stdout": exec_result["output"],
         "error": exec_result["error"],
+        "runtime_error": exec_result["error"] if not exec_result["success"] else None,
+        "execution_time_seconds": exec_result["execution_time"],
+        "execution_time_ms": int(exec_result["execution_time"] * 1000),
         "cognitive_insight": {
             "cognitive_level": ml_eval.get("cognitive_level"),
             "cognitive_load": ml_eval.get("cognitive_load"),

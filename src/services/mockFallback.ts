@@ -191,10 +191,10 @@ export const mockTopicDetails: Record<string, any> = {
     sections: [
       {
         id: 'sec-py-fund-1',
-        title: '1. Python Architecture & Flavours',
+        title: '1. Python 3 Architecture & Standard Runtime',
         order_index: 1,
-        content: 'Guido Van Rossum developed Python borrowing functional syntax from C, OOP from C++, and scripting from Perl/Shell. PyPy uses a JIT compiler inside the PVM for massive performance speedups.',
-        code_snippet: 'import sys\nprint(sys.version)',
+        content: 'Python 3 is the modern standard for Python development, executed by the reference CPython 3 interpreter. Guido Van Rossum designed Python with clear syntax, automatic memory management via the Python Virtual Machine (PVM), and rich standard libraries.',
+        code_snippet: 'import sys\nprint("Python Version:", sys.version)',
         pitfalls: 'Confusing CPython (standard C-based runtime) with PyPy (JIT accelerated runtime).'
       },
       {

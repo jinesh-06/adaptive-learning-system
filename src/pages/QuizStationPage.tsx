@@ -49,7 +49,9 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
       setLoading(true);
       try {
         const data = await api.getTopicQuiz(topicId);
-        const questionList = Array.isArray(data) ? data : (data.questions || []);
+        const questionList = Array.isArray(data)
+          ? data
+          : (data && Array.isArray(data.questions) ? data.questions : []);
         setQuestions(questionList);
         if (data && data.target_difficulty) {
           setAdaptiveInfo({
@@ -61,6 +63,7 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
         }
       } catch (err) {
         console.error('Failed to load quiz:', err);
+        setQuestions([]);
       } finally {
         setLoading(false);
       }
@@ -92,13 +95,32 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
 
     try {
       const res = await api.submitTopicQuiz(topicId, selectedAnswers, timeSpent);
-      setResult(res);
+      // Ensure review array is guaranteed
+      const safeReview = (res && Array.isArray(res.review) && res.review.length > 0)
+        ? res.review
+        : questions.map((q: any) => ({
+            ...q,
+            user_choice: selectedAnswers[q.id],
+            is_correct: selectedAnswers[q.id] === q.correct_index
+          }));
 
-      if (res.adaptive_feedback) {
-        updateFromFeedback(res.adaptive_feedback);
+      const safeResult = {
+        ...res,
+        review: safeReview,
+        score: res?.score ?? res?.percentage ?? 0,
+        correct_count: res?.correct_count ?? (safeReview.filter((r: any) => r.is_correct).length),
+        total_questions: res?.total_questions ?? questions.length,
+        passed: res?.passed ?? false,
+        adaptive_feedback: res?.adaptive_feedback || res?.cognitive_insight
+      };
+
+      setResult(safeResult);
+
+      if (safeResult.adaptive_feedback) {
+        updateFromFeedback(safeResult.adaptive_feedback);
       }
 
-      if (res.passed) {
+      if (safeResult.passed) {
         confetti({
           particleCount: 80,
           spread: 70,
@@ -292,13 +314,20 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
 
       {/* Question Cards */}
       <div className="space-y-6">
-        {(result ? result.review : questions).map((q: any, idx: number) => {
+        {((result && Array.isArray(result.review) && result.review.length > 0)
+          ? result.review
+          : (Array.isArray(questions) ? questions : [])
+        ).map((q: any, idx: number) => {
           const selected = selectedAnswers[q.id];
           const isSubmitted = !!result;
+          const isQuestionCorrect = q.is_correct !== undefined
+            ? q.is_correct
+            : (selected === q.correct_index);
+          const options = Array.isArray(q.options) ? q.options : [];
 
           return (
             <div
-              key={q.id}
+              key={q.id || idx}
               className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl"
             >
               <div className="flex items-center justify-between mb-3">
@@ -307,13 +336,13 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] uppercase font-mono text-slate-400">
-                    {q.difficulty}
+                    {q.difficulty || 'standard'}
                   </span>
                   <BookmarkButton
                     itemType="question"
                     itemId={q.id}
-                    title={`Question: ${q.question.slice(0, 45)}...`}
-                    snippet={q.options ? q.options.join(' | ') : q.question}
+                    title={`Question: ${(q.question || '').slice(0, 45)}...`}
+                    snippet={options.length > 0 ? options.join(' | ') : (q.question || '')}
                     topicId={topicId}
                     language="python"
                   />
@@ -325,13 +354,13 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
               </p>
 
               <div className="space-y-2.5">
-                {q.options.map((opt: string, optIdx: number) => {
+                {options.map((opt: string, optIdx: number) => {
                   let optStyle = 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700';
 
                   if (isSubmitted) {
                     if (optIdx === q.correct_index) {
                       optStyle = 'border-emerald-500/60 bg-emerald-950/30 text-emerald-200 font-semibold';
-                    } else if (selected === optIdx && !q.is_correct) {
+                    } else if (selected === optIdx && !isQuestionCorrect) {
                       optStyle = 'border-rose-500/60 bg-rose-950/30 text-rose-200';
                     }
                   } else if (selected === optIdx) {
@@ -349,7 +378,7 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
                       {isSubmitted && optIdx === q.correct_index && (
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                       )}
-                      {isSubmitted && selected === optIdx && !q.is_correct && (
+                      {isSubmitted && selected === optIdx && !isQuestionCorrect && (
                         <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
                       )}
                     </button>

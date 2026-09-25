@@ -65,6 +65,12 @@ class AdaptiveRequest(BaseModel):
     topic: Optional[str] = Field(
         default=None, description="Optional topic or domain category"
     )
+    tutor_mode: Optional[str] = Field(
+        default=None, description="Active tutor contextual mode (e.g., EXPLAIN, SIMPLIFY, EXAMPLE, DEBUG, HINT, QUIZ, REVISE, ADVANCED)"
+    )
+    lesson_context: Optional[str] = Field(
+        default=None, description="Current lesson section title and content"
+    )
 
     @field_validator("question", mode="before")
     @classmethod
