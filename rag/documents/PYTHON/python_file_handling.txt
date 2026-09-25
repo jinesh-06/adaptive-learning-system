@@ -1,0 +1,2408 @@
+COURSE: Python Programming
+TOPIC: File Handling, Encodings, CSV, JSON, and Pathlib
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation + Standard Library Reference
+
+================================================================================
+FILE HANDLING, ENCODINGS, CSV, JSON, AND PATHLIB
+================================================
+
+1. INTRODUCTION
+
+File handling is a fundamental part of Python programming. Applications commonly need to read configuration files, store logs, process datasets, exchange structured information, and manipulate files and directories.
+
+Python provides several standard-library tools for these tasks:
+
+* `open()` for general file I/O.
+* `io` for the stream and I/O abstraction layers.
+* `pathlib` for object-oriented filesystem paths.
+* `csv` for CSV/tabular data.
+* `json` for JSON serialization and deserialization.
+* `tempfile` for securely creating temporary files and directories.
+* `mmap` for memory-mapped file access.
+
+Python distinguishes between:
+
+* Text streams, which operate on Unicode `str`.
+* Binary streams, which operate on `bytes`.
+* Raw streams, which provide lower-level access to the underlying I/O system.
+
+Text files contain bytes on storage. Python converts those bytes to Unicode text using a character encoding such as UTF-8.
+
+For portable applications, explicitly specifying the encoding is strongly recommended:
+
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    text = f.read()
+```
+
+Python's default text encoding is locale-dependent unless UTF-8 Mode is active, so relying on the default can produce platform-dependent behavior.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, a learner should be able to:
+
+* Open, read, write, append, and update text files.
+* Work with binary files using `bytes`.
+* Use `with` for automatic resource management.
+* Understand file modes such as `r`, `w`, `a`, `x`, `b`, and `+`.
+* Understand Unicode, UTF-8, ASCII, Latin-1, BOMs, and decoding errors.
+* Use `read()`, `readline()`, `readlines()`, and direct iteration.
+* Use `seek()` and `tell()` for stream positioning.
+* Understand newline translation.
+* Process CSV files with `reader`, `writer`, `DictReader`, and `DictWriter`.
+* Serialize and deserialize JSON.
+* Customize JSON encoding and decoding.
+* Work with filesystem paths using `pathlib.Path`.
+* Create, remove, rename, copy, move, and search files and directories.
+* Process large files efficiently.
+* Understand temporary files and atomic replacement.
+* Use memory-mapped files when appropriate.
+* Apply file-handling security practices.
+
+3. PREREQUISITES
+
+Recommended prerequisites:
+
+* Python variables and data types.
+* Strings and bytes.
+* Lists and dictionaries.
+* Functions.
+* Exception handling.
+* Basic object-oriented programming.
+* Basic operating-system filesystem concepts.
+
+4. BEGINNER CONCEPTS
+
+4.1 FILE OPENING
+
+The built-in `open()` function creates a file object.
+
+Basic syntax:
+
+```python
+open(file, mode="r", buffering=-1, encoding=None, errors=None, newline=None)
+```
+
+Example:
+
+```python
+with open("example.txt", "r", encoding="utf-8") as f:
+    data = f.read()
+    print(data)
+```
+
+Using `with` is recommended because the file is automatically closed when the block finishes, including when an exception occurs.
+
+4.2 COMMON FILE MODES
+
+`r`
+
+* Read mode.
+* Default mode.
+* File must already exist.
+* Raises `FileNotFoundError` if it does not exist.
+
+`w`
+
+* Write mode.
+* Creates the file if necessary.
+* Truncates an existing file.
+
+`a`
+
+* Append mode.
+* Creates the file if necessary.
+* Writes new data at the end.
+
+`x`
+
+* Exclusive creation mode.
+* Creates a new file.
+* Raises `FileExistsError` if the file already exists.
+
+`b`
+
+* Binary mode.
+* Used with modes such as `rb` and `wb`.
+* Reads/writes `bytes`.
+
+`+`
+
+* Update mode.
+* Allows both reading and writing.
+* Examples: `r+`, `w+`, `a+`.
+
+Examples:
+
+```python
+open("data.txt", "r", encoding="utf-8")
+open("data.txt", "w", encoding="utf-8")
+open("data.txt", "a", encoding="utf-8")
+
+open("image.jpg", "rb")
+open("image.jpg", "wb")
+
+open("data.txt", "r+", encoding="utf-8")
+```
+
+4.3 WRITING TEXT
+
+```python
+with open("message.txt", "w", encoding="utf-8") as f:
+    f.write("Hello, Python!\n")
+    f.write("File handling is useful.")
+```
+
+`write()` returns the number of characters written for a text stream.
+
+4.4 READING TEXT
+
+```python
+with open("message.txt", "r", encoding="utf-8") as f:
+    content = f.read()
+
+print(content)
+```
+
+4.5 READING METHODS
+
+`read()`:
+
+```python
+with open("message.txt", encoding="utf-8") as f:
+    data = f.read()
+```
+
+Reads the requested amount of data into memory.
+
+`readline()`:
+
+```python
+with open("message.txt", encoding="utf-8") as f:
+    line = f.readline()
+```
+
+Reads one line.
+
+`readlines()`:
+
+```python
+with open("message.txt", encoding="utf-8") as f:
+    lines = f.readlines()
+```
+
+Returns a list containing the lines.
+
+Direct iteration:
+
+```python
+with open("message.txt", encoding="utf-8") as f:
+    for line in f:
+        print(line.rstrip("\n"))
+```
+
+Direct iteration is generally preferable for large text files because it does not create a list containing every line.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 TEXT ENCODING
+
+A file stored on disk ultimately contains bytes.
+
+Text encoding defines how characters are represented as bytes.
+
+Common encodings include:
+
+* UTF-8
+* ASCII
+* Latin-1 (`iso-8859-1`)
+* UTF-16
+* UTF-32
+
+UTF-8 is the most common choice for modern text interchange.
+
+Example:
+
+```python
+text = "Python – தமிழ் – 日本語"
+
+with open("unicode.txt", "w", encoding="utf-8") as f:
+    f.write(text)
+```
+
+Reading with the wrong encoding can cause:
+
+```text
+UnicodeDecodeError
+```
+
+5.2 ENCODING AND DECODING
+
+Encoding:
+
+```text
+Python str
+    ↓ encode()
+bytes
+```
+
+Example:
+
+```python
+text = "Hello"
+data = text.encode("utf-8")
+
+print(data)
+```
+
+Decoding:
+
+```text
+bytes
+    ↓ decode()
+Python str
+```
+
+Example:
+
+```python
+data = b"Hello"
+text = data.decode("utf-8")
+
+print(text)
+```
+
+5.3 ENCODING ERRORS
+
+The `errors` parameter controls how encoding/decoding errors are handled.
+
+Common options:
+
+* `strict` — raise an exception.
+* `ignore` — discard problematic characters.
+* `replace` — replace problematic characters.
+* `backslashreplace` — use escaped representations.
+* `xmlcharrefreplace` — useful when writing text.
+* `namereplace` — use Unicode character names when writing.
+
+Example:
+
+```python
+with open(
+    "unknown.txt",
+    "r",
+    encoding="utf-8",
+    errors="replace"
+) as f:
+    text = f.read()
+```
+
+Use `ignore` carefully because it can silently lose information.
+
+5.4 UTF-8 BOM
+
+Some files begin with a UTF-8 Byte Order Mark (BOM):
+
+```text
+EF BB BF
+```
+
+Python provides:
+
+```python
+encoding="utf-8-sig"
+```
+
+Example:
+
+```python
+with open("data.txt", "r", encoding="utf-8-sig") as f:
+    data = f.read()
+```
+
+This handles a UTF-8 BOM when present.
+
+5.5 NEWLINE HANDLING
+
+The `newline` parameter controls newline translation.
+
+Possible values include:
+
+```text
+None
+''
+'\n'
+'\r'
+'\r\n'
+```
+
+For ordinary text processing:
+
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    data = f.read()
+```
+
+With `newline=None`, universal newline handling is enabled and recognized line endings are translated to `\n` when reading.
+
+For CSV files, use:
+
+```python
+newline=""
+```
+
+because the `csv` module performs its own newline handling.
+
+5.6 FILE POSITION
+
+`tell()` returns the current stream position.
+
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    print(f.tell())
+    print(f.read(5))
+    print(f.tell())
+```
+
+`seek()` changes the stream position.
+
+```python
+with open("data.txt", "r", encoding="utf-8") as f:
+    f.seek(0)
+    data = f.read()
+```
+
+For binary files, offsets are naturally byte-oriented.
+
+Text streams have restrictions on arbitrary positioning because character encoding and newline translation can make byte positions and character positions different.
+
+5.7 BINARY FILE HANDLING
+
+Binary streams work with `bytes`, not `str`.
+
+Example:
+
+```python
+with open("image.jpg", "rb") as f:
+    data = f.read(100)
+
+print(type(data))
+```
+
+Output:
+
+```text
+<class 'bytes'>
+```
+
+Writing binary data:
+
+```python
+data = b"\x48\x65\x6c\x6c\x6f"
+
+with open("data.bin", "wb") as f:
+    f.write(data)
+```
+
+Binary mode does not perform text encoding, decoding, or newline translation.
+
+6. CSV FILE PROCESSING
+
+CSV means Comma-Separated Values.
+
+CSV files commonly represent tabular data:
+
+```text
+id,name,score
+101,Alice,95
+102,Bob,88
+103,Charlie,91
+```
+
+Python provides the standard `csv` module.
+
+6.1 CSV READER
+
+```python
+import csv
+
+with open("students.csv", "r", newline="", encoding="utf-8") as f:
+    reader = csv.reader(f)
+
+    for row in reader:
+        print(row)
+```
+
+Example result:
+
+```text
+['id', 'name', 'score']
+['101', 'Alice', '95']
+['102', 'Bob', '88']
+['103', 'Charlie', '91']
+```
+
+Important:
+
+CSV values are normally read as strings.
+
+Therefore:
+
+```python
+score = int(row[2])
+```
+
+may be necessary when numeric processing is required.
+
+6.2 CSV WRITER
+
+```python
+import csv
+
+with open("students.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+
+    writer.writerow(["id", "name", "score"])
+    writer.writerow([101, "Alice", 95])
+    writer.writerow([102, "Bob", 88])
+```
+
+6.3 DICTREADER
+
+`DictReader` represents rows as dictionaries.
+
+```python
+import csv
+
+with open("students.csv", newline="", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+
+    for row in reader:
+        print(row["name"], row["score"])
+```
+
+6.4 DICTWRITER
+
+```python
+import csv
+
+fieldnames = ["id", "name", "score"]
+
+with open("students.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+
+    writer.writeheader()
+    writer.writerow({
+        "id": 101,
+        "name": "Alice",
+        "score": 95
+    })
+```
+
+6.5 CSV DIALECTS
+
+CSV formats can differ in:
+
+* delimiter
+* quoting
+* quote character
+* line termination
+* escaping rules
+
+Example:
+
+```python
+reader = csv.reader(
+    f,
+    delimiter=";"
+)
+```
+
+Python also provides dialect support and `csv.Sniffer` for heuristic detection of CSV formatting.
+
+`csv.Sniffer` is heuristic and can produce false positives or false negatives, so it should not be treated as guaranteed schema detection.
+
+7. JSON FILE PROCESSING
+
+JSON means JavaScript Object Notation.
+
+JSON is widely used for:
+
+* configuration files
+* REST APIs
+* web applications
+* data interchange
+* machine-learning metadata
+* application state
+
+7.1 PYTHON TO JSON MAPPING
+
+Common mappings include:
+
+```text
+Python              JSON
+--------------------------------
+dict                object
+list/tuple          array
+str                 string
+int/float           number
+True                true
+False               false
+None                null
+```
+
+7.2 `json.dumps()`
+
+Converts a Python object into a JSON string.
+
+```python
+import json
+
+data = {
+    "name": "Alice",
+    "score": 95,
+    "active": True
+}
+
+text = json.dumps(data, indent=2)
+
+print(text)
+```
+
+7.3 `json.loads()`
+
+Converts a JSON string into a Python object.
+
+```python
+import json
+
+text = '{"name": "Alice", "score": 95}'
+
+data = json.loads(text)
+
+print(data["name"])
+```
+
+7.4 `json.dump()`
+
+Writes JSON directly to a file-like object.
+
+```python
+import json
+
+data = {
+    "name": "Alice",
+    "score": 95
+}
+
+with open("student.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+```
+
+7.5 `json.load()`
+
+Reads JSON directly from a file-like object.
+
+```python
+import json
+
+with open("student.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+print(data)
+```
+
+7.6 JSON FORMATTING OPTIONS
+
+```python
+json.dumps(
+    data,
+    indent=2,
+    ensure_ascii=False,
+    sort_keys=True
+)
+```
+
+`ensure_ascii=False` allows Unicode characters to be written directly rather than escaped.
+
+Example:
+
+```python
+data = {"language": "தமிழ்"}
+
+print(json.dumps(data, ensure_ascii=False))
+```
+
+7.7 JSON SPECIAL CASES
+
+Python's JSON encoder accepts `NaN`, positive infinity, and negative infinity by default even though these are outside strict JSON specification.
+
+For stricter JSON output:
+
+```python
+json.dumps(
+    data,
+    allow_nan=False
+)
+```
+
+This raises `ValueError` for unsupported non-standard floating-point values.
+
+8. PATHLIB
+
+`pathlib` provides an object-oriented interface to filesystem paths.
+
+Example:
+
+```python
+from pathlib import Path
+
+path = Path("data") / "students" / "records.csv"
+
+print(path)
+```
+
+The `/` operator joins path components in a platform-aware way.
+
+8.1 BASIC PATH OPERATIONS
+
+```python
+from pathlib import Path
+
+p = Path("data/example.txt")
+
+print(p.exists())
+print(p.is_file())
+print(p.is_dir())
+print(p.name)
+print(p.stem)
+print(p.suffix)
+print(p.parent)
+```
+
+8.2 CREATE DIRECTORIES
+
+```python
+from pathlib import Path
+
+folder = Path("data/reports")
+
+folder.mkdir(
+    parents=True,
+    exist_ok=True
+)
+```
+
+8.3 WRITE AND READ TEXT
+
+```python
+from pathlib import Path
+
+p = Path("message.txt")
+
+p.write_text(
+    "Hello Python!",
+    encoding="utf-8"
+)
+
+content = p.read_text(
+    encoding="utf-8"
+)
+
+print(content)
+```
+
+`read_text()` and `write_text()` open and close the file automatically.
+
+8.4 BINARY OPERATIONS
+
+```python
+from pathlib import Path
+
+p = Path("data.bin")
+
+p.write_bytes(b"Hello")
+
+data = p.read_bytes()
+
+print(data)
+```
+
+8.5 DIRECTORY ITERATION
+
+```python
+from pathlib import Path
+
+folder = Path(".")
+
+for item in folder.iterdir():
+    print(item)
+```
+
+8.6 GLOB
+
+```python
+from pathlib import Path
+
+for file in Path("project").glob("*.py"):
+    print(file)
+```
+
+8.7 RECURSIVE GLOB
+
+```python
+from pathlib import Path
+
+for file in Path("project").rglob("*.py"):
+    print(file)
+```
+
+`rglob()` recursively searches directories.
+
+8.8 FILE REMOVAL
+
+```python
+path.unlink()
+```
+
+Optional:
+
+```python
+path.unlink(missing_ok=True)
+```
+
+8.9 DIRECTORY REMOVAL
+
+```python
+path.rmdir()
+```
+
+The directory must be empty.
+
+9. BASIC EXAMPLE
+
+```python
+from pathlib import Path
+
+
+def demonstrate_basic_file_io():
+    base_dir = Path("sandbox_io")
+    base_dir.mkdir(exist_ok=True)
+
+    file_path = base_dir / "notes.txt"
+
+    # Write text
+    with file_path.open(
+        "w",
+        encoding="utf-8"
+    ) as f:
+        f.write("Line 1: Introduction to File I/O\n")
+        f.write("Line 2: Python context managers\n")
+        f.write("Line 3: Unicode and UTF-8\n")
+
+    print(f"File created at: {file_path.resolve()}")
+
+    # Read line-by-line
+    print("\nReading file line-by-line:")
+
+    with file_path.open(
+        "r",
+        encoding="utf-8"
+    ) as f:
+        for line_num, line in enumerate(f, start=1):
+            print(f"  [{line_num}] {line.rstrip()}")
+
+    # Pathlib read_text()
+    content = file_path.read_text(
+        encoding="utf-8"
+    )
+
+    print(f"\nRead via Path.read_text(): {len(content)} characters.")
+
+    # Cleanup
+    file_path.unlink()
+    base_dir.rmdir()
+
+    print("Cleaned up sandbox files.")
+
+
+if __name__ == "__main__":
+    demonstrate_basic_file_io()
+```
+
+10. INTERMEDIATE EXAMPLE — CSV AND JSON
+
+```python
+import csv
+import json
+from pathlib import Path
+
+
+def demonstrate_csv_and_json():
+    base_dir = Path("sandbox_structured")
+    base_dir.mkdir(exist_ok=True)
+
+    csv_file = base_dir / "users.csv"
+    json_file = base_dir / "users.json"
+
+    users = [
+        {
+            "user_id": 101,
+            "username": "alice_dev",
+            "role": "admin",
+            "active": True
+        },
+        {
+            "user_id": 102,
+            "username": "bob_ops",
+            "role": "engineer",
+            "active": False
+        },
+        {
+            "user_id": 103,
+            "username": "charlie_qa",
+            "role": "tester",
+            "active": True
+        }
+    ]
+
+    # Write CSV
+    with csv_file.open(
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as f:
+
+        fieldnames = [
+            "user_id",
+            "username",
+            "role",
+            "active"
+        ]
+
+        writer = csv.DictWriter(
+            f,
+            fieldnames=fieldnames
+        )
+
+        writer.writeheader()
+        writer.writerows(users)
+
+    # Read CSV
+    loaded_users = []
+
+    with csv_file.open(
+        "r",
+        newline="",
+        encoding="utf-8"
+    ) as f:
+
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            row["user_id"] = int(row["user_id"])
+            row["active"] = (
+                row["active"].lower() == "true"
+            )
+
+            loaded_users.append(row)
+
+    print(
+        f"Loaded {len(loaded_users)} users from CSV."
+    )
+
+    # Write JSON
+    with json_file.open(
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            loaded_users,
+            f,
+            indent=2,
+            ensure_ascii=False
+        )
+
+    # Read JSON
+    with json_file.open(
+        "r",
+        encoding="utf-8"
+    ) as f:
+
+        json_data = json.load(f)
+
+    print(
+        f"First user from JSON: {json_data[0]}"
+    )
+
+    # Cleanup
+    csv_file.unlink()
+    json_file.unlink()
+    base_dir.rmdir()
+
+
+if __name__ == "__main__":
+    demonstrate_csv_and_json()
+```
+
+11. ADVANCED CONCEPTS
+
+11.1 CUSTOM JSON SERIALIZATION
+
+The standard JSON encoder does not automatically serialize every Python object.
+
+For example:
+
+* `datetime`
+* `Decimal`
+* `UUID`
+* custom classes
+* some application-specific objects
+
+can require custom serialization.
+
+Using `default=`:
+
+```python
+import json
+from datetime import datetime
+
+
+def serialize(value):
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    raise TypeError(
+        f"Object of type {type(value).__name__} "
+        "is not JSON serializable"
+    )
+
+
+data = {
+    "created": datetime.now()
+}
+
+text = json.dumps(
+    data,
+    default=serialize
+)
+
+print(text)
+```
+
+11.2 CUSTOM JSONENCODER
+
+```python
+import json
+from datetime import datetime
+
+
+class CustomEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+        return super().default(obj)
+
+
+data = {
+    "created": datetime.now()
+}
+
+text = json.dumps(
+    data,
+    cls=CustomEncoder,
+    indent=2
+)
+
+print(text)
+```
+
+11.3 OBJECT HOOK
+
+`object_hook` can transform decoded JSON dictionaries.
+
+```python
+import json
+
+
+def convert_user(obj):
+    if "name" in obj and "age" in obj:
+        obj["age"] = int(obj["age"])
+
+    return obj
+
+
+text = '''
+{
+    "name": "Alice",
+    "age": "21"
+}
+'''
+
+user = json.loads(
+    text,
+    object_hook=convert_user
+)
+
+print(user)
+print(type(user["age"]))
+```
+
+12. TEMPORARY FILES
+
+The `tempfile` module provides secure mechanisms for creating temporary files and directories.
+
+Examples:
+
+* `TemporaryFile`
+* `NamedTemporaryFile`
+* `TemporaryDirectory`
+* `SpooledTemporaryFile`
+* `mkstemp`
+* `mkdtemp`
+
+Example:
+
+```python
+import tempfile
+
+with tempfile.TemporaryDirectory() as temp_dir:
+    print("Temporary directory:", temp_dir)
+```
+
+The directory and its contents are automatically cleaned up when the context ends.
+
+Example:
+
+```python
+import tempfile
+
+with tempfile.NamedTemporaryFile(
+    mode="w",
+    encoding="utf-8"
+) as f:
+
+    f.write("Temporary data")
+    f.flush()
+
+    print(f.name)
+```
+
+Use `tempfile` instead of predictable filenames such as:
+
+```text
+/tmp/myapp.tmp
+```
+
+when secure temporary storage is required.
+
+13. ATOMIC FILE WRITES
+
+A common safe-update pattern is:
+
+```text
+Create temporary file
+        ↓
+Write complete new content
+        ↓
+Flush userspace buffers
+        ↓
+Optionally fsync()
+        ↓
+Replace target
+```
+
+Example:
+
+```python
+import os
+import tempfile
+from pathlib import Path
+
+
+def atomic_write_text(
+    target: Path,
+    content: str
+) -> None:
+
+    target = target.resolve()
+    target.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    temp_name = None
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=target.parent,
+            delete=False
+        ) as temp:
+
+            temp_name = temp.name
+            temp.write(content)
+            temp.flush()
+            os.fsync(temp.fileno())
+
+        os.replace(
+            temp_name,
+            target
+        )
+
+    except Exception:
+        if temp_name is not None:
+            try:
+                os.unlink(temp_name)
+            except FileNotFoundError:
+                pass
+
+        raise
+```
+
+Important distinction:
+
+* `os.replace()` provides an atomic replacement operation under the relevant filesystem semantics.
+* It does not by itself guarantee that data has survived a power failure.
+* `fsync()` can be used when stronger durability is required.
+* Exact durability guarantees depend on the operating system and filesystem.
+
+14. MEMORY-MAPPED FILES
+
+The `mmap` module provides memory-mapped file access.
+
+A memory mapping allows file contents to be accessed through a memory-like interface.
+
+Example:
+
+```python
+import mmap
+
+with open("data.bin", "r+b") as f:
+    with mmap.mmap(
+        f.fileno(),
+        0,
+        access=mmap.ACCESS_READ
+    ) as mm:
+
+        position = mm.find(b"ERROR")
+
+        print("Position:", position)
+```
+
+Important characteristics:
+
+* `mmap` can be useful for large files and random-access workloads.
+* It does not mean the entire file is copied into Python heap memory.
+* The operating system manages mapped pages.
+* Performance depends on access patterns and the operating system's virtual-memory subsystem.
+* An empty file cannot be mapped on Windows using the normal whole-file mapping pattern.
+
+15. DETAILED I/O ARCHITECTURE
+
+Python's `io` system provides layered stream abstractions.
+
+A simplified model is:
+
+```text
+Application
+    ↓
+Text I/O
+TextIOWrapper
+    ↓
+Buffered Binary I/O
+BufferedReader / BufferedWriter
+    ↓
+Raw I/O
+FileIO
+    ↓
+Operating System
+    ↓
+Storage Device
+```
+
+15.1 TEXT I/O
+
+Text I/O works with:
+
+```python
+str
+```
+
+It performs:
+
+```text
+bytes
+  ↓
+decoding
+  ↓
+str
+```
+
+and when writing:
+
+```text
+str
+  ↓
+encoding
+  ↓
+bytes
+```
+
+15.2 BINARY I/O
+
+Binary I/O works directly with:
+
+```python
+bytes
+```
+
+No character decoding or newline translation is performed.
+
+15.3 BUFFERED I/O
+
+Buffered I/O reduces the number of direct operating-system operations by maintaining an internal buffer.
+
+Do not assume a universal fixed buffer size such as 8 KB; the actual buffering behavior depends on the implementation and environment.
+
+16. CODE WALKTHROUGH
+
+The basic example follows this sequence:
+
+```text
+Create directory
+      ↓
+Create Path object
+      ↓
+Open file
+      ↓
+Write UTF-8 text
+      ↓
+Close file automatically
+      ↓
+Reopen file
+      ↓
+Iterate through lines
+      ↓
+Read complete file with Path.read_text()
+      ↓
+Delete file
+      ↓
+Delete empty directory
+```
+
+The CSV/JSON example follows:
+
+```text
+Python dictionaries
+        ↓
+CSV DictWriter
+        ↓
+users.csv
+        ↓
+CSV DictReader
+        ↓
+Python dictionaries
+        ↓
+json.dump()
+        ↓
+users.json
+        ↓
+json.load()
+        ↓
+Python dictionaries
+```
+
+17. EXPECTED OUTPUT
+
+Basic example:
+
+```text
+File created at: .../sandbox_io/notes.txt
+
+Reading file line-by-line:
+  [1] Line 1: Introduction to File I/O
+  [2] Line 2: Python context managers
+  [3] Line 3: Unicode and UTF-8
+
+Read via Path.read_text(): ... characters.
+Cleaned up sandbox files.
+```
+
+CSV/JSON example:
+
+```text
+Loaded 3 users from CSV.
+First user from JSON: {
+    'user_id': 101,
+    'username': 'alice_dev',
+    'role': 'admin',
+    'active': True
+}
+```
+
+The exact path and character count can vary.
+
+18. EXECUTION FLOW
+
+For a typical text file:
+
+```text
+open()
+  ↓
+OS file/resource opened
+  ↓
+Buffered I/O layer
+  ↓
+TextIOWrapper
+  ↓
+Encoding / decoding
+  ↓
+Python str
+  ↓
+Application
+```
+
+When the `with` block ends:
+
+```text
+with block exits
+      ↓
+file object's __exit__()
+      ↓
+stream closed
+      ↓
+buffers flushed as appropriate
+      ↓
+file descriptor/resource released
+```
+
+19. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Process a 10 GB log file without loading the complete file into memory.
+
+Requirements:
+
+* Read in binary chunks or stream lines.
+* Count error codes.
+* Keep application memory bounded.
+* Report the total number of matches.
+
+Problem 2:
+
+Create a CSV merger using `pathlib`.
+
+Requirements:
+
+* Find all `.csv` files using `Path.glob()`.
+* Verify compatible headers.
+* Merge rows.
+* Write a consolidated CSV.
+* Report files with incompatible schemas.
+
+Problem 3:
+
+Create a JSON configuration manager.
+
+Requirements:
+
+* Load a JSON configuration.
+* Detect malformed JSON.
+* Validate required keys.
+* Provide fallback defaults.
+* Save updated configuration safely.
+
+Problem 4:
+
+Create a duplicate-file detector.
+
+Requirements:
+
+* Recursively scan files with `Path.rglob()`.
+* Calculate SHA-256 in binary chunks.
+* Group files by hash.
+* Report duplicate paths.
+
+20. REAL-WORLD APPLICATIONS
+
+20.1 DATA ENGINEERING
+
+CSV and JSON are commonly used as input/output formats in data-processing workflows.
+
+Example:
+
+```text
+CSV files
+   ↓
+Python processing
+   ↓
+Validation
+   ↓
+Transformation
+   ↓
+Database / analytics system
+```
+
+20.2 WEB APPLICATIONS
+
+File handling is used for:
+
+* configuration
+* uploaded files
+* logs
+* generated reports
+* static assets
+* cached data
+
+20.3 MACHINE LEARNING
+
+File operations are used for:
+
+* CSV datasets
+* JSON metadata
+* model configuration
+* training logs
+* preprocessing outputs
+* experiment results
+
+20.4 APPLICATION CONFIGURATION
+
+JSON can store:
+
+```json
+{
+    "database": {
+        "host": "localhost",
+        "port": 5432
+    },
+    "debug": false
+}
+```
+
+21. COMMON MISTAKES
+
+Mistake 1: Omitting encoding.
+
+Less portable:
+
+```python
+open("data.txt")
+```
+
+Preferred when UTF-8 is the intended format:
+
+```python
+open(
+    "data.txt",
+    encoding="utf-8"
+)
+```
+
+Mistake 2: Forgetting `newline=""` for CSV.
+
+Preferred:
+
+```python
+with open(
+    "data.csv",
+    "w",
+    newline="",
+    encoding="utf-8"
+) as f:
+    ...
+```
+
+Mistake 3: Loading huge files completely.
+
+Avoid:
+
+```python
+data = f.read()
+```
+
+when the entire file is unnecessarily large.
+
+Prefer:
+
+```python
+for line in f:
+    process(line)
+```
+
+or fixed-size binary chunks.
+
+Mistake 4: Using `w` when append behavior is required.
+
+```python
+open("log.txt", "w")
+```
+
+truncates the existing file.
+
+Use:
+
+```python
+open("log.txt", "a")
+```
+
+when appending is intended.
+
+Mistake 5: Assuming CSV values have numeric types.
+
+CSV data is generally read as strings.
+
+Convert explicitly:
+
+```python
+age = int(row["age"])
+score = float(row["score"])
+```
+
+22. COMMON ERRORS
+
+22.1 FileNotFoundError
+
+```text
+FileNotFoundError
+```
+
+Cause:
+
+* incorrect path
+* missing file
+* incorrect working directory
+
+Check:
+
+```python
+from pathlib import Path
+
+p = Path("data.txt")
+
+print(p.resolve())
+print(p.exists())
+```
+
+22.2 PermissionError
+
+Occurs when the operating system denies the requested operation.
+
+Example:
+
+```text
+PermissionError: [Errno 13] Permission denied
+```
+
+22.3 UnicodeDecodeError
+
+Occurs when the selected decoder cannot decode the file bytes.
+
+Example:
+
+```text
+UnicodeDecodeError
+```
+
+Possible causes:
+
+* wrong encoding
+* corrupted input
+* mixed encodings
+
+Do not blindly switch to `latin-1` just to suppress the exception. Determine the actual source encoding when data correctness matters.
+
+22.4 JSONDecodeError
+
+Occurs when JSON input is invalid.
+
+```python
+import json
+
+try:
+    data = json.loads(text)
+except json.JSONDecodeError as e:
+    print("Invalid JSON:", e)
+```
+
+22.5 csv.Error
+
+CSV parsing can raise `csv.Error` for malformed or problematic CSV input.
+
+```python
+import csv
+
+try:
+    ...
+except csv.Error as e:
+    print("CSV error:", e)
+```
+
+23. DEBUGGING TECHNIQUES
+
+Incorrect:
+
+```python
+import csv
+
+f = open("output.csv", "w")
+
+writer = csv.writer(f)
+
+writer.writerow(["id", "name"])
+writer.writerow([1, "Alice"])
+
+f.close()
+```
+
+Problems:
+
+* Resource management is manual.
+* `newline=""` is missing.
+* Encoding is not explicit.
+
+Improved:
+
+```python
+import csv
+
+with open(
+    "output.csv",
+    "w",
+    newline="",
+    encoding="utf-8"
+) as f:
+
+    writer = csv.writer(f)
+
+    writer.writerow(["id", "name"])
+    writer.writerow([1, "Alice"])
+```
+
+For debugging file paths:
+
+```python
+from pathlib import Path
+
+p = Path("output.csv")
+
+print("Absolute path:", p.resolve())
+print("Exists:", p.exists())
+print("Is file:", p.is_file())
+
+if p.exists():
+    print("Size:", p.stat().st_size)
+```
+
+For JSON debugging:
+
+```python
+import json
+
+try:
+    with open(
+        "config.json",
+        encoding="utf-8"
+    ) as f:
+        config = json.load(f)
+
+except json.JSONDecodeError as e:
+    print("Invalid JSON")
+    print("Line:", e.lineno)
+    print("Column:", e.colno)
+    print("Message:", e.msg)
+```
+
+24. EDGE CASES
+
+24.1 EMPTY FILE
+
+A zero-byte file is valid as a file, but it is not valid JSON.
+
+Therefore:
+
+```python
+json.load(f)
+```
+
+raises:
+
+```text
+JSONDecodeError
+```
+
+when the file is empty.
+
+24.2 UTF-8 BOM
+
+Use:
+
+```python
+encoding="utf-8-sig"
+```
+
+when BOM-aware UTF-8 reading is required.
+
+24.3 VERY LONG LINE
+
+Even:
+
+```python
+for line in f:
+```
+
+does not guarantee constant memory if one individual line is extremely large.
+
+Memory consumption can be proportional to the size of the current line.
+
+For arbitrary large binary records, fixed-size chunks may be more appropriate.
+
+24.4 EMPTY MEMORY-MAPPED FILE
+
+Do not assume:
+
+```python
+mmap.mmap(f.fileno(), 0)
+```
+
+works for every empty file on every operating system. In particular, whole-file mapping of an empty file has platform-specific limitations.
+
+24.5 JSON DUPLICATE KEYS
+
+JSON objects should normally use unique names.
+
+Python's standard JSON decoder keeps the last value when duplicate object names occur by default.
+
+For special validation requirements, `object_pairs_hook` can be used to inspect object pairs.
+
+25. BEST PRACTICES
+
+26. Use context managers:
+
+```python
+with open(...) as f:
+    ...
+```
+
+2. Explicitly specify UTF-8 when UTF-8 is the intended file format:
+
+```python
+encoding="utf-8"
+```
+
+3. Use `newline=""` with the `csv` module.
+
+4. Use `pathlib.Path` for modern filesystem code.
+
+5. Stream large files instead of unnecessarily loading them completely.
+
+6. Convert CSV strings to the required application types.
+
+7. Catch specific exceptions where practical.
+
+8. Validate JSON before using critical configuration values.
+
+9. Use `tempfile` for secure temporary resources.
+
+10. Use atomic replacement when a file must be replaced without exposing a partially written target.
+
+11. Do not treat `mmap` as automatically faster than normal file I/O. Benchmark the actual workload.
+
+12. Do not use `errors="ignore"` when silently losing characters would damage data integrity.
+
+13. PERFORMANCE CONSIDERATIONS
+
+26.1 STREAMING
+
+For large text files:
+
+```python
+with open(
+    "large.log",
+    encoding="utf-8"
+) as f:
+
+    for line in f:
+        process(line)
+```
+
+This avoids creating a list containing every line.
+
+26.2 BINARY CHUNKS
+
+```python
+with open("large.bin", "rb") as f:
+    while chunk := f.read(64 * 1024):
+        process(chunk)
+```
+
+This reads approximately 64 KiB at a time.
+
+26.3 JSON
+
+Standard-library `json` is convenient and portable.
+
+For performance-critical systems, third-party JSON libraries may provide different performance characteristics, but they should not automatically be described as drop-in replacements because their APIs, supported types, and standards behavior can differ.
+
+Choose a third-party library only after measuring the actual workload and checking compatibility requirements.
+
+26.4 MMAP
+
+`mmap` can be useful for:
+
+* random access
+* searching large files
+* shared mappings
+* workloads where OS virtual-memory behavior is beneficial
+
+It is not automatically superior to streaming.
+
+27. MEMORY CONSIDERATIONS
+
+Memory usage differs significantly between approaches.
+
+Example:
+
+```python
+data = f.read()
+```
+
+Potentially stores the complete file content in memory.
+
+By contrast:
+
+```python
+for line in f:
+    process(line)
+```
+
+processes one line at a time.
+
+For fixed-size chunks:
+
+```python
+while chunk := f.read(65536):
+    process(chunk)
+```
+
+application memory is bounded by the chunk size plus processing overhead.
+
+Important:
+
+* `readlines()` creates a list of all lines.
+* `list(csv.reader(f))` materializes all CSV rows.
+* `json.load()` builds the complete decoded JSON object in memory.
+* `mmap` provides a mapped view, but the operating system still manages physical pages and caching.
+
+28. SECURITY CONSIDERATIONS
+
+28.1 PATH TRAVERSAL
+
+Never blindly combine untrusted user input with a trusted directory.
+
+Unsafe pattern:
+
+```python
+filename = user_input
+
+path = Path("/app/uploads") / filename
+```
+
+A filename containing path components may escape the intended location.
+
+A safer design validates the requested path against an allowed root.
+
+Example:
+
+```python
+from pathlib import Path
+
+
+def safe_path(root: Path, name: str) -> Path:
+    root = root.resolve()
+    candidate = (root / name).resolve()
+
+    if candidate != root and root not in candidate.parents:
+        raise ValueError("Path escapes allowed directory")
+
+    return candidate
+```
+
+Even this should be adapted to the application's symlink and filesystem requirements.
+
+28.2 TEMPORARY FILES
+
+Prefer:
+
+```python
+tempfile.NamedTemporaryFile()
+```
+
+or:
+
+```python
+tempfile.TemporaryDirectory()
+```
+
+instead of predictable temporary filenames.
+
+28.3 UNTRUSTED JSON
+
+JSON itself does not execute Python code, but application logic must still validate:
+
+* expected data types
+* required fields
+* allowed values
+* maximum sizes
+* nesting depth where appropriate
+
+Never assume that syntactically valid JSON is automatically valid application input.
+
+28.4 SENSITIVE INFORMATION
+
+Do not place passwords, API keys, access tokens, or personal information into logs or error messages unnecessarily.
+
+29. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                  | Python                     | C++                               | Java                                |
+| ------------------------ | -------------------------- | --------------------------------- | ----------------------------------- |
+| File resource management | `with open()`              | RAII / `fstream`                  | try-with-resources                  |
+| Path API                 | `pathlib.Path`             | `std::filesystem::path`           | `java.nio.file.Path`                |
+| JSON standard library    | `json`                     | Usually third-party libraries     | Usually third-party libraries       |
+| CSV standard library     | `csv`                      | No direct equivalent              | Usually libraries/manual processing |
+| Memory mapping           | `mmap`                     | OS APIs / libraries               | `FileChannel.map()`                 |
+| Text encoding API        | `open(..., encoding=...)`  | Locale/platform/library dependent | `Charset` / I/O APIs                |
+| Temporary resources      | `tempfile`                 | OS/library APIs                   | `Files.createTempFile()`            |
+| Structured serialization | `json` and other libraries | Library dependent                 | Library dependent                   |
+
+30. FREQUENTLY ASKED QUESTIONS
+
+Q1. What is the difference between `read()`, `readline()`, and iteration?
+
+A:
+
+```text
+read()
+    → reads requested/all content
+
+readline()
+    → reads one line
+
+for line in f
+    → iterates through lines lazily
+```
+
+Q2. What is the difference between `dump()` and `dumps()`?
+
+A:
+
+```text
+json.dump()
+    → writes JSON to a file-like object
+
+json.dumps()
+    → returns JSON as a Python string
+```
+
+Similarly:
+
+```text
+json.load()
+    → reads JSON from a file-like object
+
+json.loads()
+    → reads JSON from a string
+```
+
+Q3. Why is `newline=""` used with CSV?
+
+A:
+
+The `csv` module performs its own newline handling. The official documentation recommends opening CSV files with `newline=""` to correctly handle embedded newlines and platform-specific line endings.
+
+Q4. Why use `pathlib`?
+
+A:
+
+It provides an object-oriented and cross-platform API for filesystem paths.
+
+Example:
+
+```python
+path = Path("data") / "students.csv"
+```
+
+Q5. Is UTF-8 always the default?
+
+A:
+
+Not universally. Python's ordinary text I/O default encoding is locale-dependent unless UTF-8 Mode is enabled. Therefore, explicitly specify:
+
+```python
+encoding="utf-8"
+```
+
+when UTF-8 is the intended format.
+
+Q6. Does `mmap` load the complete file into RAM?
+
+A:
+
+Not in the same way as:
+
+```python
+data = f.read()
+```
+
+The file is mapped into virtual memory and pages are brought into memory as needed. Physical memory usage is controlled by the operating system.
+
+Q7. Can JSON directly store a `datetime` object?
+
+A:
+
+No. A custom conversion is required.
+
+Example:
+
+```python
+json.dumps(
+    {"time": datetime.now()},
+    default=lambda x: x.isoformat()
+)
+```
+
+31. INTERVIEW QUESTIONS
+
+Q1. Explain text mode versus binary mode.
+
+Answer:
+
+Text mode returns `str` and performs encoding/decoding and newline handling.
+
+Binary mode returns `bytes` and does not perform text encoding or newline translation.
+
+Q2. Why should `encoding="utf-8"` be specified?
+
+Answer:
+
+The default text encoding can depend on the locale. Explicit UTF-8 makes the intended file format clear and improves portability.
+
+Q3. Why is `newline=""` recommended for CSV?
+
+Answer:
+
+The `csv` module implements its own newline handling. Opening the file with `newline=""` avoids incorrect newline processing, including issues involving embedded newlines and platform-specific line endings.
+
+Q4. What is the difference between `json.load()` and `json.loads()`?
+
+Answer:
+
+```text
+load  → file-like object
+loads → string
+```
+
+Q5. What is `pathlib.Path`?
+
+Answer:
+
+`Path` is an object-oriented representation of filesystem paths.
+
+Example:
+
+```python
+from pathlib import Path
+
+p = Path("data/file.txt")
+```
+
+Q6. What is an atomic file replacement?
+
+Answer:
+
+A complete replacement is first prepared in a temporary file and then the target is replaced using an atomic filesystem operation such as `os.replace()`.
+
+This reduces the chance that readers observe a partially written target file.
+
+Q7. What is `mmap`?
+
+Answer:
+
+`mmap` provides a memory-mapped view of file contents and can be useful for large-file random access and searching.
+
+Q8. Why shouldn't `errors="ignore"` always be used?
+
+Answer:
+
+It can silently discard invalid data. If data integrity matters, it is usually better to detect and handle the decoding error explicitly.
+
+32. EXAM QUESTIONS
+
+Q1. What is the default mode of `open()`?
+
+Answer:
+
+```text
+r
+```
+
+Q2. Which mode truncates an existing file?
+
+Answer:
+
+```text
+w
+```
+
+Q3. Which mode appends data?
+
+Answer:
+
+```text
+a
+```
+
+Q4. Which mode creates a new file and fails if it already exists?
+
+Answer:
+
+```text
+x
+```
+
+Q5. Which encoding is commonly recommended for portable modern text files?
+
+Answer:
+
+```text
+UTF-8
+```
+
+Q6. Which parameter is commonly used for BOM-aware UTF-8 files?
+
+Answer:
+
+```python
+encoding="utf-8-sig"
+```
+
+Q7. What does `json.dumps()` return?
+
+Answer:
+
+A Python `str` containing JSON data.
+
+Q8. What does `json.load()` accept?
+
+Answer:
+
+A file-like object containing JSON data.
+
+Q9. What does `Path.exists()` return?
+
+Answer:
+
+A boolean indicating whether the path exists.
+
+Q10. Which CSV class reads rows as dictionaries?
+
+Answer:
+
+```python
+csv.DictReader
+```
+
+Q11. Which CSV class writes dictionaries?
+
+Answer:
+
+```python
+csv.DictWriter
+```
+
+Q12. Which function performs atomic replacement?
+
+Answer:
+
+```python
+os.replace()
+```
+
+33. PRACTICE QUESTIONS
+
+Problem 1:
+
+Write a Python program that:
+
+* recursively scans a directory using `Path.rglob()`;
+* reads files in binary chunks;
+* calculates SHA-256;
+* identifies duplicate files.
+
+Problem 2:
+
+Write a CSV student-result processor that:
+
+* reads student records;
+* converts marks to integers;
+* calculates total and average;
+* writes results using `DictWriter`.
+
+Problem 3:
+
+Create a JSON configuration manager that:
+
+* loads a configuration;
+* validates required keys;
+* handles `JSONDecodeError`;
+* writes changes atomically.
+
+Problem 4:
+
+Create a UTF-8 file analyzer that:
+
+* counts characters;
+* counts words;
+* counts lines;
+* handles Unicode correctly.
+
+Problem 5:
+
+Create a large-log analyzer that:
+
+* reads a file in 64 KiB chunks;
+* searches for `ERROR`;
+* counts occurrences;
+* does not load the entire file.
+
+Problem 6:
+
+Create a custom JSON decoder using `object_hook` that converts selected ISO-8601 timestamp fields into `datetime` objects.
+
+Problem 7:
+
+Create a CSV dialect detector using `csv.Sniffer` and compare its result against a manually specified delimiter.
+
+34. ADVANCED MINI PROJECT
+
+PROJECT: FILE-BASED STUDENT DATA MANAGEMENT SYSTEM
+
+Requirements:
+
+1. Store student data in CSV.
+2. Load records with `DictReader`.
+3. Validate input.
+4. Calculate total and average.
+5. Export results to JSON.
+6. Use `pathlib` for all filesystem operations.
+7. Use UTF-8 explicitly.
+8. Use `newline=""` for CSV.
+9. Handle:
+
+   * `FileNotFoundError`
+   * `PermissionError`
+   * `csv.Error`
+   * `JSONDecodeError`
+10. Use atomic replacement when updating important JSON configuration.
+
+Suggested structure:
+
+```text
+student_manager/
+│
+├── data/
+│   ├── students.csv
+│   └── results.json
+│
+├── src/
+│   ├── csv_handler.py
+│   ├── json_handler.py
+│   ├── processor.py
+│   └── main.py
+│
+└── README.md
+```
+
+35. SUMMARY
+
+Python provides a complete standard-library ecosystem for file and data processing.
+
+The main concepts are:
+
+```text
+open()
+   ↓
+Text / Binary I/O
+   ↓
+Encoding / Decoding
+   ↓
+CSV / JSON
+   ↓
+pathlib
+   ↓
+Temporary / Atomic File Operations
+   ↓
+Large-File Techniques
+```
+
+Important standard-library modules include:
+
+```text
+io
+csv
+json
+pathlib
+tempfile
+mmap
+os
+```
+
+For normal application development:
+
+```python
+from pathlib import Path
+
+path = Path("data.txt")
+
+with path.open(
+    "r",
+    encoding="utf-8"
+) as f:
+    for line in f:
+        process(line)
+```
+
+is a strong general pattern.
+
+36. KEY TAKEAWAYS
+
+* Use `with` when working with files and other resources.
+* Use `encoding="utf-8"` when UTF-8 is the intended text format.
+* Remember that text I/O works with `str`, while binary I/O works with `bytes`.
+* Use `newline=""` when opening files for the `csv` module.
+* Use `csv.reader` and `csv.writer` for sequence-based CSV processing.
+* Use `csv.DictReader` and `csv.DictWriter` for dictionary-based CSV processing.
+* Use `json.dump()` / `json.load()` for file-based JSON.
+* Use `json.dumps()` / `json.loads()` for string-based JSON.
+* Use `default=` or `JSONEncoder` for custom JSON serialization.
+* Use `object_hook` for custom JSON decoding.
+* Use `pathlib.Path` for modern filesystem operations.
+* Use `Path.glob()` and `Path.rglob()` for file discovery.
+* Use `tempfile` for secure temporary resources.
+* Use `os.replace()` for atomic replacement patterns.
+* Use streaming or fixed-size chunks for large files.
+* Use `mmap` when its access pattern provides a real benefit.
+* Do not assume `mmap` means constant physical RAM usage.
+* Validate untrusted paths and structured input.
+* Do not silently discard invalid text unless data loss is acceptable.
+* Benchmark performance claims instead of assuming one I/O method is always faster.
+* Treat filesystem atomicity and crash durability as related but different concepts.
+  ================================================================================
+  END OF KNOWLEDGE BASE
+  ================================================================================

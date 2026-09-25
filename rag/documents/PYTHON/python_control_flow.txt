@@ -1,0 +1,1966 @@
+COURSE: Python Programming
+TOPIC: Control Flow, Pattern Matching, Iterators, and Comprehensions
+LEVEL: Beginner to Advanced
+SOURCE: Official Python Documentation – Python 3.14
+
+================================================================================
+CONTROL FLOW, PATTERN MATCHING, ITERATORS, AND COMPREHENSIONS
+=============================================================
+
+1. INTRODUCTION
+
+Control flow determines the order in which statements execute in a Python program.
+
+Python provides several control-flow mechanisms:
+
+* Conditional statements: `if`, `elif`, and `else`.
+* Conditional expressions.
+* `for` and `while` loops.
+* Loop-control statements: `break`, `continue`, and `pass`.
+* Loop `else` clauses.
+* Structural pattern matching using `match` and `case`.
+* The iterator protocol using `__iter__()` and `__next__()`.
+* Comprehensions for lists, sets, and dictionaries.
+* Generator expressions for lazy evaluation.
+* Iteration utilities such as `range()`, `enumerate()`, `zip()`, `reversed()`, and `sorted()`.
+
+Python's `for` statement works with iterable objects rather than requiring a numeric loop counter. Internally, iteration obtains an iterator and repeatedly requests its next value until `StopIteration` signals that iteration is complete.
+
+Structural pattern matching, introduced in Python 3.10, allows programs to match values against literals, sequences, mappings, classes, and other patterns while optionally binding matched values to names.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Use `if`, `elif`, and `else` for conditional execution.
+* Use conditional expressions for concise value selection.
+* Use `for` and `while` loops correctly.
+* Apply `break`, `continue`, and `pass`.
+* Understand and correctly use loop `else` clauses.
+* Use `match` and `case` for structural pattern matching.
+* Work with literal, sequence, mapping, class, wildcard, OR, and guarded patterns.
+* Understand the difference between iterables and iterators.
+* Implement the iterator protocol using `__iter__()` and `__next__()`.
+* Use `range()`, `enumerate()`, `zip()`, `reversed()`, and `sorted()`.
+* Create list, dictionary, set, and generator comprehensions.
+* Avoid modifying collections unsafely while iterating.
+* Select appropriate iteration techniques for readability, memory use, and correctness.
+
+3. PREREQUISITES
+
+The learner should understand:
+
+* Variables and assignment.
+* Built-in data types.
+* Boolean expressions.
+* Functions.
+* Lists, tuples, sets, and dictionaries.
+* Basic exception handling.
+* Basic object-oriented programming.
+
+4. BEGINNER CONCEPTS
+
+4.1 Indentation
+
+Python uses indentation to define blocks of code.
+
+The conventional style is four spaces per indentation level.
+
+Example:
+
+```python
+if score >= 50:
+    print("Pass")
+else:
+    print("Fail")
+```
+
+Incorrect indentation can produce an `IndentationError` or `SyntaxError`.
+
+4.2 Conditional Statements
+
+The basic structure is:
+
+```python
+if condition:
+    statement
+elif another_condition:
+    statement
+else:
+    statement
+```
+
+Python evaluates conditions from top to bottom.
+
+Once a condition is true, its corresponding block executes and the remaining `elif` and `else` blocks are skipped.
+
+4.3 Conditional Expressions
+
+A conditional expression selects one of two values:
+
+```python
+result = value_if_true if condition else value_if_false
+```
+
+Example:
+
+```python
+age = 20
+status = "Adult" if age >= 18 else "Minor"
+
+print(status)
+```
+
+Output:
+
+```text
+Adult
+```
+
+4.4 `while` Loops
+
+A `while` loop repeatedly executes its body while its condition is true.
+
+```python
+count = 3
+
+while count > 0:
+    print(count)
+    count -= 1
+```
+
+Output:
+
+```text
+3
+2
+1
+```
+
+4.5 `for` Loops
+
+A Python `for` loop iterates over an iterable.
+
+```python
+for item in [10, 20, 30]:
+    print(item)
+```
+
+It can iterate over:
+
+* Lists.
+* Tuples.
+* Strings.
+* Dictionaries.
+* Sets.
+* Files.
+* Generators.
+* Custom iterable objects.
+
+4.6 Loop Control Statements
+
+`break` terminates the nearest enclosing `for` or `while` loop.
+
+```python
+for number in range(10):
+    if number == 5:
+        break
+    print(number)
+```
+
+`continue` skips the remainder of the current iteration and continues with the next iteration.
+
+```python
+for number in range(5):
+    if number == 2:
+        continue
+    print(number)
+```
+
+`pass` performs no operation.
+
+```python
+def future_function():
+    pass
+```
+
+It is useful as a placeholder when Python syntax requires a statement.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 Loop `else`
+
+A `for` or `while` loop can have an `else` clause.
+
+The loop `else` executes when the loop finishes normally without executing `break`.
+
+For a `for` loop, normal completion means that the iterator becomes exhausted.
+
+For a `while` loop, normal completion means that its condition becomes false.
+
+Example:
+
+```python
+for number in range(5):
+    if number == 10:
+        break
+else:
+    print("Number was not found")
+```
+
+Output:
+
+```text
+Number was not found
+```
+
+If `break` executes, the loop `else` is skipped.
+
+A `return` or exception that leaves the loop also prevents the loop `else` from executing.
+
+5.2 `range()`
+
+`range()` represents an arithmetic progression of integers.
+
+```python
+range(stop)
+range(start, stop)
+range(start, stop, step)
+```
+
+Example:
+
+```python
+for number in range(2, 10, 2):
+    print(number)
+```
+
+Output:
+
+```text
+2
+4
+6
+8
+```
+
+A `range` object does not construct a list containing every value in advance, which makes it useful for large numeric ranges.
+
+Its exact memory size is implementation-dependent, so fixed byte-size claims should not be treated as universal Python guarantees.
+
+5.3 `enumerate()`
+
+`enumerate()` produces pairs containing an index and value.
+
+```python
+fruits = ["Apple", "Banana", "Cherry"]
+
+for index, fruit in enumerate(fruits, start=1):
+    print(index, fruit)
+```
+
+Output:
+
+```text
+1 Apple
+2 Banana
+3 Cherry
+```
+
+It is preferable to manually maintaining an index variable in many situations.
+
+5.4 `zip()`
+
+`zip()` combines values from multiple iterables position by position.
+
+```python
+names = ["Alice", "Bob", "Charlie"]
+marks = [90, 85, 88]
+
+for name, mark in zip(names, marks):
+    print(name, mark)
+```
+
+By default, `zip()` stops when the shortest input iterable is exhausted.
+
+Python also supports:
+
+```python
+zip(names, marks, strict=True)
+```
+
+With `strict=True`, a `ValueError` is raised if the input iterables have different lengths. The `strict` parameter was added in Python 3.10.
+
+5.5 `itertools.zip_longest()`
+
+When the goal is to continue until the longest iterable is exhausted, use:
+
+```python
+from itertools import zip_longest
+
+a = [1, 2, 3]
+b = ["A", "B"]
+
+print(list(zip_longest(a, b, fillvalue=None)))
+```
+
+Output:
+
+```text
+[(1, 'A'), (2, 'B'), (3, None)]
+```
+
+5.6 `reversed()`
+
+`reversed()` returns a reverse iterator for supported objects.
+
+```python
+values = [1, 2, 3, 4]
+
+for value in reversed(values):
+    print(value)
+```
+
+Output:
+
+```text
+4
+3
+2
+1
+```
+
+5.7 `sorted()`
+
+`sorted()` creates a new sorted list from an iterable.
+
+```python
+values = [5, 2, 8, 1]
+
+result = sorted(values)
+
+print(result)
+```
+
+Output:
+
+```text
+[1, 2, 5, 8]
+```
+
+Unlike `list.sort()`, `sorted()` does not modify the original list.
+
+6. COMPREHENSIONS
+
+Comprehensions provide a concise way to construct collections.
+
+6.1 List Comprehension
+
+Syntax:
+
+```python
+[expression for item in iterable if condition]
+```
+
+Example:
+
+```python
+squares = [x ** 2 for x in range(10) if x % 2 == 0]
+
+print(squares)
+```
+
+Output:
+
+```text
+[0, 4, 16, 36, 64]
+```
+
+6.2 Dictionary Comprehension
+
+```python
+lookup = {
+    name: len(name)
+    for name in ["Alice", "Bob", "Charlie"]
+}
+```
+
+Result:
+
+```text
+{'Alice': 5, 'Bob': 3, 'Charlie': 7}
+```
+
+6.3 Set Comprehension
+
+```python
+lengths = {
+    len(word)
+    for word in ["apple", "banana", "apple"]
+}
+```
+
+Result:
+
+```text
+{5, 6}
+```
+
+Duplicate values are removed because the result is a set.
+
+6.4 Generator Expression
+
+```python
+numbers = (x ** 2 for x in range(10))
+```
+
+A generator expression produces values lazily.
+
+It does not immediately construct the complete result collection.
+
+Example:
+
+```python
+total = sum(x ** 2 for x in range(1_000_000))
+```
+
+7. ADVANCED CONCEPTS: STRUCTURAL PATTERN MATCHING
+
+Structural pattern matching was introduced in Python 3.10.
+
+Basic syntax:
+
+```python
+match subject:
+    case pattern:
+        action
+    case another_pattern:
+        action
+    case _:
+        default_action
+```
+
+A `match` statement evaluates the subject and tries each `case` in order. The first successful case is selected.
+
+7.1 Literal Patterns
+
+```python
+status = 404
+
+match status:
+    case 200:
+        print("Success")
+    case 404:
+        print("Not Found")
+    case _:
+        print("Other")
+```
+
+Output:
+
+```text
+Not Found
+```
+
+7.2 Wildcard Pattern
+
+```python
+case _:
+```
+
+matches any value.
+
+The `_` wildcard does not bind the subject to a variable.
+
+7.3 Capture Patterns
+
+A standalone name in a pattern is normally a capture pattern:
+
+```python
+match value:
+    case x:
+        print(x)
+```
+
+This captures the subject in `x`.
+
+Important:
+
+```python
+case x:
+```
+
+does NOT mean "match the existing variable `x`".
+
+It is a capture pattern and will normally match anything.
+
+When matching a named constant, use a qualified name such as:
+
+```python
+case Status.OK:
+```
+
+rather than:
+
+```python
+case OK:
+```
+
+because an unqualified name is interpreted as a capture pattern.
+
+7.4 OR Patterns
+
+Multiple alternatives can be combined:
+
+```python
+command = "QUIT"
+
+match command:
+    case "QUIT" | "EXIT":
+        print("Terminate")
+    case _:
+        print("Continue")
+```
+
+7.5 Sequence Patterns
+
+Sequence patterns can destructure supported sequence objects.
+
+```python
+data = ["POINT", 10, 20]
+
+match data:
+    case ["POINT", x, y]:
+        print(f"Point: {x}, {y}")
+```
+
+Extended unpacking is supported:
+
+```python
+case [first, *middle, last]:
+```
+
+This captures the first and last elements and collects the remaining elements in `middle`.
+
+Sequence patterns do not match arbitrary iterators or strings.
+
+7.6 Mapping Patterns
+
+Mapping patterns can match dictionary-like mappings.
+
+```python
+response = {
+    "status": 200,
+    "data": "OK"
+}
+
+match response:
+    case {"status": 200, "data": value}:
+        print(value)
+```
+
+Extra keys are allowed.
+
+For example:
+
+```python
+{
+    "status": 200,
+    "data": "OK",
+    "server": "Python"
+}
+```
+
+can still match the pattern above.
+
+7.7 Class Patterns
+
+Class patterns can match an object's type and extract attributes.
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: int
+    y: int
+
+
+point = Point(10, 20)
+
+match point:
+    case Point(x=0, y=y):
+        print(f"Y-axis point: {y}")
+    case Point(x=x, y=y):
+        print(f"Point: {x}, {y}")
+```
+
+7.8 Guards
+
+A guard adds an additional Boolean condition.
+
+```python
+point = (10, 10)
+
+match point:
+    case (x, y) if x == y:
+        print("Point is on the diagonal")
+    case (x, y):
+        print("Point is not on the diagonal")
+```
+
+The pattern binds values before the guard is evaluated. If the guard is false, matching proceeds to the next case.
+
+8. ITERATOR PROTOCOL
+
+Python's iteration system is based on two related concepts:
+
+* Iterable.
+* Iterator.
+
+8.1 Iterable
+
+An iterable is an object from which an iterator can be obtained.
+
+Examples include:
+
+```text
+list
+tuple
+str
+dict
+set
+range
+file objects
+generators
+```
+
+An object can generally provide iteration through `__iter__()`.
+
+The Python iteration machinery also supports the older sequence-style `__getitem__()` protocol in appropriate cases.
+
+8.2 Iterator
+
+An iterator implements:
+
+```python
+__iter__()
+__next__()
+```
+
+`__iter__()` returns the iterator itself.
+
+`__next__()` returns the next value.
+
+When no values remain, `__next__()` raises:
+
+```python
+StopIteration
+```
+
+8.3 Custom Iterator
+
+```python
+class FibonacciIterator:
+
+    def __init__(self, limit):
+        self.limit = limit
+        self.count = 0
+        self.a = 0
+        self.b = 1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.count >= self.limit:
+            raise StopIteration
+
+        value = self.a
+        self.a, self.b = self.b, self.a + self.b
+        self.count += 1
+
+        return value
+
+
+fib = FibonacciIterator(8)
+
+for value in fib:
+    print(value)
+```
+
+Output:
+
+```text
+0
+1
+1
+2
+3
+5
+8
+13
+```
+
+9. HOW A `FOR` LOOP USES ITERATORS
+
+Conceptually:
+
+```python
+for item in iterable:
+    process(item)
+```
+
+works through the iterator protocol approximately as follows:
+
+```python
+iterator = iter(iterable)
+
+while True:
+    try:
+        item = next(iterator)
+    except StopIteration:
+        break
+
+    process(item)
+```
+
+This is a conceptual explanation rather than a guarantee of the exact CPython bytecode or internal C implementation.
+
+The language-level behavior is based on obtaining an iterator and repeatedly requesting values until `StopIteration` occurs.
+
+10. SHORT-CIRCUIT BOOLEAN EVALUATION
+
+Python's `and` and `or` operators use short-circuit evaluation.
+
+For:
+
+```python
+A and B
+```
+
+if `A` is false, `B` is not evaluated.
+
+For:
+
+```python
+A or B
+```
+
+if `A` is true, `B` is not evaluated.
+
+Example:
+
+```python
+if user is not None and user.is_active():
+    print("Active user")
+```
+
+This prevents `user.is_active()` from being evaluated when `user` is `None`.
+
+An important detail is that `and` and `or` return one of their operands rather than necessarily returning `True` or `False`.
+
+11. BASIC EXAMPLE: CONTROL FLOW
+
+```python
+def demonstrate_control_flow():
+
+    score = 85
+
+    if score >= 90:
+        grade = "A"
+    elif score >= 80:
+        grade = "B"
+    elif score >= 70:
+        grade = "C"
+    else:
+        grade = "F"
+
+    print(f"Score {score} -> Grade {grade}")
+
+    count = 3
+
+    while count > 0:
+        print(f"Countdown: {count}")
+        count -= 1
+
+    fruits = ["Apple", "Banana", "Cherry"]
+
+    print("Enumerated Fruits:")
+
+    for index, fruit in enumerate(fruits, start=1):
+        print(f"  {index}. {fruit}")
+
+    prices = [1.20, 0.50, 2.50]
+
+    print("Fruit Prices:")
+
+    for fruit, price in zip(fruits, prices, strict=True):
+        print(f"  {fruit}: ${price:.2f}")
+
+
+if __name__ == "__main__":
+    demonstrate_control_flow()
+```
+
+Expected output:
+
+```text
+Score 85 -> Grade B
+Countdown: 3
+Countdown: 2
+Countdown: 1
+Enumerated Fruits:
+  1. Apple
+  2. Banana
+  3. Cherry
+Fruit Prices:
+  Apple: $1.20
+  Banana: $0.50
+  Cherry: $2.50
+```
+
+12. INTERMEDIATE EXAMPLE: LOOP `ELSE` AND COMPREHENSIONS
+
+```python
+def find_first_prime(numbers: list[int]):
+
+    for number in numbers:
+
+        if number <= 1:
+            continue
+
+        for divisor in range(
+            2,
+            int(number ** 0.5) + 1
+        ):
+            if number % divisor == 0:
+                break
+        else:
+            print(
+                f"Found first prime number: {number}"
+            )
+            return number
+
+    print("No prime numbers found.")
+    return None
+
+
+def demonstrate_comprehensions():
+
+    matrix = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ]
+
+    even_flat = [
+        value
+        for row in matrix
+        for value in row
+        if value % 2 == 0
+    ]
+
+    print("Flattened Evens:", even_flat)
+
+    user_roles = {
+        "alice": "admin",
+        "bob": "user",
+        "charlie": "user",
+        "david": "moderator"
+    }
+
+    roles_to_users = {
+        role: [
+            user
+            for user, current_role in user_roles.items()
+            if current_role == role
+        ]
+        for role in set(user_roles.values())
+    }
+
+    print("Grouped Roles:", roles_to_users)
+
+
+if __name__ == "__main__":
+    find_first_prime(
+        [4, 6, 8, 9, 11, 14]
+    )
+
+    demonstrate_comprehensions()
+```
+
+Expected output:
+
+```text
+Found first prime number: 11
+Flattened Evens: [2, 4, 6, 8]
+Grouped Roles: {'admin': ['alice'], 'user': ['bob', 'charlie'], 'moderator': ['david']}
+```
+
+Dictionary ordering should not be treated as a required semantic feature of the grouping algorithm, even though modern Python dictionaries preserve insertion order.
+
+13. ADVANCED EXAMPLE: PATTERN MATCHING AND CUSTOM ITERATOR
+
+```python
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class Command:
+    action: str
+    target: str
+    flags: list[str]
+
+
+def process_event(event: Any) -> str:
+
+    match event:
+
+        case "QUIT" | "EXIT":
+            return "Terminating application session."
+
+        case [
+            "MOVE",
+            x,
+            y
+        ] if isinstance(x, (int, float)) and isinstance(y, (int, float)):
+            return f"Moving to coordinate ({x}, {y})"
+
+        case ["LOG", *messages]:
+            return (
+                f"Logging {len(messages)} events: "
+                f"{', '.join(map(str, messages))}"
+            )
+
+        case {
+            "type": "API_RESPONSE",
+            "status": 200,
+            "data": payload
+        }:
+            return f"API Success with payload: {payload}"
+
+        case {
+            "type": "API_RESPONSE",
+            "status": status,
+            "error": error_message
+        } if status >= 400:
+            return (
+                f"API Error {status}: "
+                f"{error_message}"
+            )
+
+        case Command(
+            action="DELETE",
+            target=file_name,
+            flags=flags
+        ) if "--force" in flags:
+            return f"Force-deleting file: {file_name}"
+
+        case _:
+            return (
+                f"Unrecognized event pattern: "
+                f"{event}"
+            )
+
+
+class FibonacciIterator:
+
+    def __init__(self, limit: int):
+        self.limit = limit
+        self.count = 0
+        self.a = 0
+        self.b = 1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+
+        if self.count >= self.limit:
+            raise StopIteration
+
+        value = self.a
+
+        self.a, self.b = (
+            self.b,
+            self.a + self.b
+        )
+
+        self.count += 1
+
+        return value
+
+
+if __name__ == "__main__":
+
+    events = [
+        "QUIT",
+        ["MOVE", 10.5, 20.0],
+        ["LOG", "auth_attempt", "ip_verified", "token_granted"],
+        {
+            "type": "API_RESPONSE",
+            "status": 200,
+            "data": {"user_id": 42}
+        },
+        {
+            "type": "API_RESPONSE",
+            "status": 500,
+            "error": "Internal Server Error"
+        },
+        Command(
+            action="DELETE",
+            target="database.db",
+            flags=["--force", "--verbose"]
+        ),
+        "UNKNOWN_PACKET"
+    ]
+
+    for event in events:
+        print(
+            f"Event: {event} -> "
+            f"Result: {process_event(event)}"
+        )
+
+    print("Fibonacci sequence:")
+
+    fibonacci = FibonacciIterator(8)
+
+    print(list(fibonacci))
+```
+
+Expected output:
+
+```text
+Event: QUIT -> Result: Terminating application session.
+Event: ['MOVE', 10.5, 20.0] -> Result: Moving to coordinate (10.5, 20.0)
+Event: ['LOG', 'auth_attempt', 'ip_verified', 'token_granted'] -> Result: Logging 3 events: auth_attempt, ip_verified, token_granted
+Event: {'type': 'API_RESPONSE', 'status': 200, 'data': {'user_id': 42}} -> Result: API Success with payload: {'user_id': 42}
+Event: {'type': 'API_RESPONSE', 'status': 500, 'error': 'Internal Server Error'} -> Result: API Error 500: Internal Server Error
+Event: Command(action='DELETE', target='database.db', flags=['--force', '--verbose']) -> Result: Force-deleting file: database.db
+Event: UNKNOWN_PACKET -> Result: Unrecognized event pattern: UNKNOWN_PACKET
+Fibonacci sequence:
+[0, 1, 1, 2, 3, 5, 8, 13]
+```
+
+14. CODE WALKTHROUGH
+
+14.1 Pattern Matching
+
+The following:
+
+```python
+case ["MOVE", x, y] if isinstance(x, (int, float)):
+```
+
+performs several operations:
+
+1. Checks whether the subject matches the sequence pattern.
+2. Checks that the sequence has the required structure.
+3. Binds values to `x` and `y`.
+4. Evaluates the guard.
+5. Executes the case body only when the guard succeeds.
+
+Pattern matching supports nested patterns and extraction of values.
+
+14.2 Mapping Pattern
+
+```python
+case {
+    "type": "API_RESPONSE",
+    "status": 200,
+    "data": payload
+}:
+```
+
+requires the relevant mapping keys and values.
+
+Additional keys in the mapping do not prevent a successful match.
+
+14.3 Class Pattern
+
+```python
+case Command(
+    action="DELETE",
+    target=file_name,
+    flags=flags
+):
+```
+
+checks the class and extracts attributes from the object.
+
+14.4 Iterator
+
+The Fibonacci iterator maintains its state in:
+
+```text
+a
+b
+count
+limit
+```
+
+Each call to `__next__()` updates this state and returns the next Fibonacci value.
+
+15. EXECUTION FLOW
+
+A language-level view of iteration is:
+
+```text
+Iterable
+   |
+   v
+iter(iterable)
+   |
+   v
+Iterator
+   |
+   v
+next(iterator)
+   |
+   +---- value ----> Loop body
+   |
+   +---- StopIteration ----> Loop finished
+```
+
+For a `for` loop with an `else` clause:
+
+```text
+Iterator exhausted
+       |
+       v
+   loop else
+```
+
+But:
+
+```text
+break
+ |
+ v
+exit loop
+ |
+ X
+skip loop else
+```
+
+The exact CPython bytecode used to implement this behavior is an implementation detail and may change between Python versions.
+
+16. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Implement a run-length encoding algorithm using a single pass through the input.
+
+Problem 2:
+
+Use `match-case` to validate JSON-RPC-style requests containing:
+
+* `"jsonrpc"`
+* `"method"`
+* `"params"`
+* `"id"`
+
+Problem 3:
+
+Implement a custom iterator that cycles through a fixed-size collection.
+
+Problem 4:
+
+Create a generator that reads a large file one line at a time and yields only matching lines.
+
+Problem 5:
+
+Implement a custom iterable that supports both `iter()` and `reversed()`.
+
+Problem 6:
+
+Use comprehensions to transform and filter a nested dataset.
+
+17. REAL-WORLD APPLICATIONS
+
+17.1 Pattern Matching
+
+Pattern matching can be useful for:
+
+* Command dispatch.
+* Parsing structured data.
+* Protocol messages.
+* State machines.
+* AST processing.
+* Event handling.
+
+It is not simply a replacement for every `if-elif` chain.
+
+17.2 Iterators
+
+Iterators are useful for:
+
+* Files.
+* Database results.
+* Streaming data.
+* Log processing.
+* Large datasets.
+* Lazy computation.
+
+17.3 Comprehensions
+
+Comprehensions are useful for:
+
+* Data transformation.
+* Filtering.
+* Creating lookup dictionaries.
+* Removing duplicates through sets.
+* Building simple nested structures.
+
+17.4 Generators
+
+Generators are useful when:
+
+* Data is large.
+* Data should be consumed incrementally.
+* Materializing the entire result is unnecessary.
+
+18. COMMON MISTAKES
+
+18.1 Modifying a Collection During Iteration
+
+Code such as:
+
+```python
+for item in numbers:
+    numbers.remove(item)
+```
+
+can produce unexpected behavior because the collection changes while it is being traversed.
+
+Safer approaches include:
+
+```python
+numbers = [
+    number
+    for number in numbers
+    if number % 2 != 0
+]
+```
+
+or iterating over a copy when appropriate.
+
+Python's official tutorial specifically recommends iterating over a copy or creating a new collection when modifying a collection during iteration.
+
+18.2 Incorrect Loop `else` Interpretation
+
+This:
+
+```python
+for item in items:
+    if found(item):
+        break
+else:
+    not_found()
+```
+
+does not mean "else belongs to the if".
+
+The `else` belongs to the `for` loop.
+
+18.3 Overly Complex Comprehensions
+
+Avoid deeply nested comprehensions when they become difficult to read.
+
+Instead of:
+
+```python
+result = [
+    transform(x)
+    for group in groups
+    for x in group
+    if condition(x)
+    if another_condition(x)
+]
+```
+
+consider using normal loops or helper functions when readability suffers.
+
+18.4 Incorrect `match` Capture
+
+This:
+
+```python
+case STATUS:
+```
+
+does not normally mean "compare with the value stored in STATUS".
+
+An unqualified name is interpreted as a capture pattern.
+
+Use a qualified constant such as:
+
+```python
+case Status.OK:
+```
+
+when appropriate.
+
+19. COMMON ERRORS
+
+19.1 SyntaxError
+
+Common causes include:
+
+```python
+if condition
+    print("Hello")
+```
+
+The colon is missing.
+
+Correct:
+
+```python
+if condition:
+    print("Hello")
+```
+
+19.2 StopIteration
+
+Manually calling:
+
+```python
+next(iterator)
+```
+
+may raise `StopIteration` when the iterator is exhausted.
+
+You can provide a default:
+
+```python
+value = next(iterator, None)
+```
+
+19.3 Unpacking Error
+
+Incorrect:
+
+```python
+for key, value in dictionary:
+    ...
+```
+
+A dictionary iteration normally produces keys.
+
+Correct:
+
+```python
+for key, value in dictionary.items():
+    ...
+```
+
+19.4 IndentationError
+
+Example:
+
+```python
+if True:
+print("Hello")
+```
+
+Correct:
+
+```python
+if True:
+    print("Hello")
+```
+
+20. DEBUGGING TECHNIQUES
+
+Incorrect:
+
+```python
+numbers = [1, 2, 2, 3, 4, 5, 6]
+
+for number in numbers:
+    if number % 2 == 0:
+        numbers.remove(number)
+
+print(numbers)
+```
+
+The collection changes while the iteration is taking place.
+
+A safer approach is:
+
+```python
+numbers = [1, 2, 2, 3, 4, 5, 6]
+
+numbers = [
+    number
+    for number in numbers
+    if number % 2 != 0
+]
+
+print(numbers)
+```
+
+Output:
+
+```text
+[1, 3, 5]
+```
+
+The original collection is not modified while it is being traversed.
+
+21. EDGE CASES
+
+21.1 Empty Iterables
+
+For:
+
+```python
+for item in []:
+    print(item)
+else:
+    print("Completed")
+```
+
+the `else` block executes because the loop finishes normally without `break`.
+
+Output:
+
+```text
+Completed
+```
+
+21.2 Infinite Loops
+
+This creates an infinite loop:
+
+```python
+while True:
+    pass
+```
+
+A busy infinite loop can consume significant CPU resources.
+
+An infinite loop that waits or blocks is different from a busy loop.
+
+21.3 Exhausted Iterators
+
+Iterators are normally single-pass.
+
+Example:
+
+```python
+iterator = iter([1, 2, 3])
+
+print(list(iterator))
+print(list(iterator))
+```
+
+Output:
+
+```text
+[1, 2, 3]
+[]
+```
+
+The iterator has already been exhausted.
+
+21.4 `zip()` With Unequal Lengths
+
+Default behavior:
+
+```python
+list(zip([1, 2, 3], ["a", "b"]))
+```
+
+Result:
+
+```text
+[(1, 'a'), (2, 'b')]
+```
+
+Using:
+
+```python
+zip([1, 2, 3], ["a", "b"], strict=True)
+```
+
+raises `ValueError` when the lengths differ.
+
+22. BEST PRACTICES
+
+* Use `enumerate()` instead of manually maintaining an index.
+* Use `zip()` when traversing related iterables together.
+* Use `zip(..., strict=True)` when equal lengths are required.
+* Use `itertools.zip_longest()` when padding is required.
+* Use loop `else` for clear search-style algorithms.
+* Use comprehensions for simple transformations and filtering.
+* Use ordinary loops when a comprehension becomes difficult to understand.
+* Use generator expressions when lazy evaluation is useful.
+* Avoid modifying a collection while directly iterating over it.
+* Use `match-case` when structural matching makes the logic clearer.
+* Remember that a standalone name in a pattern is generally a capture pattern.
+* Do not depend on CPython-specific bytecode details in portable Python code.
+* Do not use fixed byte-size claims for Python objects as universal memory guarantees.
+
+23. PERFORMANCE CONSIDERATIONS
+
+23.1 Comprehensions
+
+Comprehensions are often concise and efficient, but there is no universal percentage such as "20–30% faster" that applies to every Python version, implementation, workload, or loop.
+
+Choose comprehensions primarily for clarity and appropriate collection construction.
+
+Measure performance when performance actually matters.
+
+23.2 Generator Expressions
+
+Generator expressions avoid materializing the entire result.
+
+Example:
+
+```python
+total = sum(
+    value * value
+    for value in range(1_000_000)
+)
+```
+
+This is useful when only the aggregate result is needed.
+
+23.3 Membership Testing
+
+Typical average-case behavior:
+
+```text
+list: O(N)
+set:  O(1) average
+dict: O(1) average
+```
+
+However, these are complexity characteristics rather than guarantees of identical runtime performance in every situation.
+
+Choose the data structure according to both semantics and workload.
+
+23.4 `itertools`
+
+The `itertools` module provides efficient iterator-building tools such as:
+
+```text
+chain
+islice
+product
+permutations
+combinations
+zip_longest
+```
+
+These are useful for constructing iterator pipelines without unnecessary intermediate collections.
+
+24. MEMORY CONSIDERATIONS
+
+24.1 `range()`
+
+A `range` object represents an arithmetic sequence without materializing every integer as a list.
+
+Therefore:
+
+```python
+r = range(10**9)
+```
+
+does not create a billion-element list.
+
+Do not rely on a specific byte-size value for `range` objects because object representation is an implementation detail.
+
+24.2 Generator Expressions
+
+```python
+values = (
+    x * x
+    for x in range(10_000_000)
+)
+```
+
+The generator does not materialize all ten million results at creation time.
+
+However, downstream operations can still materialize data:
+
+```python
+values = list(
+    x * x
+    for x in range(10_000_000)
+)
+```
+
+The `list()` call creates the complete list.
+
+24.3 Comprehensions
+
+A list comprehension creates the resulting list immediately:
+
+```python
+values = [x * x for x in range(1000)]
+```
+
+Therefore, choose a generator expression when lazy processing is sufficient.
+
+25. SECURITY CONSIDERATIONS
+
+25.1 Unbounded Input
+
+Applications processing untrusted input should avoid unbounded work.
+
+Examples include:
+
+* Infinite input streams.
+* Extremely large sequences.
+* Unbounded recursion or iteration.
+* Expensive pattern-processing operations.
+
+Use appropriate limits, timeouts, and resource controls.
+
+25.2 Infinite Iterators
+
+An attacker-controlled or accidentally infinite iterator can cause an application to continue processing indefinitely.
+
+Where input size is untrusted, consider explicit limits.
+
+25.3 Pattern Matching
+
+Pattern matching itself is not a security mechanism.
+
+When processing untrusted data:
+
+* Validate expected data types.
+* Validate required fields.
+* Bound input size.
+* Reject unexpected or invalid values where appropriate.
+* Avoid expensive operations in guards for attacker-controlled input.
+
+26. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                | Python                       | C / C++                                      | Java                                      |
+| ---------------------- | ---------------------------- | -------------------------------------------- | ----------------------------------------- |
+| Conditional branching  | `if / elif / else`           | `if / else if / else`                        | `if / else if / else`                     |
+| Structural matching    | `match / case`               | `switch` / C++ pattern-related features vary | Modern `switch` supports pattern matching |
+| Loop `else`            | Yes                          | No                                           | No                                        |
+| Comprehensions         | List, set, dictionary        | Not a direct language feature                | Streams provide related operations        |
+| Iteration model        | Iterable / Iterator Protocol | Iterators / ranges                           | `Iterable` / `Iterator`                   |
+| Generator-like feature | Generators                   | C++20 coroutines                             | Streams/iterators and other mechanisms    |
+| Lazy sequence tools    | Generators / `itertools`     | Iterators / ranges                           | Streams                                   |
+| Conditional expression | `x if c else y`              | `c ? x : y`                                  | `c ? x : y`                               |
+
+27. FREQUENTLY ASKED QUESTIONS
+
+Q1. What does `pass` do?
+
+A:
+
+`pass` is a null operation. It allows a syntactically required block to contain no action.
+
+Example:
+
+```python
+def future_function():
+    pass
+```
+
+Q2. Is `match-case` the same as `switch-case`?
+
+A:
+
+No.
+
+Python's `match` statement supports structural patterns, destructuring, guards, sequence patterns, mapping patterns, and class patterns. It is more expressive than a traditional scalar `switch` statement.
+
+Q3. What happens when a `for` loop reaches the end?
+
+A:
+
+The iterator raises `StopIteration` internally, and the loop terminates normally.
+
+If a loop `else` exists, it executes after normal completion.
+
+Q4. What happens when `break` is used?
+
+A:
+
+The nearest enclosing loop terminates immediately and its `else` block is skipped.
+
+Q5. Does `zip()` always require equal-length inputs?
+
+A:
+
+No.
+
+By default, `zip()` stops at the shortest iterable.
+
+Use `strict=True` when unequal lengths should raise `ValueError`.
+
+Q6. Are generators and iterators the same?
+
+A:
+
+No.
+
+A generator is a particular kind of iterator created using generator functions or generator expressions.
+
+An iterator is any object implementing the iterator protocol.
+
+Q7. Does a list comprehension create a generator?
+
+A:
+
+No.
+
+A list comprehension creates a list immediately.
+
+A generator expression creates a lazy generator.
+
+Q8. Does `match` modify the original object?
+
+A:
+
+Pattern matching normally examines the subject and can bind extracted values to names. It does not inherently modify the matched object.
+
+28. INTERVIEW QUESTIONS
+
+Q1. Explain the iterator protocol.
+
+Answer:
+
+An iterator provides `__iter__()` and `__next__()`.
+
+`__iter__()` returns the iterator, and `__next__()` returns successive values. When no values remain, `__next__()` raises `StopIteration`.
+
+Q2. How does a `for` loop work conceptually?
+
+Answer:
+
+It obtains an iterator using `iter()` and repeatedly calls `next()` until `StopIteration` occurs.
+
+Q3. What is the difference between an iterable and an iterator?
+
+Answer:
+
+An iterable can provide an iterator.
+
+An iterator represents the state of an ongoing traversal and implements `__next__()`.
+
+Q4. Explain loop `else`.
+
+Answer:
+
+The `else` block executes when the loop completes normally without `break`.
+
+For a `for` loop, this means iterator exhaustion.
+
+For a `while` loop, this means the condition becomes false.
+
+Q5. What is structural pattern matching?
+
+Answer:
+
+It is Python's `match-case` mechanism for comparing a subject against structural patterns and optionally extracting values.
+
+Q6. What is a guard in pattern matching?
+
+Answer:
+
+A guard is an `if` condition attached to a pattern.
+
+Example:
+
+```python
+case (x, y) if x == y:
+```
+
+Q7. Why is `case x:` dangerous when trying to match a constant?
+
+Answer:
+
+Because `x` is normally a capture pattern, so it can match almost any subject.
+
+Use a qualified constant such as:
+
+```python
+case Status.OK:
+```
+
+Q8. What is the difference between a list comprehension and a generator expression?
+
+Answer:
+
+A list comprehension immediately creates a list.
+
+A generator expression produces values lazily.
+
+29. EXAM QUESTIONS
+
+Q1. What is the output?
+
+```python
+for i in range(3):
+    if i == 1:
+        continue
+
+    print(i, end=" ")
+
+else:
+    print("Done", end=" ")
+```
+
+Answer:
+
+```text
+0 2 Done
+```
+
+`continue` does not terminate the loop, so the loop completes normally and the `else` block executes.
+
+Q2. What is the result?
+
+```python
+result = [
+    i
+    for i in range(10)
+    if i % 2 == 0
+    if i % 3 == 0
+]
+```
+
+Answer:
+
+```text
+[0, 6]
+```
+
+Both conditions must be satisfied.
+
+Q3. What does `next(iterator)` do?
+
+Answer:
+
+It requests the next value from an iterator.
+
+If no value remains, `StopIteration` is raised.
+
+Q4. What does `zip(..., strict=True)` provide?
+
+Answer:
+
+It checks that all supplied iterables are exhausted together and raises `ValueError` if their lengths differ.
+
+Q5. What does `_` represent in:
+
+```python
+case _:
+```
+
+Answer:
+
+A wildcard pattern that matches any subject and does not bind it to a variable.
+
+30. PRACTICE QUESTIONS
+
+Q1.
+
+Implement:
+
+```python
+chunk_iterable(iterable, chunk_size)
+```
+
+as a generator that yields fixed-size chunks without first materializing the entire input.
+
+Q2.
+
+Create a `match-case` calculator supporting:
+
+```text
+["ADD", a, b]
+["SUB", a, b]
+["MUL", a, b]
+["DIV", a, b]
+["NEG", a]
+```
+
+Q3.
+
+Implement a custom `ReversibleRange` supporting:
+
+```python
+iter(obj)
+reversed(obj)
+```
+
+Q4.
+
+Write a generator that reads a large text file and yields only lines containing a specified keyword.
+
+Q5.
+
+Write a program using `zip(..., strict=True)` that validates two equally sized datasets.
+
+Q6.
+
+Implement a custom iterator that generates Fibonacci numbers until a maximum value is reached.
+
+Q7.
+
+Use a dictionary comprehension to group student names by grade.
+
+Q8.
+
+Use a set comprehension to extract unique word lengths from a paragraph.
+
+31. SUMMARY
+
+Python control flow combines traditional conditional and looping constructs with powerful iteration and structural matching features.
+
+Important concepts include:
+
+* `if`, `elif`, and `else` for conditional branching.
+* Conditional expressions for concise two-way decisions.
+* `for` for iterating over iterable objects.
+* `while` for condition-controlled repetition.
+* `break`, `continue`, and `pass`.
+* Loop `else` for normal loop completion.
+* `match-case` for structural pattern matching.
+* Iterable and iterator protocols.
+* `range()`, `enumerate()`, `zip()`, `reversed()`, and `sorted()`.
+* List, dictionary, and set comprehensions.
+* Generator expressions for lazy evaluation.
+* `StopIteration` as the iterator termination signal.
+
+The official Python documentation emphasizes that Python's `for` loop operates through the iterator protocol and that loop `else` is tied to normal completion rather than an `if` condition.
+
+32. KEY TAKEAWAYS
+
+* Use `if`, `elif`, and `else` for conditional control flow.
+* Use `for` to traverse iterable objects.
+* Use `while` when repetition depends on a condition.
+* `break` exits the nearest loop.
+* `continue` starts the next iteration.
+* `pass` performs no operation.
+* Loop `else` executes when the loop completes without `break`.
+* `match-case` provides structural pattern matching.
+* A standalone name in a pattern is generally a capture pattern.
+* Sequence patterns can destructure supported sequences.
+* Mapping patterns can match required dictionary keys while allowing additional keys.
+* Guards add Boolean conditions to patterns.
+* Iterators implement `__iter__()` and `__next__()`.
+* `StopIteration` signals normal iterator exhaustion.
+* Use `enumerate()` instead of manual index counters.
+* Use `zip(..., strict=True)` when equal lengths are required.
+* Use comprehensions for clear collection construction.
+* Use generator expressions for lazy processing.
+* Avoid modifying collections while directly iterating over them.
+* Avoid relying on exact CPython bytecode, memory sizes, or performance percentages as universal Python behavior.
+
+================================================================================
+END OF CONTROL FLOW, PATTERN MATCHING, ITERATORS, AND COMPREHENSIONS
+====================================================================

@@ -1,0 +1,2497 @@
+COURSE: CPP
+TOPIC: STL
+LEVEL: ADVANCED
+SOURCE: cpp_stl.txt
+
+TITLE: C++ Standard Template Library (STL): Containers, Iterators, Algorithms, Complexity, Comparators, Ranges, and Modern C++
+
+1. INTRODUCTION
+
+The C++ Standard Library provides generic containers, iterators, algorithms, utilities, ranges, and other reusable components for solving common programming problems.
+
+The term "STL" is commonly used for the container, iterator, algorithm, and function-object facilities that originated from the Standard Template Library and became part of standardized C++.
+
+The standardized C++ library does not require every container to use one particular internal data structure. For example, `std::map` provides the required ordered-associative-container behavior and complexity guarantees; an implementation commonly uses a balanced tree, but the standard does not require a specific tree implementation.
+
+The central STL design idea is:
+
+```text
+Container
+    |
+    v
+Iterator / Range
+    |
+    v
+Algorithm
+    |
+    v
+Result
+```
+
+Examples:
+
+```cpp
+std::vector<int> data;
+std::sort(data.begin(), data.end());
+```
+
+The container stores the data, the iterators describe the range, and the algorithm performs the computation.
+
+Modern C++ extends this model with:
+
+* Iterator concepts
+* Ranges
+* Range algorithms
+* Views
+* Projections
+* Concepts
+* `std::span`
+* `std::mdspan`
+* `std::flat_map`
+* `std::flat_set`
+* Execution policies
+
+2. LEARNING OBJECTIVES
+
+* Understand STL container categories.
+* Select appropriate sequence containers.
+* Use associative and unordered associative containers.
+* Understand container adapters.
+* Understand iterator categories and concepts.
+* Understand iterator invalidation.
+* Apply standard algorithms.
+* Use binary-search algorithms correctly.
+* Design custom comparators.
+* Understand strict weak ordering.
+* Implement custom hash functions.
+* Use structured bindings.
+* Understand algorithmic complexity.
+* Use C++20 ranges and views.
+* Understand C++23 `flat_map` and `flat_set`.
+* Apply STL containers in real-world data structures.
+* Analyze performance and memory behavior.
+
+3. PREREQUISITES
+
+Students should understand:
+
+* C++ classes and objects
+* Templates
+* References
+* Pointers
+* Function objects
+* Lambda expressions
+* Move semantics
+* Operator overloading
+* Basic algorithmic complexity
+* Basic recursion and data structures
+
+4. STL COMPONENTS
+
+The major STL components include:
+
+1. Containers
+2. Iterators
+3. Algorithms
+4. Function objects
+5. Allocators
+6. Container adapters
+7. Ranges and views
+8. Utilities and helper types
+
+Conceptual relationship:
+
+```text
++------------------+
+|    Containers    |
++------------------+
+          |
+          v
++------------------+
+|    Iterators     |
++------------------+
+          |
+          v
++------------------+
+|    Algorithms    |
++------------------+
+          |
+          v
++------------------+
+|    Function      |
+|    Objects       |
++------------------+
+```
+
+5. CONTAINER CATEGORIES
+
+STL containers can be broadly divided into:
+
+### Sequence Containers
+
+* `std::array`
+* `std::vector`
+* `std::deque`
+* `std::list`
+* `std::forward_list`
+
+### Ordered Associative Containers
+
+* `std::set`
+* `std::multiset`
+* `std::map`
+* `std::multimap`
+
+### Unordered Associative Containers
+
+* `std::unordered_set`
+* `std::unordered_multiset`
+* `std::unordered_map`
+* `std::unordered_multimap`
+
+### Container Adapters
+
+* `std::stack`
+* `std::queue`
+* `std::priority_queue`
+
+### C++23 Flat Associative Containers
+
+* `std::flat_set`
+* `std::flat_multiset`
+* `std::flat_map`
+* `std::flat_multimap`
+
+The current standard library also provides non-owning views such as:
+
+* `std::span`
+* `std::mdspan`
+
+6. std::VECTOR
+
+`std::vector<T>` is a dynamically sized contiguous sequence container.
+
+Example:
+
+```cpp
+std::vector<int> numbers = {10, 20, 30};
+```
+
+Important properties:
+
+* Contiguous element storage.
+* Random access.
+* Dynamic size.
+* Amortized constant-time insertion at the end.
+* Linear insertion/erasure away from the end.
+* Supports `data()` for access to contiguous storage.
+
+Typical complexity:
+
+```text
+operator[]          O(1)
+front/back          O(1)
+push_back           Amortized O(1)
+pop_back            O(1)
+insert middle       O(N)
+erase middle        O(N)
+```
+
+`reserve()` can reduce reallocations when the approximate required capacity is known.
+
+Example:
+
+```cpp
+std::vector<int> values;
+values.reserve(1000);
+```
+
+7. std::ARRAY
+
+`std::array<T, N>` represents a fixed-size array.
+
+Example:
+
+```cpp
+std::array<int, 5> values = {1, 2, 3, 4, 5};
+```
+
+Properties:
+
+* Fixed number of elements.
+* Contiguous storage.
+* Does not dynamically grow.
+* Supports random access.
+* Works naturally with STL algorithms.
+
+Unlike a built-in C array, `std::array` provides STL-style member functions such as:
+
+```cpp
+size()
+begin()
+end()
+front()
+back()
+data()
+```
+
+8. std::DEQUE
+
+`std::deque<T>` is a double-ended sequence container.
+
+It provides:
+
+* Random access.
+* Efficient insertion at both ends.
+* Efficient removal at both ends.
+
+Typical complexity:
+
+```text
+Random access       O(1)
+push_front          O(1)
+push_back           O(1)
+pop_front           O(1)
+pop_back            O(1)
+middle insertion    O(N)
+middle erasure      O(N)
+```
+
+Unlike `std::vector`, a deque does not guarantee contiguous storage.
+
+Implementations commonly use multiple memory blocks with bookkeeping, but the exact internal representation is implementation-defined.
+
+9. std::LIST
+
+`std::list<T>` is a doubly linked list.
+
+It provides:
+
+* Bidirectional iteration.
+* Constant-time insertion/erasure when the relevant iterator is already known.
+* No random-access indexing.
+
+Example:
+
+```cpp
+std::list<int> values = {10, 20, 30};
+
+auto it = values.begin();
+std::advance(it, 1);
+
+values.insert(it, 15);
+```
+
+Important:
+
+```cpp
+values.insert(position, value);
+```
+
+can be constant-time once `position` is known.
+
+Finding the position may itself require linear traversal.
+
+Therefore, saying "middle insertion is always O(1)" is incomplete.
+
+10. std::FORWARD_LIST
+
+`std::forward_list<T>` is a singly linked list.
+
+It supports:
+
+* Forward iteration.
+* Low per-node overhead compared with a doubly linked list.
+* Efficient insertion/erasure after a known position.
+
+It does not provide:
+
+* Random access.
+* `size()` member function in the same way as most standard containers.
+
+Example:
+
+```cpp
+std::forward_list<int> values = {10, 20, 30};
+
+auto it = values.before_begin();
+values.insert_after(it, 5);
+```
+
+11. ORDERED ASSOCIATIVE CONTAINERS
+
+Ordered associative containers maintain elements according to a comparison function.
+
+They include:
+
+```text
+std::set
+std::multiset
+std::map
+std::multimap
+```
+
+Typical search, insertion, and removal complexity is logarithmic.
+
+The standard specifies the required behavior and complexity, but does not require a particular tree implementation.
+
+Implementations commonly use balanced binary search trees.
+
+12. std::SET
+
+`std::set<T>` stores unique keys in sorted order.
+
+Example:
+
+```cpp
+std::set<int> numbers = {
+    40, 10, 30, 20, 10
+};
+```
+
+Result:
+
+```text
+10 20 30 40
+```
+
+Duplicate keys are ignored.
+
+Typical operations:
+
+```text
+find       O(log N)
+insert     O(log N)
+erase      O(log N)
+```
+
+13. std::MULTISET
+
+`std::multiset<T>` allows equivalent keys to occur multiple times.
+
+Example:
+
+```cpp
+std::multiset<int> values = {
+    10, 20, 10, 30, 10
+};
+```
+
+Output order:
+
+```text
+10 10 10 20 30
+```
+
+Useful when duplicate sorted values are required.
+
+14. std::MAP
+
+`std::map<Key, T>` stores key-value pairs sorted by key.
+
+Example:
+
+```cpp
+std::map<std::string, int> marks;
+
+marks["Alice"] = 90;
+marks["Bob"] = 85;
+```
+
+Keys are unique.
+
+Important:
+
+```cpp
+std::map<std::string, int> data;
+```
+
+has a value type conceptually similar to:
+
+```cpp
+std::pair<const std::string, int>
+```
+
+The key is treated as constant through normal map iterators so that modifying it cannot violate the container's ordering.
+
+15. std::MULTIMAP
+
+`std::multimap<Key, T>` allows multiple equivalent keys.
+
+Example:
+
+```cpp
+std::multimap<std::string, int> students;
+
+students.insert({"CSE", 80});
+students.insert({"CSE", 90});
+students.insert({"ECE", 85});
+```
+
+Useful when one key can legitimately correspond to multiple records.
+
+16. UNORDERED ASSOCIATIVE CONTAINERS
+
+Unordered containers use hashing.
+
+They include:
+
+```text
+std::unordered_set
+std::unordered_multiset
+std::unordered_map
+std::unordered_multimap
+```
+
+Typical complexity:
+
+```text
+Average search      O(1)
+Average insertion   O(1)
+Average erase       O(1)
+Worst case          O(N)
+```
+
+The standard specifies complexity requirements but does not require one particular collision-handling implementation.
+
+17. std::UNORDERED_MAP
+
+Example:
+
+```cpp
+std::unordered_map<std::string, int> scores;
+
+scores["Alice"] = 95;
+scores["Bob"] = 88;
+```
+
+Keys are not sorted.
+
+Elements are organized according to hash values and buckets.
+
+A hash function and equality predicate work together:
+
+```text
+key
+ |
+ v
+hash function
+ |
+ v
+bucket
+ |
+ v
+equivalent key search
+```
+
+18. HASH AND EQUALITY REQUIREMENT
+
+For `std::unordered_map`, equivalent keys must produce the same hash value.
+
+Conceptually:
+
+```cpp
+if (key_equal(a, b))
+{
+    hash(a) == hash(b);
+}
+```
+
+A poor hash function can cause many keys to occupy the same bucket and degrade performance.
+
+19. CONTAINER ADAPTERS
+
+Container adapters provide restricted interfaces over an underlying container.
+
+### std::stack
+
+LIFO:
+
+```text
+Last In
+   |
+   v
+First Out
+```
+
+Common operations:
+
+```cpp
+push()
+pop()
+top()
+empty()
+size()
+```
+
+### std::queue
+
+FIFO:
+
+```text
+First In
+   |
+   v
+First Out
+```
+
+Common operations:
+
+```cpp
+push()
+pop()
+front()
+back()
+empty()
+```
+
+### std::priority_queue
+
+Provides priority-based access.
+
+By default, the largest element has the highest priority.
+
+```cpp
+std::priority_queue<int> pq;
+```
+
+For:
+
+```text
+10 50 20 30
+```
+
+`top()` returns:
+
+```text
+50
+```
+
+20. CUSTOM PRIORITY QUEUE
+
+A custom comparator can change the priority ordering.
+
+Example:
+
+```cpp
+struct Task
+{
+    int priority;
+    std::string description;
+};
+
+struct CompareTask
+{
+    bool operator()(const Task& a,
+                    const Task& b) const
+    {
+        return a.priority > b.priority;
+    }
+};
+```
+
+Then:
+
+```cpp
+std::priority_queue<
+    Task,
+    std::vector<Task>,
+    CompareTask
+> tasks;
+```
+
+Here, a smaller priority number is treated as higher priority.
+
+21. ITERATORS
+
+An iterator provides an abstraction for accessing elements in a range.
+
+Example:
+
+```cpp
+std::vector<int> values = {10, 20, 30};
+
+auto it = values.begin();
+
+std::cout << *it;
+```
+
+Important iterator operations:
+
+```cpp
+*it
+++it
+--it
+it == other
+it != other
+```
+
+Not every iterator supports every operation.
+
+For example, a forward iterator does not support arbitrary jumps such as:
+
+```cpp
+it + 10
+```
+
+unless its iterator category provides that capability.
+
+22. ITERATOR CATEGORIES
+
+Traditional iterator categories include:
+
+1. Input iterator
+2. Output iterator
+3. Forward iterator
+4. Bidirectional iterator
+5. Random-access iterator
+
+C++20 additionally formalizes:
+
+6. Contiguous iterator
+
+Conceptual hierarchy:
+
+```text
+Input / Output
+      |
+      v
+Forward
+      |
+      v
+Bidirectional
+      |
+      v
+Random Access
+      |
+      v
+Contiguous
+```
+
+The C++20 iterator concepts provide compile-time constraints for generic algorithms.
+
+23. CONTIGUOUS ITERATORS
+
+A contiguous iterator guarantees that the referenced elements are stored contiguously.
+
+Examples include iterators/pointers associated with:
+
+* `std::vector`
+* `std::array`
+* C arrays
+
+This property enables algorithms and utilities to reason about the underlying contiguous memory.
+
+Example:
+
+```cpp
+std::vector<int> values = {1, 2, 3};
+
+auto it = values.begin();
+
+int* raw = std::to_address(it);
+```
+
+24. ITERATOR INVALIDATION
+
+Iterator invalidation is a critical advanced STL concept.
+
+An iterator can become invalid after a container modification.
+
+For example:
+
+```cpp
+std::vector<int> values = {1, 2, 3};
+
+auto it = values.begin();
+
+values.push_back(4);
+```
+
+If the insertion causes reallocation, `it` may become invalid.
+
+For `std::vector`:
+
+* Reallocation invalidates iterators, references, and pointers to elements.
+* `erase()` invalidates the erased element and elements after it.
+* `reserve()` can invalidate iterators if capacity changes.
+
+Always check the specific container's invalidation rules.
+
+25. ALGORITHMS
+
+STL algorithms are reusable generic functions.
+
+Important headers:
+
+```cpp
+#include <algorithm>
+#include <numeric>
+```
+
+Common algorithms:
+
+```text
+sort
+stable_sort
+find
+find_if
+count
+count_if
+binary_search
+lower_bound
+upper_bound
+equal_range
+reverse
+rotate
+transform
+copy
+remove
+remove_if
+unique
+min_element
+max_element
+accumulate
+reduce
+```
+
+Algorithms operate on ranges rather than requiring a particular container type.
+
+26. std::SORT
+
+Example:
+
+```cpp
+std::vector<int> values = {
+    40, 10, 30, 20
+};
+
+std::sort(
+    values.begin(),
+    values.end()
+);
+```
+
+Result:
+
+```text
+10 20 30 40
+```
+
+`std::sort` requires random-access iterators.
+
+Its complexity requirement is:
+
+```text
+O(N log N) comparisons
+```
+
+The order of equivalent elements is not guaranteed to be preserved.
+
+Use `std::stable_sort` when preservation of equivalent-element order is required.
+
+27. std::FIND
+
+Example:
+
+```cpp
+auto it = std::find(
+    values.begin(),
+    values.end(),
+    30
+);
+
+if (it != values.end())
+{
+    std::cout << "Found\n";
+}
+```
+
+For an unsorted range, ordinary `find` generally requires:
+
+```text
+O(N)
+```
+
+comparisons.
+
+28. BINARY SEARCH ALGORITHMS
+
+Binary-search algorithms require the range to be appropriately sorted/partitioned according to the comparator.
+
+### lower_bound
+
+Returns the first position where the value can be inserted without violating ordering.
+
+For the default ordering:
+
+```text
+first element >= target
+```
+
+### upper_bound
+
+Returns:
+
+```text
+first element > target
+```
+
+### equal_range
+
+Returns the pair:
+
+```text
+{lower_bound, upper_bound}
+```
+
+Example:
+
+```cpp
+std::vector<int> values = {
+    10, 20, 20, 20, 30
+};
+
+auto range =
+    std::equal_range(
+        values.begin(),
+        values.end(),
+        20
+    );
+```
+
+29. TRANSFORM
+
+`std::transform` applies an operation to elements.
+
+Example:
+
+```cpp
+std::vector<int> input = {
+    1, 2, 3, 4, 5
+};
+
+std::vector<int> output(input.size());
+
+std::transform(
+    input.begin(),
+    input.end(),
+    output.begin(),
+    [](int x)
+    {
+        return x * x;
+    }
+);
+```
+
+Result:
+
+```text
+1 4 9 16 25
+```
+
+30. ACCUMULATE
+
+`std::accumulate` combines values into an accumulated result.
+
+Example:
+
+```cpp
+int sum = std::accumulate(
+    values.begin(),
+    values.end(),
+    0
+);
+```
+
+For:
+
+```text
+1 2 3 4 5
+```
+
+result:
+
+```text
+15
+```
+
+The initial value is important because it influences the result type and operation.
+
+31. C++20 RANGES
+
+C++20 introduced the ranges library.
+
+Instead of:
+
+```cpp
+std::sort(
+    values.begin(),
+    values.end()
+);
+```
+
+you can write:
+
+```cpp
+std::ranges::sort(values);
+```
+
+Ranges provide:
+
+* Concepts
+* Range-based algorithms
+* Views
+* Sentinels
+* Projections
+* Better composability
+
+Example:
+
+```cpp
+#include <algorithm>
+#include <ranges>
+#include <vector>
+
+std::vector<int> values = {
+    50, 10, 40, 20, 30
+};
+
+std::ranges::sort(values);
+```
+
+32. RANGES AND VIEWS
+
+A view is a non-owning, lazily evaluated way of describing a range.
+
+Example:
+
+```cpp
+#include <ranges>
+#include <vector>
+
+std::vector<int> values = {
+    1, 2, 3, 4, 5, 6
+};
+
+auto even =
+    values
+    | std::views::filter(
+        [](int x)
+        {
+            return x % 2 == 0;
+        }
+    );
+```
+
+The view does not create a new vector containing all filtered elements.
+
+This supports composable data-processing pipelines.
+
+33. PROJECTIONS
+
+C++20 ranges algorithms can use projections.
+
+Example:
+
+```cpp
+struct Student
+{
+    std::string name;
+    int marks;
+};
+
+std::vector<Student> students = {
+    {"Alice", 90},
+    {"Bob", 75},
+    {"Charlie", 85}
+};
+
+std::ranges::sort(
+    students,
+    std::less{},
+    &Student::marks
+);
+```
+
+The algorithm sorts according to the `marks` member.
+
+34. CUSTOM COMPARATORS
+
+A comparator determines ordering.
+
+Example:
+
+```cpp
+struct Descending
+{
+    bool operator()(int a, int b) const
+    {
+        return a > b;
+    }
+};
+```
+
+Usage:
+
+```cpp
+std::sort(
+    values.begin(),
+    values.end(),
+    Descending{}
+);
+```
+
+A lambda can also be used:
+
+```cpp
+std::sort(
+    values.begin(),
+    values.end(),
+    [](int a, int b)
+    {
+        return a > b;
+    }
+);
+```
+
+35. STRICT WEAK ORDERING
+
+Standard algorithms and ordered associative containers use comparison relationships that must satisfy the required ordering rules.
+
+For a comparator `comp(a, b)`:
+
+### Irreflexivity
+
+```text
+comp(a, a) == false
+```
+
+### Transitivity
+
+If:
+
+```text
+comp(a, b)
+comp(b, c)
+```
+
+then:
+
+```text
+comp(a, c)
+```
+
+must also hold.
+
+The induced equivalence relation must also be transitive.
+
+Example of a valid comparator:
+
+```cpp
+bool less_than(int a, int b)
+{
+    return a < b;
+}
+```
+
+An invalid comparator can violate the algorithm/container requirements and result in undefined behavior.
+
+36. EQUIVALENCE IN ORDERED CONTAINERS
+
+For a comparator `comp`, two objects are considered equivalent when:
+
+```cpp
+!comp(a, b) && !comp(b, a)
+```
+
+This is not necessarily the same as:
+
+```cpp
+a == b
+```
+
+For `std::set` and `std::map`, this comparator-induced equivalence determines whether keys are considered equivalent.
+
+37. HETEROGENEOUS LOOKUP
+
+Transparent comparators such as:
+
+```cpp
+std::less<>
+```
+
+can allow associative containers to perform lookup using compatible key types.
+
+Example:
+
+```cpp
+std::map<
+    std::string,
+    int,
+    std::less<>
+> users;
+```
+
+With suitable operations, a compatible lookup type such as `std::string_view` can be used without constructing a temporary `std::string`.
+
+This can reduce unnecessary temporary objects.
+
+38. CUSTOM HASH FUNCTIONS
+
+User-defined types can be used as keys in unordered containers when an appropriate hash and equality operation are provided.
+
+Example:
+
+```cpp
+struct Point
+{
+    int x;
+    int y;
+
+    bool operator==(const Point& other) const
+    {
+        return x == other.x &&
+               y == other.y;
+    }
+};
+```
+
+Custom hash:
+
+```cpp
+struct PointHash
+{
+    std::size_t operator()(
+        const Point& p) const noexcept
+    {
+        std::size_t h1 =
+            std::hash<int>{}(p.x);
+
+        std::size_t h2 =
+            std::hash<int>{}(p.y);
+
+        return h1 ^
+            (h2 + 0x9e3779b9u +
+             (h1 << 6) +
+             (h1 >> 2));
+    }
+};
+```
+
+Usage:
+
+```cpp
+std::unordered_map<
+    Point,
+    std::string,
+    PointHash
+> labels;
+```
+
+39. HASH FUNCTION DESIGN
+
+A hash function should distribute keys effectively.
+
+Important requirements:
+
+* Equal keys must produce equal hash values.
+* Hashing should be deterministic for the required execution context.
+* Good distribution reduces collisions.
+* Hash quality affects performance.
+
+A hash function does not need to produce unique values.
+
+Collisions are expected.
+
+The equality predicate resolves whether two keys are actually equivalent.
+
+40. STRUCTURED BINDINGS
+
+C++17 structured bindings simplify iteration over map elements.
+
+Example:
+
+```cpp
+std::map<std::string, int> scores = {
+    {"Alice", 90},
+    {"Bob", 85}
+};
+
+for (const auto& [name, score] : scores)
+{
+    std::cout
+        << name
+        << ": "
+        << score
+        << '\n';
+}
+```
+
+This is easier to read than accessing:
+
+```cpp
+item.first
+item.second
+```
+
+41. MAP OPERATOR[] VS FIND
+
+Consider:
+
+```cpp
+std::map<int, std::string> users;
+```
+
+This:
+
+```cpp
+if (users[100] == "Admin")
+{
+}
+```
+
+can insert:
+
+```text
+100 -> ""
+```
+
+if key `100` does not already exist.
+
+For read-only lookup, prefer:
+
+```cpp
+auto it = users.find(100);
+
+if (it != users.end() &&
+    it->second == "Admin")
+{
+    std::cout
+        << "Admin access granted.\n";
+}
+```
+
+For a lookup that must not insert, `find`, `contains` (C++20), or related lookup functions are appropriate.
+
+42. CONTAINS
+
+C++20 introduced convenient `contains()` operations for associative containers.
+
+Example:
+
+```cpp
+std::map<int, std::string> users;
+
+if (users.contains(100))
+{
+    std::cout << "User exists\n";
+}
+```
+
+This is useful when only existence needs to be checked.
+
+43. VECTOR BOOL
+
+`std::vector<bool>` is a specialized representation.
+
+It may store boolean values in a packed bit-oriented representation rather than one ordinary `bool` object per element.
+
+Therefore:
+
+```cpp
+std::vector<bool>
+```
+
+does not behave exactly like:
+
+```cpp
+std::vector<T>
+```
+
+for ordinary object types.
+
+In particular, its element access uses proxy reference behavior rather than a normal `bool&`.
+
+44. FLAT ASSOCIATIVE CONTAINERS — C++23
+
+C++23 introduced:
+
+```cpp
+std::flat_map
+std::flat_multimap
+std::flat_set
+std::flat_multiset
+```
+
+These provide associative-container interfaces using sequence-container-based storage.
+
+For example:
+
+```cpp
+std::flat_map<std::string, int> scores;
+
+scores["Alice"] = 90;
+scores["Bob"] = 85;
+```
+
+Flat containers can provide better memory locality than node-based associative containers for suitable workloads.
+
+However, insertion and erasure of individual elements are generally linear rather than logarithmic.
+
+Therefore, they should not automatically replace `std::map` or `std::set`.
+
+45. STD::SPAN — C++20
+
+`std::span` is a non-owning view over a contiguous sequence.
+
+Example:
+
+```cpp
+#include <span>
+#include <vector>
+
+void print_values(std::span<const int> values)
+{
+    for (int value : values)
+    {
+        std::cout
+            << value
+            << ' ';
+    }
+}
+```
+
+It can accept a compatible contiguous sequence without copying the elements.
+
+Example:
+
+```cpp
+std::vector<int> values = {
+    10, 20, 30
+};
+
+print_values(values);
+```
+
+`std::span` does not own the referenced memory.
+
+46. COMPLEXITY REFERENCE
+
+```text
+Container             Typical Operation       Complexity
+
+vector                random access           O(1)
+vector                push_back               Amortized O(1)
+vector                middle insert           O(N)
+
+array                 random access           O(1)
+
+deque                 random access           O(1)
+deque                 front/back insertion    O(1)
+deque                 middle insertion       O(N)
+
+list                  access by position      O(N)
+list                  insert with iterator    O(1)
+list                  erase with iterator     O(1)
+
+forward_list          forward traversal       O(N)
+forward_list          insert_after            O(1)
+
+set/map               search                 O(log N)
+set/map               insertion              O(log N)
+set/map               erase                  O(log N)
+
+unordered_map         average search         O(1)
+unordered_map         worst-case search      O(N)
+
+priority_queue        top                    O(1)
+priority_queue        push                   O(log N)
+priority_queue        pop                    O(log N)
+```
+
+47. CONTAINER SELECTION GUIDE
+
+Use `std::vector` when:
+
+* Contiguous storage is useful.
+* Random access is required.
+* Most insertion is at the end.
+* General-purpose sequence storage is required.
+
+Use `std::array` when:
+
+* Size is fixed at compile time.
+
+Use `std::deque` when:
+
+* Efficient insertion/removal at both ends is required.
+
+Use `std::list` when:
+
+* Stable node-based iterators/references are important.
+* Frequent insertion/erasure occurs at known positions.
+
+Use `std::set` when:
+
+* Unique sorted keys are required.
+
+Use `std::map` when:
+
+* Key-value pairs must remain ordered.
+
+Use `std::unordered_map` when:
+
+* Key-based lookup is required.
+* Ordering is unnecessary.
+* Average constant-time lookup is desirable.
+
+Use `std::priority_queue` when:
+
+* The highest-priority element must be accessed efficiently.
+
+48. ITERATOR INVALIDATION EXAMPLE
+
+Incorrect:
+
+```cpp
+std::vector<int> values = {
+    10, 20, 30
+};
+
+auto it = values.begin();
+
+values.push_back(40);
+
+std::cout << *it;
+```
+
+If `push_back()` caused reallocation, `it` may no longer refer to a valid element.
+
+Safer approach:
+
+```cpp
+values.push_back(40);
+
+auto it = values.begin();
+
+std::cout << *it;
+```
+
+Always consult the invalidation rules for the specific container and operation.
+
+49. ALGORITHM REQUIREMENTS
+
+Different algorithms require different iterator capabilities.
+
+Examples:
+
+```text
+find
+    Input iterator
+
+sort
+    Random-access iterator
+
+reverse
+    Bidirectional iterator
+
+ranges::sort
+    Random-access range
+```
+
+This is one reason STL algorithms can work across many different containers while still imposing appropriate requirements.
+
+50. BASIC STL PROGRAM
+
+Problem:
+
+Sort a vector, search for a value, and count word frequencies.
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+
+int main()
+{
+    std::vector<int> numbers = {
+        45, 12, 89, 2, 77, 34
+    };
+
+    std::sort(
+        numbers.begin(),
+        numbers.end()
+    );
+
+    std::cout << "Sorted Vector: ";
+
+    for (int n : numbers)
+    {
+        std::cout << n << ' ';
+    }
+
+    std::cout << '\n';
+
+    bool found =
+        std::binary_search(
+            numbers.begin(),
+            numbers.end(),
+            77
+        );
+
+    std::cout
+        << "Is 77 present? "
+        << (found ? "Yes" : "No")
+        << '\n';
+
+    std::vector<std::string> words = {
+        "apple",
+        "banana",
+        "apple",
+        "cherry",
+        "banana",
+        "apple"
+    };
+
+    std::map<std::string, int> counts;
+
+    for (const auto& word : words)
+    {
+        ++counts[word];
+    }
+
+    std::cout
+        << "=== WORD FREQUENCIES ===\n";
+
+    for (const auto& [word, count] : counts)
+    {
+        std::cout
+            << word
+            << " : "
+            << count
+            << '\n';
+    }
+
+    return 0;
+}
+```
+
+51. EXPECTED OUTPUT
+
+```text
+Sorted Vector: 2 12 34 45 77 89
+Is 77 present? Yes
+=== WORD FREQUENCIES ===
+apple : 3
+banana : 2
+cherry : 1
+```
+
+52. ADVANCED CUSTOM HASH EXAMPLE
+
+```cpp
+#include <iostream>
+#include <numeric>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+
+struct Point2D
+{
+    int x;
+    int y;
+
+    bool operator==(const Point2D& other) const
+    {
+        return x == other.x &&
+               y == other.y;
+    }
+};
+
+struct PointHash
+{
+    std::size_t operator()(
+        const Point2D& p) const noexcept
+    {
+        std::size_t h1 =
+            std::hash<int>{}(p.x);
+
+        std::size_t h2 =
+            std::hash<int>{}(p.y);
+
+        return h1 ^
+            (h2 + 0x9e3779b9u +
+             (h1 << 6) +
+             (h1 >> 2));
+    }
+};
+
+int main()
+{
+    std::unordered_map<
+        Point2D,
+        std::string,
+        PointHash
+    > labels;
+
+    labels[{0, 0}] = "Origin";
+    labels[{10, 20}] = "Waypoint Alpha";
+    labels[{-5, 15}] = "Sensor Station";
+
+    Point2D query{10, 20};
+
+    auto it = labels.find(query);
+
+    if (it != labels.end())
+    {
+        std::cout
+            << "Found: "
+            << it->second
+            << '\n';
+    }
+
+    std::vector<int> input = {
+        1, 2, 3, 4, 5
+    };
+
+    std::vector<int> squared(
+        input.size()
+    );
+
+    std::transform(
+        input.begin(),
+        input.end(),
+        squared.begin(),
+        [](int x)
+        {
+            return x * x;
+        }
+    );
+
+    int sum =
+        std::accumulate(
+            squared.begin(),
+            squared.end(),
+            0
+        );
+
+    std::cout
+        << "Sum of squares: "
+        << sum
+        << '\n';
+
+    return 0;
+}
+```
+
+53. EXPECTED OUTPUT
+
+```text
+Found: Waypoint Alpha
+Sum of squares: 55
+```
+
+54. ADVANCED STL DATA-STRUCTURE PROBLEMS
+
+### Problem 1: Top-K Frequent Words
+
+Use:
+
+```text
+unordered_map
+priority_queue
+vector
+```
+
+Steps:
+
+1. Count each word.
+2. Store frequency information.
+3. Maintain a priority queue.
+4. Keep only the required K elements.
+5. Produce the result.
+
+### Problem 2: LRU Cache
+
+Use:
+
+```text
+std::list
+std::unordered_map
+```
+
+Typical design:
+
+```text
+unordered_map<Key, list iterator>
+              |
+              v
+         list of entries
+```
+
+The list maintains usage order while the hash table provides fast lookup.
+
+55. PRACTICAL PROGRAMMING PROBLEMS
+
+56. Implement Top-K frequent words.
+
+57. Implement an LRU cache.
+
+58. Implement a median finder using two priority queues.
+
+59. Implement an anagram grouper using `unordered_map`.
+
+60. Implement a custom hash table key.
+
+61. Implement a student ranking system using `map`.
+
+62. Implement a task scheduler using `priority_queue`.
+
+63. Implement duplicate detection using `unordered_set`.
+
+64. Implement range queries using `lower_bound` and `upper_bound`.
+
+65. Implement a data-processing pipeline using C++20 ranges.
+
+66. REAL-WORLD APPLICATIONS
+
+STL containers and algorithms are widely applicable to:
+
+* Compiler symbol tables
+* Graph algorithms
+* Scheduling systems
+* Caching systems
+* Database indexing
+* Search systems
+* Financial data processing
+* Log processing
+* Network routing
+* AI/ML preprocessing
+* File processing
+* Configuration management
+
+Examples:
+
+```text
+Dijkstra algorithm       priority_queue
+Frequency counting       unordered_map
+Sorted dictionary        map
+Unique values            set
+Sequential data          vector
+LRU cache                list + unordered_map
+Top-K selection          priority_queue
+Range searching          lower_bound / upper_bound
+```
+
+57. COMMON MISTAKES
+
+Mistake 1:
+
+Using:
+
+```cpp
+map[key]
+```
+
+for read-only lookup.
+
+Better:
+
+```cpp
+map.find(key)
+```
+
+or:
+
+```cpp
+map.contains(key)
+```
+
+Mistake 2:
+
+Assuming `std::map` must use a red-black tree.
+
+The standard specifies behavior and complexity, not the exact implementation.
+
+Mistake 3:
+
+Assuming `std::list` middle insertion is always O(1).
+
+The insertion is constant-time when the position iterator is already available. Finding that position can take O(N).
+
+Mistake 4:
+
+Assuming `emplace()` is always faster than `push_back()` or `insert()`.
+
+The benefit depends on the operation, argument types, and whether construction can be performed directly.
+
+Mistake 5:
+
+Using an invalid comparator.
+
+Comparators must satisfy the required ordering relationship.
+
+Mistake 6:
+
+Ignoring iterator invalidation.
+
+A previously valid iterator can become invalid after container modification.
+
+58. COMMON ERRORS
+
+Incorrect:
+
+```cpp
+std::map<int, std::string> users;
+
+if (users[100] == "Admin")
+{
+    std::cout
+        << "Admin access granted.\n";
+}
+```
+
+Problem:
+
+If key `100` does not exist, `operator[]` inserts a default value.
+
+Correct:
+
+```cpp
+auto it = users.find(100);
+
+if (it != users.end() &&
+    it->second == "Admin")
+{
+    std::cout
+        << "Admin access granted.\n";
+}
+```
+
+Alternative in C++20:
+
+```cpp
+if (users.contains(100))
+{
+    // key exists
+}
+```
+
+59. INVALID COMPARATOR
+
+Potentially invalid:
+
+```cpp
+struct BadCompare
+{
+    bool operator()(int a, int b) const
+    {
+        return a <= b;
+    }
+};
+```
+
+For:
+
+```text
+a == b
+```
+
+this returns true:
+
+```text
+comp(a, a) == true
+```
+
+which violates irreflexivity.
+
+Use:
+
+```cpp
+struct GoodCompare
+{
+    bool operator()(int a, int b) const
+    {
+        return a < b;
+    }
+};
+```
+
+60. DEBUGGING STL PROGRAMS
+
+Useful tools:
+
+* Compiler warnings
+* AddressSanitizer
+* UndefinedBehaviorSanitizer
+* Debug iterators where supported
+* Static analysis
+* Debugger
+* Unit tests
+
+Example:
+
+```bash
+g++ -std=c++20 -Wall -Wextra \
+-fsanitize=address,undefined \
+-g program.cpp -o program
+```
+
+Important:
+
+AddressSanitizer does not generally detect every iterator-invalidation mistake simply because an iterator is logically invalid. Some invalid iterators may still point to accessible memory.
+
+Therefore, sanitizer tools complement, rather than replace, knowledge of container invalidation rules.
+
+61. EMPTY-CONTAINER EDGE CASES
+
+Do not access elements through operations requiring an existing element when the container is empty.
+
+Examples:
+
+```cpp
+vec.front();
+vec.back();
+stack.top();
+queue.front();
+queue.back();
+```
+
+Always check:
+
+```cpp
+if (!container.empty())
+{
+    // safe operation
+}
+```
+
+62. PERFORMANCE CONSIDERATIONS
+
+`std::vector` is often an excellent default sequence container because:
+
+* Elements are contiguous.
+* Random access is constant-time.
+* Iteration has good spatial locality.
+* Memory allocation is relatively simple.
+* Many algorithms work efficiently with random-access iterators.
+
+However, "always use vector" is incorrect.
+
+The correct container depends on:
+
+* Access pattern
+* Insertion pattern
+* Erasure pattern
+* Memory requirements
+* Iterator stability
+* Ordering requirements
+* Lookup requirements
+
+63. CACHE LOCALITY
+
+Node-based containers such as:
+
+```text
+std::list
+std::map
+```
+
+may require separate allocations for elements/nodes.
+
+This can result in less predictable memory locality compared with contiguous containers.
+
+A vector may outperform a list even for some operations that have worse asymptotic complexity because moving a contiguous block can be efficient and traversal is cache-friendly.
+
+Asymptotic complexity and actual hardware performance are different considerations.
+
+64. MEMORY CONSIDERATIONS
+
+Do not assume exact memory overhead for STL containers.
+
+The standard specifies semantics and requirements, while implementation details can differ.
+
+For example, a `std::map` node may contain:
+
+* Key-value storage
+* Tree links
+* Balancing metadata
+* Allocator-related information
+* Padding
+
+But the exact representation is implementation-dependent.
+
+Similarly, `std::deque` internal block sizes differ between standard-library implementations.
+
+65. VECTOR CAPACITY
+
+`std::vector` maintains:
+
+```text
+size()
+capacity()
+```
+
+Example:
+
+```cpp
+std::vector<int> values;
+
+values.reserve(100);
+
+std::cout
+    << values.size()
+    << ' '
+    << values.capacity();
+```
+
+`reserve()` requests enough capacity for at least the specified number of elements.
+
+This can reduce repeated reallocations.
+
+`shrink_to_fit()` is a non-binding request to reduce unused capacity.
+
+66. ALLOCATORS
+
+STL containers are allocator-aware.
+
+Example:
+
+```cpp
+std::vector<
+    int,
+    std::allocator<int>
+> values;
+```
+
+The default allocator is normally:
+
+```cpp
+std::allocator<T>
+```
+
+Allocators allow containers to customize how storage is obtained.
+
+Advanced applications may use:
+
+* Custom allocators
+* Polymorphic allocators
+* Memory resources
+* Pool allocation
+* Monotonic allocation strategies
+
+67. EXECUTION POLICIES
+
+Some standard algorithms support execution policies.
+
+Examples:
+
+```cpp
+std::execution::seq
+std::execution::par
+std::execution::par_unseq
+```
+
+Example:
+
+```cpp
+std::sort(
+    std::execution::par,
+    values.begin(),
+    values.end()
+);
+```
+
+Execution policies allow implementations to use different execution strategies.
+
+Parallel algorithms require careful consideration of:
+
+* Data races
+* Thread safety
+* Synchronization
+* Algorithm requirements
+* Exception behavior
+
+68. MODERN STL DESIGN PRINCIPLES
+
+Prefer:
+
+```text
+Standard container
+        +
+Algorithm
+        +
+Iterator / Range
+```
+
+instead of manually implementing common data structures and algorithms when the standard library already provides an appropriate solution.
+
+Examples:
+
+Instead of writing a sorting algorithm:
+
+```cpp
+std::sort(...)
+```
+
+Instead of manually implementing a dynamic array:
+
+```cpp
+std::vector<T>
+```
+
+Instead of manually implementing a priority queue:
+
+```cpp
+std::priority_queue<T>
+```
+
+69. COMPARISON: MAP VS UNORDERED_MAP
+
+```text
+Feature              map                  unordered_map
+
+Ordering             Sorted               No sorted order
+Lookup               O(log N)             O(1) average
+Worst-case lookup    O(log N)             O(N)
+Main mechanism       Ordered structure    Hashing
+Range ordering       Yes                  No
+Hash required        No                   Yes
+Custom comparator    Yes                  Yes, for key equality/order as applicable
+```
+
+Choose based on required semantics, not only average complexity.
+
+70. COMPARISON: VECTOR VS DEQUE
+
+```text
+Feature              vector               deque
+
+Contiguous           Yes                  No
+Random access        O(1)                 O(1)
+Front insertion      O(N)                 O(1)
+Back insertion       Amortized O(1)       O(1)
+Middle insertion     O(N)                 O(N)
+data()               Yes                  No contiguous-storage guarantee
+```
+
+Use `vector` when contiguous storage is useful.
+
+Use `deque` when efficient operations at both ends are important.
+
+71. COMPARISON: VECTOR VS LIST
+
+```text
+Feature              vector               list
+
+Storage              Contiguous           Node-based
+Random access        O(1)                 O(N)
+Traversal             Cache-friendly       Less locality
+Known-position insert O(N) generally       O(1)
+Known-position erase  O(N) generally       O(1)
+Memory overhead       Usually lower         Usually higher
+```
+
+Actual performance depends on workload and element type.
+
+72. SECURITY CONSIDERATIONS
+
+Unordered containers can experience performance degradation when many keys collide.
+
+For applications processing attacker-controlled input:
+
+* Validate input.
+* Consider the threat model.
+* Use appropriate hash strategies.
+* Avoid assuming average-case complexity is guaranteed.
+* Monitor resource consumption.
+
+Do not automatically replace every standard hash with a cryptographic hash. The appropriate strategy depends on the application and security requirements.
+
+73. FAQ
+
+Q1: What is STL?
+
+A:
+STL commonly refers to the generic C++ library facilities centered around containers, iterators, algorithms, and function objects.
+
+Q2: Is `std::vector` always the fastest container?
+
+A:
+No. It is often an excellent default because of contiguous storage and cache locality, but the correct container depends on the workload.
+
+Q3: Is `std::map` always implemented as a red-black tree?
+
+A:
+No. The standard specifies behavior and complexity, not a specific implementation. Red-black trees are a common implementation technique.
+
+Q4: What is the difference between `map` and `unordered_map`?
+
+A:
+`map` maintains ordered keys and provides logarithmic operations. `unordered_map` uses hashing, has no sorted order, and provides average constant-time lookup.
+
+Q5: What is `lower_bound`?
+
+A:
+For a properly ordered range, it finds the first position that is not ordered before the searched value; with ordinary ascending ordering, this corresponds to the first element greater than or equal to the target.
+
+Q6: What is an iterator?
+
+A:
+An iterator is an abstraction used to traverse and access elements in a range.
+
+Q7: What is iterator invalidation?
+
+A:
+It occurs when a container operation causes an existing iterator, pointer, or reference to no longer refer to a valid element.
+
+Q8: What is a contiguous iterator?
+
+A:
+A C++20 iterator concept representing iterators whose referenced elements occupy contiguous memory.
+
+74. INTERVIEW QUESTIONS
+
+BEGINNER:
+
+Q1: What is STL?
+
+A:
+STL commonly describes generic standard-library facilities such as containers, iterators, algorithms, and function objects.
+
+Q2: What is a vector?
+
+A:
+`std::vector` is a dynamically sized contiguous sequence container.
+
+Q3: What is a map?
+
+A:
+`std::map` stores unique keys with associated values in sorted key order.
+
+INTERMEDIATE:
+
+Q4: Difference between `vector` and `list`?
+
+A:
+`vector` provides contiguous storage and O(1) random access. `list` is node-based and provides O(1) insertion/erasure when the position is already known, but O(N) traversal.
+
+Q5: Difference between `map` and `unordered_map`?
+
+A:
+`map` provides sorted keys and logarithmic operations. `unordered_map` provides hash-based average constant-time lookup without sorted ordering.
+
+Q6: What does `lower_bound` do?
+
+A:
+It returns the first position in an appropriately ordered range where the target could be inserted without violating the ordering.
+
+ADVANCED:
+
+Q7: What is strict weak ordering?
+
+A:
+It is the ordering relationship required by many standard algorithms and ordered containers. It includes irreflexivity and transitivity requirements, together with transitivity of the induced equivalence relation.
+
+Q8: What is iterator invalidation?
+
+A:
+It is the loss of validity of iterators, references, or pointers after certain container modifications.
+
+Q9: What are C++20 ranges?
+
+A:
+Ranges provide concepts, range-aware algorithms, views, projections, and related facilities for generic range processing.
+
+Q10: What are `flat_map` and `flat_set`?
+
+A:
+C++23 associative container adaptors that use sequence-container-based storage and provide associative interfaces with different performance and locality characteristics from node-based associative containers.
+
+75. EXAM QUESTIONS
+
+SHORT ANSWER:
+
+1. Define STL.
+2. What is an iterator?
+3. What is a container?
+4. What is `std::vector`?
+5. What is `std::priority_queue`?
+6. What is `std::lower_bound`?
+7. What is a strict weak ordering comparator?
+
+MEDIUM ANSWER:
+
+1. Compare `std::map` and `std::unordered_map`.
+2. Explain iterator categories.
+3. Explain vector iterator invalidation.
+4. Explain custom hash functions.
+5. Explain container adapters.
+6. Explain `lower_bound`, `upper_bound`, and `equal_range`.
+7. Explain C++20 ranges.
+
+LONG ANSWER:
+
+1. Explain STL containers, iterators, and algorithms with examples.
+
+2. Compare sequence, associative, unordered, and adapter containers.
+
+3. Explain strict weak ordering and custom comparators.
+
+4. Explain iterator invalidation and its performance implications.
+
+5. Compare `vector`, `deque`, `list`, `map`, and `unordered_map`.
+
+6. Explain modern C++ ranges and views.
+
+7. Explain C++23 flat associative containers.
+
+8. PRACTICE QUESTIONS
+
+9. Implement a Top-K frequent words program.
+
+10. Implement an LRU cache using `list` and `unordered_map`.
+
+11. Find the median of a streaming dataset using two priority queues.
+
+12. Group anagrams using `unordered_map`.
+
+13. Implement a custom key and hash function.
+
+14. Sort objects using a custom comparator.
+
+15. Implement a student ranking system using `map`.
+
+16. Perform range queries using `lower_bound`.
+
+17. Create a C++20 ranges pipeline.
+
+18. Compare the performance of `vector` and `list`.
+
+19. Demonstrate vector iterator invalidation.
+
+20. Implement a graph traversal using STL containers.
+
+21. Implement Dijkstra's algorithm using `priority_queue`.
+
+22. Compare `map` and `unordered_map` for a large dataset.
+
+23. Experiment with `flat_map` and `map` for lookup-heavy workloads.
+
+24. BEST PRACTICES
+
+* Prefer `std::vector` as a general-purpose sequence container when its semantics fit the workload.
+* Use `std::array` for fixed-size arrays.
+* Use `std::deque` when efficient operations at both ends are important.
+* Use node-based containers when their iterator/reference stability or insertion/erasure characteristics are needed.
+* Use `std::map` when sorted ordering is required.
+* Use `std::unordered_map` when hash-based lookup is appropriate and ordering is unnecessary.
+* Use `std::priority_queue` for priority-based access.
+* Use `find()` or `contains()` for non-mutating map existence checks.
+* Do not assume `emplace()` is always faster.
+* Respect iterator invalidation rules.
+* Ensure comparators satisfy the required ordering requirements.
+* Use `std::ranges` for modern generic range processing.
+* Use `std::span` for non-owning views over contiguous data.
+* Reserve vector capacity when a useful size estimate is known.
+* Prefer standard algorithms instead of rewriting common algorithms unnecessarily.
+
+78. PERFORMANCE CHECKLIST
+
+Before selecting a container, ask:
+
+1. Do I need random access?
+
+2. Do I need contiguous storage?
+
+3. Do I insert/remove mostly at the front?
+
+4. Do I insert/remove mostly at the back?
+
+5. Do I need sorted keys?
+
+6. Do I need unique keys?
+
+7. Do I need duplicate keys?
+
+8. Do I need average constant-time lookup?
+
+9. Do I need stable iterators/references?
+
+10. Do I need priority-based access?
+
+11. Will iterator invalidation matter?
+
+12. Is memory locality important?
+
+13. Is the data size large enough for allocation overhead to matter?
+
+14. Would a C++23 flat associative container fit the workload?
+
+15. SUMMARY
+
+The C++ Standard Library provides reusable generic facilities for storing, accessing, processing, and transforming data.
+
+The most important STL concepts are:
+
+* Containers
+* Iterators
+* Algorithms
+* Comparators
+* Hash functions
+* Container adapters
+* Complexity
+* Iterator invalidation
+* Ranges
+* Views
+* Projections
+
+Modern C++ extends traditional STL programming through C++20 ranges and iterator concepts and C++23 facilities such as `flat_map`, `flat_set`, `span`, and `mdspan`.
+
+Good STL programming is not simply memorizing containers.
+
+The key skill is selecting a data structure and algorithm based on:
+
+```text
+Required semantics
+        +
+Complexity
+        +
+Memory behavior
+        +
+Iterator/reference stability
+        +
+Cache locality
+        +
+Maintainability
+```
+
+The best container is therefore the one whose guarantees and behavior match the actual problem.
+
+80. KEY TAKEAWAYS
+
+* STL separates data structures from algorithms through iterators and ranges.
+* `std::vector` provides contiguous storage and is an excellent general-purpose sequence container.
+* `std::array` provides fixed-size contiguous storage.
+* `std::deque` supports efficient operations at both ends.
+* `std::list` provides efficient insertion/erasure at known positions.
+* `std::map` maintains ordered unique keys.
+* `std::unordered_map` provides hash-based average constant-time lookup.
+* `std::priority_queue` provides priority-based access.
+* Iterators have different capability levels.
+* C++20 introduced formal iterator concepts including `contiguous_iterator`.
+* Iterator invalidation must be considered after container modifications.
+* `std::sort` requires random-access iterators and provides O(N log N) comparison complexity.
+* `lower_bound` and related algorithms require an appropriately ordered range.
+* Custom comparators must satisfy the required ordering rules.
+* Equal unordered keys must produce equal hash values.
+* `operator[]` on a map can insert a missing key.
+* `emplace()` is not automatically faster than every insertion alternative.
+* C++20 ranges provide composable range algorithms and views.
+* `std::span` provides a non-owning view over contiguous data.
+* C++23 provides `flat_map`, `flat_set`, and related flat associative containers.
+* Container selection should be based on semantics, complexity, memory behavior, and workload.

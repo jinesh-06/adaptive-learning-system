@@ -1,0 +1,1723 @@
+COURSE: Python Programming
+TOPIC: Exception Handling, Context Managers, Modules, and Packages
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation — Language Reference, Tutorial, Standard Library Documentation
+
+================================================================================
+EXCEPTION HANDLING, CONTEXT MANAGERS, MODULES, AND PACKAGES
+===========================================================
+
+1. INTRODUCTION
+
+Robust Python programs need reliable error handling, predictable resource cleanup, and well-organized code.
+
+Python provides:
+
+* Structured exception handling using `try`, `except`, `else`, and `finally`.
+* Explicit exception generation using `raise`.
+* Exception chaining using `raise ... from ...`.
+* Custom exception classes.
+* Exception groups and `except*` for handling multiple independent exceptions.
+* Context managers using the `with` statement.
+* Class-based context managers using `__enter__()` and `__exit__()`.
+* Generator-based context managers using `contextlib.contextmanager`.
+* Modules for organizing reusable Python code.
+* Packages for organizing related modules.
+* Namespace packages for packages that can span multiple locations.
+* An import system involving `sys.path`, `sys.modules`, `sys.meta_path`, module specifications, finders, loaders, and `importlib`.
+
+The Python language defines the behavior of these features, while some import and execution details are implementation-dependent.
+
+2. LEARNING OBJECTIVES
+
+* Understand Python exception handling with `try`, `except`, `else`, and `finally`.
+* Understand the built-in exception hierarchy.
+* Create custom exception classes.
+* Use `raise`, `raise from`, and `raise ... from None`.
+* Understand implicit and explicit exception chaining.
+* Understand `ExceptionGroup` and `except*`.
+* Create class-based and generator-based context managers.
+* Use `contextlib` utilities such as `suppress()` and `ExitStack`.
+* Understand modules, packages, and namespace packages.
+* Understand `__init__.py`, `__all__`, and relative imports.
+* Understand `sys.path`, `sys.modules`, and `importlib`.
+* Identify and resolve common circular-import problems.
+* Use `if __name__ == "__main__":` correctly.
+* Design maintainable and reusable Python applications.
+
+3. PREREQUISITES
+
+* Python variables and data types.
+* Conditional statements and loops.
+* Functions.
+* Basic object-oriented programming.
+* Basic file handling.
+* Basic understanding of classes and objects.
+
+4. BEGINNER CONCEPTS
+
+4.1 BASIC EXCEPTION HANDLING
+
+An exception interrupts the normal flow of execution and can be handled by an appropriate `except` clause.
+
+Example:
+
+```python id="a8v2kd"
+try:
+    value = int("invalid_int")
+except ValueError as error:
+    print(f"Caught conversion error: {error}")
+```
+
+Output:
+
+```text id="j4q7np"
+Caught conversion error: invalid literal for int() with base 10: 'invalid_int'
+```
+
+4.2 `try`, `except`, `else`, AND `finally`
+
+The four components have different purposes:
+
+`try`
+
+Contains code that may raise an exception.
+
+`except`
+
+Handles matching exceptions.
+
+`else`
+
+Runs when the `try` block completes without an exception and without leaving the `try` statement through `return`, `break`, or `continue`.
+
+`finally`
+
+Runs when control leaves the `try` statement and is normally used for cleanup.
+
+Example:
+
+```python id="k5x9qr"
+try:
+    result = 10 / 2
+except ZeroDivisionError:
+    print("Cannot divide by zero")
+else:
+    print(f"Result: {result}")
+finally:
+    print("Operation completed")
+```
+
+Output:
+
+```text id="e4f7cw"
+Result: 5.0
+Operation completed
+```
+
+4.3 RAISING EXCEPTIONS
+
+Exceptions can be generated explicitly using `raise`.
+
+```python id="p8z2lm"
+age = -5
+
+if age < 0:
+    raise ValueError("Age cannot be negative")
+```
+
+4.4 THE `__name__ == "__main__"` IDIOM
+
+A Python module receives a special `__name__` value.
+
+When executed directly:
+
+```python id="m7r4qt"
+__name__ == "__main__"
+```
+
+When imported:
+
+```python id="s2c9vk"
+__name__ == "module_name"
+```
+
+A common pattern is:
+
+```python id="d5n8bx"
+def main():
+    print("Program started")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+This allows a module to provide reusable functions without automatically executing its main program when imported.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 PYTHON EXCEPTION HIERARCHY
+
+The main hierarchy is:
+
+```text id="h8q2wd"
+BaseException
+├── BaseExceptionGroup
+├── GeneratorExit
+├── KeyboardInterrupt
+├── SystemExit
+└── Exception
+    ├── ArithmeticError
+    ├── LookupError
+    ├── OSError
+    ├── RuntimeError
+    ├── ValueError
+    ├── TypeError
+    └── ...
+```
+
+Important point:
+
+`StandardError` does not exist in modern Python 3. It was removed as part of the Python 3 transition.
+
+`Exception` is the usual base class for application-level exceptions.
+
+`KeyboardInterrupt`, `SystemExit`, and `GeneratorExit` inherit directly from `BaseException`, not `Exception`.
+
+Therefore, application code should normally catch specific exception types or `Exception`, rather than catching `BaseException`.
+
+5.2 COMMON BUILT-IN EXCEPTIONS
+
+Examples include:
+
+```text id="n7b5vx"
+ValueError
+TypeError
+KeyError
+IndexError
+FileNotFoundError
+PermissionError
+ZeroDivisionError
+NameError
+AttributeError
+RuntimeError
+TimeoutError
+```
+
+5.3 CUSTOM EXCEPTIONS
+
+Custom exceptions should normally inherit from `Exception` or an appropriate subclass.
+
+```python id="x6c3rt"
+class AppBaseError(Exception):
+    """Base exception for application-specific errors."""
+    pass
+
+
+class ValidationError(AppBaseError):
+    def __init__(self, field: str, message: str):
+        super().__init__(
+            f"Validation failed on field '{field}': {message}"
+        )
+        self.field = field
+```
+
+Using a common base exception allows callers to handle an entire application-specific error family:
+
+```python id="q9v4ns"
+try:
+    ...
+except AppBaseError:
+    ...
+```
+
+5.4 EXCEPTION CHAINING
+
+Python supports both implicit and explicit exception chaining.
+
+Implicit chaining:
+
+```python id="t2f6jk"
+try:
+    1 / 0
+except ZeroDivisionError:
+    raise RuntimeError("Calculation failed")
+```
+
+The new exception receives the original exception through `__context__`.
+
+Explicit chaining:
+
+```python id="u5m8cz"
+try:
+    1 / 0
+except ZeroDivisionError as error:
+    raise RuntimeError("Calculation failed") from error
+```
+
+The original exception becomes the explicit cause:
+
+```python id="r3n7px"
+new_error.__cause__
+```
+
+Suppressing the displayed context:
+
+```python id="v6k2lm"
+try:
+    1 / 0
+except ZeroDivisionError:
+    raise RuntimeError("Calculation failed") from None
+```
+
+`from None` suppresses the normal display of the previous exception context.
+
+5.5 CONTEXT MANAGERS
+
+A context manager defines behavior for entering and leaving a runtime context.
+
+Typical uses include:
+
+* Opening and closing files.
+* Acquiring and releasing locks.
+* Managing database transactions.
+* Temporarily changing state.
+* Managing network resources.
+
+Example:
+
+```python id="c8w4qa"
+with open("data.txt", "r") as file:
+    data = file.read()
+```
+
+The context manager ensures that the file is properly closed when the block is exited.
+
+A class-based context manager normally implements:
+
+```python id="z7p3hm"
+__enter__()
+__exit__()
+```
+
+6. ADVANCED CONCEPTS
+
+6.1 CLASS-BASED CONTEXT MANAGERS
+
+Example:
+
+```python id="f4k9xs"
+class ManagedResource:
+
+    def __enter__(self):
+        print("Acquiring resource")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        print("Releasing resource")
+
+        if exc_type is not None:
+            print(f"Exception: {exc_value}")
+
+        return False
+```
+
+Usage:
+
+```python id="n6v2pc"
+with ManagedResource() as resource:
+    print("Using resource")
+```
+
+If no exception occurs, all three arguments supplied to `__exit__()` are `None`.
+
+If an exception occurs, they contain:
+
+```text id="s9d5kj"
+exc_type      -> exception class
+exc_value     -> exception instance
+traceback     -> traceback object
+```
+
+Returning a true value from `__exit__()` suppresses the exception. Returning `False` or `None` allows normal propagation.
+
+6.2 `contextlib.contextmanager`
+
+The `contextlib.contextmanager` decorator allows a generator function to act as a context manager.
+
+```python id="w3x7bn"
+from contextlib import contextmanager
+
+
+@contextmanager
+def managed_resource(name):
+    print(f"Acquiring {name}")
+
+    resource = {
+        "name": name,
+        "status": "active"
+    }
+
+    try:
+        yield resource
+    finally:
+        print(f"Releasing {name}")
+        resource["status"] = "closed"
+```
+
+Usage:
+
+```python id="k8m2vr"
+with managed_resource("Database") as resource:
+    print(resource)
+```
+
+The code before `yield` performs setup, the yielded value becomes the `as` target, and the `finally` section performs cleanup.
+
+6.3 `contextlib.suppress`
+
+`suppress()` is useful when a specific exception is intentionally ignored.
+
+```python id="q4v8yc"
+from contextlib import suppress
+
+with suppress(FileNotFoundError):
+    remove_file("temporary.txt")
+```
+
+Only the specified exception is suppressed.
+
+6.4 `contextlib.ExitStack`
+
+`ExitStack` manages a dynamically determined collection of context managers and cleanup callbacks.
+
+```python id="j6p3sw"
+from contextlib import ExitStack
+
+with ExitStack() as stack:
+    file1 = stack.enter_context(open("file1.txt"))
+    file2 = stack.enter_context(open("file2.txt"))
+
+    print("Both files are active")
+```
+
+Resources are cleaned up in reverse order when the stack exits. `ExitStack` is particularly useful when the number of resources is not known in advance.
+
+6.5 EXCEPTION GROUPS
+
+Modern Python supports `ExceptionGroup` and `except*` for handling multiple independent exceptions.
+
+Example:
+
+```python id="p9c4tz"
+try:
+    raise ExceptionGroup(
+        "Multiple errors",
+        [
+            ValueError("Invalid value"),
+            TypeError("Invalid type")
+        ]
+    )
+except* ValueError as error:
+    print("Handled ValueError group")
+except* TypeError as error:
+    print("Handled TypeError group")
+```
+
+`except*` is designed for exception groups and can process different matching subsets separately.
+
+7. MODULES AND PACKAGES
+
+7.1 MODULES
+
+A module is normally a Python source file containing definitions and executable statements.
+
+Example structure:
+
+```text id="r5m8kd"
+math_utils.py
+main.py
+```
+
+`math_utils.py`:
+
+```python id="w2c7vx"
+def add(a, b):
+    return a + b
+
+
+def multiply(a, b):
+    return a * b
+```
+
+`main.py`:
+
+```python id="n8q3ps"
+import math_utils
+
+print(math_utils.add(10, 20))
+```
+
+7.2 IMPORTING SPECIFIC NAMES
+
+```python id="v4x6jm"
+from math_utils import add
+
+print(add(10, 20))
+```
+
+7.3 IMPORTING WITH AN ALIAS
+
+```python id="c9r2kw"
+import math_utils as mu
+
+print(mu.add(10, 20))
+```
+
+7.4 PACKAGES
+
+A package is a way of organizing related Python modules.
+
+Example:
+
+```text id="t7n4bc"
+project/
+│
+├── main.py
+│
+└── utilities/
+    ├── __init__.py
+    ├── math_utils.py
+    └── string_utils.py
+```
+
+A regular package commonly contains `__init__.py`.
+
+Example:
+
+```python id="m3x8qa"
+from utilities.math_utils import add
+```
+
+7.5 NAMESPACE PACKAGES
+
+Python also supports namespace packages.
+
+A namespace package does not require an `__init__.py` file and can combine portions located in different directories.
+
+This is different from a traditional regular package.
+
+Namespace packages are defined by PEP 420 and are supported by Python's import system.
+
+7.6 `__init__.py`
+
+`__init__.py` can be used to:
+
+* Initialize package state.
+* Define package-level names.
+* Import selected objects.
+* Provide package metadata.
+* Define package-level behavior.
+
+It is important to note that namespace packages do not require `__init__.py`.
+
+7.7 `__all__`
+
+A module or package can define:
+
+```python id="b6v9hr"
+__all__ = ["add", "multiply"]
+```
+
+This primarily controls which names are imported by:
+
+```python id="s4n7xc"
+from module import *
+```
+
+It does not prevent direct imports such as:
+
+```python id="d2k5vp"
+from module import internal_function
+```
+
+Therefore, `__all__` should not be described as a strict access-control mechanism.
+
+8. IMPORT SYSTEM
+
+Python's import system is more sophisticated than simply searching for `.py` files.
+
+Important components include:
+
+```text id="e7m3qs"
+sys.path
+sys.modules
+sys.meta_path
+importlib
+ModuleSpec
+Finders
+Loaders
+```
+
+8.1 `sys.path`
+
+`sys.path` is a list of locations searched for modules.
+
+Example:
+
+```python id="u8k2nz"
+import sys
+
+for path in sys.path:
+    print(path)
+```
+
+Its initial contents depend on how Python was started, environment configuration, installation, and other factors. `PYTHONPATH` can also contribute entries.
+
+8.2 `sys.modules`
+
+`sys.modules` is a dictionary mapping module names to module objects that have already been loaded.
+
+```python id="q5w9kc"
+import sys
+
+print("math" in sys.modules)
+```
+
+It acts as an important module cache during importing.
+
+8.3 `sys.meta_path`
+
+When a module is not already available through `sys.modules`, Python's import machinery consults meta path finders through:
+
+```python id="z3m7px"
+sys.meta_path
+```
+
+These finders can provide module specifications that identify how a module should be loaded.
+
+8.4 `importlib`
+
+The `importlib` module provides programmatic access to Python's import system.
+
+Example:
+
+```python id="c6r4vb"
+import importlib
+
+module = importlib.import_module("math")
+
+print(module.sqrt(25))
+```
+
+9. CIRCULAR IMPORTS
+
+A circular import occurs when modules depend on each other during initialization.
+
+Example:
+
+```text id="j8p2qs"
+module_a
+   ↓
+module_b
+   ↓
+module_a
+```
+
+This can cause errors such as:
+
+```text id="n5x7md"
+ImportError:
+cannot import name ... from partially initialized module
+```
+
+Possible solutions:
+
+* Move shared definitions into a third module.
+* Redesign module dependencies.
+* Import inside a function when appropriate.
+* Import the module rather than individual symbols when that better fits the dependency structure.
+
+Deferred imports can sometimes solve initialization-order problems, but they should not be used merely to hide poor module architecture.
+
+10. SYNTAX
+
+10.1 BASIC EXCEPTION HANDLING
+
+```python id="v2c8kr"
+try:
+    value = int(input("Enter an integer: "))
+except ValueError as error:
+    print(f"Invalid input: {error}")
+else:
+    print(f"Value: {value}")
+finally:
+    print("Program finished")
+```
+
+10.2 CUSTOM EXCEPTION
+
+```python id="k7m4px"
+class ValidationError(Exception):
+    pass
+
+
+def validate_age(age):
+    if age < 0:
+        raise ValidationError("Age cannot be negative")
+```
+
+10.3 EXCEPTION CHAINING
+
+```python id="q3w9nv"
+try:
+    value = int("abc")
+except ValueError as error:
+    raise RuntimeError("Configuration contains an invalid integer") from error
+```
+
+10.4 CONTEXT MANAGER
+
+```python id="h6p2zc"
+from contextlib import contextmanager
+
+
+@contextmanager
+def managed_resource(name):
+    print(f"Opening {name}")
+
+    try:
+        yield name
+    finally:
+        print(f"Closing {name}")
+
+
+with managed_resource("Database") as resource:
+    print(f"Using {resource}")
+```
+
+11. BASIC EXAMPLE
+
+```python id="x4n8qs"
+class NegativeBalanceError(Exception):
+    """Raised when a withdrawal exceeds the available balance."""
+    pass
+
+
+def process_withdrawal(balance: float, amount: float) -> float:
+
+    try:
+        if amount <= 0:
+            raise ValueError(
+                "Withdrawal amount must be strictly positive."
+            )
+
+        if amount > balance:
+            raise NegativeBalanceError(
+                f"Insufficient funds: Balance is ${balance}, "
+                f"requested ${amount}"
+            )
+
+        new_balance = balance - amount
+
+    except ValueError as error:
+        print(f"[Handled Error] Input validation: {error}")
+        raise
+
+    except NegativeBalanceError as error:
+        print(f"[Handled Error] Business logic: {error}")
+        raise
+
+    else:
+        print(
+            f"[Success] Withdrawal of ${amount} approved. "
+            f"New balance: ${new_balance}"
+        )
+        return new_balance
+
+    finally:
+        print("[Audit Log] Withdrawal transaction attempt recorded.")
+
+
+if __name__ == "__main__":
+
+    try:
+        current = process_withdrawal(100.0, 40.0)
+        process_withdrawal(current, 80.0)
+
+    except Exception as error:
+        print(
+            f"Top-level caller caught: "
+            f"{type(error).__name__} - {error}"
+        )
+```
+
+12. INTERMEDIATE EXAMPLE
+
+```python id="m9c5wv"
+import time
+from contextlib import contextmanager
+
+
+class DatabaseTransaction:
+
+    def __init__(self, db_name: str):
+        self.db_name = db_name
+        self.in_transaction = False
+
+    def __enter__(self):
+        print(
+            f"[DB] BEGIN TRANSACTION "
+            f"on '{self.db_name}'"
+        )
+
+        self.in_transaction = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+
+        if exc_type is not None:
+            print(
+                f"[DB] ROLLBACK transaction "
+                f"on '{self.db_name}' "
+                f"due to {exc_type.__name__}: {exc_value}"
+            )
+
+            self.in_transaction = False
+            return False
+
+        print(
+            f"[DB] COMMIT transaction "
+            f"on '{self.db_name}' successfully."
+        )
+
+        self.in_transaction = False
+        return False
+
+
+@contextmanager
+def execution_timer(label: str):
+
+    start_time = time.perf_counter()
+
+    try:
+        yield
+    finally:
+        elapsed = time.perf_counter() - start_time
+
+        print(
+            f"[Timer] '{label}' completed in "
+            f"{elapsed * 1000:.3f} ms"
+        )
+
+
+if __name__ == "__main__":
+
+    with DatabaseTransaction("production_db"):
+
+        with execution_timer("Sample Query"):
+            print(
+                "  Executing: "
+                "UPDATE users SET active = 1"
+            )
+
+    try:
+
+        with DatabaseTransaction("production_db"):
+
+            print(
+                "  Executing: "
+                "INSERT INTO accounts VALUES ('invalid')"
+            )
+
+            raise RuntimeError(
+                "Database constraint violation"
+            )
+
+    except RuntimeError as error:
+        print(
+            f"Main program received expected error: {error}"
+        )
+```
+
+13. ADVANCED EXAMPLE
+
+```python id="p7x3km"
+import contextlib
+
+
+class ServiceException(Exception):
+    """Base service exception."""
+    pass
+
+
+class DatabaseConnectionError(ServiceException):
+    """Database connection failure."""
+    pass
+
+
+def low_level_query():
+
+    raise ConnectionRefusedError(
+        "TCP connection to port 5432 refused"
+    )
+
+
+def run_service_operation():
+
+    try:
+        low_level_query()
+
+    except ConnectionRefusedError as error:
+
+        raise DatabaseConnectionError(
+            "Failed to connect to primary DB cluster"
+        ) from error
+
+
+def demonstrate_exit_stack(resource_names):
+
+    with contextlib.ExitStack() as stack:
+
+        print(
+            f"[ExitStack] Initializing "
+            f"{len(resource_names)} resources."
+        )
+
+        for name in resource_names:
+
+            stack.callback(
+                lambda resource=name:
+                print(
+                    f"[ExitStack Cleanup] "
+                    f"Releasing resource: {resource}"
+                )
+            )
+
+        print(
+            "[ExitStack] All operations completed."
+        )
+
+
+if __name__ == "__main__":
+
+    try:
+        run_service_operation()
+
+    except DatabaseConnectionError as error:
+
+        print(f"Caught: {error}")
+
+        print(
+            f"Original cause (__cause__): "
+            f"{error.__cause__}"
+        )
+
+    print()
+
+    demonstrate_exit_stack(
+        ["res_A.dat", "res_B.dat", "res_C.dat"]
+    )
+```
+
+14. CODE WALKTHROUGHS
+
+14.1 `__enter__()`
+
+`__enter__()` executes when the `with` statement enters the context.
+
+Its return value is assigned to the variable after `as`.
+
+Example:
+
+```python id="w6m2qr"
+with Resource() as value:
+    ...
+```
+
+The value returned by:
+
+```python id="n4x8vc"
+__enter__()
+```
+
+becomes:
+
+```python id="j7p3km"
+value
+```
+
+14.2 `__exit__()`
+
+The method receives:
+
+```text id="c2r5vz"
+exc_type
+exc_value
+traceback
+```
+
+If no exception occurs:
+
+```text id="t8m3qn"
+exc_type = None
+exc_value = None
+traceback = None
+```
+
+If an exception occurs, the arguments describe that exception.
+
+Returning a true value suppresses the exception. Otherwise it propagates normally.
+
+14.3 EXCEPTION CHAINING
+
+```python id="y5k9wp"
+raise DatabaseConnectionError(
+    "Database unavailable"
+) from error
+```
+
+sets the original exception as the new exception's `__cause__`.
+
+14.4 EXITSTACK
+
+`ExitStack` maintains registered cleanup operations and executes them in reverse order when the context exits.
+
+This makes it useful for dynamically managing resources.
+
+15. EXPECTED OUTPUT
+
+BASIC EXAMPLE:
+
+```text id="k4p8ns"
+[Success] Withdrawal of $40.0 approved. New balance: $60.0
+[Audit Log] Withdrawal transaction attempt recorded.
+[Handled Error] Business logic: Insufficient funds: Balance is $60.0, requested $80.0
+[Audit Log] Withdrawal transaction attempt recorded.
+Top-level caller caught: NegativeBalanceError - Insufficient funds: Balance is $60.0, requested $80.0
+```
+
+INTERMEDIATE EXAMPLE:
+
+```text id="b7m3qx"
+[DB] BEGIN TRANSACTION on 'production_db'
+  Executing: UPDATE users SET active = 1
+[Timer] 'Sample Query' completed in ... ms
+[DB] COMMIT transaction on 'production_db' successfully.
+
+[DB] BEGIN TRANSACTION on 'production_db'
+  Executing: INSERT INTO accounts VALUES ('invalid')
+[DB] ROLLBACK transaction on 'production_db' due to RuntimeError: Database constraint violation
+Main program received expected error: Database constraint violation
+```
+
+ADVANCED EXAMPLE:
+
+```text id="r8c2vm"
+Caught: Failed to connect to primary DB cluster
+Original cause (__cause__): TCP connection to port 5432 refused
+
+[ExitStack] Initializing 3 resources.
+[ExitStack] All operations completed.
+[ExitStack Cleanup] Releasing resource: res_C.dat
+[ExitStack Cleanup] Releasing resource: res_B.dat
+[ExitStack Cleanup] Releasing resource: res_A.dat
+```
+
+Execution time output is variable and should not be expected to have an exact numerical value.
+
+16. EXECUTION FLOW
+
+16.1 EXCEPTION FLOW
+
+1. Python executes the `try` suite.
+2. If no exception occurs, the `else` suite can execute.
+3. If an exception occurs, Python searches for a matching handler.
+4. The matching `except` suite executes.
+5. The `finally` suite executes when control leaves the `try` statement.
+6. If the exception remains unhandled, it continues propagating outward.
+
+The `else` block is not a general-purpose continuation block; it is specifically executed when the `try` suite completes normally.
+
+16.2 CONTEXT-MANAGER FLOW
+
+Conceptually:
+
+```text id="q5v8mw"
+with expression as target:
+
+    __enter__()
+          ↓
+      with body
+          ↓
+      __exit__()
+          ↓
+ normal completion
+       OR
+ exception handling
+```
+
+17. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Implement an `AtomicFileWriter` context manager that:
+
+* Creates a temporary file.
+* Writes data to the temporary file.
+* Replaces the destination only after successful completion.
+* Cleans up the temporary file after failure.
+
+Problem 2:
+
+Design a custom REST API exception hierarchy:
+
+```text id="m6x3vp"
+APIError
+├── HTTPClientError
+│   ├── AuthenticationError
+│   └── RateLimitError
+└── HTTPServerError
+```
+
+Include status codes and response information.
+
+Problem 3:
+
+Create a connection-pool context manager that:
+
+* Obtains a connection on entry.
+* Returns it to the pool on exit.
+* Handles exceptions without leaking resources.
+
+Problem 4:
+
+Create a package containing separate modules for:
+
+* Authentication.
+* Database operations.
+* Validation.
+* Logging.
+
+18. REAL-WORLD APPLICATIONS
+
+18.1 DATABASE TRANSACTIONS
+
+Context managers can ensure that database resources are correctly committed or rolled back.
+
+18.2 FILE MANAGEMENT
+
+```python id="d8n2xr"
+with open("data.txt") as file:
+    data = file.read()
+```
+
+ensures the file is properly closed.
+
+18.3 LOCK MANAGEMENT
+
+Locks can be acquired and released safely using context managers.
+
+18.4 NETWORK RESOURCES
+
+Sockets and other resource-owning objects can use context managers to ensure cleanup.
+
+18.5 MODULAR SOFTWARE
+
+Large applications can be separated into modules and packages for:
+
+* Maintainability.
+* Reusability.
+* Testing.
+* Separation of responsibilities.
+
+19. COMMON MISTAKES
+
+19.1 BARE `except`
+
+Avoid:
+
+```python id="v3m7kx"
+try:
+    operation()
+except:
+    pass
+```
+
+This can catch exceptions such as `KeyboardInterrupt` and `SystemExit`.
+
+Prefer specific exceptions:
+
+```python id="x9c5wr"
+try:
+    operation()
+except FileNotFoundError:
+    print("File does not exist")
+```
+
+19.2 CATCHING TOO MUCH
+
+Avoid:
+
+```python id="k6p2mv"
+try:
+    complex_operation()
+except Exception:
+    pass
+```
+
+unless there is a deliberate reason to catch a broad application-level failure.
+
+19.3 UNINTENTIONAL EXCEPTION SUPPRESSION
+
+Avoid returning `True` from `__exit__()` unless suppressing the exception is intentional.
+
+19.4 RETURNING FROM `finally`
+
+Avoid:
+
+```python id="n4w8qc"
+def example():
+    try:
+        return 10
+    finally:
+        return 20
+```
+
+The `finally` return overrides the earlier return.
+
+Python 3.14 also emits a `SyntaxWarning` for `return`, `break`, or `continue` statements appearing in a `finally` block.
+
+20. COMMON ERRORS
+
+20.1 `ModuleNotFoundError`
+
+```text id="y7c3kn"
+ModuleNotFoundError: No module named 'xyz'
+```
+
+Possible causes:
+
+* Module is not installed.
+* Module is not in the import search path.
+* Wrong virtual environment is active.
+* Package/module name is incorrect.
+
+20.2 `ImportError`
+
+Can occur when a requested name cannot be imported.
+
+20.3 CIRCULAR IMPORT ERROR
+
+Example:
+
+```text id="p2m6vx"
+ImportError:
+cannot import name 'function_name'
+from partially initialized module
+```
+
+This often indicates circular module initialization.
+
+20.4 `AttributeError`
+
+Example:
+
+```python id="q8r4ws"
+import math
+
+math.not_existing()
+```
+
+This attempts to access an attribute that does not exist.
+
+21. DEBUGGING TECHNIQUES
+
+INCORRECT:
+
+```python id="f6k2mv"
+try:
+    data = load_user_data(user_id)
+except:
+    data = None
+```
+
+PROBLEM:
+
+The bare `except` catches all `BaseException` subclasses, including interruption and termination exceptions.
+
+CORRECT:
+
+```python id="w3n9qx"
+try:
+    data = load_user_data(user_id)
+
+except UserNotFoundError as error:
+    print(f"User not found: {error}")
+    data = None
+```
+
+If several application exceptions should be handled together:
+
+```python id="c5v7mr"
+try:
+    operation()
+
+except AppBaseError as error:
+    print(f"Application error: {error}")
+```
+
+22. EDGE CASES
+
+22.1 EXCEPTION IN `finally`
+
+If `finally` raises another exception, the new exception becomes the exception that propagates, and the previous exception becomes its context.
+
+22.2 RETURN IN `finally`
+
+A `return` in `finally` can discard a pending exception or override an earlier return.
+
+22.3 EXCEPTION IN `else`
+
+An exception raised inside the `else` block is not handled by the `except` clauses belonging to the same `try` statement.
+
+Example:
+
+```python id="r9m4kx"
+try:
+    value = 10
+except ValueError:
+    print("Handled")
+else:
+    raise RuntimeError("Error in else")
+```
+
+23. BEST PRACTICES
+
+* Catch the most specific exception type that you can reasonably handle.
+* Use `Exception` only when broad application-level handling is appropriate.
+* Avoid catching `BaseException` unless implementing specialized framework-level behavior.
+* Use `raise` to re-raise the currently handled exception.
+* Use `raise ... from ...` when translating low-level errors into higher-level domain errors.
+* Use `from None` when intentionally hiding implementation-level context from the displayed traceback.
+* Use `with` for resource management.
+* Keep context-manager cleanup reliable.
+* Avoid returning from `finally`.
+* Use `__main__` guards for executable module entry points.
+* Keep modules focused on related responsibilities.
+* Avoid unnecessary circular dependencies.
+* Use packages to organize larger applications.
+* Do not treat `__all__` as a security mechanism.
+
+24. PERFORMANCE CONSIDERATIONS
+
+Exception handling should primarily be designed for correctness and clarity.
+
+Raising and handling an exception requires more work than ordinary control flow, especially when traceback information must be constructed and processed.
+
+Therefore:
+
+* Do not use exceptions for ordinary high-frequency control flow when simpler logic is appropriate.
+* Use exceptions for genuinely exceptional conditions.
+* Benchmark performance-sensitive code rather than relying only on assumptions.
+
+CPython 3.11 introduced a redesigned exception-handling implementation using exception tables. This is a CPython implementation detail and should not be presented as a universal Python-language guarantee.
+
+25. MEMORY CONSIDERATIONS
+
+Exceptions can contain traceback information.
+
+A traceback can reference stack frames and their local variables.
+
+Python also takes care to clear the exception target created by:
+
+```python id="x5c8mv"
+except Exception as error:
+```
+
+at the end of the `except` clause to help break reference cycles involving the traceback and stack frame.
+
+For long-lived debugging or logging structures, avoid unnecessarily retaining complete traceback objects or exception objects when they are no longer needed.
+
+26. SECURITY CONSIDERATIONS
+
+26.1 INFORMATION DISCLOSURE
+
+Do not expose detailed internal tracebacks to untrusted users.
+
+A traceback may reveal:
+
+* File-system paths.
+* Internal module names.
+* Database details.
+* Configuration information.
+* Implementation details.
+
+For public applications, log detailed diagnostics securely while returning an appropriate user-facing error.
+
+26.2 EXCEPTION SUPPRESSION
+
+Do not silently suppress unexpected exceptions.
+
+Bad:
+
+```python id="m8q3vx"
+try:
+    process_payment()
+except Exception:
+    pass
+```
+
+This can hide serious failures.
+
+27. MODULE AND PACKAGE COMPARISON
+
+| Concept           | Purpose                                            |
+| ----------------- | -------------------------------------------------- |
+| Module            | Usually a single Python source file                |
+| Package           | Organizes related modules                          |
+| `__init__.py`     | Initializes/defines a regular package              |
+| Namespace package | Package whose portions can span multiple locations |
+| `sys.path`        | Module search path                                 |
+| `sys.modules`     | Cache of loaded modules                            |
+| `sys.meta_path`   | Meta path finder mechanism                         |
+| `importlib`       | Programmatic import-system interface               |
+| `__all__`         | Controls names imported by `from module import *`  |
+
+28. COMPARISON WITH RELATED LANGUAGES
+
+| Feature              | Python           | C++                         | Java                 |
+| -------------------- | ---------------- | --------------------------- | -------------------- |
+| Main error mechanism | `try / except`   | `try / catch`               | `try / catch`        |
+| Cleanup mechanism    | Context managers | RAII / destructors          | `try-with-resources` |
+| Exception chaining   | `raise from`     | Nested/exception mechanisms | Exception causes     |
+| Checked exceptions   | No               | No                          | Yes                  |
+| Module organization  | Modules/packages | Headers/modules             | Packages/modules     |
+| Resource scope       | `with`           | RAII                        | `try-with-resources` |
+
+29. FREQUENTLY ASKED QUESTIONS
+
+Q1: What is the difference between `except Exception` and bare `except`?
+
+A:
+
+`except Exception` catches exceptions derived from `Exception`, while bare `except` can catch every `BaseException`, including `KeyboardInterrupt` and `SystemExit`.
+
+Q2: What is EAFP?
+
+A:
+
+EAFP means:
+
+```text id="t4n8wc"
+Easier to Ask for Forgiveness than Permission
+```
+
+Code attempts an operation and handles an exception if the expected failure occurs.
+
+Example:
+
+```python id="q7m2vx"
+try:
+    value = data["key"]
+except KeyError:
+    value = None
+```
+
+Q3: What is LBYL?
+
+A:
+
+LBYL means:
+
+```text id="n5c9kr"
+Look Before You Leap
+```
+
+The program checks a condition before attempting an operation.
+
+Q4: What is `__cause__`?
+
+A:
+
+`__cause__` records an explicitly chained exception created using:
+
+```python id="w6p3ms"
+raise NewError(...) from original_error
+```
+
+Q5: What is `__context__`?
+
+A:
+
+`__context__` records the exception that was being handled when another exception was raised implicitly.
+
+Q6: What does `__all__` do?
+
+A:
+
+It controls the names imported by wildcard imports such as:
+
+```python id="c8x4nv"
+from module import *
+```
+
+It is not an access-control mechanism.
+
+Q7: Does every package need `__init__.py`?
+
+A:
+
+No. Regular packages commonly use `__init__.py`, while namespace packages can exist without it.
+
+Q8: What is `sys.modules`?
+
+A:
+
+It is a dictionary containing module objects that have already been loaded.
+
+Q9: What is `sys.path`?
+
+A:
+
+It is the list of locations used by Python's import machinery when searching for modules.
+
+30. INTERVIEW QUESTIONS
+
+Q1: Explain the purpose of `finally`.
+
+Answer:
+
+`finally` is used for cleanup code that should execute when control leaves a `try` statement, regardless of whether an exception occurred.
+
+Q2: What happens if `__exit__()` returns `True`?
+
+Answer:
+
+The exception raised inside the `with` block is suppressed.
+
+Q3: What is the difference between `__context__` and `__cause__`?
+
+Answer:
+
+`__context__` represents implicit exception chaining. `__cause__` represents explicit chaining created using `raise ... from ...`.
+
+Q4: Why should custom exceptions normally inherit from `Exception`?
+
+Answer:
+
+`Exception` is the normal base class for application-level exceptions. System-exiting exceptions such as `KeyboardInterrupt` and `SystemExit` inherit from `BaseException`.
+
+Q5: What is a circular import?
+
+Answer:
+
+It occurs when modules depend on each other during import-time initialization, causing one or both modules to be only partially initialized.
+
+Q6: What is the purpose of `sys.modules`?
+
+Answer:
+
+It stores already-loaded module objects and is an important part of Python's import mechanism.
+
+Q7: What is the difference between a module and a package?
+
+Answer:
+
+A module is normally a single Python file, while a package organizes multiple modules and subpackages into a structured namespace.
+
+Q8: What is `ExitStack`?
+
+Answer:
+
+`ExitStack` allows a program to dynamically register multiple context managers and cleanup callbacks and ensures they are processed in reverse order when the stack exits.
+
+31. EXAM QUESTIONS
+
+Q1:
+
+What is the output?
+
+```python id="h7m3qx"
+def test_func():
+
+    try:
+        return 1
+
+    finally:
+        return 2
+
+
+print(test_func())
+```
+
+Answer:
+
+```text id="v4n8kc"
+2
+```
+
+The `finally` return is executed last and overrides the earlier return.
+
+Q2:
+
+Which is the parent class of `KeyboardInterrupt`?
+
+Answer:
+
+```text id="p6x2wm"
+BaseException
+```
+
+Q3:
+
+What is the purpose of:
+
+```python id="r8c5kv"
+raise NewError("message") from error
+```
+
+Answer:
+
+It explicitly establishes `error` as the cause of `NewError`.
+
+Q4:
+
+What happens when a context manager's `__exit__()` returns `True`?
+
+Answer:
+
+The exception is suppressed.
+
+Q5:
+
+What is the purpose of `__main__`?
+
+Answer:
+
+It identifies a module when that module is being executed as the main program.
+
+32. PRACTICE QUESTIONS
+
+Q1:
+
+Implement a custom `TemporaryDirectory` context manager that creates a temporary directory on entry and removes it on exit.
+
+Q2:
+
+Write a configuration loader that:
+
+* Reads a JSON file.
+* Handles `FileNotFoundError`.
+* Handles `json.JSONDecodeError`.
+* Raises a custom `ConfigLoadError`.
+* Uses exception chaining.
+
+Q3:
+
+Create a Python package with:
+
+```text id="w2q7mv"
+my_package/
+├── __init__.py
+├── math_utils.py
+├── string_utils.py
+└── validation.py
+```
+
+Export selected public functions through `__all__`.
+
+Q4:
+
+Create two modules that intentionally produce a circular import and then refactor them to remove the circular dependency.
+
+Q5:
+
+Implement a context manager for measuring execution time.
+
+Q6:
+
+Create an `ExceptionGroup` containing multiple exception types and handle the groups using `except*`.
+
+Q7:
+
+Use `ExitStack` to open a dynamically determined list of files and ensure that all successfully opened files are closed.
+
+33. SUMMARY
+
+Python provides a structured and flexible error-handling system based on exceptions.
+
+The major components are:
+
+```text id="k9x4vc"
+try
+except
+else
+finally
+raise
+```
+
+Custom exceptions allow applications to represent domain-specific failures.
+
+Exception chaining allows low-level errors to be translated into higher-level errors while preserving diagnostic information.
+
+Context managers provide reliable resource management through:
+
+```text id="m5q8zr"
+__enter__()
+__exit__()
+```
+
+and can also be created conveniently with:
+
+```python id="v3c7xn"
+@contextmanager
+```
+
+The `contextlib` module provides additional tools such as:
+
+```text id="n8w2km"
+suppress()
+ExitStack
+contextmanager()
+```
+
+Python organizes reusable code through modules and packages. Its import system uses mechanisms such as:
+
+```text id="q6r9pv"
+sys.path
+sys.modules
+sys.meta_path
+importlib
+```
+
+Understanding these mechanisms helps developers build reliable, reusable, maintainable, and scalable Python applications.
+
+34. KEY TAKEAWAYS
+
+* Use `try` for code that may raise an exception.
+* Catch specific exceptions whenever possible.
+* `else` executes when the `try` suite completes normally.
+* `finally` is intended primarily for cleanup.
+* Avoid bare `except` unless there is a specific reason.
+* `BaseException` includes `KeyboardInterrupt`, `SystemExit`, and `GeneratorExit`.
+* `StandardError` is not part of modern Python 3.
+* Create application-specific exceptions by normally inheriting from `Exception`.
+* Use `raise ... from ...` for explicit exception chaining.
+* Use `raise ... from None` when intentionally suppressing displayed context.
+* Use `with` for deterministic resource management.
+* Implement class-based context managers with `__enter__()` and `__exit__()`.
+* Use `@contextmanager` for convenient generator-based context managers.
+* Use `ExitStack` when the number of resources is dynamic.
+* Use `ExceptionGroup` and `except*` when multiple independent exceptions need to be handled.
+* A module is normally a Python source file containing reusable code.
+* Packages organize related modules and subpackages.
+* Namespace packages can exist without `__init__.py`.
+* `__all__` controls wildcard-import behavior; it is not access control.
+* `sys.modules` stores loaded modules.
+* `sys.path` contains import search locations.
+* `sys.meta_path` participates in module discovery.
+* `importlib` provides programmatic access to the import system.
+* Avoid unnecessary circular imports by designing clear module dependencies.
+* Use `if __name__ == "__main__":` for executable module entry points.

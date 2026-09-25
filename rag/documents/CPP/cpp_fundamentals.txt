@@ -1,0 +1,2328 @@
+COURSE: CPP
+TOPIC: FUNDAMENTALS
+LEVEL: BEGINNER
+SOURCE: cpp_fundamentals.txt
+
+TITLE: Modern C++ Fundamentals: Language Evolution, Types, Namespaces, References, Initialization, Casting, and I/O
+
+1. INTRODUCTION
+
+C++ is a general-purpose programming language developed by Bjarne Stroustrup at Bell Labs. Development began in 1979 with a language initially called "C with Classes." The language later became C++ and evolved into a standardized multi-paradigm programming language.
+
+C++ supports procedural, object-oriented, generic, and functional programming techniques. The ISO C++ standard defines the language and its standard library.
+
+Major published C++ standards include:
+
+* C++98
+* C++03
+* C++11
+* C++14
+* C++17
+* C++20
+* C++23
+
+ISO/IEC 14882:2024 is the published C++ standard corresponding to C++23. C++ standardization continues beyond C++23.
+
+Modern C++ provides features such as:
+
+* Strong static typing.
+* Classes and objects.
+* Templates and generic programming.
+* Namespaces.
+* References.
+* RAII and deterministic resource management.
+* Move semantics.
+* constexpr and constant evaluation.
+* consteval immediate functions.
+* Lambda expressions.
+* Range-based for loops.
+* Standard containers and algorithms.
+* Smart pointers.
+* Exceptions.
+* Modules and other modern language/library facilities.
+
+C++ is used in many areas including operating systems, browsers, games, embedded systems, financial software, scientific computing, databases, compilers, graphics, and machine-learning infrastructure.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Understand the basic structure of a C++ program.
+* Explain the role of the main function.
+* Understand preprocessing, compilation, linking, and program execution.
+* Use standard library headers correctly.
+* Understand fundamental C++ data types.
+* Use fixed-width integer types from <cstdint>.
+* Understand bool, char, char16_t, char32_t, and wchar_t.
+* Use auto type deduction correctly.
+* Understand namespaces and namespace aliases.
+* Understand std::cin, std::cout, std::cerr, and std::clog.
+* Use common I/O manipulators from <iomanip>.
+* Understand lvalue references and const references.
+* Distinguish references from pointers.
+* Apply const correctness.
+* Understand constexpr and constant evaluation.
+* Understand consteval immediate functions.
+* Use enum class for scoped enumerations.
+* Use static_cast, dynamic_cast, const_cast, and reinterpret_cast appropriately.
+* Understand safer alternatives such as std::bit_cast for object-representation conversions.
+* Avoid dangling references and undefined behavior.
+* Apply modern C++ initialization practices.
+
+3. PREREQUISITES
+
+The learner should have basic knowledge of:
+
+* Variables.
+* Basic programming syntax.
+* Operators.
+* Functions.
+* Bits and bytes.
+* Basic memory concepts.
+* Compilers and executable programs.
+
+4. HISTORY AND LANGUAGE EVOLUTION
+
+4.1 EARLY DEVELOPMENT
+
+C++ originated from work by Bjarne Stroustrup at Bell Labs.
+
+The initial language was called "C with Classes."
+
+The project began in 1979, and the language gradually acquired features such as:
+
+* Classes.
+* Constructors and destructors.
+* Virtual functions.
+* Function overloading.
+* References.
+* Templates.
+* Exceptions.
+
+The language was later standardized by ISO.
+
+4.2 MAJOR STANDARD VERSIONS
+
+C++98:
+
+* First ISO standardized version of C++.
+
+C++03:
+
+* Primarily a corrective and maintenance revision of C++98.
+
+C++11:
+
+* Major modernization.
+* auto.
+* Range-based for.
+* Lambda expressions.
+* nullptr.
+* constexpr.
+* Move semantics.
+* Smart pointers.
+* Uniform initialization.
+* enum class.
+* Thread support.
+
+C++14:
+
+* Improvements to constexpr.
+* Generic lambdas.
+* Lambda init-captures.
+* Return type deduction.
+* Digit separators and other language/library improvements.
+
+C++17:
+
+* Structured bindings.
+* if and switch init-statements.
+* if constexpr.
+* Inline variables.
+* std::optional.
+* std::variant.
+* std::string_view.
+* Filesystem library.
+
+C++20:
+
+* Concepts.
+* Ranges.
+* Modules.
+* Coroutines.
+* consteval.
+* constinit.
+* Three-way comparison.
+* Expanded constexpr capabilities.
+
+C++23:
+
+* Further language and standard-library improvements.
+* std::expected.
+* std::mdspan.
+* std::print.
+* Multidimensional and ranges-related improvements.
+* Additional constexpr and library functionality.
+
+The published ISO/IEC 14882:2024 standard defines the C++23 standard.
+
+5. BASIC C++ PROGRAM STRUCTURE
+
+A simple C++ program:
+
+```cpp
+#include <iostream>
+
+int main() {
+    std::cout << "Hello, C++!\n";
+    return 0;
+}
+```
+
+Explanation:
+
+#include <iostream>
+
+* Includes declarations for standard input/output stream facilities.
+
+int main()
+
+* Defines the program's designated entry function in a hosted C++ program.
+
+std::cout
+
+* Standard output stream.
+
+return 0;
+
+* Returns a successful status value from main.
+
+6. MAIN FUNCTION
+
+In a hosted C++ program, main is the designated program entry function.
+
+Common forms include:
+
+```cpp
+int main() {
+    return 0;
+}
+```
+
+and:
+
+```cpp
+int main(int argc, char* argv[]) {
+    return 0;
+}
+```
+
+argc:
+
+* Number of command-line arguments supplied by the execution environment.
+
+argv:
+
+* Array of character pointers representing the command-line arguments.
+
+A return statement at the end of main may be omitted. Reaching the closing brace of main returns zero.
+
+Example:
+
+```cpp
+int main() {
+    return 0;
+}
+```
+
+is equivalent in this respect to:
+
+```cpp
+int main() {
+}
+```
+
+The exact permitted forms and restrictions on main are specified by the C++ standard.
+
+7. COMPILATION PROCESS
+
+A typical C++ program goes through several stages.
+
+7.1 PREPROCESSING
+
+Preprocessor directives such as:
+
+#include <iostream>
+
+are processed before normal compilation.
+
+7.2 COMPILATION
+
+The compiler translates C++ source code into an object or intermediate representation according to the implementation.
+
+7.3 LINKING
+
+The linker combines object files and required libraries into an executable program.
+
+7.4 EXECUTION
+
+The operating system loads and starts the executable, eventually invoking main in a hosted implementation.
+
+8. HEADER FILES
+
+Standard library facilities are provided through headers.
+
+Examples:
+
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <vector>
+#include <cstdint>
+#include <type_traits>
+#include <utility>
+
+Examples of commonly used facilities:
+
+<iostream>
+- Input and output streams.
+
+<iomanip>
+- Formatting manipulators.
+
+<string>
+- std::string.
+
+<vector>
+- std::vector.
+
+<cstdint>
+- Fixed-width integer types when provided by the implementation.
+
+<type_traits>
+
+* Compile-time type traits.
+
+<utility>
+- Utilities such as std::move and std::forward.
+
+9. NAMESPACES
+
+Namespaces organize declarations and help prevent name collisions.
+
+Example:
+
+```cpp
+namespace Math {
+    constexpr double pi = 3.141592653589793;
+}
+```
+
+Access:
+
+```cpp
+std::cout << Math::pi << '\n';
+```
+
+The :: operator is the scope resolution operator.
+
+9.1 NESTED NAMESPACES
+
+Example:
+
+```cpp
+namespace Company {
+    namespace Project {
+        int version = 1;
+    }
+}
+```
+
+Modern C++ also supports nested namespace syntax:
+
+```cpp
+namespace Company::Project {
+    int version = 1;
+}
+```
+
+9.2 NAMESPACE ALIAS
+
+A namespace can have an alias.
+
+Example:
+
+```cpp
+namespace VeryLongNamespaceName {
+    int value = 10;
+}
+
+namespace V = VeryLongNamespaceName;
+
+std::cout << V::value << '\n';
+```
+
+9.3 USING DECLARATION
+
+A using declaration introduces a specific name into the current scope.
+
+Example:
+
+```cpp
+using std::cout;
+
+cout << "Hello\n";
+```
+
+9.4 USING NAMESPACE
+
+Example:
+
+```cpp
+using namespace std;
+```
+
+This makes many names from std available without qualification.
+
+For small learning programs this may be convenient, but it is generally discouraged in header files and large codebases because it can introduce name collisions.
+
+Preferred:
+
+```cpp
+std::cout << "Hello\n";
+std::string name;
+```
+
+10. STANDARD INPUT AND OUTPUT
+
+10.1 STD::COUT
+
+std::cout is the standard output stream.
+
+Example:
+
+```cpp
+std::cout << "Hello\n";
+```
+
+10.2 STD::CIN
+
+std::cin extracts formatted input.
+
+Example:
+
+```cpp
+int age;
+
+std::cin >> age;
+```
+
+10.3 STD::CERR
+
+std::cerr is commonly used for diagnostic output.
+
+Example:
+
+```cpp
+std::cerr << "Input error\n";
+```
+
+10.4 STD::CLOG
+
+std::clog is commonly used for logging or diagnostic messages.
+
+Example:
+
+```cpp
+std::clog << "Processing started\n";
+```
+
+10.5 STREAM INSERTION OPERATOR
+
+The << operator inserts data into an output stream.
+
+Example:
+
+```cpp
+std::cout << "Age: " << age << '\n';
+```
+
+10.6 STREAM EXTRACTION OPERATOR
+
+The >> operator extracts formatted data from an input stream.
+
+Example:
+
+```cpp
+std::cin >> age;
+```
+
+11. IO MANIPULATORS
+
+The <iomanip> header provides formatting utilities.
+
+Example:
+
+```cpp
+#include <iomanip>
+
+double value = 1234.5678;
+
+std::cout
+    << std::fixed
+    << std::setprecision(2)
+    << value;
+```
+
+Output:
+
+```text
+1234.57
+```
+
+11.1 STD::FIXED
+
+Displays floating-point values using fixed notation.
+
+11.2 STD::SETprecision
+
+Controls the precision used for floating-point formatting.
+
+Example:
+
+```cpp
+std::cout << std::setprecision(3) << 3.14159;
+```
+
+The meaning of precision depends on the formatting state, such as fixed versus default floating formatting.
+
+11.3 STD::BOOLALPHA
+
+Displays bool values as true or false.
+
+```cpp
+bool status = true;
+
+std::cout << std::boolalpha << status;
+```
+
+Output:
+
+```text
+true
+```
+
+12. FUNDAMENTAL DATA TYPES
+
+C++ provides fundamental types including:
+
+* bool
+* char
+* signed and unsigned integer types.
+* floating-point types.
+* void
+* nullptr-related pointer type through std::nullptr_t.
+
+Common integer types:
+
+* short
+* int
+* long
+* long long
+* unsigned variants.
+
+12.1 BOOL
+
+bool represents logical true or false values.
+
+Example:
+
+```cpp
+bool logged_in = true;
+```
+
+12.2 CHAR
+
+char is a distinct fundamental type commonly used for character data and also participates in integral operations.
+
+Example:
+
+```cpp
+char grade = 'A';
+```
+
+12.3 CHAR16_T
+
+char16_t is a distinct integer type intended for UTF-16 code units.
+
+Example:
+
+```cpp
+char16_t symbol = u'A';
+```
+
+12.4 CHAR32_T
+
+char32_t is a distinct integer type intended for UTF-32 code units.
+
+Example:
+
+```cpp
+char32_t symbol = U'A';
+```
+
+12.5 WCHAR_T
+
+wchar_t is a distinct wide-character type. Its size and representation are implementation-defined.
+
+13. FIXED-WIDTH INTEGER TYPES
+
+The <cstdint> header provides fixed-width integer types when the implementation supports them.
+
+Examples:
+
+std::int8_t
+std::int16_t
+std::int32_t
+std::int64_t
+
+Unsigned versions:
+
+std::uint8_t
+std::uint16_t
+std::uint32_t
+std::uint64_t
+
+Example:
+
+```cpp
+#include <cstdint>
+
+std::int32_t score = 100;
+std::uint64_t count = 1000000;
+```
+
+Fixed-width types are useful when a particular integer width is required and the corresponding type is provided by the implementation.
+
+14. TYPE DEDUCTION WITH AUTO
+
+auto allows the compiler to deduce the type from an initializer.
+
+Example:
+
+```cpp
+auto count = 42;
+```
+
+The deduced type is int.
+
+Another example:
+
+```cpp
+auto price = 99.95;
+```
+
+The deduced type is double.
+
+14.1 AUTO AND REFERENCES
+
+Consider:
+
+```cpp
+const int value = 10;
+
+auto a = value;
+```
+
+a is deduced as int because top-level const is not retained in this form.
+
+To preserve a reference:
+
+```cpp
+const auto& b = value;
+```
+
+To preserve mutability through a reference:
+
+```cpp
+int value = 10;
+auto& reference = value;
+```
+
+14.2 AUTO AND BRACED INITIALIZATION
+
+Be careful with:
+
+```cpp
+auto a = {1, 2, 3};
+```
+
+This deduces std::initializer_list<int>.
+
+Whereas:
+
+```cpp
+auto b{1};
+```
+
+deduces int.
+
+Type deduction follows specific language rules and should not be treated as simple textual substitution.
+
+15. INITIALIZATION
+
+Modern C++ supports several forms of initialization.
+
+15.1 COPY INITIALIZATION
+
+```cpp
+int x = 10;
+```
+
+15.2 DIRECT INITIALIZATION
+
+```cpp
+int x(10);
+```
+
+15.3 LIST INITIALIZATION
+
+```cpp
+int x{10};
+```
+
+List initialization provides useful restrictions against certain narrowing conversions.
+
+Example:
+
+```cpp
+int value{3.14};
+```
+
+This is ill-formed because the conversion from double to int is narrowing in this initialization context.
+
+Prefer braces when they make initialization intent clearer.
+
+16. CONST
+
+const prevents modification through the particular const-qualified object or access path.
+
+Example:
+
+```cpp
+const int maximum = 100;
+```
+
+The object cannot be modified through maximum.
+
+For function parameters:
+
+```cpp
+void print(const std::string& text);
+```
+
+The function cannot modify the string through that reference.
+
+17. REFERENCES
+
+A reference is a type of aliasing mechanism.
+
+Example:
+
+```cpp
+int value = 10;
+int& reference = value;
+
+reference = 20;
+```
+
+After the assignment:
+
+```text
+value == 20
+```
+
+A reference must be initialized according to the rules for reference initialization.
+
+17.1 REFERENCE IS NOT A POINTER
+
+A reference and pointer have different language semantics.
+
+Reference:
+
+```cpp
+int& ref = value;
+```
+
+Pointer:
+
+```cpp
+int* ptr = &value;
+```
+
+A pointer:
+
+* Is an object containing a pointer value.
+* Can be null.
+* Can be reassigned.
+* Supports pointer arithmetic where permitted.
+
+A reference:
+
+* Is initialized through reference binding.
+* Does not have pointer syntax for ordinary use.
+* Cannot be reseated after initialization.
+* Does not have a null-reference value in the C++ language model.
+
+Do not describe a reference simply as "a hidden pointer." That can be useful as an implementation intuition, but it is not its language-level definition.
+
+17.2 CONST LVALUE REFERENCE
+
+A const lvalue reference can bind to an lvalue and can also bind to a suitable temporary.
+
+Example:
+
+```cpp
+const int& ref = 42;
+```
+
+The temporary's lifetime is extended according to the reference lifetime-extension rules in this context.
+
+17.3 NON-CONST LVALUE REFERENCE
+
+A normal lvalue reference cannot bind directly to an rvalue such as:
+
+```cpp
+int& ref = 42;
+```
+
+This is ill-formed.
+
+17.4 RETURNING REFERENCES
+
+Never return a reference to a local automatic object.
+
+Incorrect:
+
+```cpp
+const std::string& get_message() {
+    std::string message = "Hello";
+    return message;
+}
+```
+
+The local object is destroyed when the function returns.
+
+Safer:
+
+```cpp
+std::string get_message() {
+    return "Hello";
+}
+```
+
+18. CONST CORRECTNESS
+
+Const correctness means using const to express that an object should not be modified through a particular interface.
+
+Example:
+
+```cpp
+void display(const std::string& name) {
+    std::cout << name << '\n';
+}
+```
+
+This communicates that display only needs read access.
+
+19. CONSTEXPR
+
+constexpr was introduced in C++11 and allows entities to participate in constant evaluation when the language rules and inputs permit it.
+
+Example:
+
+```cpp
+constexpr int square(int n) {
+    return n * n;
+}
+```
+
+Compile-time use:
+
+```cpp
+constexpr int result = square(5);
+
+static_assert(result == 25);
+```
+
+A constexpr function is not necessarily executed at compile time for every call.
+
+Example:
+
+```cpp
+int n;
+std::cin >> n;
+
+int result = square(n);
+```
+
+This can execute at runtime.
+
+The important concept is that constexpr makes constant evaluation possible when the invocation satisfies the requirements.
+
+20. CONSTEXPR VARIABLES
+
+Example:
+
+```cpp
+constexpr int maximum = 100;
+```
+
+The initializer must satisfy the requirements for a constant expression appropriate to the declaration.
+
+21. STATIC_ASSERT
+
+static_assert performs a compile-time assertion.
+
+Example:
+
+```cpp
+constexpr int value = 25;
+
+static_assert(value == 25);
+```
+
+If the condition is false, the program is ill-formed.
+
+Example with a message:
+
+```cpp
+static_assert(value == 25, "Unexpected value");
+```
+
+22. CONSTEVAL
+
+consteval was introduced in C++20.
+
+A consteval function is an immediate function.
+
+Example:
+
+```cpp
+consteval int square(int x) {
+    return x * x;
+}
+```
+
+A valid immediate invocation must produce a constant result.
+
+Example:
+
+```cpp
+constexpr int result = square(5);
+```
+
+A call such as:
+
+```cpp
+int x;
+std::cin >> x;
+
+int result = square(x);
+```
+
+is ill-formed because x is not a constant expression in that context.
+
+Therefore:
+
+constexpr:
+
+* Can participate in compile-time evaluation.
+* Can also be called at runtime when appropriate.
+
+consteval:
+
+* Requires appropriate calls to be evaluated immediately at compile time.
+
+23. DECLTYPE
+
+decltype obtains the declared type of an entity or applies special expression-type rules without evaluating the expression.
+
+Example:
+
+```cpp
+int value = 10;
+
+decltype(value) other = 20;
+```
+
+other has type int.
+
+Another example:
+
+```cpp
+const int value = 10;
+
+decltype(value) copy = 20;
+```
+
+copy has type const int.
+
+24. DECLTYPE AND PARENTHESES
+
+decltype has special rules.
+
+Example:
+
+```cpp
+int value = 10;
+
+decltype(value) a = 20;
+```
+
+a is int.
+
+But:
+
+```cpp
+decltype((value)) b = value;
+```
+
+For an lvalue expression, decltype((value)) becomes an lvalue reference type, so b is an int&.
+
+25. ENUMERATIONS
+
+An enumeration defines a set of named enumerators.
+
+Traditional enum:
+
+```cpp
+enum Color {
+    Red,
+    Green,
+    Blue
+};
+```
+
+The enumerator values begin at zero by default unless specified otherwise.
+
+26. ENUM CLASS
+
+enum class provides a scoped enumeration with stronger type checking.
+
+Example:
+
+```cpp
+enum class Color {
+    Red,
+    Green,
+    Blue
+};
+```
+
+Use:
+
+```cpp
+Color color = Color::Green;
+```
+
+Unlike an ordinary unscoped enumeration, enum class does not implicitly convert to int in ordinary expressions.
+
+Explicit conversion:
+
+```cpp
+int value = static_cast<int>(color);
+```
+
+26.1 SPECIFYING UNDERLYING TYPE
+
+Example:
+
+```cpp
+#include <cstdint>
+
+enum class Status : std::uint8_t {
+    Pending = 1,
+    Active = 2,
+    Suspended = 3
+};
+```
+
+The underlying type is explicitly specified as std::uint8_t.
+
+27. TYPE CASTING
+
+C++ provides several named cast operators.
+
+Main explicit cast operators:
+
+* static_cast
+* dynamic_cast
+* const_cast
+* reinterpret_cast
+
+28. STATIC_CAST
+
+static_cast is used for many well-defined conversions that can be checked according to C++ language rules.
+
+Example:
+
+```cpp
+double value = 94.78;
+
+int score = static_cast<int>(value);
+```
+
+The fractional part is discarded, producing 94.
+
+static_cast is also used for appropriate enumeration conversions and certain pointer/reference conversions.
+
+Important:
+static_cast does not mean "always safe." The programmer must ensure that the requested conversion is valid for the situation.
+
+29. DYNAMIC_CAST
+
+dynamic_cast is primarily used with polymorphic class hierarchies for checked conversions involving runtime type information.
+
+Example:
+
+```cpp
+#include <iostream>
+
+class Base {
+public:
+    virtual ~Base() = default;
+};
+
+class Derived : public Base {
+public:
+    void show() {
+        std::cout << "Derived\n";
+    }
+};
+
+int main() {
+    Base* base = new Derived;
+
+    if (Derived* derived = dynamic_cast<Derived*>(base)) {
+        derived->show();
+    }
+
+    delete base;
+}
+```
+
+For a runtime-checked downcast through a pointer/reference to a polymorphic base, the base class needs the appropriate polymorphic characteristics, commonly a virtual function.
+
+dynamic_cast may return nullptr for an unsuccessful pointer downcast.
+
+For reference casts, failure is represented differently, typically by std::bad_cast.
+
+30. CONST_CAST
+
+const_cast can add or remove cv-qualifiers from a pointer or reference type.
+
+Example:
+
+```cpp
+const int value = 10;
+
+const int* const_ptr = &value;
+int* ptr = const_cast<int*>(const_ptr);
+```
+
+Removing const from a type does NOT make the original object modifiable.
+
+This is dangerous:
+
+```cpp
+const int value = 10;
+
+int* ptr = const_cast<int*>(&value);
+*ptr = 20;
+```
+
+Attempting to modify an object that was originally defined as const results in undefined behavior.
+
+const_cast should therefore be used only when the underlying object is actually modifiable and the interface requires a different qualification, or when working with carefully designed compatibility interfaces.
+
+31. REINTERPRET_CAST
+
+reinterpret_cast performs certain low-level conversions between types.
+
+It does NOT mean that arbitrary objects can safely be converted into unrelated objects or that it is a general-purpose "bit reinterpretation" operator.
+
+Example:
+
+```cpp
+std::uintptr_t address =
+    reinterpret_cast<std::uintptr_t>(pointer);
+```
+
+Such conversions are implementation-dependent and should be used only when their semantics are appropriate.
+
+For copying an object's object representation into another trivially copyable type, prefer std::bit_cast when its requirements are satisfied.
+
+32. STD::BIT_CAST
+
+C++20 introduced std::bit_cast.
+
+Example:
+
+```cpp
+#include <bit>
+#include <cstdint>
+#include <iostream>
+
+std::uint32_t float_bits(float value) {
+    return std::bit_cast<std::uint32_t>(value);
+}
+
+int main() {
+    std::uint32_t bits = float_bits(1.0f);
+
+    std::cout << std::hex
+              << bits << '\n';
+}
+```
+
+std::bit_cast expresses the intent of copying the object representation from one trivially copyable type to another.
+
+This is generally clearer than using reinterpret_cast for object-representation inspection.
+
+33. ZERO-COST ABSTRACTION PRINCIPLE
+
+C++ is designed so that abstractions can be implemented efficiently, but "zero cost" should not be interpreted as a guarantee that every C++ feature has zero runtime cost.
+
+Actual performance depends on:
+
+* Compiler.
+* Optimization settings.
+* Target architecture.
+* ABI.
+* Data structures.
+* Algorithm.
+* Program behavior.
+* Runtime inputs.
+
+Features such as templates, references, constexpr, and inline functions can often be compiled efficiently, but their exact generated code is implementation-dependent.
+
+Do not claim that C++ source constructs are always "identical to handwritten assembly."
+
+34. PROGRAM TEMPLATE
+
+```cpp
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <string>
+
+namespace App {
+    constexpr std::int32_t max_users = 1000;
+}
+
+int main() {
+    std::cout
+        << "Max Users: "
+        << App::max_users
+        << '\n';
+
+    return 0;
+}
+```
+
+35. BASIC EXAMPLE
+
+Problem:
+Read user profile data using standard streams, format a floating-point value, and demonstrate reference semantics.
+
+```cpp
+#include <iomanip>
+#include <iostream>
+#include <string>
+
+int main() {
+    std::string user_name;
+    int age = 0;
+    double account_balance = 0.0;
+
+    std::cout << "Enter username, age, and balance: ";
+
+    if (std::cin >> user_name
+                >> age
+                >> account_balance) {
+
+        double& balance_ref = account_balance;
+
+        balance_ref += 250.75;
+
+        std::cout << "\n=== USER PROFILE ===\n";
+        std::cout << "Username : " << user_name << '\n';
+        std::cout << "Age      : " << age << '\n';
+
+        std::cout
+            << "Balance  : $"
+            << std::fixed
+            << std::setprecision(2)
+            << account_balance
+            << '\n';
+    } else {
+        std::cerr << "Input parsing failed.\n";
+    }
+
+    return 0;
+}
+```
+
+36. BASIC EXAMPLE OUTPUT
+
+```text
+Enter username, age, and balance: Alex 24 1500.00
+
+=== USER PROFILE ===
+Username : Alex
+Age      : 24
+Balance  : $1750.75
+```
+
+37. INTERMEDIATE EXAMPLE
+
+Problem:
+Demonstrate constexpr, static_assert, enum class, and static_cast.
+
+```cpp
+#include <cstdint>
+#include <iostream>
+
+constexpr std::uint64_t factorial(std::uint32_t n) {
+    std::uint64_t result = 1;
+
+    for (std::uint32_t i = 2; i <= n; ++i) {
+        result *= i;
+    }
+
+    return result;
+}
+
+enum class Color : std::uint8_t {
+    Red = 1,
+    Green = 2,
+    Blue = 3
+};
+
+void print_color(Color color) {
+    switch (color) {
+        case Color::Red:
+            std::cout << "Color: Red\n";
+            break;
+
+        case Color::Green:
+            std::cout << "Color: Green\n";
+            break;
+
+        case Color::Blue:
+            std::cout << "Color: Blue\n";
+            break;
+    }
+}
+
+int main() {
+    constexpr std::uint64_t fact_5 = factorial(5);
+
+    static_assert(
+        fact_5 == 120,
+        "Factorial calculation failed"
+    );
+
+    std::cout
+        << "Factorial of 5: "
+        << fact_5
+        << '\n';
+
+    Color active_color = Color::Green;
+
+    print_color(active_color);
+
+    std::uint8_t color_value =
+        static_cast<std::uint8_t>(active_color);
+
+    std::cout
+        << "Underlying enum value: "
+        << static_cast<int>(color_value)
+        << '\n';
+
+    double raw_score = 94.78;
+
+    int score = static_cast<int>(raw_score);
+
+    std::cout
+        << "Score: "
+        << raw_score
+        << " -> "
+        << score
+        << '\n';
+
+    return 0;
+}
+```
+
+38. INTERMEDIATE EXAMPLE OUTPUT
+
+```text
+Factorial of 5: 120
+Color: Green
+Underlying enum value: 2
+Score: 94.78 -> 94
+```
+
+39. ADVANCED EXAMPLE
+
+Problem:
+Demonstrate consteval, std::bit_cast, and enum class.
+
+```cpp
+#include <bit>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+
+consteval std::uint32_t compile_time_hash(
+    const char* text,
+    std::size_t length
+) {
+    std::uint32_t hash = 5381u;
+
+    for (std::size_t i = 0; i < length; ++i) {
+        hash = (hash * 33u)
+             + static_cast<unsigned char>(text[i]);
+    }
+
+    return hash;
+}
+
+std::uint32_t inspect_float_bits(float value) {
+    return std::bit_cast<std::uint32_t>(value);
+}
+
+int main() {
+    constexpr char identifier[] = "AUTH_TOKEN_KEY";
+
+    constexpr std::uint32_t hash =
+        compile_time_hash(
+            identifier,
+            sizeof(identifier) - 1
+        );
+
+    std::cout
+        << "Compile-time hash: "
+        << hash
+        << '\n';
+
+    const std::uint32_t positive_bits =
+        inspect_float_bits(1.0f);
+
+    const std::uint32_t negative_bits =
+        inspect_float_bits(-1.0f);
+
+    std::cout
+        << "1.0f bits: 0x"
+        << std::hex
+        << std::uppercase
+        << positive_bits
+        << '\n';
+
+    std::cout
+        << "-1.0f bits: 0x"
+        << negative_bits
+        << '\n';
+
+    return 0;
+}
+```
+
+40. ADVANCED EXAMPLE OUTPUT
+
+On an implementation using the usual IEEE-754 single-precision representation:
+
+```text
+Compile-time hash: [implementation-independent result from the defined algorithm]
+1.0f bits: 0x3F800000
+-1.0f bits: 0xBF800000
+```
+
+The hexadecimal floating-point representations shown above are common, but the C++ language itself does not universally require every implementation to use IEEE-754 binary32 representation.
+
+41. CODE WALKTHROUGHS
+
+41.1 STATIC_ASSERT
+
+```cpp
+static_assert(fact_5 == 120);
+```
+
+The condition is checked during compilation.
+
+If the condition is false, the program is ill-formed.
+
+41.2 CONSTEXPR
+
+```cpp
+constexpr std::uint64_t fact_5 = factorial(5);
+```
+
+Because 5 is a constant expression and factorial is usable in constant evaluation, the initialization can be evaluated at compile time.
+
+41.3 CONSTEVAL
+
+```cpp
+consteval std::uint32_t compile_time_hash(...);
+```
+
+The function is an immediate function. Appropriate calls must produce constant evaluation.
+
+41.4 STD::BIT_CAST
+
+```cpp
+std::bit_cast<std::uint32_t>(value);
+```
+
+This copies the object representation into the destination type when the types satisfy the requirements of std::bit_cast.
+
+It is preferable to describe this as object-representation conversion rather than as an arbitrary pointer reinterpretation.
+
+42. EXECUTION FLOW
+
+A typical C++ program follows these broad stages:
+
+1. Source files are processed by the compiler toolchain.
+
+2. Preprocessor directives and included headers are handled as required by the implementation.
+
+3. The compiler analyzes declarations, types, expressions, and statements.
+
+4. Templates and constant expressions may be instantiated/evaluated as required.
+
+5. Source files are compiled into object code or an equivalent intermediate form.
+
+6. The linker combines program components.
+
+7. Program startup occurs.
+
+8. In a hosted program, execution enters main.
+
+9. Runtime input/output and other operations are performed.
+
+10. Returning from main produces a program termination status.
+
+11. PRACTICAL PROGRAMMING PROBLEMS
+
+12. Write a program to read a student's name, age, and marks.
+
+13. Create a namespace named Geometry containing functions for calculating the area of a circle and rectangle.
+
+14. Create an enum class representing:
+
+    * Pending
+    * Processing
+    * Completed
+    * Failed
+
+15. Write a constexpr function that calculates the square of an integer.
+
+16. Use static_assert to verify a compile-time calculation.
+
+17. Demonstrate the difference between int&, const int&, and int*.
+
+18. Write a function that safely returns a std::string by value.
+
+19. Demonstrate static_cast with numeric conversion.
+
+20. Create a base and derived class and demonstrate dynamic_cast.
+
+21. Use std::bit_cast to inspect the object representation of a float.
+
+22. REAL-WORLD APPLICATIONS
+
+C++ fundamentals are used in:
+
+* Operating-system components.
+* Browser engines.
+* Game engines.
+* Embedded systems.
+* Robotics.
+* Scientific computing.
+* Financial systems.
+* Compilers.
+* Database systems.
+* Graphics applications.
+* Networking software.
+* Machine-learning libraries.
+* High-performance computing.
+
+45. COMMON MISTAKES
+
+45.1 USING NAMESPACE STD IN HEADERS
+
+Avoid:
+
+```cpp
+using namespace std;
+```
+
+in header files.
+
+Prefer:
+
+```cpp
+std::string
+std::vector
+std::cout
+```
+
+45.2 DANGLING REFERENCE
+
+Incorrect:
+
+```cpp
+const int& get_value() {
+    int value = 10;
+    return value;
+}
+```
+
+The local object ceases to exist when the function returns.
+
+45.3 C-STYLE CASTS
+
+Avoid:
+
+```cpp
+int value = (int)number;
+```
+
+Prefer the appropriate named cast:
+
+```cpp
+int value = static_cast<int>(number);
+```
+
+Named casts make the programmer's intended conversion category clearer.
+
+45.4 MODIFYING A CONST OBJECT THROUGH CONST_CAST
+
+Incorrect:
+
+```cpp
+const int value = 10;
+
+int* ptr = const_cast<int*>(&value);
+
+*ptr = 20;
+```
+
+Removing const from the pointer type does not make a genuinely const object mutable.
+
+45.5 INCORRECT REINTERPRETATION
+
+Do not use reinterpret_cast simply because two types have the same size.
+
+For suitable trivially copyable types, prefer:
+
+```cpp
+std::bit_cast<Destination>(source);
+```
+
+46. COMMON ERRORS
+
+46.1 RETURNING A REFERENCE TO A LOCAL OBJECT
+
+Incorrect:
+
+```cpp
+const std::string& get_message() {
+    std::string message = "Temporary String";
+    return message;
+}
+```
+
+Why it fails:
+
+The local object is destroyed when the function exits.
+
+Correct:
+
+```cpp
+std::string get_message() {
+    return "Temporary String";
+}
+```
+
+Returning by value is safe and modern C++ implementations can use copy elision and/or move construction where appropriate.
+
+46.2 NARROWING CONVERSION
+
+Potentially surprising:
+
+```cpp
+int value = 3.14;
+```
+
+This performs a floating-to-integer conversion.
+
+Brace initialization:
+
+```cpp
+int value{3.14};
+```
+
+is ill-formed because this is a narrowing conversion in list initialization.
+
+46.3 WRONG ENUM CONVERSION
+
+With:
+
+```cpp
+enum class Color {
+    Red,
+    Green,
+    Blue
+};
+```
+
+This is not valid:
+
+```cpp
+int value = Color::Red;
+```
+
+Use:
+
+```cpp
+int value = static_cast<int>(Color::Red);
+```
+
+47. DEBUGGING TECHNIQUES
+
+47.1 COMPILER WARNINGS
+
+GCC example:
+
+```bash
+g++ -std=c++20 -Wall -Wextra -Wpedantic program.cpp -o program
+```
+
+For C++23:
+
+```bash
+g++ -std=c++23 -Wall -Wextra -Wpedantic program.cpp -o program
+```
+
+Additional warning options can be useful depending on the compiler and project.
+
+47.2 SANITIZERS
+
+AddressSanitizer can help detect many memory errors.
+
+Example:
+
+```bash
+g++ -std=c++20 -fsanitize=address -g program.cpp -o program
+```
+
+UndefinedBehaviorSanitizer can help diagnose many forms of undefined behavior.
+
+Example:
+
+```bash
+g++ -std=c++20 -fsanitize=undefined -g program.cpp -o program
+```
+
+Sanitizers are diagnostic tools; they do not prove that a program contains no bugs.
+
+47.3 CLANG-TIDY
+
+clang-tidy can provide static analysis and modernization suggestions.
+
+Example:
+
+```bash
+clang-tidy main.cpp
+```
+
+48. EDGE CASES
+
+48.1 REFERENCE TO TEMPORARY
+
+Valid:
+
+```cpp
+const int& value = 42;
+```
+
+The temporary's lifetime is extended in this context.
+
+Invalid:
+
+```cpp
+int& value = 42;
+```
+
+48.2 AUTO REMOVES TOP-LEVEL QUALIFIERS
+
+Example:
+
+```cpp
+const int value = 10;
+
+auto copy = value;
+```
+
+copy is int.
+
+To preserve const reference semantics:
+
+```cpp
+const auto& reference = value;
+```
+
+48.3 FLOATING-POINT TO INTEGER
+
+Example:
+
+```cpp
+int value = static_cast<int>(3.99);
+```
+
+The result is 3 because the fractional part is discarded.
+
+This is not rounding.
+
+48.4 ENUM UNDERLYING TYPE
+
+The underlying representation of an enumeration should not be assumed unless specified or otherwise determined by the language rules.
+
+Use an explicit underlying type when a particular underlying type is required:
+
+```cpp
+enum class Status : std::uint8_t {
+    OK = 200,
+    NotFound = 404
+};
+```
+
+48.5 INTEGER OVERFLOW
+
+Signed integer overflow is undefined behavior.
+
+Do not assume:
+
+```cpp
+int x = INT_MAX;
+++x;
+```
+
+will wrap around.
+
+Unsigned integer arithmetic has different rules and can wrap modulo 2^N for the corresponding unsigned type.
+
+49. BEST PRACTICES
+
+* Prefer qualified names such as std::cout and std::string.
+* Avoid using namespace std in header files.
+* Use const to express read-only intent.
+* Use constexpr when compile-time evaluation is useful.
+* Use consteval when immediate compile-time evaluation is required.
+* Prefer enum class for strongly scoped enumerations.
+* Use named C++ cast operators instead of C-style casts.
+* Use static_cast for appropriate numeric conversions.
+* Use dynamic_cast when runtime-checked polymorphic conversion is genuinely required.
+* Use const_cast only when the underlying object and API semantics make it valid.
+* Avoid unnecessary reinterpret_cast.
+* Prefer std::bit_cast for suitable object-representation conversions.
+* Never return a reference to a local automatic object.
+* Use braces when they improve initialization safety and clarity.
+* Use warnings and sanitizers during development.
+* Do not assume object sizes, memory layout, or generated machine code unless guaranteed by the standard or implementation documentation.
+
+50. PERFORMANCE CONSIDERATIONS
+
+50.1 PASSING BY VALUE
+
+Small types are often naturally passed by value.
+
+Examples:
+
+```cpp
+int
+double
+bool
+enum
+```
+
+However, this is a guideline rather than a universal rule. Actual performance depends on the type, ABI, optimizer, and usage.
+
+50.2 PASSING BY CONST REFERENCE
+
+For large objects such as:
+
+```cpp
+std::string
+std::vector<T>
+```
+
+a const reference can avoid copying when the function only needs to inspect an existing object.
+
+Example:
+
+```cpp
+void print(const std::string& text);
+```
+
+However, do not assume const reference is always faster. For small types, passing by value can be simpler and more efficient.
+
+50.3 CONSTEXPR
+
+Compile-time evaluation can eliminate runtime computation when an expression is actually evaluated as a constant expression.
+
+However, the standard does not require a particular assembly representation.
+
+50.4 IO PERFORMANCE
+
+For ordinary output:
+
+```cpp
+std::cout << '\n';
+```
+
+does not explicitly flush the stream.
+
+By contrast:
+
+```cpp
+std::cout << std::endl;
+```
+
+inserts a newline and performs a flush.
+
+Frequent unnecessary flushing can reduce I/O performance.
+
+Therefore, use std::endl when flushing is actually required; otherwise '\n' is often preferable.
+
+51. MEMORY CONSIDERATIONS
+
+51.1 REFERENCES
+
+References provide aliasing semantics but should not be described as guaranteed pointer-sized objects.
+
+The C++ language does not require a reference to have a particular memory representation.
+
+51.2 LOCAL OBJECTS
+
+Local automatic objects generally have automatic storage duration.
+
+Do not equate automatic storage duration with "always stack memory" as a strict C++ language guarantee. Implementations may optimize storage and representation.
+
+51.3 STATIC STORAGE
+
+Objects with static storage duration exist for the duration of the program.
+
+Examples include namespace-scope variables with appropriate declarations and static data members.
+
+51.4 DYNAMIC STORAGE
+
+Objects created using dynamic allocation have dynamic storage duration.
+
+Modern C++ usually prefers resource-managing abstractions such as standard containers and smart pointers instead of direct manual new/delete management.
+
+52. SECURITY CONSIDERATIONS
+
+Important security and reliability practices include:
+
+* Validate external input.
+* Avoid buffer overflows.
+* Avoid dangling references.
+* Avoid use-after-lifetime errors.
+* Avoid undefined behavior.
+* Avoid unsafe casts.
+* Use strong types where appropriate.
+* Prefer standard containers over manually managed raw arrays where suitable.
+* Use compiler warnings.
+* Use AddressSanitizer and UndefinedBehaviorSanitizer during testing.
+* Keep ownership and lifetime clear.
+
+53. COMPARISON WITH RELATED CONCEPTS
+
+53.1 REFERENCE VS POINTER
+
+Reference:
+
+```cpp
+int& ref = value;
+```
+
+Pointer:
+
+```cpp
+int* ptr = &value;
+```
+
+Reference:
+
+* Must be initialized through reference binding.
+* Cannot be reseated.
+* Does not use pointer arithmetic syntax.
+
+Pointer:
+
+* Can represent null.
+* Can be reassigned.
+* Supports pointer arithmetic in appropriate contexts.
+
+53.2 CONSTEXPR VS CONSTEVAL
+
+constexpr:
+
+* Allows constant evaluation.
+* Can also be used at runtime.
+
+consteval:
+
+* Defines an immediate function.
+* Appropriate calls must be evaluated at compile time.
+
+53.3 ENUM VS ENUM CLASS
+
+enum:
+
+* Enumerators may enter the surrounding scope.
+* Implicit conversion to integer is generally permitted.
+
+enum class:
+
+* Enumerators are scoped.
+* Stronger type checking.
+* Explicit conversion is normally required to obtain an integer value.
+
+53.4 STATIC_CAST VS REINTERPRET_CAST
+
+static_cast:
+
+* Used for specified language conversions.
+
+reinterpret_cast:
+
+* Used for certain low-level reinterpretations.
+* Highly dependent on the exact types and context.
+
+Neither should be chosen merely because it makes code compile.
+
+53.5 STD::BIT_CAST VS REINTERPRET_CAST
+
+std::bit_cast:
+
+* Designed for copying object representation between suitable trivially copyable types.
+* Available since C++20.
+
+reinterpret_cast:
+
+* Performs certain low-level conversions.
+* Does not generally provide a portable object-representation conversion mechanism.
+
+54. FAQ
+
+Q1. Does main need return 0?
+
+A:
+No. Reaching the closing brace of main returns zero.
+
+Q2. What is the difference between a pointer and a reference?
+
+A:
+A pointer is an object representing a pointer value and can be null or reassigned. A reference is initialized through reference binding and cannot be reseated.
+
+Q3. Can a reference be null?
+
+A:
+The C++ language does not define a null reference value. A program that attempts to create/use an invalid reference can have undefined behavior.
+
+Q4. Does constexpr always execute at compile time?
+
+A:
+No. constexpr makes constant evaluation possible when the context and arguments satisfy the requirements.
+
+Q5. Does consteval always execute at compile time?
+
+A:
+An appropriate potentially evaluated invocation of an immediate function must produce a constant expression.
+
+Q6. What does auto do?
+
+A:
+auto is a placeholder type specifier. The compiler deduces the type from the initializer according to the type-deduction rules.
+
+Q7. Why use enum class?
+
+A:
+It provides scoped enumerators and stronger type checking than traditional unscoped enumerations.
+
+Q8. Is static_cast always safe?
+
+A:
+No. static_cast performs conversions allowed by the language, but the programmer must ensure the resulting conversion is appropriate.
+
+Q9. Can const_cast make a const object mutable?
+
+A:
+No. Removing const from a pointer/reference type does not change the actual object's constness. Modifying an object originally defined as const can result in undefined behavior.
+
+Q10. Why should std::endl not be used everywhere?
+
+A:
+std::endl inserts a newline and flushes the stream. If flushing is unnecessary, '\n' avoids that explicit flush.
+
+Q11. Is a reference always implemented as a pointer?
+
+A:
+The implementation may use a pointer-like representation, but the C++ language specifies reference semantics rather than requiring a particular representation.
+
+Q12. What is std::bit_cast used for?
+
+A:
+It provides a standardized way to copy an object's representation into another suitable trivially copyable type when the requirements are satisfied.
+
+55. INTERVIEW QUESTIONS
+
+BEGINNER
+
+Q1. What is C++?
+
+A:
+C++ is a general-purpose, statically typed programming language supporting procedural, object-oriented, generic, and other programming styles.
+
+Q2. What is a namespace?
+
+A:
+A namespace provides a scope for declarations and helps prevent naming collisions.
+
+Q3. What is std::cout?
+
+A:
+std::cout is the standard output stream used for formatted character output.
+
+Q4. What is auto?
+
+A:
+auto allows the compiler to deduce a variable's type from its initializer.
+
+INTERMEDIATE
+
+Q5. What is a reference?
+
+A:
+A reference is a language mechanism that binds a reference to an object or function according to the reference-initialization rules.
+
+Q6. What is constexpr?
+
+A:
+constexpr specifies that an entity can participate in constant evaluation when the required conditions are satisfied.
+
+Q7. What is enum class?
+
+A:
+enum class is a scoped enumeration with stronger type checking than an ordinary unscoped enum.
+
+Q8. Why use static_cast?
+
+A:
+It explicitly expresses many well-defined C++ conversions.
+
+ADVANCED
+
+Q9. What is the difference between constexpr and consteval?
+
+A:
+constexpr permits constant evaluation but can also be used at runtime. consteval defines an immediate function whose appropriate calls must produce constant evaluation.
+
+Q10. Why is reinterpret_cast dangerous?
+
+A:
+Its low-level semantics depend strongly on the types and context. Using it incorrectly can lead to invalid pointer use, alignment problems, lifetime violations, or undefined behavior.
+
+Q11. What is std::bit_cast?
+
+A:
+It is a C++20 facility for copying the object representation of a suitable trivially copyable object into another suitable trivially copyable type.
+
+56. EXAM QUESTIONS
+
+SHORT ANSWER
+
+1. Define a namespace.
+2. What is auto type deduction?
+3. What is a reference?
+4. What is const?
+5. What is constexpr?
+6. What is consteval?
+7. What is enum class?
+8. What is static_cast?
+9. What is std::cout?
+10. What is static_assert?
+
+MEDIUM ANSWER
+
+1. Explain the compilation process of a C++ program.
+2. Explain namespaces with examples.
+3. Explain references and const references.
+4. Explain auto type deduction.
+5. Explain enum class.
+6. Explain the four named C++ cast operators.
+7. Explain constexpr and static_assert.
+8. Explain constexpr versus consteval.
+
+LONG ANSWER
+
+1. Explain the evolution of C++ from C++98 to modern C++.
+
+2. Explain C++ references, pointers, const correctness, and lifetime considerations.
+
+3. Explain constant evaluation using constexpr, static_assert, and consteval.
+
+4. Explain static_cast, dynamic_cast, const_cast, reinterpret_cast, and std::bit_cast.
+
+5. Explain C++ input/output streams and formatting using <iostream> and <iomanip>.
+
+6. PRACTICE QUESTIONS
+
+7. Write a program that reads student details and prints them using std::cout.
+
+8. Create a namespace called University containing student-related constants.
+
+9. Write a program demonstrating auto with int, double, and std::string.
+
+10. Demonstrate auto&, const auto&, and auto with a vector.
+
+11. Create a constexpr function that calculates the cube of a number.
+
+12. Verify a constexpr calculation using static_assert.
+
+13. Create an enum class for HTTP status codes.
+
+14. Demonstrate static_cast from double to int.
+
+15. Demonstrate a safe dynamic_cast using a polymorphic base class.
+
+16. Demonstrate why modifying a genuinely const object through const_cast is invalid.
+
+17. Use std::bit_cast to inspect the object representation of a floating-point value.
+
+18. Write a function returning std::string by value.
+
+19. Demonstrate a dangling-reference bug and explain why it is invalid.
+
+20. Format a floating-point value using std::fixed and std::setprecision.
+
+21. SUMMARY
+
+Modern C++ fundamentals include:
+
+* Program structure.
+* main function.
+* Compilation and linking.
+* Header files.
+* Namespaces.
+* Fundamental data types.
+* Fixed-width integer types.
+* auto.
+* decltype.
+* Initialization.
+* const.
+* References.
+* Enumerations.
+* enum class.
+* Input/output streams.
+* I/O manipulators.
+* static_cast.
+* dynamic_cast.
+* const_cast.
+* reinterpret_cast.
+* std::bit_cast.
+* constexpr.
+* consteval.
+* static_assert.
+* Modern lifetime and safety practices.
+
+Modern C++ provides powerful abstractions while retaining precise control over types, object lifetimes, and resource management.
+
+59. KEY TAKEAWAYS
+
+* Use std::cout, std::cin, std::cerr, and std::clog for standard stream operations.
+* Prefer qualified standard-library names such as std::vector and std::string.
+* Avoid using namespace std in header files.
+* Use auto when type deduction improves readability.
+* Use const to express read-only intent.
+* Understand that references are aliases with language-defined reference semantics, not simply pointers.
+* Never return a reference to a local automatic object.
+* Use enum class when scoped, strongly typed enumerations are appropriate.
+* Use static_cast for appropriate explicit conversions.
+* Use dynamic_cast for appropriate runtime-checked polymorphic conversions.
+* Use const_cast only when the underlying object and operation make it valid.
+* Avoid unnecessary reinterpret_cast.
+* Prefer std::bit_cast for suitable object-representation conversions.
+* constexpr allows constant evaluation when the required conditions are satisfied.
+* consteval defines immediate functions.
+* static_assert performs compile-time validation.
+* Do not assume a particular object size, reference representation, stack layout, or generated assembly unless guaranteed by the standard or implementation.
+* Prefer '\n' when an explicit stream flush is not required.
+* Use compiler warnings and sanitizers during development.
+
+60. REFERENCE BASIS
+
+PRIMARY STANDARD
+
+ISO/IEC 14882:2024
+Programming Languages — C++
+Edition 7, published October 2024.
+
+The standard specifies requirements for C++ implementations and defines the C++ language and standard library.
+
+PRACTICAL LANGUAGE REFERENCE
+
+cppreference C++ Language documentation.
+
+Relevant topics:
+
+* Fundamental types.
+* Namespaces.
+* References.
+* auto.
+* decltype.
+* const.
+* constexpr.
+* consteval.
+* Enumerations.
+* Cast operators.
+* Functions.
+* Initialization.
+* Input/output.
+* Statements.
+
+CONSTANT-EVALUATION REFERENCES
+
+cppreference documents constexpr as enabling entities to participate in constant expressions when the required conditions are satisfied.
+
+cppreference documents consteval as defining an immediate function whose appropriate potentially evaluated calls must produce compile-time constant evaluation.
+
+MAIN FUNCTION REFERENCE
+
+The C++ main function has standardized hosted-program forms and restrictions; reaching the end of main returns zero.
+
+DOCUMENTATION POLICY
+
+This document separates:
+
+1. Standard-mandated C++ behavior.
+2. Common implementation behavior.
+3. Compiler/ABI-specific behavior.
+4. Performance assumptions.
+
+Implementation details such as stack layout, register usage, object representation, generated assembly, name mangling, and optimization decisions should not be treated as universal C++ guarantees.

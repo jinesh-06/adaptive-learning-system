@@ -1,0 +1,1949 @@
+COURSE: Java Programming
+TOPIC: Object-Oriented Programming: Classes, Objects, Constructors, Encapsulation, and Records
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE / Java Language Specification (JLS) / Java Virtual Machine Specification (JVMS)
+
+================================================================================
+OBJECT-ORIENTED PROGRAMMING: CLASSES, OBJECTS, CONSTRUCTORS, ENCAPSULATION, AND RECORDS
+=======================================================================================
+
+1. INTRODUCTION
+
+Object-Oriented Programming (OOP) is a programming paradigm in which software is organized around objects that represent state and behavior.
+
+Java is a statically typed, class-based object-oriented language. Classes define fields, methods, constructors, and other members. Objects are runtime instances of classes.
+
+Major OOP concepts in Java include:
+
+* Encapsulation
+* Abstraction
+* Inheritance
+* Polymorphism
+* Classes and objects
+* Constructors
+* Access control
+* Static and instance members
+* Immutability
+* Record classes
+
+Java also provides modern language features such as record classes for concise data carriers.
+
+A class declaration defines a type. An object is an instance of a class. The `new` operator is commonly used to create class instances and invoke their constructors.
+
+The JVM specification defines a heap as a runtime data area from which memory for class instances and arrays is allocated, but the exact physical memory layout and implementation strategy are JVM-dependent.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, students should be able to:
+
+* Define classes containing fields and methods.
+* Create objects using constructors.
+* Understand instance and static members.
+* Use the `this` reference correctly.
+* Understand constructor overloading and constructor chaining.
+* Understand implicit and explicit constructors.
+* Use Java access modifiers correctly.
+* Apply encapsulation through controlled access to object state.
+* Understand `final` fields and immutable object design.
+* Apply defensive copying when working with mutable objects.
+* Understand static initialization and instance initialization.
+* Create and use static factory methods.
+* Understand class initialization and object initialization.
+* Create Java record classes.
+* Use canonical and compact record constructors.
+* Understand that records provide shallow immutability rather than automatic deep immutability.
+* Distinguish records from ordinary classes.
+* Understand JVM-level object and class initialization concepts without assuming implementation-specific memory layouts.
+
+3. PREREQUISITES
+
+Students should understand:
+
+* Java variables and data types.
+* Operators.
+* Conditional statements.
+* Loops.
+* Methods.
+* Arrays and strings.
+* Basic exception handling.
+
+4. BEGINNER CONCEPTS
+
+4.1 CLASS
+
+A class is a declaration that defines a type and may contain:
+
+* Instance fields.
+* Static fields.
+* Instance methods.
+* Static methods.
+* Constructors.
+* Initializer blocks.
+* Nested types.
+
+Example:
+
+```java id="h1c7n2"
+public class Car {
+
+    private String make;
+    private String model;
+    private int year;
+
+    public Car(String make, String model, int year) {
+        this.make = make;
+        this.model = model;
+        this.year = year;
+    }
+
+    public void displayInfo() {
+        System.out.println(
+            year + " " + make + " " + model
+        );
+    }
+}
+```
+
+4.2 OBJECT
+
+An object is an instance of a class.
+
+Example:
+
+```java id="b6m2q4"
+Car car = new Car("Toyota", "Camry", 2026);
+```
+
+This statement contains:
+
+1. Declaration of a reference variable.
+2. Creation of an object using `new`.
+3. Invocation of the constructor.
+4. Assignment of the resulting reference to `car`.
+
+The JVM specification defines a heap as a runtime data area used for class instances and arrays. It does not prescribe a particular physical memory layout for objects.
+
+4.3 INSTANCE VARIABLES
+
+Instance fields belong to individual object instances.
+
+```java id="c3r8p1"
+class Student {
+
+    String name;
+    int age;
+}
+```
+
+Each `Student` object has its own instance state.
+
+```java id="m8x4q2"
+Student s1 = new Student();
+Student s2 = new Student();
+
+s1.name = "Alice";
+s2.name = "Bob";
+```
+
+The two objects maintain separate values for `name`.
+
+4.4 INSTANCE METHODS
+
+Instance methods operate on an object instance and can directly access instance fields.
+
+```java id="z5p2k8"
+class Student {
+
+    private String name;
+
+    void displayName() {
+        System.out.println(name);
+    }
+}
+```
+
+4.5 THE `this` REFERENCE
+
+Within an instance method or constructor, `this` refers to the current object.
+
+Example:
+
+```java id="q7m4v3"
+class Student {
+
+    private String name;
+
+    Student(String name) {
+        this.name = name;
+    }
+}
+```
+
+Here:
+
+```text
+this.name
+```
+
+refers to the instance field, while:
+
+```text
+name
+```
+
+refers to the constructor parameter.
+
+5. CONSTRUCTORS
+
+A constructor initializes a newly created object.
+
+A constructor:
+
+* Has the same name as the class.
+* Has no return type.
+* Is invoked during object creation.
+* Can be overloaded.
+* Can invoke another constructor.
+
+Example:
+
+```java id="r4v9k2"
+class Student {
+
+    private String name;
+    private int age;
+
+    Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+```
+
+5.1 DEFAULT / IMPLICIT CONSTRUCTOR
+
+If a class declares no constructor, Java provides an implicit no-argument constructor subject to the language rules.
+
+Example:
+
+```java id="p8k3m1"
+class Student {
+    String name;
+}
+```
+
+Conceptually, the compiler provides a no-argument constructor.
+
+However, once a programmer declares a constructor, Java does not automatically provide another no-argument constructor.
+
+5.2 PARAMETERIZED CONSTRUCTOR
+
+A constructor that accepts arguments is commonly called a parameterized constructor.
+
+```java id="n4s8w2"
+class Employee {
+
+    private String name;
+    private double salary;
+
+    Employee(String name, double salary) {
+        this.name = name;
+        this.salary = salary;
+    }
+}
+```
+
+5.3 CONSTRUCTOR OVERLOADING
+
+A class can have multiple constructors with different parameter lists.
+
+```java id="k7d2q9"
+class Employee {
+
+    private String name;
+    private double salary;
+
+    Employee() {
+        this("Unknown", 0.0);
+    }
+
+    Employee(String name) {
+        this(name, 0.0);
+    }
+
+    Employee(String name, double salary) {
+        this.name = name;
+        this.salary = salary;
+    }
+}
+```
+
+5.4 CONSTRUCTOR CHAINING
+
+`this(...)` invokes another constructor in the same class.
+
+In ordinary Java constructor syntax, an explicit constructor invocation using `this(...)` or `super(...)` must follow the applicable constructor-body rules and traditionally appears as the first statement.
+
+Example:
+
+```java id="u3m7p1"
+class Account {
+
+    private String owner;
+    private double balance;
+
+    Account(String owner) {
+        this(owner, 0.0);
+    }
+
+    Account(String owner, double balance) {
+        this.owner = owner;
+        this.balance = balance;
+    }
+}
+```
+
+NOTE:
+
+Modern Java has a preview feature for flexible constructor bodies. When preview features are enabled in a supported Java release, some statements may appear before an explicit superclass constructor invocation. For normal non-preview Java code, follow the standard constructor invocation rules.
+
+6. ACCESS MODIFIERS AND ENCAPSULATION
+
+Java provides four levels of access control:
+
+* `public`
+* `protected`
+* package-private (no modifier)
+* `private`
+
+6.1 ACCESS MODIFIER TABLE
+
+| Modifier        | Same Class | Same Package | Subclass in Different Package  | Unrelated Class |
+| --------------- | ---------- | ------------ | ------------------------------ | --------------- |
+| `public`        | Yes        | Yes          | Yes                            | Yes             |
+| `protected`     | Yes        | Yes          | Yes, through inheritance rules | No              |
+| package-private | Yes        | Yes          | No                             | No              |
+| `private`       | Yes        | No           | No                             | No              |
+
+`protected` access across packages has additional rules: a subclass in another package can access the protected member through inheritance, rather than through arbitrary instances of the superclass.
+
+6.2 ENCAPSULATION
+
+Encapsulation means controlling access to an object's internal state and exposing appropriate operations.
+
+Example:
+
+```java id="e8q4m2"
+class BankAccount {
+
+    private double balance;
+
+    public void deposit(double amount) {
+
+        if (amount > 0) {
+            balance += amount;
+        }
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+}
+```
+
+The field is private and can only be modified through controlled operations.
+
+7. STATIC MEMBERS
+
+A `static` member belongs to the class rather than to a particular instance.
+
+7.1 STATIC FIELD
+
+```java id="s5m9q3"
+class Counter {
+
+    static int count = 0;
+
+    Counter() {
+        count++;
+    }
+}
+```
+
+All `Counter` objects access the same `count` field.
+
+7.2 STATIC METHOD
+
+A static method can be invoked using the class name.
+
+```java id="w2k7p4"
+class MathUtil {
+
+    static int square(int value) {
+        return value * value;
+    }
+}
+
+class Test {
+    public static void main(String[] args) {
+        System.out.println(MathUtil.square(5));
+    }
+}
+```
+
+A static method does not have a `this` reference and cannot directly access instance fields or instance methods.
+
+7.3 STATIC FACTORY METHOD
+
+A static factory method is a method that creates or provides instances.
+
+```java id="j6p1r8"
+class User {
+
+    private String name;
+
+    private User(String name) {
+        this.name = name;
+    }
+
+    public static User of(String name) {
+        return new User(name);
+    }
+}
+```
+
+Usage:
+
+```java id="t9c3v5"
+User user = User.of("Alice");
+```
+
+Static factory methods can provide meaningful names and can choose how objects are created.
+
+They may also return cached or shared instances when appropriate, but caching is not an automatic property of static factory methods.
+
+8. INITIALIZATION BLOCKS
+
+8.1 STATIC INITIALIZATION
+
+A static initializer is executed as part of class initialization.
+
+```java id="f2n8q4"
+class Configuration {
+
+    static {
+        System.out.println("Class initialization");
+    }
+}
+```
+
+A class is not initialized merely because its class file has been loaded. Class initialization occurs when the JVM determines that initialization is required according to the Java and JVM specifications.
+
+8.2 INSTANCE INITIALIZATION BLOCK
+
+An instance initializer runs during object creation as part of the constructor execution process.
+
+```java id="v7m3k1"
+class Example {
+
+    {
+        System.out.println("Instance initializer");
+    }
+
+    Example() {
+        System.out.println("Constructor");
+    }
+}
+```
+
+For a normal constructor, the effective constructor execution includes instance field initializers and instance initializer blocks before the constructor body continues.
+
+9. OBJECT INITIALIZATION ORDER
+
+For a class hierarchy, a simplified initialization sequence is:
+
+1. The superclass is initialized before the subclass when class initialization requires both.
+2. Static fields and static initializers execute in textual order during class initialization.
+3. When an object is created, superclass instance initialization occurs before subclass instance initialization.
+4. Superclass instance field initializers and instance initializer blocks execute.
+5. The superclass constructor body executes.
+6. Subclass instance field initializers and instance initializer blocks execute.
+7. The subclass constructor body executes.
+
+Example:
+
+```java id="k5p9s2"
+class Parent {
+
+    static {
+        System.out.println("Parent static");
+    }
+
+    {
+        System.out.println("Parent instance");
+    }
+
+    Parent() {
+        System.out.println("Parent constructor");
+    }
+}
+
+class Child extends Parent {
+
+    static {
+        System.out.println("Child static");
+    }
+
+    {
+        System.out.println("Child instance");
+    }
+
+    Child() {
+        System.out.println("Child constructor");
+    }
+}
+```
+
+Creating:
+
+```java id="m4q8t6"
+new Child();
+```
+
+produces initialization according to the class initialization and object construction rules.
+
+10. IMMUTABILITY
+
+An immutable object is an object whose observable state cannot be changed after construction.
+
+A common immutable-class design includes:
+
+1. Preventing unwanted subclass-based mutation, often by making the class `final`.
+2. Making fields `private`.
+3. Making fields `final` where appropriate.
+4. Providing no mutating setters.
+5. Validating constructor arguments.
+6. Defensively copying mutable input.
+7. Defensively copying mutable state when returning it.
+8. Ensuring referenced objects are themselves immutable or safely encapsulated.
+
+Example:
+
+```java id="a8v2n6"
+public final class Person {
+
+    private final String name;
+    private final int age;
+
+    public Person(String name, int age) {
+
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name required");
+        }
+
+        if (age < 0) {
+            throw new IllegalArgumentException("Invalid age");
+        }
+
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+}
+```
+
+11. DEFENSIVE COPYING
+
+A reference to a mutable object can allow external code to change internal state.
+
+Problem:
+
+```java id="g5r9w3"
+class UserProfile {
+
+    private final Date birthDate;
+
+    UserProfile(Date birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    Date getBirthDate() {
+        return birthDate;
+    }
+}
+```
+
+The caller can modify the internal object.
+
+Better:
+
+```java id="x3m7q8"
+class UserProfile {
+
+    private final Date birthDate;
+
+    UserProfile(Date birthDate) {
+        this.birthDate =
+            birthDate == null
+                ? null
+                : new Date(birthDate.getTime());
+    }
+
+    Date getBirthDate() {
+        return birthDate == null
+            ? null
+            : new Date(birthDate.getTime());
+    }
+}
+```
+
+For new code, immutable types from `java.time`, such as `LocalDate`, are generally preferable to mutable legacy `Date` when they fit the requirement.
+
+12. RECORD CLASSES
+
+Record classes were introduced as a preview feature in Java 14 and became a permanent Java language feature in Java 16.
+
+A record is a restricted form of class designed primarily to model a transparent, shallowly immutable data carrier.
+
+Example:
+
+```java id="q9v4m2"
+public record UserRecord(
+    int id,
+    String username,
+    String email
+) {
+}
+```
+
+The record components form the record's state description.
+
+A record class automatically provides, according to the language rules:
+
+* Private final fields corresponding to record components.
+* Component accessor methods.
+* A canonical constructor.
+* `equals()`.
+* `hashCode()`.
+* `toString()`.
+
+Record classes are implicitly `final`.
+
+They directly extend `java.lang.Record` and cannot extend another class.
+
+A record can implement interfaces.
+
+13. RECORD ACCESSORS
+
+For:
+
+```java id="n6s2w8"
+public record User(String name, int age) {
+}
+```
+
+the generated accessors are:
+
+```java id="e7p4k1"
+user.name()
+user.age()
+```
+
+not:
+
+```java id="z5r8m3"
+user.getName()
+user.getAge()
+```
+
+unless custom methods with those names are explicitly provided.
+
+14. RECORD CONSTRUCTORS
+
+14.1 CANONICAL CONSTRUCTOR
+
+The canonical constructor has the same parameter types as the record components.
+
+Example:
+
+```java id="p3m8q6"
+public record User(int id, String name) {
+
+    public User(int id, String name) {
+
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                "ID must be positive"
+            );
+        }
+
+        this.id = id;
+        this.name = name;
+    }
+}
+```
+
+14.2 COMPACT CANONICAL CONSTRUCTOR
+
+A compact constructor avoids explicit parameter assignments.
+
+```java id="r8v2k5"
+public record User(int id, String name) {
+
+    public User {
+
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                "ID must be positive"
+            );
+        }
+
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException(
+                "Name required"
+            );
+        }
+    }
+}
+```
+
+The compiler performs the component-field initialization according to the record constructor rules.
+
+15. RECORDS ARE SHALLOWLY IMMUTABLE
+
+This is an important distinction.
+
+A record's component fields are final, but an object referenced by a component can still be mutable.
+
+Example:
+
+```java id="u6m3p9"
+record Student(String name, int[] marks) {
+}
+```
+
+The reference `marks` is final, but the array contents can still change:
+
+```java id="b8q5n2"
+int[] marks = {90, 80, 95};
+
+Student student =
+    new Student("Alice", marks);
+
+marks[0] = 0;
+```
+
+The record still refers to the same array.
+
+Therefore:
+
+```text
+record != automatically deeply immutable
+```
+
+If deep immutability is required, mutable components must be copied or replaced with immutable representations.
+
+16. RECORD EXAMPLE
+
+```java id="m9k4s1"
+public record UserRecord(
+        int id,
+        String username,
+        String email) {
+
+    public UserRecord {
+
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                "ID must be positive"
+            );
+        }
+
+        if (username == null || username.isBlank()) {
+            throw new IllegalArgumentException(
+                "Username required"
+            );
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                "Email required"
+            );
+        }
+    }
+}
+```
+
+17. BASIC EXAMPLE
+
+```java id="c7p2m8"
+public class BasicOOP {
+
+    static class BankAccount {
+
+        private final String accountNumber;
+        private String ownerName;
+        private double balance;
+
+        public BankAccount(
+                String accountNumber,
+                String ownerName,
+                double initialBalance) {
+
+            if (initialBalance < 0) {
+                throw new IllegalArgumentException(
+                    "Initial balance cannot be negative"
+                );
+            }
+
+            this.accountNumber = accountNumber;
+            this.ownerName = ownerName;
+            this.balance = initialBalance;
+        }
+
+        public BankAccount(
+                String accountNumber,
+                String ownerName) {
+
+            this(accountNumber, ownerName, 0.0);
+        }
+
+        public void deposit(double amount) {
+
+            if (amount <= 0) {
+                throw new IllegalArgumentException(
+                    "Deposit must be positive"
+                );
+            }
+
+            balance += amount;
+
+            System.out.println(
+                "Deposited $" + amount +
+                " into " + accountNumber
+            );
+        }
+
+        public boolean withdraw(double amount) {
+
+            if (amount <= 0 || amount > balance) {
+
+                System.out.println(
+                    "Withdrawal rejected for "
+                    + accountNumber
+                );
+
+                return false;
+            }
+
+            balance -= amount;
+
+            System.out.println(
+                "Withdrew $" + amount +
+                " from " + accountNumber
+            );
+
+            return true;
+        }
+
+        public double getBalance() {
+            return balance;
+        }
+
+        public String getOwnerName() {
+            return ownerName;
+        }
+
+        public String getAccountNumber() {
+            return accountNumber;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        BankAccount acc1 =
+            new BankAccount(
+                "ACC-101",
+                "Alice",
+                500.0
+            );
+
+        BankAccount acc2 =
+            new BankAccount(
+                "ACC-102",
+                "Bob"
+            );
+
+        acc1.deposit(150.0);
+        acc1.withdraw(200.0);
+
+        acc2.withdraw(50.0);
+
+        System.out.println(
+            acc1.getOwnerName()
+            + " Balance: $"
+            + acc1.getBalance()
+        );
+
+        System.out.println(
+            acc2.getOwnerName()
+            + " Balance: $"
+            + acc2.getBalance()
+        );
+    }
+}
+```
+
+18. INTERMEDIATE EXAMPLE
+
+```java id="v4q8n6"
+public class IntermediateOOP {
+
+    static class ServerConfig {
+
+        private static final String DEFAULT_ENVIRONMENT;
+
+        private static int instanceCount = 0;
+
+        private final String host;
+        private final int port;
+        private final String environment;
+
+        static {
+
+            String env =
+                System.getenv("APP_ENV");
+
+            DEFAULT_ENVIRONMENT =
+                env != null
+                    ? env
+                    : "DEVELOPMENT";
+
+            System.out.println(
+                "[Static Init] Environment: "
+                + DEFAULT_ENVIRONMENT
+            );
+        }
+
+        {
+            instanceCount++;
+
+            System.out.println(
+                "[Instance Init] Instance created: "
+                + instanceCount
+            );
+        }
+
+        private ServerConfig(
+                String host,
+                int port,
+                String environment) {
+
+            this.host = host;
+            this.port = port;
+            this.environment = environment;
+        }
+
+        public static ServerConfig createDefault(
+                String host) {
+
+            return new ServerConfig(
+                host,
+                8080,
+                DEFAULT_ENVIRONMENT
+            );
+        }
+
+        public static ServerConfig createProduction(
+                String host,
+                int port) {
+
+            return new ServerConfig(
+                host,
+                port,
+                "PRODUCTION"
+            );
+        }
+
+        public static int getInstanceCount() {
+            return instanceCount;
+        }
+
+        public void printConfig() {
+
+            System.out.println(
+                "Host: " + host
+                + ":" + port
+                + " [" + environment + "]"
+            );
+        }
+    }
+
+    public static void main(String[] args) {
+
+        ServerConfig dev =
+            ServerConfig.createDefault(
+                "localhost"
+            );
+
+        dev.printConfig();
+
+        ServerConfig prod =
+            ServerConfig.createProduction(
+                "api.example.com",
+                443
+            );
+
+        prod.printConfig();
+
+        System.out.println(
+            "Total instances: "
+            + ServerConfig.getInstanceCount()
+        );
+    }
+}
+```
+
+19. ADVANCED EXAMPLE
+
+```java id="k3w7p9"
+import java.time.LocalDate;
+import java.util.Arrays;
+
+public class AdvancedOOP {
+
+    public static final class ImmutableToken {
+
+        private final String tokenId;
+        private final LocalDate expiryDate;
+        private final byte[] permissions;
+
+        public ImmutableToken(
+                String tokenId,
+                LocalDate expiryDate,
+                byte[] permissions) {
+
+            this.tokenId = tokenId;
+            this.expiryDate = expiryDate;
+
+            this.permissions =
+                permissions == null
+                    ? new byte[0]
+                    : Arrays.copyOf(
+                        permissions,
+                        permissions.length
+                    );
+        }
+
+        public String getTokenId() {
+            return tokenId;
+        }
+
+        public LocalDate getExpiryDate() {
+            return expiryDate;
+        }
+
+        public byte[] getPermissions() {
+            return Arrays.copyOf(
+                permissions,
+                permissions.length
+            );
+        }
+    }
+
+    public record DatabaseConfig(
+            String host,
+            int port,
+            String username) {
+
+        public DatabaseConfig {
+
+            if (host == null || host.isBlank()) {
+                throw new IllegalArgumentException(
+                    "Host cannot be empty"
+                );
+            }
+
+            if (port < 1 || port > 65535) {
+                throw new IllegalArgumentException(
+                    "Invalid port"
+                );
+            }
+        }
+
+        public String getJdbcUrl() {
+
+            return String.format(
+                "jdbc:postgresql://%s:%d/app_db",
+                host,
+                port
+            );
+        }
+    }
+
+    public static void main(String[] args) {
+
+        byte[] permissions = {1, 2, 3};
+
+        ImmutableToken token =
+            new ImmutableToken(
+                "TOK-999",
+                LocalDate.now().plusDays(30),
+                permissions
+            );
+
+        permissions[0] = 99;
+
+        System.out.println(
+            "Permission 0: "
+            + token.getPermissions()[0]
+        );
+
+        DatabaseConfig config =
+            new DatabaseConfig(
+                "db-primary.internal",
+                5432,
+                "application"
+            );
+
+        System.out.println(
+            "Record: " + config
+        );
+
+        System.out.println(
+            "JDBC URL: "
+            + config.getJdbcUrl()
+        );
+
+        System.out.println(
+            "Host: " + config.host()
+        );
+    }
+}
+```
+
+20. CODE WALKTHROUGHS
+
+20.1 ENCAPSULATION
+
+```java id="s2m7q4"
+private double balance;
+```
+
+The field is hidden from direct external access.
+
+The class controls modifications through:
+
+```java id="f8p3n6"
+deposit()
+withdraw()
+```
+
+This allows validation of state changes.
+
+20.2 CONSTRUCTOR CHAINING
+
+```java id="a4v9k1"
+public BankAccount(String accountNumber,
+                   String ownerName) {
+
+    this(accountNumber, ownerName, 0.0);
+}
+```
+
+This constructor delegates to another constructor in the same class.
+
+It avoids duplicating initialization logic.
+
+20.3 STATIC STATE
+
+```java id="q6m2w8"
+private static int instanceCount;
+```
+
+There is one logical static field associated with the class rather than one field per object.
+
+The Java language and JVM specifications do not require a particular physical storage location such as "Metaspace" for every static field.
+
+20.4 DEFENSIVE COPYING
+
+```java id="n7r4p2"
+Arrays.copyOf(permissions, permissions.length);
+```
+
+creates a separate array so the caller cannot directly modify the internal array through the original reference.
+
+20.5 RECORD
+
+```java id="v9k3m5"
+record DatabaseConfig(
+    String host,
+    int port,
+    String username
+)
+```
+
+The compiler supplies the record's mandated component fields, accessors, canonical construction mechanism, and implementations of `equals`, `hashCode`, and `toString` according to the Java language rules.
+
+21. EXPECTED OUTPUT
+
+Basic example:
+
+```text id="w4m8q2"
+Deposited $150.0 into ACC-101
+Withdrew $200.0 from ACC-101
+Withdrawal rejected for ACC-102
+Alice Balance: $450.0
+Bob Balance: $0.0
+```
+
+Intermediate example:
+
+```text id="k8p3v6"
+[Static Init] Environment: DEVELOPMENT
+[Instance Init] Instance created: 1
+Host: localhost:8080 [DEVELOPMENT]
+[Instance Init] Instance created: 2
+Host: api.example.com:443 [PRODUCTION]
+Total instances: 2
+```
+
+Advanced example:
+
+```text id="m2q7s4"
+Permission 0: 1
+Record: DatabaseConfig[host=db-primary.internal, port=5432, username=application]
+JDBC URL: jdbc:postgresql://db-primary.internal:5432/app_db
+Host: db-primary.internal
+```
+
+22. EXECUTION FLOW
+
+A simplified object-creation flow is:
+
+1. The class must be loaded and linked as required.
+2. If class initialization is required, static initialization is performed.
+3. The `new` operation creates a new class instance.
+4. Instance initialization begins according to Java's constructor and initialization rules.
+5. Superclass initialization occurs before subclass initialization.
+6. Instance field initializers and instance initializer blocks execute in the appropriate order.
+7. The constructor body executes.
+8. A reference to the initialized object becomes available to the caller.
+
+The JVM specification defines runtime data areas such as the heap, method area, JVM stacks, and frames, but exact implementation details are JVM-dependent.
+
+23. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Create a `Student` class with:
+
+```text
+name
+rollNumber
+marks
+```
+
+Use encapsulation and validation.
+
+Problem 2:
+
+Create an immutable `Money` class containing:
+
+```text
+currency
+amount
+```
+
+Implement:
+
+```text
+add()
+subtract()
+multiply()
+```
+
+Problem 3:
+
+Create a `Book` record:
+
+```java id="r5m8q1"
+record Book(
+    String isbn,
+    String title,
+    String author,
+    double price
+) {
+}
+```
+
+Add validation using a compact constructor.
+
+Problem 4:
+
+Create a `DateInterval` record using immutable `LocalDate` components and validate that the start date is not after the end date.
+
+Problem 5:
+
+Implement a Builder pattern for a configuration object with optional properties.
+
+24. REAL-WORLD APPLICATIONS
+
+24.1 DOMAIN-DRIVEN DESIGN
+
+Classes can model:
+
+* Entities.
+* Value objects.
+* Aggregate roots.
+* Domain services.
+
+Records are particularly useful for small value-like data carriers when their shallow immutability and identity semantics are appropriate.
+
+24.2 DATA TRANSFER OBJECTS
+
+Records can reduce boilerplate in applications that exchange structured data.
+
+Example:
+
+```java id="b7n3q9"
+public record UserResponse(
+    long id,
+    String name,
+    String email
+) {
+}
+```
+
+25. COMMON MISTAKES
+
+25.1 CONFUSING CLASS AND OBJECT
+
+Incorrect idea:
+
+```text
+Class = object
+```
+
+Correct:
+
+```text
+Class = type definition
+Object = runtime instance
+```
+
+25.2 ASSUMING `new` ONLY DECLARES A REFERENCE
+
+```java id="c4m7p2"
+Student student;
+```
+
+does not create a `Student` object.
+
+Object creation requires an appropriate construction operation such as:
+
+```java id="u8q5n1"
+Student student = new Student();
+```
+
+25.3 ACCESSING INSTANCE MEMBERS FROM STATIC CONTEXT
+
+Incorrect:
+
+```java id="z6p3m8"
+class Test {
+
+    int value = 10;
+
+    static void display() {
+        System.out.println(value);
+    }
+}
+```
+
+A static method has no particular object instance.
+
+26. COMMON ERRORS
+
+26.1 FINAL FIELD NOT INITIALIZED
+
+```java id="h3v8q5"
+class Test {
+
+    private final int value;
+
+    Test() {
+    }
+}
+```
+
+This produces a compilation error because the blank final field must be definitely assigned.
+
+26.2 CONSTRUCTOR CHAINING ERROR
+
+Incorrect:
+
+```java id="m7q2r4"
+class Test {
+
+    Test() {
+        System.out.println("Hello");
+        this(10);
+    }
+
+    Test(int value) {
+    }
+}
+```
+
+In ordinary Java constructor syntax, an explicit constructor invocation cannot be placed after ordinary statements.
+
+27. DEBUGGING TECHNIQUES
+
+27.1 MUTABLE REFERENCE LEAK
+
+Incorrect:
+
+```java id="p4n8s2"
+class UserProfile {
+
+    private final java.util.Date birthDate;
+
+    UserProfile(java.util.Date birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public java.util.Date getBirthDate() {
+        return birthDate;
+    }
+}
+```
+
+Problem:
+
+```java id="v8m3q6"
+profile.getBirthDate().setTime(0);
+```
+
+can modify the object's internal state.
+
+Correct:
+
+```java id="x5r9k1"
+class UserProfile {
+
+    private final java.util.Date birthDate;
+
+    UserProfile(java.util.Date birthDate) {
+
+        this.birthDate =
+            birthDate == null
+                ? null
+                : new java.util.Date(
+                    birthDate.getTime()
+                );
+    }
+
+    public java.util.Date getBirthDate() {
+
+        return birthDate == null
+            ? null
+            : new java.util.Date(
+                birthDate.getTime()
+            );
+    }
+}
+```
+
+For new applications, an immutable `java.time` type such as `LocalDate` is often a cleaner choice.
+
+28. EDGE CASES
+
+28.1 CIRCULAR CONSTRUCTOR DELEGATION
+
+This is invalid:
+
+```java id="q2m7v5"
+class A {
+
+    A() {
+        this(1);
+    }
+
+    A(int value) {
+        this();
+    }
+}
+```
+
+The compiler detects recursive constructor invocation.
+
+28.2 LEAKING `this`
+
+Avoid exposing `this` to external code before construction has completed.
+
+Risky examples include:
+
+* Registering `this` with a global listener from a constructor.
+* Starting a thread that immediately uses `this`.
+* Passing `this` to external callbacks during construction.
+
+The problem is that external code may observe partially initialized state.
+
+28.3 RECORD COMPONENT MUTABILITY
+
+This record is not deeply immutable:
+
+```java id="s8n4k3"
+record Data(int[] values) {
+}
+```
+
+The array contents remain mutable.
+
+29. BEST PRACTICES
+
+* Keep fields private unless broader access is intentionally required.
+* Validate constructor arguments.
+* Use `final` for fields that should not be reassigned.
+* Prefer immutable objects when practical.
+* Use defensive copying for mutable arrays and legacy mutable classes.
+* Prefer immutable `java.time` types over mutable legacy date types when appropriate.
+* Use records for concise data carriers when record semantics fit the model.
+* Remember that records are shallowly immutable.
+* Use static factory methods when they improve clarity or construction control.
+* Keep static state minimal.
+* Avoid exposing mutable internal collections or arrays directly.
+* Avoid leaking `this` during construction.
+* Do not assume JVM-specific object memory layouts in portable Java code.
+
+30. PERFORMANCE CONSIDERATIONS
+
+Object creation and garbage collection have runtime costs, but the Java compiler and JVM may optimize code.
+
+Possible JVM optimizations include:
+
+* Method inlining.
+* Escape analysis.
+* Scalar replacement.
+* Allocation elimination in suitable cases.
+* JIT compilation.
+* Constant folding.
+* Dead-code elimination.
+
+These optimizations are implementation-dependent.
+
+Do not assume:
+
+```text
+every new object = guaranteed heap allocation visible in physical memory
+```
+
+at the machine level.
+
+The source-level semantics remain the important programming abstraction.
+
+31. MEMORY CONSIDERATIONS
+
+The JVM specification defines a heap as a shared runtime data area from which memory for class instances and arrays is allocated.
+
+However, Java does not define:
+
+* A universal object header size.
+* A universal reference size.
+* A fixed number of bytes for every object.
+* A universal location for static fields.
+* A required physical implementation of class metadata.
+
+Therefore, avoid statements such as:
+
+```text
+"Every object has exactly X bytes."
+"Every reference is exactly Y bytes."
+"All static fields are stored in Metaspace."
+```
+
+unless the discussion is explicitly about a particular JVM implementation and configuration.
+
+31.1 STATIC COLLECTIONS
+
+A static collection can keep references reachable for as long as the corresponding class/class loader remains reachable.
+
+Example:
+
+```java id="n5q8w2"
+class Cache {
+
+    static final java.util.Map<String, Object> DATA =
+        new java.util.HashMap<>();
+}
+```
+
+If entries are continuously added and never removed, memory usage can grow.
+
+The correct solution depends on the application's cache requirements and lifecycle.
+
+32. SECURITY CONSIDERATIONS
+
+32.1 ENCAPSULATION
+
+Private fields help prevent uncontrolled direct modification.
+
+32.2 SENSITIVE DATA
+
+Do not assume that making a field `private` makes sensitive information secure.
+
+Passwords, tokens, keys, and credentials require appropriate security practices.
+
+A record containing a password is also potentially problematic because the automatically generated `toString()` includes component values.
+
+For example:
+
+```java id="f7m2q9"
+record Credentials(
+    String username,
+    String password
+) {
+}
+```
+
+could expose the password through:
+
+```java id="r3k8v5"
+System.out.println(credentials);
+```
+
+Therefore, records should be used carefully for sensitive data.
+
+33. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                       | Java Class        | Java Record                        | C++ Class                     | Python Class              |
+| ----------------------------- | ----------------- | ---------------------------------- | ----------------------------- | ------------------------- |
+| General-purpose object type   | Yes               | Restricted form                    | Yes                           | Yes                       |
+| Automatic accessors           | No                | Yes                                | No                            | No                        |
+| Automatic `equals`/`hashCode` | No                | Yes                                | Depends on implementation     | Depends on implementation |
+| Automatic `toString`          | No                | Yes                                | No                            | Depends on implementation |
+| Fields                        | Flexible          | Record components are final fields | Flexible                      | Flexible                  |
+| Inheritance                   | Single superclass | Cannot extend another class        | Multiple inheritance possible | Multiple inheritance      |
+| Mutability                    | Configurable      | Shallowly immutable structure      | Configurable                  | Configurable              |
+| Primary use                   | General objects   | Data carriers                      | General objects               | General objects           |
+
+34. FREQUENTLY ASKED QUESTIONS
+
+Q1. What is a class?
+
+A:
+
+A class is a Java type declaration that can define fields, methods, constructors, and other members.
+
+Q2. What is an object?
+
+A:
+
+An object is an instance of a class created at runtime.
+
+Q3. Does declaring a reference create an object?
+
+A:
+
+No.
+
+```java id="h8q3m6"
+Student s;
+```
+
+only declares a reference variable.
+
+An object is created using an appropriate object creation expression such as:
+
+```java id="m4v7p2"
+Student s = new Student();
+```
+
+Q4. What is a constructor?
+
+A:
+
+A constructor initializes a newly created object. It has the same name as its class and no return type.
+
+Q5. What is `this`?
+
+A:
+
+`this` is the current object reference in an instance context.
+
+Q6. What is constructor chaining?
+
+A:
+
+Constructor chaining allows one constructor to invoke another constructor in the same class using `this(...)`.
+
+Q7. What is encapsulation?
+
+A:
+
+Encapsulation controls access to an object's internal state and provides appropriate operations for interacting with that state.
+
+Q8. What is a record?
+
+A:
+
+A record is a restricted form of class designed primarily as a transparent, shallowly immutable carrier for a fixed set of values.
+
+Q9. Can a record extend another class?
+
+A:
+
+No. A record implicitly extends `java.lang.Record` and cannot extend another class.
+
+Q10. Can a record implement interfaces?
+
+A:
+
+Yes.
+
+Q11. Are records deeply immutable?
+
+A:
+
+No. Record component fields are final, but referenced objects can remain mutable.
+
+Q12. Can a record have methods?
+
+A:
+
+Yes. A record can declare additional methods, subject to the record language rules.
+
+35. INTERVIEW QUESTIONS
+
+Q1. What is the difference between a class and an object?
+
+Answer:
+
+A class defines a type and its members. An object is a runtime instance of that class.
+
+Q2. What is the purpose of `this`?
+
+Answer:
+
+`this` refers to the current object and is commonly used to distinguish instance fields from parameters with the same names.
+
+Q3. What is constructor overloading?
+
+Answer:
+
+Defining multiple constructors with different parameter lists.
+
+Q4. What is constructor chaining?
+
+Answer:
+
+Using `this(...)` to delegate construction from one constructor to another constructor in the same class.
+
+Q5. What is the difference between instance and static members?
+
+Answer:
+
+Instance members belong to individual objects. Static members belong to the class-level state.
+
+Q6. Why can't a static method directly access an instance field?
+
+Answer:
+
+A static method does not execute with a particular object instance and therefore has no `this` reference.
+
+Q7. What is defensive copying?
+
+Answer:
+
+Creating independent copies of mutable objects when accepting or returning them so external code cannot directly modify internal state.
+
+Q8. What is a record?
+
+Answer:
+
+A record is a restricted Java class designed to concisely model a fixed set of values with generated component accessors and value-oriented methods.
+
+Q9. What is a compact constructor?
+
+Answer:
+
+A compact constructor is a concise form of a record's canonical constructor that allows validation or normalization logic without explicitly writing assignments to every component field.
+
+Q10. Are records immutable?
+
+Answer:
+
+Records are shallowly immutable. Their component fields cannot be reassigned after construction, but referenced mutable objects can still be changed.
+
+36. EXAM QUESTIONS
+
+Q1. What happens if a class declares no constructor?
+
+Answer:
+
+The Java language provides an implicit default constructor, subject to the class's superclass constructor accessibility and constructor rules.
+
+Q2. What happens if a class declares one parameterized constructor but no no-argument constructor?
+
+Answer:
+
+Java does not automatically provide a no-argument constructor.
+
+Q3. What is the output conceptually?
+
+```java id="q9m4s7"
+class Test {
+
+    static {
+        System.out.println("Static");
+    }
+
+    {
+        System.out.println("Instance");
+    }
+
+    Test() {
+        System.out.println("Constructor");
+    }
+}
+```
+
+Answer:
+
+When an instance is created after class initialization is required:
+
+```text id="w5p8k2"
+Static
+Instance
+Constructor
+```
+
+Q4. True or False:
+
+A record can extend an arbitrary class.
+
+Answer:
+
+False.
+
+A record implicitly extends `java.lang.Record`.
+
+Q5. True or False:
+
+A record component can refer to a mutable object.
+
+Answer:
+
+True.
+
+However, this means the record is not necessarily deeply immutable.
+
+37. PRACTICE QUESTIONS
+
+Q1. Create an immutable `Student` class with:
+
+```text
+id
+name
+email
+```
+
+Validate all constructor parameters.
+
+Q2. Create a `Book` record with:
+
+```text
+isbn
+title
+author
+price
+```
+
+Validate the price using a compact constructor.
+
+Q3. Create an immutable `DateInterval` using:
+
+```java id="u4m8p1"
+LocalDate start
+LocalDate end
+```
+
+Validate that:
+
+```text
+start <= end
+```
+
+Q4. Create a `Result<T>` record for successful and failed operations.
+
+Q5. Implement a Builder pattern for an `HttpRequestConfig` class.
+
+Q6. Create a static factory method:
+
+```java id="x7q2n5"
+User.of(...)
+```
+
+for constructing validated `User` objects.
+
+Q7. Demonstrate constructor chaining using three overloaded constructors.
+
+Q8. Demonstrate the difference between instance and static variables using an object counter.
+
+38. SUMMARY
+
+Java OOP organizes software around classes, objects, state, and behavior.
+
+Classes define Java types, while objects represent runtime instances.
+
+Constructors initialize newly created objects. Constructor overloading allows multiple construction forms, while constructor chaining reduces duplicated initialization logic.
+
+Encapsulation protects internal state by controlling access through modifiers and methods.
+
+Static members belong to the class-level state rather than an individual object.
+
+Immutable classes prevent externally observable state changes after construction and often require defensive copying for mutable components.
+
+Record classes provide concise syntax for data-oriented classes with generated component fields, accessors, `equals`, `hashCode`, and `toString`.
+
+Records are shallowly immutable, so mutable component objects still require careful handling.
+
+The JVM specification defines runtime structures such as the heap and method area, but exact physical object layout and memory placement are implementation-dependent.
+
+39. KEY TAKEAWAYS
+
+* A class defines a Java type.
+* An object is a runtime instance of a class.
+* `new` commonly creates an object and invokes its constructor.
+* Constructors initialize newly created objects.
+* A class receives an implicit no-argument constructor only when no constructor is declared.
+* `this` refers to the current object in an instance context.
+* `this(...)` is used for constructor chaining.
+* `private` is the strongest class-member access restriction.
+* Encapsulation controls access to internal state.
+* `static` members belong to class-level state.
+* Static methods do not have a `this` reference.
+* Static initialization occurs as part of class initialization, not simply because a class file was loaded.
+* Instance initialization occurs as part of object construction.
+* Immutable classes should protect mutable referenced objects through defensive copying or immutable types.
+* Records became a permanent Java feature in Java 16.
+* Records are implicitly final and directly extend `java.lang.Record`.
+* Records can implement interfaces.
+* Record components have private final fields and public component accessors.
+* Records automatically provide value-oriented `equals`, `hashCode`, and `toString` behavior.
+* Records are shallowly immutable, not automatically deeply immutable.
+* A compact record constructor is useful for validation and normalization.
+* Do not assume fixed JVM object sizes or universal memory locations for Java fields.
+* Use implementation-specific memory claims only when documenting a specific JVM implementation.
+
+================================================================================
+END OF DOCUMENT
+===============

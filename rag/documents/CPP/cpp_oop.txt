@@ -1,0 +1,2359 @@
+COURSE: CPP
+TOPIC: OOP
+LEVEL: INTERMEDIATE
+SOURCE: cpp_oop.txt
+
+TITLE: C++ Object-Oriented Programming: Encapsulation, Constructors, Destructors, RAII, and Rule of 0/3/5
+
+1. INTRODUCTION
+
+Object-Oriented Programming (OOP) in C++ provides a way to model software using user-defined types such as classes and structs. A class can combine data, member functions, access control, constructors, destructors, and overloaded operators into a single abstraction.
+
+The major OOP concepts in C++ include:
+
+* Encapsulation
+* Abstraction
+* Inheritance
+* Polymorphism
+
+Modern C++ additionally emphasizes:
+
+* RAII (Resource Acquisition Is Initialization)
+* Value semantics
+* Deterministic object lifetime
+* Copy semantics
+* Move semantics
+* Exception safety
+* Rule of Zero
+* Rule of Three
+* Rule of Five
+
+C++ does not require every class to manually manage memory. In modern C++, standard library types such as `std::string`, `std::vector`, `std::unique_ptr`, and other RAII types should normally manage resources whenever possible.
+
+RAII is also broader than memory management. It can be used for files, sockets, mutex locks, database connections, operating-system handles, and other resources.
+
+2. LEARNING OBJECTIVES
+
+* Design classes and structs using data members and member functions.
+* Understand `public`, `private`, and `protected` access control.
+* Understand constructors and destructors.
+* Use member initializer lists correctly.
+* Understand delegating and explicit constructors.
+* Apply RAII for deterministic resource management.
+* Understand copy constructors and copy assignment operators.
+* Understand move constructors and move assignment operators.
+* Apply the Rule of Zero, Rule of Three, and Rule of Five.
+* Use `const` member functions correctly.
+* Understand operator overloading.
+* Understand `friend` functions and classes.
+* Distinguish ownership from non-owning access.
+* Understand exception-safe resource management.
+* Design classes using modern C++ value and ownership semantics.
+
+3. PREREQUISITES
+
+Students should understand:
+
+* C++ variables and data types
+* Functions
+* References
+* Pointers
+* Dynamic memory
+* Function overloading
+* Basic exception handling
+* Standard library containers
+* Basic templates
+
+4. CLASS AND STRUCT
+
+A class is a user-defined type that can contain:
+
+* Data members
+* Member functions
+* Constructors
+* Destructors
+* Static members
+* Nested types
+* Operator overloads
+* Access control
+
+The main language-level difference between `class` and `struct` is their default access control.
+
+For a `class`:
+
+* Members are `private` by default.
+* Base classes are privately inherited by default.
+
+For a `struct`:
+
+* Members are `public` by default.
+* Base classes are publicly inherited by default.
+
+Example:
+
+```cpp
+class Student
+{
+private:
+    int marks;
+
+public:
+    void set_marks(int value)
+    {
+        marks = value;
+    }
+
+    int get_marks() const
+    {
+        return marks;
+    }
+};
+```
+
+Equivalent structure:
+
+```cpp
+struct Student
+{
+    int marks;
+
+    void set_marks(int value)
+    {
+        marks = value;
+    }
+
+    int get_marks() const
+    {
+        return marks;
+    }
+};
+```
+
+The choice between `class` and `struct` is often a design convention:
+
+* Use `struct` when public data and simple value-like types are appropriate.
+* Use `class` when encapsulation and controlled access are central.
+
+5. ENCAPSULATION
+
+Encapsulation combines data and operations that work on that data and controls how outside code can access the object's state.
+
+Example:
+
+```cpp
+class BankAccount
+{
+private:
+    double balance;
+
+public:
+    void deposit(double amount)
+    {
+        if (amount > 0)
+            balance += amount;
+    }
+
+    double get_balance() const
+    {
+        return balance;
+    }
+};
+```
+
+Here, `balance` cannot be modified directly through ordinary public access.
+
+Benefits:
+
+* Protects invariants.
+* Reduces accidental modification.
+* Provides a controlled interface.
+* Makes implementation details easier to change.
+* Improves maintainability.
+
+6. CONSTRUCTORS
+
+A constructor initializes an object.
+
+Common constructor forms include:
+
+1. Default constructor
+2. Parameterized constructor
+3. Copy constructor
+4. Move constructor
+5. Delegating constructor
+6. Explicit constructor
+7. Defaulted constructor
+8. Deleted constructor
+
+Example:
+
+```cpp
+class Point
+{
+private:
+    int x;
+    int y;
+
+public:
+    Point()
+        : x(0), y(0)
+    {
+    }
+
+    Point(int x_value, int y_value)
+        : x(x_value), y(y_value)
+    {
+    }
+};
+```
+
+Constructors do not have a return type.
+
+The constructor name is the same as the class name.
+
+7. MEMBER INITIALIZER LIST
+
+A member initializer list initializes bases and data members before the constructor body executes.
+
+Example:
+
+```cpp
+class Point
+{
+private:
+    int x;
+    int y;
+
+public:
+    Point(int x_value, int y_value)
+        : x(x_value), y(y_value)
+    {
+    }
+};
+```
+
+Initialization is preferred over assigning values inside the constructor body.
+
+For example:
+
+```cpp
+class Example
+{
+private:
+    std::string name;
+
+public:
+    Example(const std::string& value)
+        : name(value)
+    {
+    }
+};
+```
+
+The initializer list is required or especially important for:
+
+* `const` data members
+* Reference members
+* Members without default constructors
+* Base classes
+* Efficient construction of class-type members
+
+Important:
+
+Members are initialized in the order of their declaration in the class, not the order written in the initializer list.
+
+8. DELEGATING CONSTRUCTORS
+
+One constructor can delegate construction to another constructor of the same class.
+
+Example:
+
+```cpp
+class Student
+{
+private:
+    std::string name;
+    int marks;
+
+public:
+    Student()
+        : Student("Unknown", 0)
+    {
+    }
+
+    Student(const std::string& student_name, int student_marks)
+        : name(student_name), marks(student_marks)
+    {
+    }
+};
+```
+
+Delegating constructors reduce duplicated initialization logic.
+
+9. EXPLICIT CONSTRUCTORS
+
+A constructor taking one argument can participate in implicit conversions unless conversion is prevented.
+
+Use `explicit` when implicit conversion is not intended.
+
+Example:
+
+```cpp
+class Buffer
+{
+private:
+    std::size_t size;
+
+public:
+    explicit Buffer(std::size_t value)
+        : size(value)
+    {
+    }
+};
+```
+
+Now this is not allowed:
+
+```cpp
+// Buffer b = 100;   // Error
+```
+
+But direct initialization is allowed:
+
+```cpp
+Buffer b(100);
+```
+
+`explicit` is especially useful for constructors where automatic conversion could be surprising or dangerous.
+
+10. DESTRUCTORS
+
+A destructor performs cleanup when an object's lifetime ends.
+
+Syntax:
+
+```cpp
+class Example
+{
+public:
+    ~Example()
+    {
+        // cleanup
+    }
+};
+```
+
+For an automatic object:
+
+```cpp
+void test()
+{
+    Example object;
+} // destructor executes here
+```
+
+For an object managed by `std::unique_ptr`, destruction occurs automatically when the owning smart pointer is destroyed.
+
+A destructor should generally release resources owned by the object.
+
+Examples of resources:
+
+* Dynamic memory
+* File handles
+* Mutex locks
+* Network resources
+* Operating-system handles
+
+Important:
+
+RAII makes cleanup automatic when an object leaves its scope, but RAII does not mean every possible program error disappears.
+
+11. RAII
+
+RAII means:
+
+Resource Acquisition Is Initialization.
+
+The central idea is:
+
+* Resource lifetime is tied to object lifetime.
+* Acquisition happens during initialization.
+* Release happens during destruction.
+
+Example:
+
+```cpp
+#include <fstream>
+
+void save_data()
+{
+    std::ofstream file("data.txt");
+
+    file << "Hello C++\n";
+
+} // file is automatically closed here
+```
+
+RAII is useful because destruction occurs during normal scope exit and during stack unwinding caused by exceptions.
+
+RAII can manage:
+
+* Memory
+* Files
+* Mutexes
+* Sockets
+* Database connections
+* OS handles
+
+Important correction:
+
+RAII does not guarantee "zero resource leaks" in every possible program. It greatly reduces leaks when ownership is correctly represented and objects have correct lifetimes.
+
+12. CONST MEMBER FUNCTIONS
+
+A member function declared with `const` promises not to modify the observable non-mutable state of the object.
+
+Example:
+
+```cpp
+class BankAccount
+{
+private:
+    double balance;
+
+public:
+    double get_balance() const
+    {
+        return balance;
+    }
+};
+```
+
+A `const` object can call suitable `const` member functions:
+
+```cpp
+const BankAccount account;
+account.get_balance();
+```
+
+A non-`const` member function generally cannot be called on a `const` object.
+
+`mutable` members are an exception to the normal modification restriction.
+
+Example:
+
+```cpp
+class Counter
+{
+private:
+    mutable int access_count = 0;
+    int value = 0;
+
+public:
+    int get_value() const
+    {
+        ++access_count;
+        return value;
+    }
+};
+```
+
+13. SPECIAL MEMBER FUNCTIONS
+
+C++ recognizes several special member functions:
+
+1. Default constructor
+2. Copy constructor
+3. Move constructor
+4. Copy assignment operator
+5. Move assignment operator
+6. Destructor
+
+Example:
+
+```cpp
+class Widget
+{
+public:
+    Widget();
+
+    Widget(const Widget& other);
+
+    Widget(Widget&& other) noexcept;
+
+    Widget& operator=(const Widget& other);
+
+    Widget& operator=(Widget&& other) noexcept;
+
+    ~Widget();
+};
+```
+
+The compiler can implicitly declare and define some of these functions when appropriate.
+
+Whether they are implicitly generated, deleted, or suppressed depends on the class definition and its members/bases.
+
+14. COPY CONSTRUCTOR
+
+A copy constructor creates a new object from an existing object.
+
+Typical form:
+
+```cpp
+Widget(const Widget& other);
+```
+
+Example:
+
+```cpp
+class Point
+{
+private:
+    int x;
+    int y;
+
+public:
+    Point(int x_value, int y_value)
+        : x(x_value), y(y_value)
+    {
+    }
+
+    Point(const Point& other)
+        : x(other.x), y(other.y)
+    {
+    }
+};
+```
+
+Usage:
+
+```cpp
+Point a(10, 20);
+Point b = a;
+```
+
+The copy constructor is different from copy assignment because a new object is being created.
+
+15. COPY ASSIGNMENT
+
+Copy assignment assigns an already-existing object from another object.
+
+Typical form:
+
+```cpp
+Widget& operator=(const Widget& other);
+```
+
+Example:
+
+```cpp
+Point a(10, 20);
+Point b(30, 40);
+
+b = a;
+```
+
+Here, `b` already exists, so copy assignment is used.
+
+16. DEEP COPY VS SHALLOW COPY
+
+Suppose a class owns dynamically allocated memory:
+
+```cpp
+class Resource
+{
+private:
+    int* data;
+
+public:
+    Resource()
+        : data(new int[100])
+    {
+    }
+
+    ~Resource()
+    {
+        delete[] data;
+    }
+};
+```
+
+If copying is left to the compiler-generated copy constructor, the pointer value may be copied.
+
+Conceptually:
+
+```text
+Object A
+data -----> [memory]
+
+Object B
+data -----> [same memory]
+```
+
+Now both objects appear to own the same resource.
+
+When both destructors call `delete[]`, the program has undefined behavior.
+
+A deep copy instead creates independent storage:
+
+```text
+Object A
+data -----> [memory A]
+
+Object B
+data -----> [memory B]
+```
+
+For a resource-owning class, copying must therefore have explicitly designed ownership semantics.
+
+Alternatives include:
+
+* Implement deep copying.
+* Delete copying.
+* Use a shared ownership model.
+* Use a standard RAII type that already implements correct semantics.
+
+17. MOVE SEMANTICS
+
+Move semantics were introduced in C++11.
+
+A move constructor normally has the form:
+
+```cpp
+Widget(Widget&& other) noexcept;
+```
+
+A move operation transfers or otherwise efficiently reuses resources from a source object when appropriate.
+
+Example:
+
+```cpp
+class Buffer
+{
+private:
+    int* data;
+    std::size_t size;
+
+public:
+    Buffer(Buffer&& other) noexcept
+        : data(other.data),
+          size(other.size)
+    {
+        other.data = nullptr;
+        other.size = 0;
+    }
+};
+```
+
+The moved-from object remains valid, but its exact resulting state depends on the type's specification.
+
+Important:
+
+`std::move` itself does not move an object.
+
+It primarily casts an expression to an rvalue reference category so that move-enabled overloads can be selected.
+
+Example:
+
+```cpp
+std::string a = "hello";
+std::string b = std::move(a);
+```
+
+18. MOVE CONSTRUCTOR VS MOVE ASSIGNMENT
+
+Move constructor:
+
+```cpp
+Widget(Widget&& other) noexcept;
+```
+
+Creates a new object.
+
+Example:
+
+```cpp
+Widget a;
+Widget b = std::move(a);
+```
+
+Move assignment:
+
+```cpp
+Widget& operator=(Widget&& other) noexcept;
+```
+
+Assigns to an existing object.
+
+Example:
+
+```cpp
+Widget a;
+Widget b;
+
+b = std::move(a);
+```
+
+19. RULE OF THREE
+
+The traditional Rule of Three applies to resource-owning classes.
+
+If a class needs a user-defined:
+
+* Destructor
+* Copy constructor
+* Copy assignment operator
+
+then it will usually need all three.
+
+Example:
+
+```cpp
+class Resource
+{
+private:
+    int* data;
+
+public:
+    Resource(std::size_t size)
+        : data(new int[size])
+    {
+    }
+
+    ~Resource()
+    {
+        delete[] data;
+    }
+
+    Resource(const Resource& other);
+
+    Resource& operator=(const Resource& other);
+};
+```
+
+The Rule of Three is mainly relevant to classes that directly manage resources.
+
+Modern C++ often avoids this situation by using RAII members such as:
+
+```cpp
+std::vector<int>
+std::string
+std::unique_ptr<int[]>
+```
+
+20. RULE OF FIVE
+
+C++11 added move semantics.
+
+If a class directly manages a resource and needs custom special member functions, it may need to explicitly define or delete:
+
+1. Destructor
+2. Copy constructor
+3. Copy assignment
+4. Move constructor
+5. Move assignment
+
+Example:
+
+```cpp
+class Buffer
+{
+public:
+    Buffer(const Buffer& other);
+
+    Buffer& operator=(const Buffer& other);
+
+    Buffer(Buffer&& other) noexcept;
+
+    Buffer& operator=(Buffer&& other) noexcept;
+
+    ~Buffer();
+};
+```
+
+Important:
+
+The Rule of Five is not a requirement that every class must implement five functions.
+
+It is a guideline for resource-managing classes.
+
+If a class does not need custom resource management, the Rule of Zero is usually preferable.
+
+21. RULE OF ZERO
+
+The Rule of Zero recommends designing classes so that resource management is delegated to RAII types.
+
+Example:
+
+```cpp
+class Student
+{
+private:
+    std::string name;
+    std::vector<int> marks;
+
+public:
+    Student(const std::string& student_name)
+        : name(student_name)
+    {
+    }
+};
+```
+
+No custom destructor, copy constructor, move constructor, copy assignment, or move assignment is required merely to manage these members.
+
+The standard library types already manage their resources.
+
+Benefits:
+
+* Less code
+* Fewer ownership bugs
+* Better exception safety
+* Easier maintenance
+* Natural copy/move behavior
+
+Modern C++ generally prefers the Rule of Zero whenever practical.
+
+22. =DEFAULT AND =DELETE
+
+C++ allows special member functions to be explicitly defaulted or deleted.
+
+Example:
+
+```cpp
+class Example
+{
+public:
+    Example() = default;
+
+    Example(const Example&) = default;
+
+    Example& operator=(const Example&) = default;
+
+    Example(Example&&) = default;
+
+    Example& operator=(Example&&) = default;
+
+    ~Example() = default;
+};
+```
+
+To prevent copying:
+
+```cpp
+class NonCopyable
+{
+public:
+    NonCopyable() = default;
+
+    NonCopyable(const NonCopyable&) = delete;
+
+    NonCopyable& operator=(const NonCopyable&) = delete;
+};
+```
+
+This is useful for objects representing unique resources.
+
+23. OPERATOR OVERLOADING
+
+C++ allows operators to be overloaded for user-defined types.
+
+Examples:
+
+```cpp
+operator+
+operator-
+operator*
+operator==
+operator<<
+operator>>
+operator=
+operator[]
+```
+
+Example:
+
+```cpp
+class Point
+{
+public:
+    int x;
+    int y;
+
+    Point operator+(const Point& other) const
+    {
+        return Point{x + other.x, y + other.y};
+    }
+};
+```
+
+Operators should have behavior that is natural and unsurprising for the type.
+
+24. STREAM INSERTION OPERATOR
+
+A common pattern is overloading `operator<<` as a non-member function.
+
+Example:
+
+```cpp
+#include <iostream>
+
+class Point
+{
+public:
+    int x;
+    int y;
+};
+
+std::ostream& operator<<(std::ostream& out, const Point& point)
+{
+    out << "(" << point.x << ", " << point.y << ")";
+    return out;
+}
+```
+
+Usage:
+
+```cpp
+Point p{10, 20};
+std::cout << p << '\n';
+```
+
+25. FRIEND FUNCTIONS
+
+A `friend` function can access private and protected members of a class.
+
+Example:
+
+```cpp
+class Point
+{
+private:
+    int x;
+    int y;
+
+public:
+    Point(int x_value, int y_value)
+        : x(x_value), y(y_value)
+    {
+    }
+
+    friend std::ostream& operator<<(
+        std::ostream& out,
+        const Point& point);
+};
+```
+
+`friend` should be used deliberately.
+
+It can be useful for:
+
+* Stream operators
+* Symmetric binary operators
+* Closely coupled helper functions
+
+It should not be used simply to bypass good encapsulation.
+
+26. CANONICAL RESOURCE-OWNING CLASS
+
+A simplified Rule-of-Five class can look like this:
+
+```cpp
+#include <algorithm>
+#include <cstddef>
+#include <utility>
+
+class DynamicBuffer
+{
+private:
+    int* data;
+    std::size_t size;
+
+public:
+    explicit DynamicBuffer(std::size_t n)
+        : data(n ? new int[n] : nullptr),
+          size(n)
+    {
+    }
+
+    ~DynamicBuffer()
+    {
+        delete[] data;
+    }
+
+    DynamicBuffer(const DynamicBuffer& other)
+        : data(other.size ? new int[other.size] : nullptr),
+          size(other.size)
+    {
+        std::copy_n(other.data, size, data);
+    }
+
+    DynamicBuffer(DynamicBuffer&& other) noexcept
+        : data(std::exchange(other.data, nullptr)),
+          size(std::exchange(other.size, 0))
+    {
+    }
+
+    DynamicBuffer& operator=(const DynamicBuffer& other)
+    {
+        if (this != &other)
+        {
+            DynamicBuffer temp(other);
+            swap(*this, temp);
+        }
+
+        return *this;
+    }
+
+    DynamicBuffer& operator=(DynamicBuffer&& other) noexcept
+    {
+        if (this != &other)
+        {
+            delete[] data;
+
+            data = std::exchange(other.data, nullptr);
+            size = std::exchange(other.size, 0);
+        }
+
+        return *this;
+    }
+
+    friend void swap(DynamicBuffer& a,
+                     DynamicBuffer& b) noexcept
+    {
+        using std::swap;
+
+        swap(a.data, b.data);
+        swap(a.size, b.size);
+    }
+};
+```
+
+27. COPY-AND-SWAP IDIOM
+
+Copy-and-swap can provide strong exception safety for copy assignment.
+
+Example:
+
+```cpp
+Buffer& operator=(const Buffer& other)
+{
+    if (this != &other)
+    {
+        Buffer temp(other);
+        swap(*this, temp);
+    }
+
+    return *this;
+}
+```
+
+The basic idea is:
+
+1. Create a copy.
+2. If copying succeeds, swap resources.
+3. The temporary destroys the old resource.
+
+If copying throws, the original object has not yet been modified.
+
+Important:
+
+A copy-and-swap implementation may allocate a new resource even when existing storage could have been reused. It trades possible storage reuse for simpler exception-safe implementation.
+
+28. COPY-AND-SWAP WITH PASS-BY-VALUE
+
+Another form is:
+
+```cpp
+Buffer& operator=(Buffer other)
+{
+    swap(*this, other);
+    return *this;
+}
+```
+
+This can handle both copy assignment and move assignment through one function.
+
+However, the function should not be marked `noexcept` merely because `swap` is `noexcept`.
+
+The construction of the by-value parameter may perform a copy and can throw.
+
+Therefore:
+
+```cpp
+Buffer& operator=(Buffer other);
+```
+
+is generally different from:
+
+```cpp
+Buffer& operator=(Buffer other) noexcept;
+```
+
+The second form must only be used when parameter construction is also known to be non-throwing.
+
+29. WHY MOVE OPERATIONS ARE OFTEN noexcept
+
+A move constructor that is declared `noexcept` allows standard library containers to use move operations when appropriate during reallocation.
+
+Example:
+
+```cpp
+class Buffer
+{
+public:
+    Buffer(Buffer&& other) noexcept;
+};
+```
+
+`std::vector` may prefer copying over moving when moving could throw and copying is available, because this can help preserve exception guarantees.
+
+Therefore, a move operation should normally be marked `noexcept` when its implementation truly cannot throw.
+
+Do not add `noexcept` if the move operation can actually throw.
+
+30. RETURN VALUE OPTIMIZATION AND MOVE
+
+Modern C++ can eliminate certain temporary object constructions.
+
+Example:
+
+```cpp
+Buffer create_buffer()
+{
+    Buffer temp(100);
+    return temp;
+}
+```
+
+The compiler may perform named return value optimization (NRVO).
+
+For:
+
+```cpp
+Buffer create_buffer()
+{
+    return Buffer(100);
+}
+```
+
+C++17 provides guaranteed copy elision in certain prvalue cases.
+
+Therefore, it is incorrect to assume that every return of an object necessarily calls a move constructor.
+
+Move semantics are still important when actual moves are required.
+
+31. OBJECT LIFETIME
+
+Object lifetime is distinct from raw storage.
+
+Storage can exist without an object currently being alive in that storage.
+
+For normal class objects:
+
+```cpp
+{
+    Widget w;
+} // lifetime ends here
+```
+
+The destructor runs when the object's lifetime ends, subject to the rules of the object's storage duration and destruction.
+
+Common storage-duration categories include:
+
+* Automatic storage duration
+* Static storage duration
+* Thread storage duration
+* Dynamic storage duration
+
+Understanding object lifetime is essential when working with:
+
+* Pointers
+* References
+* Placement construction
+* Allocators
+* Unions
+* Containers
+* Custom memory pools
+
+32. RESOURCE OWNERSHIP
+
+A raw pointer such as:
+
+```cpp
+Widget* ptr;
+```
+
+does not by itself communicate ownership.
+
+It may represent:
+
+* Non-owning access
+* An optional object
+* An array element
+* A resource handle
+* A pointer whose ownership is documented elsewhere
+
+Modern APIs should make ownership semantics clear.
+
+Common conventions:
+
+```cpp
+T&
+```
+
+Usually indicates a required, non-owning reference.
+
+```cpp
+T*
+```
+
+Often indicates optional or non-owning access, although the exact ownership convention must be documented.
+
+```cpp
+std::unique_ptr<T>
+```
+
+Indicates exclusive ownership.
+
+```cpp
+std::shared_ptr<T>
+```
+
+Indicates shared ownership.
+
+```cpp
+std::weak_ptr<T>
+```
+
+Indicates non-owning observation of an object managed by `shared_ptr`.
+
+33. SMART POINTERS AND OOP
+
+Smart pointers are important RAII tools in modern C++.
+
+`std::unique_ptr<T>`:
+
+* Exclusive ownership
+* Move-only
+* Automatically destroys the managed object
+* Usually has very low overhead
+* Can use custom deleters
+
+`std::shared_ptr<T>`:
+
+* Shared ownership
+* Reference-counted ownership model
+* Copyable
+* Object is destroyed when the last owning `shared_ptr` is released
+
+`std::weak_ptr<T>`:
+
+* Non-owning reference to an object managed by `shared_ptr`
+* Does not keep the object alive
+* Can help break ownership cycles
+
+34. BASIC BANK ACCOUNT EXAMPLE
+
+```cpp
+#include <iostream>
+#include <string>
+
+class BankAccount
+{
+private:
+    std::string owner;
+    double balance;
+
+public:
+    BankAccount(const std::string& account_owner,
+                double initial_balance)
+        : owner(account_owner),
+          balance(initial_balance >= 0.0
+                      ? initial_balance
+                      : 0.0)
+    {
+    }
+
+    void deposit(double amount)
+    {
+        if (amount > 0.0)
+        {
+            balance += amount;
+
+            std::cout
+                << "Deposited $"
+                << amount
+                << " into "
+                << owner
+                << "'s account.\n";
+        }
+    }
+
+    bool withdraw(double amount)
+    {
+        if (amount > 0.0 && amount <= balance)
+        {
+            balance -= amount;
+
+            std::cout
+                << "Withdrew $"
+                << amount
+                << " from "
+                << owner
+                << "'s account.\n";
+
+            return true;
+        }
+
+        std::cout
+            << "Withdrawal denied: Insufficient funds.\n";
+
+        return false;
+    }
+
+    double get_balance() const
+    {
+        return balance;
+    }
+
+    const std::string& get_owner() const
+    {
+        return owner;
+    }
+};
+
+int main()
+{
+    BankAccount account("Alice", 500.0);
+
+    account.deposit(250.0);
+    account.withdraw(100.0);
+    account.withdraw(1000.0);
+
+    std::cout
+        << "Final Balance for "
+        << account.get_owner()
+        << ": $"
+        << account.get_balance()
+        << '\n';
+
+    return 0;
+}
+```
+
+35. EXPECTED OUTPUT
+
+```text
+Deposited $250 into Alice's account.
+Withdrew $100 from Alice's account.
+Withdrawal denied: Insufficient funds.
+Final Balance for Alice: $650
+```
+
+36. RAII FILE WRAPPER
+
+A file handle can be wrapped inside a class so that cleanup happens automatically.
+
+```cpp
+#include <cstdio>
+#include <iostream>
+#include <string>
+
+class ScopedFile
+{
+private:
+    FILE* handle;
+    std::string filename;
+
+public:
+    explicit ScopedFile(const std::string& name,
+                        const char* mode)
+        : handle(std::fopen(name.c_str(), mode)),
+          filename(name)
+    {
+        if (handle)
+        {
+            std::cout
+                << "[RAII] Opened file: "
+                << filename
+                << '\n';
+        }
+    }
+
+    ~ScopedFile()
+    {
+        if (handle)
+        {
+            std::fclose(handle);
+
+            std::cout
+                << "[RAII] Closed file: "
+                << filename
+                << " automatically.\n";
+        }
+    }
+
+    ScopedFile(const ScopedFile&) = delete;
+
+    ScopedFile& operator=(const ScopedFile&) = delete;
+
+    void write(const std::string& text)
+    {
+        if (handle)
+        {
+            std::fputs(text.c_str(), handle);
+        }
+    }
+
+    bool is_open() const
+    {
+        return handle != nullptr;
+    }
+};
+
+int main()
+{
+    {
+        ScopedFile log_file("app.log", "w");
+
+        if (log_file.is_open())
+        {
+            log_file.write(
+                "Logging RAII event.\n");
+        }
+
+        std::cout
+            << "Leaving inner scope...\n";
+    }
+
+    std::cout
+        << "File has been closed.\n";
+
+    return 0;
+}
+```
+
+The copy operations are deleted because copying two wrappers that both close the same `FILE*` would create an ownership problem.
+
+In production code, a standard RAII wrapper such as `std::unique_ptr` with a suitable custom deleter can often express this ownership more directly.
+
+37. ADVANCED DYNAMIC ARRAY EXAMPLE
+
+```cpp
+#include <algorithm>
+#include <cstddef>
+#include <iostream>
+#include <utility>
+
+class SmartArray
+{
+private:
+    int* data;
+    std::size_t size;
+
+public:
+    explicit SmartArray(std::size_t n = 0,
+                         int default_value = 0)
+        : data(n ? new int[n] : nullptr),
+          size(n)
+    {
+        std::fill_n(data, size, default_value);
+
+        std::cout
+            << "[Construct] Allocated "
+            << size
+            << " integers.\n";
+    }
+
+    ~SmartArray()
+    {
+        delete[] data;
+
+        std::cout
+            << "[Destruct] Released "
+            << size
+            << " integers.\n";
+    }
+
+    SmartArray(const SmartArray& other)
+        : data(other.size
+                   ? new int[other.size]
+                   : nullptr),
+          size(other.size)
+    {
+        std::copy_n(other.data, size, data);
+
+        std::cout
+            << "[Copy Construct] Deep copied "
+            << size
+            << " integers.\n";
+    }
+
+    SmartArray(SmartArray&& other) noexcept
+        : data(std::exchange(other.data, nullptr)),
+          size(std::exchange(other.size, 0))
+    {
+        std::cout
+            << "[Move Construct] Transferred resources.\n";
+    }
+
+    SmartArray& operator=(SmartArray other)
+    {
+        swap(*this, other);
+
+        std::cout
+            << "[Assignment via Swap]\n";
+
+        return *this;
+    }
+
+    friend void swap(SmartArray& a,
+                     SmartArray& b) noexcept
+    {
+        using std::swap;
+
+        swap(a.data, b.data);
+        swap(a.size, b.size);
+    }
+
+    int& operator[](std::size_t index)
+    {
+        return data[index];
+    }
+
+    const int& operator[](std::size_t index) const
+    {
+        return data[index];
+    }
+
+    std::size_t get_size() const
+    {
+        return size;
+    }
+};
+
+SmartArray create_sample_array()
+{
+    SmartArray temp(3, 99);
+    return temp;
+}
+
+int main()
+{
+    SmartArray a(4, 10);
+
+    SmartArray b = a;
+
+    SmartArray c = create_sample_array();
+
+    a = std::move(c);
+
+    return 0;
+}
+```
+
+Important:
+
+`SmartArray::operator=(SmartArray other)` uses copy-and-swap.
+
+The by-value parameter can be constructed using either copying or moving depending on the argument.
+
+The function is intentionally not marked `noexcept` because construction of the parameter may allocate and throw.
+
+38. CODE WALKTHROUGH
+
+Move constructor:
+
+```cpp
+SmartArray(SmartArray&& other) noexcept
+```
+
+Transfers the resource handle from the source object.
+
+The source is then placed into a valid state:
+
+```cpp
+other.data = nullptr;
+other.size = 0;
+```
+
+This is normally an O(1) operation for this pointer-based representation.
+
+Copy constructor:
+
+```cpp
+SmartArray(const SmartArray& other)
+```
+
+Allocates independent storage and copies the elements.
+
+Copy-and-swap assignment:
+
+```cpp
+SmartArray& operator=(SmartArray other)
+```
+
+Receives a copy or moved value and exchanges the resources with the current object.
+
+39. SELF-ASSIGNMENT
+
+A copy assignment operator may receive:
+
+```cpp
+object = object;
+```
+
+A manually implemented assignment operator should account for self-assignment if its implementation could otherwise invalidate the source before copying.
+
+Example:
+
+```cpp
+if (this != &other)
+{
+    // perform assignment
+}
+```
+
+Copy-and-swap naturally handles self-assignment safely because the temporary is a separate object.
+
+40. POLYMORPHIC BASE CLASSES AND VIRTUAL DESTRUCTORS
+
+If a class is intended to be used polymorphically and objects may be deleted through a base pointer, the base class normally needs an appropriate virtual destructor.
+
+Example:
+
+```cpp
+class Base
+{
+public:
+    virtual ~Base() = default;
+};
+
+class Derived : public Base
+{
+};
+```
+
+Then:
+
+```cpp
+Base* object = new Derived;
+delete object;
+```
+
+correctly invokes the derived destructor followed by the base destructor.
+
+Polymorphic classes require careful thought about copy/move operations and slicing.
+
+41. PRACTICAL OOP + RAII PROBLEM
+
+Problem:
+
+Implement a `LockGuard` class that:
+
+1. Receives a mutex reference.
+2. Locks the mutex in the constructor.
+3. Unlocks the mutex in the destructor.
+4. Does not allow copying.
+
+Concept:
+
+```cpp
+class LockGuard
+{
+private:
+    // mutex reference
+
+public:
+    // lock in constructor
+    // unlock in destructor
+    // delete copy operations
+};
+```
+
+In real programs, prefer the standard RAII synchronization types such as:
+
+```cpp
+std::lock_guard
+std::unique_lock
+std::scoped_lock
+```
+
+when they satisfy the required behavior.
+
+42. PRACTICAL PROGRAMMING PROBLEMS
+
+43. Implement an RAII file wrapper.
+
+44. Implement a matrix class with `+`, `-`, and `*`.
+
+45. Implement a move-only resource class.
+
+46. Implement a deep-copy string class.
+
+47. Implement a class using Rule of Zero.
+
+48. Implement a class with deleted copy operations.
+
+49. Implement a class with a custom move constructor.
+
+50. Implement a stream insertion operator.
+
+51. Implement a resource wrapper using `std::unique_ptr`.
+
+52. Implement a class demonstrating copy vs move behavior.
+
+53. COMMON MISTAKES
+
+Mistake 1:
+Manually managing a resource when a standard RAII type already exists.
+
+Better:
+
+```cpp
+std::vector<int>
+```
+
+instead of manually managing a dynamic array where appropriate.
+
+Mistake 2:
+Forgetting ownership semantics.
+
+A raw pointer does not automatically mean ownership.
+
+Mistake 3:
+Defining a destructor for a resource-owning class but ignoring copy operations.
+
+This can result in shallow copying and double deletion.
+
+Mistake 4:
+Assuming every object return performs a move.
+
+Copy elision can remove the copy/move operation.
+
+Mistake 5:
+Marking every move operation `noexcept` without checking whether it can actually throw.
+
+Mistake 6:
+Marking a copy-and-swap by-value assignment operator `noexcept` when parameter construction can throw.
+
+Mistake 7:
+Using `std::move` and assuming it immediately transfers resources.
+
+`std::move` is a cast; the selected move operation performs the actual transfer.
+
+44. COMMON ERRORS
+
+Incorrect:
+
+```cpp
+class Resource
+{
+private:
+    int* data;
+
+public:
+    Resource()
+        : data(new int[100])
+    {
+    }
+
+    ~Resource()
+    {
+        delete[] data;
+    }
+};
+```
+
+Problem:
+
+```cpp
+Resource r1;
+Resource r2 = r1;
+```
+
+The implicitly generated copy operation may copy the pointer value rather than duplicate the pointed-to resource.
+
+Both objects can then attempt to destroy the same allocation.
+
+Correct approaches include:
+
+1. Implement deep copy.
+
+2. Delete copying.
+
+3. Use a suitable standard RAII type.
+
+4. Use explicit shared ownership if shared ownership is actually intended.
+
+5. DEBUGGING TECHNIQUES
+
+Useful techniques include:
+
+* AddressSanitizer
+* UndefinedBehaviorSanitizer
+* LeakSanitizer where supported
+* Debugger breakpoints
+* Constructor/destructor logging
+* Static analysis
+* Unit tests
+* Compiler warnings
+
+Example GCC/Clang command:
+
+```bash
+g++ -std=c++20 -Wall -Wextra -fsanitize=address -g program.cpp -o program
+```
+
+AddressSanitizer can detect several classes of memory errors such as:
+
+* Use-after-free
+* Out-of-bounds access
+* Double-free
+
+Sanitizers are debugging tools, not a replacement for correct ownership design.
+
+46. EDGE CASES
+
+Important edge cases include:
+
+* Self-assignment
+* Empty objects
+* Zero-sized allocations
+* Moved-from objects
+* Exceptions during allocation
+* Exceptions during copying
+* Object lifetime ending during exception unwinding
+* Copying a resource that should be unique
+* Accidental ownership through raw pointers
+* Polymorphic deletion through base pointers
+* Resource cycles
+
+47. EXCEPTION SAFETY
+
+RAII is closely connected to exception safety.
+
+Consider:
+
+```cpp
+void process()
+{
+    std::vector<int> values(1000);
+
+    // code that may throw
+}
+```
+
+If an exception leaves the scope, `values` is still destroyed automatically.
+
+This makes cleanup deterministic during stack unwinding.
+
+Common exception-safety levels include:
+
+* No-throw guarantee
+* Strong guarantee
+* Basic guarantee
+
+Copy-and-swap is one technique that can help implement the strong guarantee for assignment.
+
+48. PERFORMANCE CONSIDERATIONS
+
+Move operations can be significantly cheaper than deep copies for resource-owning types.
+
+For a class containing a heap pointer and size:
+
+Move may involve:
+
+```text
+copy pointer
+copy size
+reset source
+```
+
+whereas deep copy may involve:
+
+```text
+allocate memory
+copy many elements
+```
+
+However, exact execution time depends on:
+
+* Hardware
+* Compiler
+* Optimization level
+* Resource size
+* Memory hierarchy
+* Implementation details
+
+Therefore, avoid fixed claims such as "move always takes exactly 1 nanosecond."
+
+49. MEMORY CONSIDERATIONS
+
+Class object layout is controlled by the C++ object model, alignment requirements, base classes, virtual functions, and implementation details.
+
+Do not assume that:
+
+```cpp
+sizeof(Class)
+```
+
+is simply the sum of member sizes.
+
+Padding and alignment can add space.
+
+For example:
+
+```cpp
+class Example
+{
+    char a;
+    int b;
+};
+```
+
+may contain padding between members.
+
+The exact layout should not be assumed to be identical across all implementations unless the relevant language/ABI requirements guarantee it.
+
+50. MEMORY SAFETY AND SECURITY
+
+RAII helps reduce classes of resource-management errors such as:
+
+* Memory leaks
+* Double deletion
+* Unreleased file handles
+* Unreleased locks
+* Some exception-related cleanup failures
+
+However, RAII does not prevent every memory-safety problem.
+
+It does not automatically prevent:
+
+* Buffer overflows
+* Use-after-free through invalid non-owning pointers
+* Data races
+* Logic errors
+* Incorrect custom deleters
+* Reference cycles
+* Invalid indexing
+* Memory exhaustion
+
+Correct ownership design and bounds-safe programming remain necessary.
+
+51. RULE OF ZERO DESIGN EXAMPLE
+
+Prefer:
+
+```cpp
+#include <memory>
+#include <string>
+#include <vector>
+
+class Student
+{
+private:
+    std::string name;
+    std::vector<int> marks;
+    std::unique_ptr<int> identifier;
+
+public:
+    Student(const std::string& student_name,
+            int id)
+        : name(student_name),
+          identifier(std::make_unique<int>(id))
+    {
+    }
+};
+```
+
+The class does not need a custom destructor merely to release these resources.
+
+The member types already own and release their resources.
+
+52. OWNERSHIP DESIGN TABLE
+
+```text
+Type / Technique          Typical meaning
+
+T                         Value object
+
+T&                        Required non-owning access
+
+const T&                  Read-only non-owning access
+
+T*                        Often optional/non-owning access
+
+std::unique_ptr<T>        Exclusive ownership
+
+std::shared_ptr<T>        Shared ownership
+
+std::weak_ptr<T>          Non-owning observation of shared ownership
+```
+
+These are design conventions rather than universal ownership rules for every API.
+
+53. COMPARISON WITH GARBAGE-COLLECTED LANGUAGES
+
+C++:
+
+* Objects can have automatic, static, thread, or dynamic storage duration.
+* Destruction can be deterministic according to object lifetime.
+* RAII can manage resources beyond memory.
+* Programmer/design determines ownership semantics.
+
+Garbage-collected languages:
+
+* Memory reclamation is handled by a garbage collector.
+* Object reclamation timing is generally not equivalent to deterministic C++ scope-based destruction.
+* Resource management often requires separate constructs such as `try/finally`, context managers, or language/library-specific mechanisms.
+
+The key difference is not simply "stack versus heap."
+
+The important distinction is object lifetime, ownership, and resource reclamation strategy.
+
+54. FAQ
+
+Q1: What is RAII?
+
+A:
+RAII is a C++ resource-management technique that ties resource lifetime to object lifetime. Acquisition and initialization are associated with object construction, while cleanup is associated with destruction.
+
+Q2: What is the Rule of Zero?
+
+A:
+Prefer classes that do not need custom special member functions because resource-owning member types already manage their resources.
+
+Q3: What is the Rule of Three?
+
+A:
+For a resource-managing class, if one of destructor, copy constructor, or copy assignment requires custom handling, the other two often require consideration as well.
+
+Q4: What is the Rule of Five?
+
+A:
+The Rule of Five extends the Rule of Three to include move constructor and move assignment in C++11 and later.
+
+Q5: What is the difference between copy constructor and copy assignment?
+
+A:
+A copy constructor creates a new object from an existing object. Copy assignment modifies an existing object.
+
+Q6: What is the difference between move constructor and move assignment?
+
+A:
+A move constructor initializes a new object from an rvalue. Move assignment transfers/reuses resources for an already-existing destination object.
+
+Q7: Does `std::move` move an object?
+
+A:
+No. `std::move` performs an rvalue-reference cast. A move constructor or move assignment operator may then be selected.
+
+Q8: Why use `explicit`?
+
+A:
+It prevents unintended implicit conversions through constructors where applicable.
+
+Q9: Why use `noexcept` on move operations?
+
+A:
+When a move operation truly cannot throw, `noexcept` allows standard-library code to use that information when selecting operations and preserving exception guarantees.
+
+Q10: Does RAII eliminate every memory bug?
+
+A:
+No. RAII reduces ownership and cleanup errors but does not prevent all memory-safety problems.
+
+55. INTERVIEW QUESTIONS
+
+BEGINNER:
+
+Q1: What is encapsulation?
+
+A:
+Encapsulation combines data and operations in a type and controls access to its internal state.
+
+Q2: What is a constructor?
+
+A:
+A constructor initializes an object when its lifetime begins.
+
+Q3: What is a destructor?
+
+A:
+A destructor performs cleanup when an object's lifetime ends.
+
+Q4: What is the difference between class and struct?
+
+A:
+Their main language-level difference is default access control. Class members are private by default, while struct members are public by default.
+
+INTERMEDIATE:
+
+Q5: Explain RAII.
+
+A:
+RAII ties resource management to object lifetime so that resource cleanup occurs automatically during destruction.
+
+Q6: Explain Rule of Three.
+
+A:
+A resource-owning class that needs a custom destructor, copy constructor, or copy assignment operator will generally need to consider all three.
+
+Q7: Explain Rule of Five.
+
+A:
+The Rule of Five adds move constructor and move assignment to the three copy/resource-management operations.
+
+Q8: Explain Rule of Zero.
+
+A:
+Use RAII member types so that the class itself does not need custom copy, move, or destructor operations for resource management.
+
+ADVANCED:
+
+Q9: Why should move constructors often be `noexcept`?
+
+A:
+Standard containers can use `noexcept` information when deciding whether moving is safe during operations such as reallocation. If moving may throw and copying is available, an implementation may choose copying to preserve exception guarantees.
+
+Q10: What is copy-and-swap?
+
+A:
+It creates a copy or moved value, swaps its resources with the destination, and lets the temporary destroy the old resources. This can simplify assignment and provide strong exception safety.
+
+Q11: Why is `shared_ptr(this)` dangerous inside a class already owned by `shared_ptr`?
+
+A:
+It can create a separate ownership control block for the same object, resulting in multiple independent owners that may eventually attempt to destroy the object more than once. `enable_shared_from_this` is the appropriate mechanism when shared ownership must be obtained from an already shared-managed object.
+
+56. EXAM QUESTIONS
+
+SHORT ANSWER:
+
+1. What is encapsulation?
+2. What is RAII?
+3. What is a destructor?
+4. What does `explicit` prevent?
+5. What is a move constructor?
+6. What is the Rule of Zero?
+
+MEDIUM ANSWER:
+
+1. Explain the difference between copy constructor and copy assignment.
+2. Explain Rule of Three and Rule of Five.
+3. Explain deep copy and shallow copy.
+4. Explain the importance of `noexcept` for move operations.
+5. Explain member initializer lists.
+
+LONG ANSWER:
+
+1. Explain RAII and its role in exception-safe C++ programming.
+
+2. Explain Rule of Zero, Rule of Three, and Rule of Five with examples.
+
+3. Explain copy and move semantics for resource-owning classes.
+
+4. Design an RAII resource wrapper and explain its lifetime.
+
+5. Compare deterministic C++ resource management with garbage-collected memory management.
+
+6. PRACTICE QUESTIONS
+
+7. Implement a `SmartPointer<T>` class with:
+
+   * Constructor
+   * Destructor
+   * `operator*`
+   * `operator->`
+   * Deleted copy operations
+   * Move constructor
+   * Move assignment
+
+8. Implement a `Matrix` class with:
+
+   * Constructor
+   * Copy constructor
+   * Move constructor
+   * `operator+`
+   * `operator-`
+   * `operator*`
+   * `operator<<`
+
+9. Implement an RAII file manager.
+
+10. Implement a move-only socket/resource wrapper.
+
+11. Implement a deep-copy dynamic string class.
+
+12. Implement a Rule-of-Zero class using `std::vector` and `std::string`.
+
+13. Demonstrate copy elision and move construction.
+
+14. Create a polymorphic base class with a virtual destructor.
+
+15. BEST PRACTICES
+
+* Prefer the Rule of Zero.
+* Prefer standard RAII types over manual resource management.
+* Use member initializer lists.
+* Mark single-argument converting constructors `explicit` when implicit conversion is not intended.
+* Make move operations `noexcept` when they truly cannot throw.
+* Do not manually implement copy/move/destruction without a clear ownership reason.
+* Make ownership semantics clear in APIs.
+* Use `std::unique_ptr` for exclusive dynamic ownership.
+* Use `std::shared_ptr` only when shared ownership is actually required.
+* Use `std::weak_ptr` for non-owning observation and to break appropriate ownership cycles.
+* Use `= delete` when copying or moving must be prohibited.
+* Use `= default` when the compiler-generated operation expresses the intended semantics.
+* Avoid unnecessary raw `new` and `delete`.
+* Use sanitizers and compiler warnings during debugging.
+* Do not rely on implementation-specific object sizes or performance claims without evidence.
+
+59. IMPORTANT MODERN C++ CORRECTIONS
+
+The following statements should be avoided:
+
+Incorrect:
+"Modern C++ eliminates manual memory management."
+
+Better:
+"Modern C++ encourages RAII and standard ownership types so ordinary application code can often avoid explicit `new` and `delete`."
+
+Incorrect:
+"RAII guarantees zero resource leaks."
+
+Better:
+"RAII greatly reduces leaks and ensures cleanup during normal scope exit and exception unwinding when ownership is correctly designed."
+
+Incorrect:
+"Every return of an object triggers move semantics."
+
+Better:
+"Copy elision can eliminate copy and move operations in several cases."
+
+Incorrect:
+"Every move operation must be `noexcept`."
+
+Better:
+"Move operations should be `noexcept` when they are genuinely non-throwing, especially for types intended for efficient use in standard containers."
+
+Incorrect:
+"Copy-and-swap assignment is always `noexcept`."
+
+Better:
+"Copy-and-swap can be exception-safe, but a by-value parameter may require a potentially throwing copy."
+
+Incorrect:
+"Move semantics always allocate zero memory."
+
+Better:
+"For a particular resource-owning type, a move operation can transfer an existing resource without allocating, but this is type-dependent."
+
+60. REAL-WORLD APPLICATIONS
+
+RAII and OOP are commonly useful for:
+
+* File management
+* Database connections
+* Network sockets
+* Thread synchronization
+* Operating-system handles
+* Graphics resources
+* Memory pools
+* Containers
+* Serialization objects
+* Resource managers
+* Transaction management
+
+Examples of standard C++ RAII facilities include:
+
+```cpp
+std::unique_ptr
+std::shared_ptr
+std::lock_guard
+std::scoped_lock
+std::fstream
+std::vector
+std::string
+```
+
+These types demonstrate how resource management can be integrated into object lifetime.
+
+61. EXECUTION FLOW
+
+For a block such as:
+
+```cpp
+{
+    A a;
+    B b;
+    C c;
+}
+```
+
+Objects with automatic storage duration are constructed in their required initialization order and destroyed in reverse order:
+
+```text
+Construct A
+Construct B
+Construct C
+
+Destroy C
+Destroy B
+Destroy A
+```
+
+During exception handling, automatic objects whose construction completed are destroyed as stack unwinding proceeds.
+
+This is one of the foundations of RAII.
+
+62. SUMMARY
+
+C++ OOP combines data abstraction, encapsulation, object lifetime management, and user-defined behavior.
+
+Modern C++ emphasizes:
+
+* Encapsulation
+* Constructors
+* Destructors
+* Member initializer lists
+* `const` correctness
+* RAII
+* Copy semantics
+* Move semantics
+* Rule of Zero
+* Rule of Three
+* Rule of Five
+* Exception safety
+* Clear ownership semantics
+
+The most important design principle is:
+
+Prefer composing classes from well-designed RAII types instead of manually managing resources.
+
+When direct resource management is necessary, correctly defining ownership, copying, moving, destruction, and exception safety becomes essential.
+
+63. KEY TAKEAWAYS
+
+* Encapsulation protects object invariants.
+* `class` and `struct` mainly differ in their default access control.
+* Member initializer lists initialize members before the constructor body.
+* Destructors provide deterministic cleanup for object-owned resources.
+* RAII binds resource management to object lifetime.
+* `const` member functions support read-only object access.
+* Copy construction creates a new object.
+* Copy assignment modifies an existing object.
+* Move construction initializes a new object from an rvalue.
+* Move assignment transfers/reuses resources for an existing object.
+* `std::move` is a cast; it does not itself perform the move.
+* The Rule of Three applies to traditional resource-owning classes.
+* The Rule of Five accounts for move operations in C++11 and later.
+* The Rule of Zero is generally preferred in modern C++.
+* `noexcept` move operations can improve compatibility with standard containers.
+* Copy-and-swap can simplify exception-safe assignment.
+* Copy elision can remove copy and move operations.
+* Raw pointers do not inherently express ownership.
+* Standard RAII types should be preferred where appropriate.
+* RAII reduces resource-management bugs but does not eliminate all memory-safety problems.

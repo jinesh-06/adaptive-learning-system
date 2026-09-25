@@ -1,0 +1,2101 @@
+COURSE: Java Programming
+TOPIC: Arrays, Strings, String Pool, and StringBuilder Mechanics
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE Documentation / Textbook Knowledge Base
+
+================================================================================
+ARRAYS, STRINGS, STRING POOL, AND STRINGBUILDER MECHANICS
+=========================================================
+
+1. INTRODUCTION
+
+Arrays and Strings are fundamental building blocks of Java programming.
+
+An array is an object that stores a fixed number of values of a single component type. Java supports:
+
+* One-dimensional arrays
+* Multidimensional arrays
+* Jagged or ragged arrays
+* Arrays of primitive values
+* Arrays of object references
+
+The size of an array is fixed when the array object is created.
+
+A String represents an immutable sequence of characters. Because String objects cannot be modified after creation, String operations that appear to change a string produce another String value rather than modifying the original object.
+
+Java also provides:
+
+* StringBuilder for mutable string construction without synchronization
+* StringBuffer for synchronized mutable string construction
+* String.intern() for canonical string representation
+* Text Blocks for convenient multiline string literals
+* java.util.Arrays for common array operations
+
+The JVM implementation may use compact internal representations for strings and may optimize memory layout, but application code should rely on the Java language and API specifications rather than assuming a particular object layout.
+
+2. LEARNING OBJECTIVES
+
+After completing this chapter, the learner should be able to:
+
+* Declare, create, initialize, and traverse arrays.
+* Work with one-dimensional, multidimensional, and jagged arrays.
+* Understand array indexing and the fixed-size nature of arrays.
+* Use the java.util.Arrays utility class.
+* Sort, search, copy, compare, and print arrays.
+* Understand String immutability.
+* Distinguish String reference equality from content equality.
+* Understand string literals and the String intern pool.
+* Use String.intern() appropriately.
+* Use StringBuilder for mutable string construction.
+* Understand StringBuilder length and capacity.
+* Understand StringBuffer and its synchronization.
+* Use text blocks introduced in Java 15.
+* Understand Unicode characters, UTF-16 code units, and code points.
+* Understand important JVM implementation details without confusing them with Java language guarantees.
+* Write memory-conscious and performance-aware array and string code.
+
+3. PREREQUISITES
+
+The learner should understand:
+
+* Java syntax
+* Primitive data types
+* Variables
+* Operators
+* Control flow
+* Classes and objects
+* Basic memory concepts
+* Basic exception handling
+
+4. BEGINNER CONCEPTS
+
+4.1 ARRAY BASICS
+
+An array is an object containing a fixed number of components.
+
+Example:
+
+```java
+int[] numbers = new int[5];
+```
+
+The array contains five integer elements.
+
+Valid indexes are:
+
+```text
+0
+1
+2
+3
+4
+```
+
+The number of elements is obtained using:
+
+```java
+numbers.length
+```
+
+The length of an array is fixed after creation.
+
+4.2 ARRAY INITIALIZATION
+
+Array initializer:
+
+```java
+int[] primes = {2, 3, 5, 7, 11};
+```
+
+Equivalent explicit creation:
+
+```java
+int[] primes = new int[] {2, 3, 5, 7, 11};
+```
+
+4.3 DEFAULT VALUES
+
+When an array is created, its components receive default values.
+
+Examples:
+
+| Type             | Default  |
+| ---------------- | -------- |
+| byte             | 0        |
+| short            | 0        |
+| int              | 0        |
+| long             | 0L       |
+| float            | 0.0f     |
+| double           | 0.0d     |
+| char             | '\u0000' |
+| boolean          | false    |
+| Object reference | null     |
+
+Example:
+
+```java
+int[] values = new int[3];
+
+System.out.println(values[0]);
+```
+
+Output:
+
+```text
+0
+```
+
+4.4 STRING BASICS
+
+A String represents a sequence of characters and is immutable.
+
+Example:
+
+```java
+String greeting = "Hello";
+
+String message =
+    greeting + ", World!";
+```
+
+The original `greeting` String is not changed.
+
+String methods such as:
+
+```text
+toUpperCase()
+toLowerCase()
+concat()
+replace()
+substring()
+strip()
+```
+
+return a String result rather than modifying the original String object.
+
+4.5 STRING LENGTH
+
+For arrays:
+
+```java
+array.length
+```
+
+For Strings:
+
+```java
+string.length()
+```
+
+For collections:
+
+```java
+collection.size()
+```
+
+Example:
+
+```java
+int[] values = {10, 20, 30};
+
+String name = "Java";
+
+System.out.println(values.length);
+System.out.println(name.length());
+```
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 MULTIDIMENSIONAL ARRAYS
+
+Java multidimensional arrays are arrays whose components can themselves be arrays.
+
+Example:
+
+```java
+int[][] matrix = new int[3][4];
+```
+
+Conceptually:
+
+```text
+matrix
+ |
+ +--> row 0 -> [0][0] [0][1] [0][2] [0][3]
+ |
+ +--> row 1 -> [1][0] [1][1] [1][2] [1][3]
+ |
+ +--> row 2 -> [2][0] [2][1] [2][2] [2][3]
+```
+
+Each row is a separate array object.
+
+5.2 JAGGED ARRAYS
+
+Rows can have different lengths.
+
+```java
+int[][] jagged = new int[3][];
+
+jagged[0] = new int[2];
+jagged[1] = new int[5];
+jagged[2] = new int[3];
+```
+
+The structure is:
+
+```text
+Row 0 -> 2 elements
+Row 1 -> 5 elements
+Row 2 -> 3 elements
+```
+
+5.3 ARRAYS OF OBJECTS
+
+An object array stores references to objects.
+
+```java
+String[] names = new String[3];
+
+names[0] = "Alice";
+names[1] = "Bob";
+names[2] = "Charlie";
+```
+
+The array components contain references, not the String objects themselves.
+
+5.4 java.util.Arrays
+
+The `Arrays` utility class provides methods for working with arrays.
+
+Important operations include:
+
+```text
+sort()
+binarySearch()
+copyOf()
+copyOfRange()
+equals()
+deepEquals()
+fill()
+toString()
+deepToString()
+compare()
+mismatch()
+```
+
+Example:
+
+```java
+import java.util.Arrays;
+
+int[] data = {5, 2, 8, 1, 9};
+
+Arrays.sort(data);
+
+System.out.println(
+    Arrays.toString(data)
+);
+```
+
+5.5 ARRAYS.SORT()
+
+Example:
+
+```java
+int[] values = {5, 1, 4, 2, 3};
+
+Arrays.sort(values);
+```
+
+Result:
+
+```text
+[1, 2, 3, 4, 5]
+```
+
+The exact implementation used by the JDK can differ according to the array type and JDK implementation. Application code should depend on the API behavior rather than assuming a particular sorting implementation.
+
+For object arrays, overloads are available for natural ordering and supplied comparators.
+
+5.6 ARRAYS.BINARYSEARCH()
+
+Binary search requires the relevant array or range to be sorted according to the ordering used for the search.
+
+Example:
+
+```java
+int[] values = {10, 20, 30, 40, 50};
+
+int index =
+    Arrays.binarySearch(values, 30);
+
+System.out.println(index);
+```
+
+Output:
+
+```text
+2
+```
+
+If the key is not present, the method returns a negative value encoding the insertion point.
+
+If the array is not sorted as required, the result is unspecified by the API contract.
+
+5.7 COPYING ARRAYS
+
+Using `Arrays.copyOf()`:
+
+```java
+int[] original = {1, 2, 3};
+
+int[] copy =
+    Arrays.copyOf(original, 5);
+```
+
+The new array contains the copied elements and default values for the additional positions.
+
+Using `System.arraycopy()`:
+
+```java
+int[] source = {10, 20, 30, 40};
+int[] target = new int[4];
+
+System.arraycopy(
+    source,
+    0,
+    target,
+    0,
+    source.length
+);
+```
+
+`System.arraycopy()` copies a specified range of array components.
+
+5.8 ARRAY EQUALITY
+
+For one-dimensional arrays:
+
+```java
+Arrays.equals(a, b)
+```
+
+Example:
+
+```java
+int[] a = {1, 2, 3};
+int[] b = {1, 2, 3};
+
+System.out.println(
+    Arrays.equals(a, b)
+);
+```
+
+Output:
+
+```text
+true
+```
+
+For nested arrays:
+
+```java
+Arrays.deepEquals(a, b)
+```
+
+can recursively compare nested array contents.
+
+5.9 ARRAY TO STRING
+
+For one-dimensional arrays:
+
+```java
+Arrays.toString(values)
+```
+
+For multidimensional arrays:
+
+```java
+Arrays.deepToString(matrix)
+```
+
+Example:
+
+```java
+int[][] matrix = {
+    {1, 2},
+    {3, 4}
+};
+
+System.out.println(
+    Arrays.deepToString(matrix)
+);
+```
+
+Output:
+
+```text
+[[1, 2], [3, 4]]
+```
+
+6. STRING EQUALITY
+
+6.1 REFERENCE EQUALITY
+
+The `==` operator compares references when used with objects.
+
+Example:
+
+```java
+String a = "Java";
+String b = "Java";
+
+System.out.println(a == b);
+```
+
+This may print:
+
+```text
+true
+```
+
+because both variables can refer to the same interned string.
+
+However, `==` should not be used to test String content equality.
+
+6.2 CONTENT EQUALITY
+
+Use:
+
+```java
+equals()
+```
+
+Example:
+
+```java
+String a = new String("Java");
+String b = new String("Java");
+
+System.out.println(a.equals(b));
+```
+
+Output:
+
+```text
+true
+```
+
+6.3 NULL-SAFE COMPARISON
+
+A useful pattern is:
+
+```java
+if ("admin".equals(input)) {
+    System.out.println("Access granted");
+}
+```
+
+If `input` is null, the expression safely evaluates to false instead of throwing a NullPointerException.
+
+7. STRING CONSTANT POOL
+
+7.1 STRING LITERALS
+
+String literals are handled specially by the Java language and runtime.
+
+Example:
+
+```java
+String s1 = "Hello";
+String s2 = "Hello";
+```
+
+The two variables can refer to the same canonical String object.
+
+Therefore:
+
+```java
+s1 == s2
+```
+
+can be true.
+
+7.2 NEW STRING OBJECT
+
+Example:
+
+```java
+String s1 = "Hello";
+String s2 = new String("Hello");
+```
+
+The `new String(...)` expression creates a distinct String object.
+
+Therefore:
+
+```java
+s1 == s2
+```
+
+is false in this example.
+
+But:
+
+```java
+s1.equals(s2)
+```
+
+is true.
+
+7.3 INTERN()
+
+The `intern()` method returns a canonical representation of the string.
+
+Example:
+
+```java
+String s1 = "Hello";
+
+String s2 =
+    new String("Hello");
+
+String s3 =
+    s2.intern();
+
+System.out.println(s1 == s3);
+```
+
+Output:
+
+```text
+true
+```
+
+Interning should not be used indiscriminately for large numbers of unique dynamic strings. It should be used only when canonicalization provides a real application benefit.
+
+8. ADVANCED STRING CONCEPTS
+
+8.1 STRING IMMUTABILITY
+
+Consider:
+
+```java
+String text = "Java";
+
+text = text.toUpperCase();
+```
+
+The original String is immutable.
+
+The operation produces another String value and the variable `text` is then assigned to that result.
+
+8.2 WHY IMMUTABILITY IS USEFUL
+
+String immutability provides several important properties:
+
+* Safe sharing of String objects
+* Predictable behavior
+* Stable String hash codes
+* Compatibility with the String intern pool
+* Easier reasoning about concurrent access
+* Reduced risk of accidental modification
+
+String immutability is a language/API design property, not a guarantee that all application code using Strings is automatically secure.
+
+8.3 STRINGBUILDER
+
+`StringBuilder` represents a mutable sequence of characters.
+
+Example:
+
+```java
+StringBuilder builder =
+    new StringBuilder();
+
+builder.append("Java");
+builder.append(" Programming");
+
+String result =
+    builder.toString();
+```
+
+Output:
+
+```text
+Java Programming
+```
+
+Oracle documents `StringBuilder` as a mutable character sequence without a guarantee of synchronization and recommends it over `StringBuffer` when synchronization is not required.
+
+8.4 STRINGBUFFER
+
+`StringBuffer` is also mutable but provides synchronized methods for thread-safe use of the buffer.
+
+Example:
+
+```java
+StringBuffer buffer =
+    new StringBuffer();
+
+buffer.append("Java");
+buffer.append(" Programming");
+```
+
+`StringBuffer` is appropriate when the synchronization characteristics it provides are required. Otherwise, `StringBuilder` is generally preferred.
+
+8.5 STRINGBUILDER CAPACITY
+
+A StringBuilder has:
+
+```text
+length
+capacity
+```
+
+`length()` reports the number of characters currently contained.
+
+`capacity()` reports the amount of storage currently available before another allocation may be required.
+
+The default constructor starts with a capacity of 16.
+
+For:
+
+```java
+new StringBuilder("Java")
+```
+
+the initial capacity is 16 plus the length of the supplied String.
+
+Oracle specifies that when capacity needs to grow, the new capacity is at least the requested minimum and can be based on twice the old capacity plus 2. Code should not depend on a particular growth sequence beyond the documented API behavior.
+
+8.6 ENSURE CAPACITY
+
+If the approximate final size is known:
+
+```java
+StringBuilder builder =
+    new StringBuilder(1000);
+```
+
+or:
+
+```java
+builder.ensureCapacity(1000);
+```
+
+Pre-sizing can reduce the number of internal reallocations during construction.
+
+9. UNICODE AND STRING CHARACTER HANDLING
+
+Java Strings use UTF-16 semantics for their character sequence.
+
+Important distinction:
+
+```text
+char       -> UTF-16 code unit
+code point -> Unicode character value
+```
+
+A Unicode code point outside the Basic Multilingual Plane can require two UTF-16 code units, represented as a surrogate pair.
+
+Therefore:
+
+```java
+text.length()
+```
+
+reports the number of UTF-16 code units, not necessarily the number of user-perceived characters.
+
+For Unicode-aware processing, APIs such as:
+
+```java
+codePointAt()
+codePoints()
+codePointCount()
+```
+
+can be used.
+
+10. COMPACT STRINGS
+
+Modern HotSpot implementations may use a compact internal representation for String objects.
+
+In supported JDK implementations, strings whose contents can be represented using Latin-1 may use a more compact representation than strings requiring UTF-16.
+
+This is a JVM implementation detail.
+
+Important:
+
+* Do not assume every Java implementation has the same internal String layout.
+* Do not write application code that depends on String's private fields.
+* The Java API guarantees String behavior, not a specific backing-array representation.
+
+This distinction is important when teaching JVM internals.
+
+11. TEXT BLOCKS
+
+Text blocks were introduced as a standard Java feature in Java 15.
+
+Example:
+
+```java
+String json = """
+    {
+        "id": 101,
+        "name": "Java",
+        "active": true
+    }
+    """;
+```
+
+Text blocks are useful for multiline text such as:
+
+* JSON
+* SQL
+* HTML
+* configuration text
+* source-code examples
+
+Java performs processing such as incidental whitespace handling and line-terminator normalization according to the text-block rules.
+
+11.1 FORMATTED TEXT BLOCKS
+
+Text blocks can be combined with `formatted()`:
+
+```java
+String message = """
+    Name: %s
+    Age: %d
+    """.formatted(
+        "Alice",
+        21
+    );
+```
+
+This is useful when a multiline template contains dynamic values.
+
+12. STRING CONCATENATION
+
+Simple concatenation:
+
+```java
+String name = "Alice";
+
+String message =
+    "Hello " + name;
+```
+
+is convenient and readable.
+
+The Java compiler and runtime may optimize string concatenation.
+
+Therefore, it is incorrect to assume that every use of `+` automatically creates a new StringBuilder object at runtime.
+
+For a simple expression, compiler/runtime optimizations can produce efficient concatenation code.
+
+For repeated mutation inside a loop, an explicitly reusable `StringBuilder` is often appropriate:
+
+```java
+StringBuilder builder =
+    new StringBuilder();
+
+for (int i = 0; i < 1000; i++) {
+    builder.append(i);
+}
+
+String result =
+    builder.toString();
+```
+
+13. SYNTAX
+
+13.1 ARRAY OPERATIONS
+
+```java
+import java.util.Arrays;
+
+int[] data = {5, 2, 8, 1, 9};
+
+Arrays.sort(data);
+
+int index =
+    Arrays.binarySearch(data, 8);
+
+System.out.println(
+    Arrays.toString(data)
+);
+
+System.out.println(index);
+```
+
+13.2 STRINGBUILDER
+
+```java
+StringBuilder builder =
+    new StringBuilder(128);
+
+builder
+    .append("Order #")
+    .append(101)
+    .append(": Status=")
+    .append("APPROVED");
+
+String result =
+    builder.toString();
+```
+
+13.3 TEXT BLOCK
+
+```java
+String json = """
+    {
+        "productId": 501,
+        "name": "Mechanical Keyboard",
+        "inStock": true
+    }
+    """;
+```
+
+14. BASIC EXAMPLE
+
+```java
+import java.util.Arrays;
+
+public class BasicArraysStrings {
+
+    public static void main(String[] args) {
+
+        int[] scores =
+            {85, 92, 78, 95, 88};
+
+        Arrays.sort(scores);
+
+        System.out.println(
+            "Sorted scores: " +
+            Arrays.toString(scores)
+        );
+
+        int target = 92;
+
+        int index =
+            Arrays.binarySearch(
+                scores,
+                target
+            );
+
+        System.out.println(
+            "Score " +
+            target +
+            " found at index: " +
+            index
+        );
+
+        int[][] matrix = {
+            {1, 2, 3},
+            {4, 5, 6}
+        };
+
+        System.out.println(
+            "2D Matrix: " +
+            Arrays.deepToString(matrix)
+        );
+
+        String text =
+            "   Java Enterprise Architecture   ";
+
+        String trimmed =
+            text.trim();
+
+        String upper =
+            trimmed.toUpperCase();
+
+        boolean contains =
+            upper.contains("ENTERPRISE");
+
+        String replaced =
+            upper.replace(
+                "JAVA",
+                "MODERN JAVA"
+            );
+
+        System.out.println(
+            "Trimmed: '" + trimmed + "'"
+        );
+
+        System.out.println(
+            "Uppercase: '" + upper + "'"
+        );
+
+        System.out.println(
+            "Contains 'ENTERPRISE': " +
+            contains
+        );
+
+        System.out.println(
+            "Replaced: '" + replaced + "'"
+        );
+    }
+}
+```
+
+15. INTERMEDIATE EXAMPLE
+
+```java
+public class IntermediateArraysStrings {
+
+    public static void main(String[] args) {
+
+        String s1 = "Hello";
+        String s2 = "Hello";
+
+        String s3 =
+            new String("Hello");
+
+        String s4 =
+            s3.intern();
+
+        System.out.println(
+            "s1 == s2: " +
+            (s1 == s2)
+        );
+
+        System.out.println(
+            "s1 == s3: " +
+            (s1 == s3)
+        );
+
+        System.out.println(
+            "s1.equals(s3): " +
+            s1.equals(s3)
+        );
+
+        System.out.println(
+            "s1 == s4: " +
+            (s1 == s4)
+        );
+
+        int[][] triangle =
+            new int[4][];
+
+        for (int i = 0;
+             i < triangle.length;
+             i++) {
+
+            triangle[i] =
+                new int[i + 1];
+
+            for (int j = 0;
+                 j < triangle[i].length;
+                 j++) {
+
+                triangle[i][j] =
+                    (i + 1) * 10 + (j + 1);
+            }
+        }
+
+        System.out.println(
+            "\n=== Jagged Array ==="
+        );
+
+        for (int i = 0;
+             i < triangle.length;
+             i++) {
+
+            System.out.print(
+                "Row " + i + ": "
+            );
+
+            for (int value : triangle[i]) {
+                System.out.print(
+                    value + " "
+                );
+            }
+
+            System.out.println();
+        }
+    }
+}
+```
+
+16. ADVANCED EXAMPLE
+
+```java
+public class AdvancedArraysStrings {
+
+    public static void main(String[] args) {
+
+        int iterations = 50000;
+
+        long start =
+            System.nanoTime();
+
+        StringBuilder builder =
+            new StringBuilder(iterations);
+
+        for (int i = 0;
+             i < iterations;
+             i++) {
+
+            builder.append('a');
+        }
+
+        String result =
+            builder.toString();
+
+        long elapsed =
+            System.nanoTime() - start;
+
+        System.out.println(
+            "Length: " + result.length()
+        );
+
+        System.out.println(
+            "StringBuilder capacity: " +
+            builder.capacity()
+        );
+
+        System.out.println(
+            "Elapsed time: " +
+            elapsed +
+            " ns"
+        );
+
+        String sql = """
+            SELECT u.user_id,
+                   u.username,
+                   p.profile_name
+            FROM users u
+            JOIN profiles p
+              ON u.profile_id = p.id
+            WHERE u.status = '%s'
+            ORDER BY u.created_at DESC;
+            """.formatted("ACTIVE");
+
+        System.out.println(
+            "\n=== SQL ==="
+        );
+
+        System.out.println(sql);
+    }
+}
+```
+
+This example demonstrates StringBuilder capacity and text blocks without claiming a fixed performance ratio. Actual performance should be measured using a proper benchmark methodology rather than a single `System.nanoTime()` measurement.
+
+17. CODE WALKTHROUGHS
+
+17.1 String Pool Example
+
+```java
+String s1 = "Hello";
+String s2 = "Hello";
+```
+
+The variables can refer to the same canonical interned String.
+
+Therefore:
+
+```java
+s1 == s2
+```
+
+can be true.
+
+But:
+
+```java
+String s3 =
+    new String("Hello");
+```
+
+creates a distinct String object.
+
+Therefore:
+
+```java
+s1 == s3
+```
+
+is false.
+
+However:
+
+```java
+s1.equals(s3)
+```
+
+is true because their contents are equal.
+
+17.2 Jagged Array
+
+```java
+int[][] triangle =
+    new int[4][];
+```
+
+creates an outer array whose elements are references to `int[]` arrays.
+
+Each row is then created separately:
+
+```java
+triangle[0] = new int[1];
+triangle[1] = new int[2];
+triangle[2] = new int[3];
+triangle[3] = new int[4];
+```
+
+Therefore each row can have a different length.
+
+17.3 StringBuilder
+
+```java
+StringBuilder builder =
+    new StringBuilder(100);
+```
+
+creates a mutable character sequence with an initial capacity of at least the requested size.
+
+As characters are appended, the builder can grow when its capacity is insufficient.
+
+`capacity()` and `length()` should not be confused:
+
+```text
+length   -> current number of characters
+capacity -> current allocated capacity
+```
+
+18. EXPECTED OUTPUT
+
+Basic example:
+
+```text
+Sorted scores: [78, 85, 88, 92, 95]
+Score 92 found at index: 3
+2D Matrix: [[1, 2, 3], [4, 5, 6]]
+Trimmed: 'Java Enterprise Architecture'
+Uppercase: 'JAVA ENTERPRISE ARCHITECTURE'
+Contains 'ENTERPRISE': true
+Replaced: 'MODERN JAVA ENTERPRISE ARCHITECTURE'
+```
+
+Intermediate example:
+
+```text
+s1 == s2: true
+s1 == s3: false
+s1.equals(s3): true
+s1 == s4: true
+
+=== Jagged Array ===
+Row 0: 11
+Row 1: 21 22
+Row 2: 31 32 33
+Row 3: 41 42 43 44
+```
+
+Advanced timing output is machine-dependent and should not be treated as a fixed expected value.
+
+19. EXECUTION FLOW
+
+20. The Java compiler checks array and String syntax.
+
+21. Array creation creates an array object with a fixed number of components.
+
+22. Array components receive their default values when the array is created.
+
+23. String literals are handled using the Java String intern mechanism.
+
+24. String operations preserve String immutability.
+
+25. `StringBuilder` maintains a mutable character sequence.
+
+26. `StringBuilder` grows its capacity when necessary.
+
+27. `Arrays.sort()` orders an array according to its applicable ordering.
+
+28. `Arrays.binarySearch()` searches a correctly sorted array or range.
+
+29. `toString()` converts a StringBuilder's current contents into a String.
+
+30. Text blocks are processed according to Java's text-block rules.
+
+31. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Rotate an N × N matrix by 90 degrees clockwise.
+
+Requirements:
+
+* Use an `int[][]`.
+* Perform the rotation in place.
+* Target O(1) additional algorithmic storage.
+
+Problem 2:
+Implement a run-length string compression program.
+
+Example:
+
+```text
+Input:
+aabcccccaaa
+
+Output:
+a2b1c5a3
+```
+
+Use StringBuilder.
+
+Problem 3:
+Group anagrams using:
+
+```text
+Map<String, List<String>>
+```
+
+Example:
+
+```text
+eat
+tea
+ate
+```
+
+should belong to the same group.
+
+Problem 4:
+Implement a palindrome checker that:
+
+* ignores case
+* ignores non-alphanumeric characters
+* uses two-pointer traversal
+
+Problem 5:
+Implement matrix transpose for an arbitrary M × N matrix.
+
+Problem 6:
+Implement a program that compares the memory-oriented behavior of repeated concatenation and StringBuilder using a controlled benchmark.
+
+21. REAL-WORLD APPLICATIONS
+
+21.1 Database and Query Generation
+
+Text blocks can improve the readability of multiline SQL templates.
+
+StringBuilder can be useful for constructing dynamically generated text when repeated mutation is required.
+
+21.2 Web Applications
+
+Strings are used extensively for:
+
+* HTTP headers
+* URLs
+* JSON
+* HTML
+* configuration
+* logging
+
+21.3 Data Processing
+
+Arrays are useful for:
+
+* numerical computation
+* image processing
+* matrix operations
+* algorithm implementations
+* low-level data processing
+
+21.4 Text Processing
+
+StringBuilder can efficiently construct:
+
+* reports
+* logs
+* generated documents
+* formatted output
+* dynamically assembled messages
+
+22. COMMON MISTAKES
+
+Mistake 1:
+
+```java
+if (a == b)
+```
+
+for String content comparison.
+
+Correction:
+
+```java
+a.equals(b)
+```
+
+or:
+
+```java
+"constant".equals(b)
+```
+
+Mistake 2:
+
+Confusing:
+
+```text
+array.length
+String.length()
+Collection.size()
+```
+
+Correction:
+
+Use the correct API for the corresponding data type.
+
+Mistake 3:
+
+Assuming a multidimensional Java array is one rectangular memory block.
+
+Correction:
+
+Java multidimensional arrays are arrays of arrays.
+
+Mistake 4:
+
+Calling `Arrays.binarySearch()` on an unsorted array.
+
+Correction:
+
+Sort the array according to the required ordering before searching.
+
+Mistake 5:
+
+Assuming `StringBuilder` is thread-safe.
+
+Correction:
+
+Use `StringBuffer` or external synchronization when shared mutable access requires synchronization.
+
+Mistake 6:
+
+Assuming every use of `+` creates a visible StringBuilder object.
+
+Correction:
+
+Modern Java compilers and runtimes can optimize concatenation expressions.
+
+23. COMMON ERRORS
+
+23.1 ArrayIndexOutOfBoundsException
+
+Occurs when an array index is outside:
+
+```text
+0 to array.length - 1
+```
+
+Example:
+
+```java
+int[] values = new int[3];
+
+System.out.println(
+    values[3]
+);
+```
+
+This is invalid because valid indexes are 0, 1, and 2.
+
+23.2 NegativeArraySizeException
+
+```java
+int[] values =
+    new int[-5];
+```
+
+This is invalid and results in NegativeArraySizeException.
+
+23.3 StringIndexOutOfBoundsException
+
+An invalid character index can result in an index-related exception.
+
+Example:
+
+```java
+String text = "Java";
+
+char c = text.charAt(10);
+```
+
+23.4 NullPointerException
+
+Example:
+
+```java
+String text = null;
+
+text.length();
+```
+
+Calling an instance method through a null reference causes NullPointerException.
+
+24. DEBUGGING TECHNIQUES
+
+24.1 Incorrect String Comparison
+
+Incorrect:
+
+```java
+String input =
+    scanner.nextLine();
+
+if (input == "admin") {
+    grantAccess();
+}
+```
+
+The `==` operator compares references rather than String contents.
+
+24.2 Correct Comparison
+
+```java
+String input =
+    scanner.nextLine();
+
+if ("admin".equals(input)) {
+    grantAccess();
+}
+```
+
+This performs content comparison and is safe when `input` is null.
+
+24.3 Array Boundary Debugging
+
+Before accessing:
+
+```java
+values[index]
+```
+
+verify:
+
+```java
+index >= 0 &&
+index < values.length
+```
+
+24.4 StringBuilder Debugging
+
+Useful methods include:
+
+```java
+builder.length();
+builder.capacity();
+builder.charAt(index);
+builder.toString();
+```
+
+These help inspect the current state of the mutable sequence.
+
+25. EDGE CASES
+
+25.1 Binary Search on Unsorted Data
+
+Do not use:
+
+```java
+Arrays.binarySearch()
+```
+
+unless the relevant array/range is sorted according to the search ordering.
+
+Oracle explicitly documents this requirement.
+
+25.2 Empty Array
+
+```java
+int[] values = new int[0];
+
+System.out.println(values.length);
+```
+
+Output:
+
+```text
+0
+```
+
+An empty array is valid.
+
+25.3 Empty String
+
+```java
+String text = "";
+
+System.out.println(text.length());
+```
+
+Output:
+
+```text
+0
+```
+
+25.4 Null Array Reference
+
+```java
+int[] values = null;
+
+System.out.println(values.length);
+```
+
+This causes NullPointerException because the variable does not reference an array object.
+
+25.5 Large Arrays
+
+Very large arrays may fail because of available heap memory, JVM implementation limits, address-space constraints, or maximum array-size restrictions.
+
+Do not rely on one fixed maximum array size across every JVM implementation.
+
+25.6 Unicode Supplementary Characters
+
+A visible Unicode character may occupy more than one UTF-16 code unit.
+
+Therefore:
+
+```java
+text.length()
+```
+
+and the number of Unicode code points can differ.
+
+26. BEST PRACTICES
+
+* Use `.equals()` for String content comparison.
+* Use `==` only when reference identity is intentionally required.
+* Use `"constant".equals(variable)` when null-safe comparison is useful.
+* Prefer arrays when fixed-size indexed storage is appropriate.
+* Use `ArrayList` when a dynamically resizable list is required.
+* Use `Arrays.toString()` for readable one-dimensional array output.
+* Use `Arrays.deepToString()` for nested arrays.
+* Sort before using `Arrays.binarySearch()`.
+* Use `StringBuilder` for repeated mutable string construction.
+* Pre-size StringBuilder when a reasonable final size is known.
+* Use StringBuffer only when its synchronization characteristics are actually needed.
+* Use text blocks for readable multiline string literals.
+* Do not depend on HotSpot-specific object sizes in portable Java code.
+* Consider Unicode code points when processing international text.
+* Avoid unnecessary String interning.
+* Benchmark performance-sensitive code instead of assuming one implementation is always faster.
+
+27. PERFORMANCE CONSIDERATIONS
+
+27.1 Arrays
+
+Arrays provide direct indexed access.
+
+```java
+values[index]
+```
+
+is a constant-time indexed operation under the normal array model.
+
+However, overall application performance also depends on:
+
+* cache behavior
+* memory layout
+* algorithm complexity
+* object allocation
+* JVM optimization
+
+27.2 Array Copying
+
+`System.arraycopy()` is designed specifically to copy array components efficiently.
+
+Example:
+
+```java
+System.arraycopy(
+    source,
+    0,
+    destination,
+    0,
+    source.length
+);
+```
+
+27.3 StringBuilder
+
+Repeated mutation using StringBuilder avoids repeatedly creating a new immutable String for every append step.
+
+Example:
+
+```java
+StringBuilder builder =
+    new StringBuilder();
+
+for (int i = 0; i < 10000; i++) {
+    builder.append(i);
+}
+```
+
+The final String can be created once:
+
+```java
+String result =
+    builder.toString();
+```
+
+Oracle specifically recommends StringBuilder over StringBuffer where synchronization is not required and notes its suitability for efficient mutable string construction.
+
+27.4 Benchmarking
+
+Do not use a single small timing experiment to make strong performance claims.
+
+JIT compilation, warm-up, garbage collection, CPU frequency, operating-system scheduling, and dead-code effects can influence results.
+
+For serious Java benchmarking, use an appropriate benchmarking framework such as JMH.
+
+28. MEMORY CONSIDERATIONS
+
+28.1 ARRAY MEMORY
+
+An array object contains implementation-managed metadata plus its component storage.
+
+The exact object header and alignment are JVM implementation details.
+
+Therefore, statements such as:
+
+```text
+"int[0] always consumes exactly 16 bytes"
+```
+
+should not be treated as portable Java guarantees.
+
+28.2 OBJECT ARRAYS
+
+For:
+
+```java
+String[] names =
+    new String[100];
+```
+
+the array stores references to String objects.
+
+It does not allocate 100 independent String objects containing text automatically.
+
+28.3 STRING OBJECTS
+
+String memory representation is JVM-dependent.
+
+Modern HotSpot implementations may use compact representations internally, but application code should not rely on private implementation fields or a fixed number of bytes per String character.
+
+28.4 STRINGBUILDER CAPACITY
+
+A StringBuilder may allocate additional internal storage when its current capacity is insufficient.
+
+Providing a reasonable initial capacity can reduce reallocations.
+
+```java
+StringBuilder builder =
+    new StringBuilder(1024);
+```
+
+29. SECURITY CONSIDERATIONS
+
+29.1 String Passwords
+
+It is common to hear:
+
+"Never store passwords in String; always use char[]."
+
+This needs nuance.
+
+Using a mutable `char[]` can allow application code to overwrite the contents after use, whereas a String is immutable.
+
+However, using `char[]` does not automatically make password handling secure. Authentication systems should preferably use established credential-handling APIs and avoid keeping plaintext credentials longer than necessary.
+
+For example:
+
+```java
+char[] password = ...;
+
+try {
+    authenticate(password);
+} finally {
+    Arrays.fill(password, '\0');
+}
+```
+
+This only demonstrates clearing an array; it is not a complete password-security strategy.
+
+29.2 Sensitive Strings
+
+Avoid unnecessarily logging:
+
+* passwords
+* authentication tokens
+* session identifiers
+* private keys
+* personal information
+
+String immutability does not provide automatic secure memory wiping.
+
+29.3 Input Validation
+
+Validate:
+
+* array sizes
+* input lengths
+* file sizes
+* string sizes
+* externally supplied indexes
+
+to reduce resource-exhaustion and input-validation problems.
+
+30. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                | Java                   | C++                               | Python                                         |
+| ---------------------- | ---------------------- | --------------------------------- | ---------------------------------------------- |
+| Basic array            | Fixed-size Java array  | Built-in array / std::array       | list / array module / NumPy arrays             |
+| Dynamic sequence       | ArrayList              | std::vector                       | list                                           |
+| String mutability      | String immutable       | std::string mutable               | str immutable                                  |
+| Mutable text builder   | StringBuilder          | std::string / string streams      | list/join or io.StringIO                       |
+| String pooling         | JVM intern pool        | Implementation/compiler dependent | Runtime implementation may intern some strings |
+| Multidimensional array | Arrays of arrays       | Can be nested arrays/containers   | Nested sequences                               |
+| Memory management      | JVM garbage collection | Manual/resource-based management  | Runtime-managed memory                         |
+| Text blocks            | Java text blocks       | Raw strings                       | Triple-quoted strings                          |
+
+31. FREQUENTLY ASKED QUESTIONS
+
+Q1: Why is String immutable?
+
+A:
+
+String immutability provides predictable sharing and stable object state. It also works well with hashing, the intern pool, and concurrent access.
+
+Q2: What is the difference between `==` and `equals()` for Strings?
+
+A:
+
+`==` checks whether two references identify the same object.
+
+`equals()` checks whether two String objects contain equal character sequences.
+
+Q3: What is the String intern pool?
+
+A:
+
+It is the runtime mechanism used for canonical String representations. String literals are associated with interned strings, and `intern()` can return the canonical representation for a String.
+
+Q4: What is StringBuilder?
+
+A:
+
+StringBuilder is a mutable character sequence designed for string construction without synchronization.
+
+Q5: What is the difference between StringBuilder and StringBuffer?
+
+A:
+
+StringBuilder does not guarantee synchronization and is generally preferred for single-threaded use.
+
+StringBuffer provides synchronized operations and is intended for situations requiring its thread-safety characteristics.
+
+Q6: What is an array's length?
+
+A:
+
+It is the fixed number of components in the array and is accessed using:
+
+```java
+array.length
+```
+
+Q7: Can Java arrays change size?
+
+A:
+
+No. An array's size is fixed after creation. To obtain a different size, create another array or use a resizable collection such as ArrayList.
+
+Q8: What are text blocks?
+
+A:
+
+Text blocks are multiline String literals introduced as a standard Java feature in Java 15. They reduce escaping and formatting complexity for multiline text.
+
+32. INTERVIEW QUESTIONS
+
+Q1: Why does `s1 == s2` sometimes return true for Strings?
+
+Answer:
+
+String literals are interned, so two identical literals can refer to the same canonical String object.
+
+Q2: Why does `new String("Java") == "Java"` return false?
+
+Answer:
+
+`new String(...)` creates a distinct String object, while the literal refers to the canonical interned String.
+
+Q3: What is the difference between length and capacity in StringBuilder?
+
+Answer:
+
+```text
+length   = number of characters currently stored
+capacity = current available storage before another growth may be needed
+```
+
+Q4: What happens when StringBuilder capacity is exceeded?
+
+Answer:
+
+The builder allocates additional internal storage according to its capacity-growth rules and continues the operation. Oracle specifies that `ensureCapacity()` can grow capacity to at least the requested minimum and otherwise uses a growth strategy based on twice the old capacity plus 2.
+
+Q5: Are Java multidimensional arrays rectangular?
+
+Answer:
+
+Not necessarily.
+
+Java multidimensional arrays are arrays of arrays, so rows can have different lengths.
+
+Q6: Why must an array be sorted before binarySearch()?
+
+Answer:
+
+Binary search relies on the required ordering of the searched range. Oracle documents that the relevant array/range must be sorted before calling the method.
+
+Q7: Does `String.length()` return the number of visible characters?
+
+Answer:
+
+Not always.
+
+It returns the number of UTF-16 code units. Unicode code points outside the Basic Multilingual Plane can require two UTF-16 code units.
+
+33. EXAM QUESTIONS
+
+Q1:
+
+What is the output?
+
+```java
+int[] values = new int[3];
+
+System.out.println(values.length);
+```
+
+Answer:
+
+```text
+3
+```
+
+Q2:
+
+What is the output?
+
+```java
+String a = "Java";
+String b = "Java";
+
+System.out.println(a == b);
+```
+
+Answer:
+
+```text
+true
+```
+
+This occurs because identical string literals can refer to the same interned String.
+
+Q3:
+
+What is the output?
+
+```java
+String a = new String("Java");
+String b = new String("Java");
+
+System.out.println(a == b);
+System.out.println(a.equals(b));
+```
+
+Answer:
+
+```text
+false
+true
+```
+
+Q4:
+
+Which method is used to compare String contents?
+
+Answer:
+
+```java
+equals()
+```
+
+Q5:
+
+What is the purpose of StringBuilder?
+
+Answer:
+
+It provides a mutable character sequence for efficient string construction when repeated modification is required.
+
+Q6:
+
+What happens when an array index is outside its valid range?
+
+Answer:
+
+An ArrayIndexOutOfBoundsException is thrown.
+
+34. PRACTICE QUESTIONS
+
+Q1:
+Write:
+
+```java
+boolean isPalindrome(String text)
+```
+
+that:
+
+* ignores spaces
+* ignores punctuation
+* ignores case
+* supports Unicode-aware processing where appropriate
+
+Q2:
+Implement run-length compression using StringBuilder.
+
+Input:
+
+```text
+aabcccccaaa
+```
+
+Output:
+
+```text
+a2b1c5a3
+```
+
+Q3:
+Implement:
+
+```java
+int[][] transposeMatrix(int[][] matrix)
+```
+
+for an M × N matrix.
+
+Q4:
+Write a program that:
+
+* reads an integer array
+* sorts it
+* searches for a target
+* reports the insertion point when the target is absent
+
+Q5:
+Create a program that compares:
+
+```text
+String concatenation
+StringBuilder
+```
+
+using a proper benchmark methodology.
+
+Q6:
+Create a text-block-based SQL or JSON template using `formatted()`.
+
+Q7:
+Write a program that demonstrates:
+
+```text
+==
+equals()
+intern()
+```
+
+using both literals and dynamically created Strings.
+
+35. SUMMARY
+
+Arrays provide fixed-size indexed storage, while Strings provide immutable character sequences.
+
+Important array concepts include:
+
+* fixed length
+* zero-based indexing
+* default initialization
+* multidimensional arrays
+* jagged arrays
+* array copying
+* sorting
+* searching
+* equality
+
+Important String concepts include:
+
+* immutability
+* content equality
+* reference identity
+* String interning
+* Unicode and UTF-16 code units
+* text blocks
+
+StringBuilder provides a mutable character sequence suitable for repeated string construction. Its capacity grows automatically when necessary, and an appropriate initial capacity can reduce reallocations.
+
+Modern Java also provides text blocks for readable multiline strings and JVM implementations may use compact internal String representations.
+
+36. KEY TAKEAWAYS
+
+* Java arrays are fixed-size objects.
+* Array indexes start at 0.
+* Array length is accessed using `array.length`.
+* String length is accessed using `string.length()`.
+* Java multidimensional arrays are arrays of arrays.
+* Jagged arrays can contain rows of different lengths.
+* Use `Arrays.sort()` for array sorting.
+* Use `Arrays.binarySearch()` only when the required ordering is established.
+* Use `Arrays.copyOf()` or `System.arraycopy()` for array copying.
+* Use `Arrays.equals()` for one-dimensional array content comparison.
+* Use `Arrays.deepEquals()` for nested array comparisons.
+* Java Strings are immutable.
+* Use `.equals()` for String content comparison.
+* `==` checks reference identity for String objects.
+* String literals are associated with the JVM's intern mechanism.
+* `intern()` returns a canonical representation.
+* Avoid unnecessary String interning.
+* StringBuilder is mutable and unsynchronized.
+* StringBuffer provides synchronized mutable string operations.
+* StringBuilder has both length and capacity.
+* Pre-sizing StringBuilder can reduce growth operations.
+* Text blocks are available from Java 15.
+* `String.length()` counts UTF-16 code units, not necessarily user-perceived characters.
+* JVM object sizes and internal String representations are implementation-dependent.
+* Use JMH or another proper benchmarking approach for serious Java performance measurements.
+* Choose arrays, collections, String, StringBuilder, and StringBuffer according to the actual application requirement.
+
+37. OFFICIAL REFERENCE BASIS
+
+Primary reference:
+
+* Oracle Java SE API Documentation
+* Oracle Java Language Specification and Language Documentation
+* Oracle Java Tutorials
+* Oracle documentation for Text Blocks
+* Oracle API documentation for Arrays, StringBuilder, StringBuffer, and System.arraycopy
+
+The document should be interpreted according to the Java version being used. JVM-specific implementation details such as object headers, String backing storage, garbage-collection behavior, and optimization strategies may differ between JDK implementations and versions.

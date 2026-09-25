@@ -1,0 +1,2574 @@
+COURSE: Python Programming
+TOPIC: Functions, Scope (LEGB), Closures, Decorators, and Lambda Expressions
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation + Standard Library Reference
+
+================================================================================
+FUNCTIONS, SCOPE (LEGB), CLOSURES, DECORATORS, AND LAMBDA EXPRESSIONS
+=====================================================================
+
+1. INTRODUCTION
+
+Functions are one of the fundamental building blocks of Python programs.
+
+A Python function is a callable object that can:
+
+* Be assigned to a variable.
+* Be passed as an argument.
+* Be returned from another function.
+* Be stored in lists, dictionaries, and other objects.
+* Be nested inside another function.
+* Capture variables from an enclosing scope.
+* Be wrapped by decorators.
+* Be used as a callback.
+
+Python supports a flexible function parameter system including:
+
+* Positional arguments.
+* Keyword arguments.
+* Positional-only parameters.
+* Keyword-only parameters.
+* Default parameter values.
+* Variable-length positional arguments (`*args`).
+* Variable-length keyword arguments (`**kwargs`).
+
+Python also provides lexical name resolution commonly described using the LEGB model:
+
+```text
+L → Local
+E → Enclosing
+G → Global
+B → Built-in
+```
+
+Functions are closely related to:
+
+* Scope and namespaces.
+* Closures.
+* Lambda expressions.
+* Higher-order functions.
+* Decorators.
+* `functools`.
+* Type annotations.
+* Recursion.
+
+Understanding these concepts is essential for writing modular, reusable, testable, and maintainable Python software.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Define functions using `def`.
+* Write useful documentation strings.
+* Use function annotations and type hints.
+* Distinguish parameters from arguments.
+* Use positional and keyword arguments.
+* Use default parameter values correctly.
+* Understand positional-only parameters using `/`.
+* Understand keyword-only parameters using `*`.
+* Use `*args` and `**kwargs`.
+* Unpack iterables and mappings into function calls.
+* Understand Python's LEGB name-resolution model.
+* Use `global` and `nonlocal` appropriately.
+* Understand closures and captured state.
+* Write lambda expressions.
+* Use higher-order functions.
+* Understand late binding in closures.
+* Implement decorators.
+* Implement parameterized decorators.
+* Preserve decorator metadata using `functools.wraps`.
+* Use `functools.partial`, `cache`, and `lru_cache`.
+* Understand function objects, code objects, and closures at an advanced level.
+* Avoid common function and decorator design mistakes.
+
+3. PREREQUISITES
+
+Recommended prerequisites:
+
+* Python variables and data types.
+* Expressions and operators.
+* Conditional statements.
+* Loops.
+* Lists, tuples, sets, and dictionaries.
+* Exception handling.
+* Basic object-oriented programming.
+* Basic understanding of object references.
+
+4. BEGINNER CONCEPTS
+
+4.1 FUNCTION DEFINITION
+
+Basic syntax:
+
+```python
+def function_name(parameter):
+    """Documentation string."""
+    statement
+    return result
+```
+
+Example:
+
+```python
+def greet(name):
+    """Return a greeting message."""
+    return f"Hello, {name}!"
+```
+
+Calling the function:
+
+```python
+message = greet("Alice")
+print(message)
+```
+
+Output:
+
+```text
+Hello, Alice!
+```
+
+4.2 PARAMETERS AND ARGUMENTS
+
+A parameter is a name in a function definition:
+
+```python
+def greet(name):
+    ...
+```
+
+Here, `name` is a parameter.
+
+An argument is the value supplied during the function call:
+
+```python
+greet("Alice")
+```
+
+Here, `"Alice"` is an argument.
+
+4.3 RETURN VALUES
+
+A function can return a value using `return`.
+
+```python
+def add(a, b):
+    return a + b
+
+result = add(10, 20)
+print(result)
+```
+
+Output:
+
+```text
+30
+```
+
+If execution reaches the end of a function without executing a `return` statement, the function returns `None`.
+
+Example:
+
+```python
+def display():
+    print("Hello")
+
+result = display()
+
+print(result)
+```
+
+Output:
+
+```text
+Hello
+None
+```
+
+4.4 MULTIPLE RETURN VALUES
+
+Python does not have a special multiple-return-value mechanism.
+
+Instead:
+
+```python
+def get_data():
+    return 10, 20, 30
+```
+
+is equivalent to returning a tuple:
+
+```python
+(10, 20, 30)
+```
+
+Example:
+
+```python
+a, b, c = get_data()
+
+print(a)
+print(b)
+print(c)
+```
+
+4.5 POSITIONAL ARGUMENTS
+
+Arguments can be supplied according to parameter order.
+
+```python
+def calculate(a, b, c):
+    return a + b + c
+
+print(calculate(10, 20, 30))
+```
+
+Mapping:
+
+```text
+a → 10
+b → 20
+c → 30
+```
+
+4.6 KEYWORD ARGUMENTS
+
+Arguments can also be supplied by parameter name.
+
+```python
+def calculate(a, b, c):
+    return a + b + c
+
+result = calculate(
+    c=30,
+    a=10,
+    b=20
+)
+
+print(result)
+```
+
+Keyword arguments make calls more explicit and can improve readability.
+
+4.7 DEFAULT PARAMETERS
+
+A parameter can have a default value.
+
+```python
+def greet(name, message="Hello"):
+    return f"{message}, {name}!"
+
+print(greet("Alice"))
+print(greet("Bob", "Welcome"))
+```
+
+Output:
+
+```text
+Hello, Alice!
+Welcome, Bob!
+```
+
+Default argument expressions are evaluated when the function definition executes, not every time the function is called.
+
+5. FUNCTION DOCUMENTATION AND ANNOTATIONS
+
+5.1 DOCSTRINGS
+
+A docstring is a string literal placed as the first statement in a function body.
+
+```python
+def square(number):
+    """Return the square of number."""
+    return number * number
+```
+
+It can be accessed using:
+
+```python
+print(square.__doc__)
+```
+
+5.2 TYPE ANNOTATIONS
+
+Python supports function annotations.
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+Annotations provide information about intended types.
+
+They do not, by themselves, enforce runtime type checking.
+
+For example:
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+does not automatically prevent a caller from passing values of another type.
+
+5.3 MODERN FUNCTION SIGNATURE
+
+```python
+def process(
+    name: str,
+    count: int = 1,
+    *,
+    verbose: bool = False
+) -> str:
+    ...
+```
+
+Here:
+
+* `name` is positional-or-keyword.
+* `count` is positional-or-keyword with a default.
+* `verbose` is keyword-only.
+
+6. SPECIAL PARAMETERS
+
+Python provides `/` and `*` to control how arguments may be passed.
+
+6.1 POSITIONAL-ONLY PARAMETERS
+
+Parameters before `/` are positional-only.
+
+```python
+def power(base, exponent, /):
+    return base ** exponent
+```
+
+Valid:
+
+```python
+power(2, 3)
+```
+
+Invalid:
+
+```python
+power(base=2, exponent=3)
+```
+
+because both parameters are positional-only.
+
+6.2 POSITIONAL-OR-KEYWORD PARAMETERS
+
+Parameters between `/` and `*` may normally be passed either by position or keyword.
+
+```python
+def calculate(a, b, /, scale=1):
+    return (a + b) * scale
+```
+
+Valid:
+
+```python
+calculate(10, 20)
+calculate(10, 20, scale=2)
+calculate(10, 20, 2)
+```
+
+6.3 KEYWORD-ONLY PARAMETERS
+
+Parameters after `*` must be passed by keyword.
+
+```python
+def connect(host, *, timeout=30):
+    print(host, timeout)
+```
+
+Valid:
+
+```python
+connect("localhost")
+connect("localhost", timeout=10)
+```
+
+Invalid:
+
+```python
+connect("localhost", 10)
+```
+
+because `timeout` is keyword-only.
+
+6.4 COMPLETE PARAMETER STRUCTURE
+
+```python
+def function(
+    positional_only,
+    /,
+    positional_or_keyword,
+    *,
+    keyword_only
+):
+    ...
+```
+
+This provides three parameter categories:
+
+```text
+Before /       → positional-only
+Between / and * → positional-or-keyword
+After *        → keyword-only
+```
+
+7. VARIADIC PARAMETERS
+
+7.1 `*args`
+
+`*args` collects extra positional arguments into a tuple.
+
+```python
+def total(*numbers):
+    return sum(numbers)
+
+print(total(10, 20, 30))
+```
+
+Output:
+
+```text
+60
+```
+
+Inside the function:
+
+```python
+numbers
+```
+
+is a tuple.
+
+7.2 `**kwargs`
+
+`**kwargs` collects extra keyword arguments into a dictionary.
+
+```python
+def display_info(**info):
+    print(info)
+
+display_info(
+    name="Alice",
+    age=21,
+    city="Chennai"
+)
+```
+
+Output:
+
+```text
+{'name': 'Alice', 'age': 21, 'city': 'Chennai'}
+```
+
+7.3 USING BOTH
+
+```python
+def process(first, *args, **kwargs):
+    print("first:", first)
+    print("args:", args)
+    print("kwargs:", kwargs)
+
+process(
+    10,
+    20,
+    30,
+    name="Alice",
+    active=True
+)
+```
+
+7.4 UNPACKING WITH `*`
+
+An iterable can be unpacked into positional arguments.
+
+```python
+def add(a, b, c):
+    return a + b + c
+
+values = [10, 20, 30]
+
+print(add(*values))
+```
+
+7.5 UNPACKING WITH `**`
+
+A mapping can be unpacked into keyword arguments.
+
+```python
+def user_info(name, age):
+    print(name, age)
+
+data = {
+    "name": "Alice",
+    "age": 21
+}
+
+user_info(**data)
+```
+
+8. MUTABLE DEFAULT ARGUMENT TRAP
+
+Consider:
+
+```python
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+```
+
+The default list is created once when the function definition is executed.
+
+Therefore, calls can share the same list:
+
+```python
+print(add_item("A"))
+print(add_item("B"))
+```
+
+Possible output:
+
+```text
+['A']
+['A', 'B']
+```
+
+This is often unexpected.
+
+8.1 RECOMMENDED PATTERN
+
+Use `None` as a sentinel:
+
+```python
+def add_item(item, items=None):
+    if items is None:
+        items = []
+
+    items.append(item)
+    return items
+```
+
+Now each call that omits `items` receives a new list.
+
+9. SCOPE AND LEGB
+
+Python name resolution is commonly described using LEGB:
+
+```text
+L → Local
+E → Enclosing
+G → Global
+B → Built-in
+```
+
+9.1 LOCAL SCOPE
+
+Names created inside a function normally belong to that function's local scope.
+
+```python
+def example():
+    message = "local"
+    print(message)
+
+example()
+```
+
+`message` is local to `example()`.
+
+9.2 ENCLOSING SCOPE
+
+An enclosing scope exists when functions are nested.
+
+```python
+def outer():
+    message = "outer"
+
+    def inner():
+        print(message)
+
+    inner()
+
+outer()
+```
+
+`inner()` can access `message` from `outer()`.
+
+9.3 GLOBAL SCOPE
+
+Names defined at module level belong to the module's global namespace.
+
+```python
+message = "global"
+
+def display():
+    print(message)
+
+display()
+```
+
+9.4 BUILT-IN SCOPE
+
+Python provides names through the `builtins` namespace.
+
+Examples include:
+
+```text
+len
+print
+range
+sum
+Exception
+str
+int
+list
+```
+
+Example:
+
+```python
+print(len([1, 2, 3]))
+```
+
+Here `len` is found through the built-in namespace if it has not been shadowed by a nearer binding.
+
+10. NAME RESOLUTION EXAMPLE
+
+```python
+x = "global"
+
+def outer():
+    x = "enclosing"
+
+    def inner():
+        x = "local"
+        print(x)
+
+    inner()
+
+outer()
+```
+
+Output:
+
+```text
+local
+```
+
+If the local `x` is removed:
+
+```python
+def outer():
+    x = "enclosing"
+
+    def inner():
+        print(x)
+
+    inner()
+```
+
+Output:
+
+```text
+enclosing
+```
+
+If both local and enclosing `x` are absent, Python continues searching the global namespace and then built-ins.
+
+11. `global` STATEMENT
+
+The `global` statement tells Python that a name should refer to the module-level global binding.
+
+Example:
+
+```python
+counter = 0
+
+def increment():
+    global counter
+    counter += 1
+
+increment()
+increment()
+
+print(counter)
+```
+
+Output:
+
+```text
+2
+```
+
+Without `global`, assignment to `counter` inside `increment()` would make it a local variable.
+
+Use global state sparingly because it can make programs harder to test and reason about.
+
+12. `nonlocal` STATEMENT
+
+`nonlocal` allows an inner function to rebind a variable in an enclosing function scope.
+
+```python
+def counter_factory():
+    count = 0
+
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+
+    return increment
+
+
+counter = counter_factory()
+
+print(counter())
+print(counter())
+print(counter())
+```
+
+Output:
+
+```text
+1
+2
+3
+```
+
+The `count` variable belongs to the enclosing function scope and is modified by the nested function.
+
+If the specified name does not exist in an enclosing function scope, Python raises `SyntaxError`.
+
+13. CLOSURES
+
+A closure is a function that retains access to variables from its enclosing lexical scope after the enclosing function has returned.
+
+Example:
+
+```python
+def make_multiplier(factor):
+
+    def multiply(value):
+        return value * factor
+
+    return multiply
+
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+
+print(double(10))
+print(triple(10))
+```
+
+Output:
+
+```text
+20
+30
+```
+
+The returned functions retain access to their corresponding `factor`.
+
+13.1 CLOSURE COMPONENTS
+
+A closure generally involves:
+
+```text
+Outer function
+      ↓
+Enclosing variable
+      ↓
+Nested function
+      ↓
+Returned nested function
+      ↓
+Captured state remains available
+```
+
+13.2 INSPECTING A CLOSURE
+
+Example:
+
+```python
+def make_multiplier(factor):
+
+    def multiply(value):
+        return value * factor
+
+    return multiply
+
+
+double = make_multiplier(2)
+
+print(double.__closure__)
+print(double.__closure__[0].cell_contents)
+```
+
+The exact representation of `__closure__` is implementation-oriented, but it demonstrates that the function has captured an enclosing value.
+
+14. LAMBDA EXPRESSIONS
+
+A lambda expression creates an anonymous function.
+
+Syntax:
+
+```python
+lambda parameters: expression
+```
+
+Example:
+
+```python
+square = lambda x: x * x
+
+print(square(5))
+```
+
+Output:
+
+```text
+25
+```
+
+A lambda is restricted to a single expression.
+
+This:
+
+```python
+lambda x: x * 2
+```
+
+is conceptually similar to:
+
+```python
+def double(x):
+    return x * 2
+```
+
+Lambda expressions cannot contain ordinary statements or annotations.
+
+15. LAMBDA WITH `sorted()`
+
+```python
+students = [
+    ("Alice", 85),
+    ("Bob", 92),
+    ("Charlie", 78)
+]
+
+students.sort(
+    key=lambda student: student[1]
+)
+
+print(students)
+```
+
+Output:
+
+```text
+[('Charlie', 78), ('Alice', 85), ('Bob', 92)]
+```
+
+The lambda acts as a key function.
+
+16. LAMBDA WITH `map()`
+
+```python
+numbers = [1, 2, 3, 4]
+
+squares = list(
+    map(lambda x: x * x, numbers)
+)
+
+print(squares)
+```
+
+Output:
+
+```text
+[1, 4, 9, 16]
+```
+
+17. LAMBDA WITH `filter()`
+
+```python
+numbers = [1, 2, 3, 4, 5, 6]
+
+even_numbers = list(
+    filter(lambda x: x % 2 == 0, numbers)
+)
+
+print(even_numbers)
+```
+
+Output:
+
+```text
+[2, 4, 6]
+```
+
+18. LAMBDA WITH `reduce()`
+
+`reduce()` is provided by `functools`.
+
+```python
+from functools import reduce
+
+numbers = [1, 2, 3, 4]
+
+product = reduce(
+    lambda a, b: a * b,
+    numbers
+)
+
+print(product)
+```
+
+Output:
+
+```text
+24
+```
+
+For simple operations, built-in functions such as `sum()` may be clearer than `reduce()`.
+
+19. HIGHER-ORDER FUNCTIONS
+
+A higher-order function is a function that accepts a callable as an argument, returns a callable, or both.
+
+Example:
+
+```python
+def apply_operation(a, b, operation):
+    return operation(a, b)
+
+
+def add(a, b):
+    return a + b
+
+
+def multiply(a, b):
+    return a * b
+
+
+print(apply_operation(10, 20, add))
+print(apply_operation(10, 20, multiply))
+```
+
+Output:
+
+```text
+30
+200
+```
+
+A lambda can also be supplied:
+
+```python
+print(
+    apply_operation(
+        10,
+        20,
+        lambda a, b: a - b
+    )
+)
+```
+
+20. DECORATORS
+
+A decorator is a callable that takes another callable and returns a callable.
+
+Basic example:
+
+```python
+def log_call(func):
+
+    def wrapper():
+        print("Function started")
+        result = func()
+        print("Function finished")
+        return result
+
+    return wrapper
+```
+
+Applying manually:
+
+```python
+def greet():
+    print("Hello")
+
+
+greet = log_call(greet)
+
+greet()
+```
+
+21. `@` DECORATOR SYNTAX
+
+Python provides syntactic sugar:
+
+```python
+@log_call
+def greet():
+    print("Hello")
+```
+
+This is conceptually equivalent to:
+
+```python
+def greet():
+    print("Hello")
+
+greet = log_call(greet)
+```
+
+For multiple decorators:
+
+```python
+@decorator1
+@decorator2
+def function():
+    ...
+```
+
+The resulting transformation is:
+
+```python
+function = decorator1(
+    decorator2(function)
+)
+```
+
+So the decorator nearest the function is applied first.
+
+22. `functools.wraps`
+
+A decorator wrapper can otherwise expose the wrapper's metadata instead of the original function's metadata.
+
+Use:
+
+```python
+from functools import wraps
+```
+
+Example:
+
+```python
+from functools import wraps
+
+
+def log_call(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print("Calling:", func.__name__)
+        return func(*args, **kwargs)
+
+    return wrapper
+```
+
+`functools.wraps()` uses `update_wrapper()` and establishes `__wrapped__`, while copying/updating important metadata from the wrapped callable.
+
+This improves:
+
+* Introspection.
+* Documentation.
+* Debugging.
+* Tool compatibility.
+* Access through `inspect`.
+
+23. BASIC DECORATOR EXAMPLE
+
+```python
+from functools import wraps
+
+
+def log_call(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print(f"[LOG] Calling {func.__name__}")
+
+        result = func(*args, **kwargs)
+
+        print(f"[LOG] Finished {func.__name__}")
+
+        return result
+
+    return wrapper
+
+
+@log_call
+def add(a, b):
+    """Return the sum of two numbers."""
+    return a + b
+
+
+print(add(10, 20))
+print(add.__name__)
+print(add.__doc__)
+```
+
+Expected output:
+
+```text
+[LOG] Calling add
+[LOG] Finished add
+30
+add
+Return the sum of two numbers.
+```
+
+24. PARAMETERIZED DECORATORS
+
+A decorator that accepts configuration requires another layer of function nesting.
+
+Structure:
+
+```text
+decorator_factory()
+      ↓
+decorator()
+      ↓
+wrapper()
+```
+
+Example:
+
+```python
+from functools import wraps
+
+
+def repeat(times):
+
+    def decorator(func):
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+
+            result = None
+
+            for _ in range(times):
+                result = func(*args, **kwargs)
+
+            return result
+
+        return wrapper
+
+    return decorator
+```
+
+Usage:
+
+```python
+@repeat(3)
+def greet():
+    print("Hello")
+
+
+greet()
+```
+
+Output:
+
+```text
+Hello
+Hello
+Hello
+```
+
+25. RETRY DECORATOR
+
+Decorators can be used for retry behavior, but only exceptions representing genuinely retryable failures should normally be caught.
+
+Example:
+
+```python
+import time
+from functools import wraps
+
+
+def retry(
+    max_attempts=3,
+    delay=0.5
+):
+
+    def decorator(func):
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+
+            for attempt in range(1, max_attempts + 1):
+
+                try:
+                    return func(*args, **kwargs)
+
+                except ConnectionError as exc:
+
+                    if attempt == max_attempts:
+                        raise
+
+                    print(
+                        f"Attempt {attempt} failed: {exc}"
+                    )
+
+                    time.sleep(delay)
+
+        return wrapper
+
+    return decorator
+```
+
+This is safer than automatically retrying every possible `Exception`, because programming errors and non-transient failures should generally not be retried blindly.
+
+26. CACHING WITH `functools`
+
+`functools` provides caching decorators.
+
+26.1 `lru_cache`
+
+```python
+from functools import lru_cache
+
+
+@lru_cache(maxsize=128)
+def fibonacci(n):
+    if n < 2:
+        return n
+
+    return (
+        fibonacci(n - 1)
+        + fibonacci(n - 2)
+    )
+
+
+print(fibonacci(40))
+print(fibonacci.cache_info())
+```
+
+The arguments used by the cached function must be hashable.
+
+Caching is useful when:
+
+* Calls repeat.
+* Results depend only on arguments.
+* Computing the result is relatively expensive.
+
+Avoid caching functions whose results depend on changing external state or whose side effects make caching inappropriate.
+
+26.2 `functools.cache`
+
+Python also provides:
+
+```python
+from functools import cache
+
+
+@cache
+def factorial(n):
+    if n == 0:
+        return 1
+
+    return n * factorial(n - 1)
+```
+
+`cache` is an unbounded cache equivalent in behavior to `lru_cache(maxsize=None)`.
+
+27. `functools.partial`
+
+`partial()` creates a callable with some arguments pre-filled.
+
+Example:
+
+```python
+from functools import partial
+
+
+def power(base, exponent):
+    return base ** exponent
+
+
+square = partial(power, exponent=2)
+cube = partial(power, exponent=3)
+
+print(square(5))
+print(cube(5))
+```
+
+Output:
+
+```text
+25
+125
+```
+
+28. INTERMEDIATE COMPLETE EXAMPLE
+
+```python
+from typing import Callable
+
+
+def create_counter(
+    initial: int = 0
+) -> tuple[
+    Callable[[], int],
+    Callable[[int], None]
+]:
+
+    count = initial
+
+    def get_and_increment() -> int:
+        nonlocal count
+
+        current = count
+        count += 1
+
+        return current
+
+    def reset(value: int = 0) -> None:
+        nonlocal count
+        count = value
+
+    return get_and_increment, reset
+
+
+def log_event(
+    event_type: str,
+    /,
+    *details: str,
+    severity: str = "INFO",
+    **metadata: str
+) -> None:
+
+    print(f"[{severity}] Event: {event_type}")
+
+    if details:
+        print(
+            "  Details:",
+            ", ".join(details)
+        )
+
+    if metadata:
+        formatted = ", ".join(
+            f"{key}={value}"
+            for key, value in metadata.items()
+        )
+
+        print(
+            f"  Metadata: {formatted}"
+        )
+
+
+if __name__ == "__main__":
+
+    counter, reset_counter = create_counter(10)
+
+    print("Counter:", counter())
+    print("Counter:", counter())
+
+    reset_counter(100)
+
+    print(
+        "Counter after reset:",
+        counter()
+    )
+
+    log_event(
+        "USER_LOGIN",
+        "IP: 192.168.1.1",
+        "Browser: Chrome",
+        severity="SECURITY",
+        user_id="u_9921",
+        status="SUCCESS"
+    )
+```
+
+Expected output:
+
+```text
+Counter: 10
+Counter: 11
+Counter after reset: 100
+[SECURITY] Event: USER_LOGIN
+  Details: IP: 192.168.1.1, Browser: Chrome
+  Metadata: user_id=u_9921, status=SUCCESS
+```
+
+29. ADVANCED EXAMPLE — DECORATOR + CACHE
+
+```python
+import functools
+from typing import Any
+
+
+def retry_operation(
+    max_attempts: int = 3,
+    delay_seconds: float = 0.1
+):
+
+    def decorator(func):
+
+        @functools.wraps(func)
+        def wrapper(
+            *args: Any,
+            **kwargs: Any
+        ) -> Any:
+
+            attempts = 0
+
+            while attempts < max_attempts:
+
+                try:
+                    return func(
+                        *args,
+                        **kwargs
+                    )
+
+                except ConnectionError as exc:
+
+                    attempts += 1
+
+                    print(
+                        f"[RETRY] "
+                        f"Attempt {attempts}/"
+                        f"{max_attempts} failed: "
+                        f"{exc}"
+                    )
+
+                    if attempts >= max_attempts:
+                        raise
+
+                    import time
+                    time.sleep(delay_seconds)
+
+        return wrapper
+
+    return decorator
+
+
+@functools.cache
+def fibonacci(n: int) -> int:
+
+    if n < 2:
+        return n
+
+    return (
+        fibonacci(n - 1)
+        + fibonacci(n - 2)
+    )
+
+
+@retry_operation(max_attempts=3)
+def unreliable_operation(
+    attempts: list[int]
+) -> str:
+
+    attempts[0] += 1
+
+    if attempts[0] < 3:
+        raise ConnectionError(
+            "Temporary connection failure"
+        )
+
+    return "Operation successful"
+
+
+if __name__ == "__main__":
+
+    print(
+        "Fibonacci(50):",
+        fibonacci(50)
+    )
+
+    tracker = [0]
+
+    print(
+        unreliable_operation(tracker)
+    )
+```
+
+30. CODE WALKTHROUGHS
+
+30.1 CLOSURE
+
+For:
+
+```python
+def create_counter():
+    count = 0
+
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+
+    return increment
+```
+
+The execution is:
+
+```text
+create_counter()
+      ↓
+count created
+      ↓
+increment function created
+      ↓
+increment captures count
+      ↓
+create_counter() returns
+      ↓
+increment still retains access to count
+```
+
+The captured variable is represented internally using closure cells.
+
+30.2 DECORATOR
+
+For:
+
+```python
+@log_call
+def add(a, b):
+    return a + b
+```
+
+Conceptually:
+
+```text
+define add
+   ↓
+log_call(add)
+   ↓
+wrapper returned
+   ↓
+name add refers to decorated callable
+```
+
+30.3 PARAMETERIZED DECORATOR
+
+For:
+
+```python
+@repeat(3)
+def greet():
+    ...
+```
+
+Conceptually:
+
+```text
+repeat(3)
+   ↓
+decorator
+   ↓
+decorator(greet)
+   ↓
+wrapper
+   ↓
+greet refers to wrapper
+```
+
+31. EXECUTION MODEL
+
+At a high level:
+
+```text
+Source code
+    ↓
+Parsing / compilation
+    ↓
+Code object
+    ↓
+Function object
+    ↓
+Function call
+    ↓
+Execution frame
+    ↓
+Return value
+```
+
+A function object contains references to its code and other function-related metadata.
+
+Advanced attributes include:
+
+```python
+function.__name__
+function.__doc__
+function.__module__
+function.__annotations__
+function.__defaults__
+function.__kwdefaults__
+function.__closure__
+function.__code__
+```
+
+These are useful for introspection, debugging, and advanced tooling.
+
+Implementation-specific details such as the exact internal frame representation should not be treated as stable Python language guarantees.
+
+32. FUNCTIONS AND METHODS
+
+A function defined in a class becomes an attribute of the class.
+
+When accessed through an instance, Python's descriptor mechanism can bind the instance to the function, producing a bound method.
+
+Example:
+
+```python
+class Calculator:
+
+    def add(self, a, b):
+        return a + b
+
+
+calculator = Calculator()
+
+print(
+    calculator.add(10, 20)
+)
+```
+
+Conceptually:
+
+```text
+calculator.add(10, 20)
+```
+
+provides the instance as `self`.
+
+The exact internal implementation is a CPython detail; the important language-level concept is descriptor-based method binding.
+
+33. LATE BINDING IN CLOSURES
+
+Consider:
+
+```python
+functions = [
+    lambda: i
+    for i in range(3)
+]
+
+print(
+    [f() for f in functions]
+)
+```
+
+Output:
+
+```text
+[2, 2, 2]
+```
+
+The lambdas refer to the same enclosing variable `i`; they do not automatically receive a snapshot of its value for each iteration.
+
+34. FIXING LATE BINDING
+
+Use a default argument to bind the current value:
+
+```python
+functions = [
+    lambda i=i: i
+    for i in range(3)
+]
+
+print(
+    [f() for f in functions]
+)
+```
+
+Output:
+
+```text
+[0, 1, 2]
+```
+
+This works because the default argument is evaluated when each lambda is created.
+
+35. RECURSION
+
+A function can call itself.
+
+Example:
+
+```python
+def factorial(n):
+
+    if n <= 1:
+        return 1
+
+    return n * factorial(n - 1)
+```
+
+Python has a recursion limit to prevent unbounded recursion from exhausting the interpreter's stack resources.
+
+Check it with:
+
+```python
+import sys
+
+print(sys.getrecursionlimit())
+```
+
+Do not assume the value is always exactly 1000.
+
+Increasing the recursion limit with `sys.setrecursionlimit()` should be done carefully. For many recursive algorithms, an iterative solution is preferable.
+
+36. COMMON MISTAKES
+
+Mistake 1: Mutable defaults.
+
+Incorrect:
+
+```python
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+```
+
+Better:
+
+```python
+def add_item(item, items=None):
+    if items is None:
+        items = []
+
+    items.append(item)
+    return items
+```
+
+Mistake 2: Forgetting `nonlocal`.
+
+Incorrect:
+
+```python
+def outer():
+    count = 0
+
+    def increment():
+        count += 1
+
+    return increment
+```
+
+This produces an `UnboundLocalError` when `increment()` executes.
+
+Correct:
+
+```python
+def outer():
+    count = 0
+
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+
+    return increment
+```
+
+Mistake 3: Missing `wraps`.
+
+Less suitable:
+
+```python
+def decorator(func):
+
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+```
+
+Preferred:
+
+```python
+from functools import wraps
+
+
+def decorator(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+```
+
+Mistake 4: Using decorators for unnecessarily complex logic.
+
+Decorators should have a clear purpose and should not make debugging or control flow unnecessarily difficult.
+
+37. COMMON ERRORS
+
+37.1 `TypeError`
+
+Example:
+
+```python
+def add(a, b):
+    return a + b
+
+add(10)
+```
+
+Error:
+
+```text
+TypeError: add() missing 1 required positional argument
+```
+
+37.2 Unexpected Keyword
+
+```python
+def greet(name):
+    print(name)
+
+greet(username="Alice")
+```
+
+Produces a `TypeError` because `username` is not a parameter.
+
+37.3 Positional-Only Violation
+
+```python
+def add(a, b, /):
+    return a + b
+
+add(a=10, b=20)
+```
+
+Produces a `TypeError`.
+
+37.4 `UnboundLocalError`
+
+```python
+total = 100
+
+def add(amount):
+    total = total + amount
+    return total
+```
+
+Because `total` is assigned inside the function, Python treats it as a local binding in that function.
+
+The right-hand side therefore attempts to access the local `total` before it has been assigned.
+
+38. DEBUGGING TECHNIQUE
+
+Incorrect:
+
+```python
+total = 100
+
+
+def add(amount):
+    total = total + amount
+    return total
+```
+
+Correct approach:
+
+```python
+total = 100
+
+
+def add(
+    current_total,
+    amount
+):
+    return current_total + amount
+
+
+total = add(total, 50)
+
+print(total)
+```
+
+Output:
+
+```text
+150
+```
+
+This design is generally easier to test because state is passed explicitly rather than modified through global state.
+
+If global state genuinely represents application-wide state, `global` can be used explicitly:
+
+```python
+total = 100
+
+
+def add(amount):
+    global total
+    total += amount
+```
+
+However, this should be used deliberately.
+
+39. EDGE CASES
+
+39.1 DEFAULT ARGUMENTS
+
+Default expressions are evaluated once when the function definition executes.
+
+39.2 LATE-BINDING CLOSURES
+
+Closures normally resolve free variables when the inner function executes.
+
+39.3 REBINDING ENCLOSING VARIABLES
+
+Use:
+
+```python
+nonlocal variable
+```
+
+when an inner function needs to rebind a variable from an enclosing function scope.
+
+39.4 GLOBAL SHADOWING
+
+This:
+
+```python
+x = 10
+
+def test():
+    x = 20
+```
+
+does not modify the global `x`.
+
+The function creates a local binding.
+
+39.5 BUILTIN SHADOWING
+
+Avoid:
+
+```python
+list = [1, 2, 3]
+```
+
+because it shadows the built-in name `list`.
+
+Similarly avoid unnecessary names such as:
+
+```python
+str = "hello"
+sum = 100
+id = 10
+```
+
+when the corresponding built-ins are needed later.
+
+40. BEST PRACTICES
+
+* Keep functions focused on one clear responsibility.
+* Prefer explicit parameters and return values over unnecessary global state.
+* Use type annotations where they improve clarity and tooling.
+* Write useful docstrings for public functions.
+* Use keyword-only parameters for important configuration options.
+* Use positional-only parameters when parameter names are intentionally part of the private implementation.
+* Avoid mutable default arguments unless shared state is explicitly intended.
+* Use `nonlocal` only when closure state is genuinely appropriate.
+* Use `functools.wraps` for function decorators.
+* Catch only exceptions that a decorator can meaningfully handle.
+* Do not retry programming errors as if they were transient failures.
+* Use caching only when the function's result is appropriate to reuse.
+* Avoid caching functions with significant side effects or results dependent on changing external state.
+* Prefer clear named functions over complicated lambdas.
+* Avoid unnecessary `global` variables.
+* Do not shadow important built-in names.
+
+41. PERFORMANCE CONSIDERATIONS
+
+41.1 FUNCTION CALL OVERHEAD
+
+Calling a Python function has overhead.
+
+For extremely hot loops, reducing unnecessary layers of function calls may improve performance.
+
+However, readability should normally be prioritized unless profiling identifies a real bottleneck.
+
+41.2 DECORATOR OVERHEAD
+
+Each wrapper can introduce additional callable layers.
+
+For example:
+
+```text
+decorator A
+    ↓
+decorator B
+    ↓
+decorator C
+    ↓
+original function
+```
+
+Performance-sensitive code should avoid unnecessary decorator layers.
+
+41.3 CACHING
+
+Caching can significantly reduce repeated computation when:
+
+* Arguments repeat.
+* Arguments are hashable.
+* Results can safely be reused.
+
+`lru_cache` uses a bounded cache when `maxsize` is specified.
+
+42. MEMORY CONSIDERATIONS
+
+Closures retain references to captured objects.
+
+Example:
+
+```python
+def create_processor():
+    large_data = load_large_dataset()
+
+    def process():
+        return len(large_data)
+
+    return process
+```
+
+As long as the returned `process` function retains the closure, the referenced `large_data` may remain reachable.
+
+Therefore, avoid accidentally capturing very large objects when they are no longer required.
+
+43. SECURITY CONSIDERATIONS
+
+43.1 UNTRUSTED CODE
+
+Never use:
+
+```python
+eval(user_input)
+```
+
+or:
+
+```python
+exec(user_input)
+```
+
+on untrusted input.
+
+These functions can execute arbitrary Python code.
+
+43.2 SERIALIZED CALLABLES
+
+Be careful when using serialization mechanisms capable of reconstructing arbitrary Python objects.
+
+In particular, never unpickle untrusted data.
+
+43.3 DECORATORS
+
+Security-sensitive decorators should be carefully reviewed because they can silently alter:
+
+* Authentication.
+* Authorization.
+* Logging.
+* Input validation.
+* Exception handling.
+* Rate limiting.
+
+A decorator should not create a false sense of security merely because it wraps a function.
+
+44. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                      | Python                         | C++                                                    | Java                                                      |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------ | --------------------------------------------------------- |
+| First-class callable objects | Yes                            | Function pointers / callable objects / `std::function` | Lambdas / functional interfaces                           |
+| Default arguments            | Yes                            | Yes                                                    | Commonly handled with overloading                         |
+| Closures                     | Yes                            | Lambda captures                                        | Lambdas capture effectively-final local variables         |
+| Keyword arguments            | Yes                            | No native equivalent                                   | No native equivalent                                      |
+| Positional-only parameters   | Yes                            | Not a direct equivalent                                | Not a direct equivalent                                   |
+| Keyword-only parameters      | Yes                            | Not a direct equivalent                                | Not a direct equivalent                                   |
+| Decorators                   | Function/class decorators      | No direct equivalent                                   | Annotations and frameworks/AOP provide related mechanisms |
+| Memoization                  | `functools.cache`, `lru_cache` | Libraries/custom implementation                        | Libraries/custom implementation                           |
+| Anonymous functions          | `lambda`                       | Lambdas                                                | Lambda expressions                                        |
+| Explicit nonlocal rebinding  | `nonlocal`                     | Lambda capture/reference mechanisms differ             | Different closure semantics                               |
+
+45. FAQ
+
+Q1. What is the difference between a parameter and an argument?
+
+A:
+
+A parameter is a variable in a function definition.
+
+An argument is a value supplied to the function call.
+
+Q2. What does `*args` do?
+
+A:
+
+It collects additional positional arguments into a tuple.
+
+Q3. What does `**kwargs` do?
+
+A:
+
+It collects additional keyword arguments into a dictionary.
+
+Q4. What is LEGB?
+
+A:
+
+LEGB describes the common name-resolution order:
+
+```text
+Local
+Enclosing
+Global
+Built-in
+```
+
+Q5. What is the difference between `global` and `nonlocal`?
+
+A:
+
+`global` refers to the module-level global binding.
+
+`nonlocal` refers to an existing binding in an enclosing function scope.
+
+Q6. What is a closure?
+
+A:
+
+A closure is a function that retains access to variables from its enclosing lexical scope.
+
+Q7. What is a lambda?
+
+A:
+
+A lambda expression creates an anonymous function containing a single expression.
+
+Q8. What does `@decorator` mean?
+
+A:
+
+It applies a callable to the function being defined.
+
+Conceptually:
+
+```python
+@decorator
+def func():
+    ...
+```
+
+becomes:
+
+```python
+def func():
+    ...
+
+func = decorator(func)
+```
+
+Q9. Why use `functools.wraps`?
+
+A:
+
+It helps a wrapper retain important metadata from the wrapped callable and establishes the `__wrapped__` relationship used by introspection tools.
+
+Q10. Why do lambdas in loops sometimes produce the same value?
+
+A:
+
+Because closures normally capture the variable binding rather than a snapshot of its value at each iteration.
+
+46. INTERVIEW QUESTIONS
+
+Q1. Explain LEGB.
+
+Answer:
+
+Python resolves names through the local scope, enclosing function scopes, the module's global namespace, and finally the built-in namespace.
+
+Q2. What is the mutable default argument problem?
+
+Answer:
+
+Default argument expressions are evaluated when the function definition executes. Therefore, using a mutable object such as `[]` as a default can cause multiple calls to share the same object.
+
+Use `None` as a sentinel when a fresh mutable object is required.
+
+Q3. What is the difference between `*args` and `**kwargs`?
+
+Answer:
+
+```text
+*args
+→ extra positional arguments
+→ tuple
+
+**kwargs
+→ extra keyword arguments
+→ dictionary
+```
+
+Q4. What is a closure?
+
+Answer:
+
+A closure is a nested function that retains access to variables from an enclosing function scope after the enclosing function has returned.
+
+Q5. What does `nonlocal` do?
+
+Answer:
+
+It allows an inner function to rebind an existing variable in an enclosing function scope.
+
+Q6. What does `functools.wraps` do?
+
+Answer:
+
+It uses `update_wrapper()` to copy/update important metadata and establish `__wrapped__` for the decorated function.
+
+Q7. How do parameterized decorators work?
+
+Answer:
+
+They use multiple nested functions:
+
+```text
+factory
+   ↓
+decorator
+   ↓
+wrapper
+```
+
+Q8. Why is caching not suitable for every function?
+
+Answer:
+
+Caching reuses previous results. Functions whose results depend on changing external state or whose behavior has important side effects may not be suitable for caching.
+
+Q9. What is late binding?
+
+Answer:
+
+A closure normally resolves a free variable when the inner function executes rather than storing a separate value snapshot for each creation.
+
+47. EXAM QUESTIONS
+
+Q1. What is the output?
+
+```python
+def test():
+    return 10, 20
+
+print(test())
+```
+
+Answer:
+
+```text
+(10, 20)
+```
+
+Q2. Which keyword allows an inner function to modify an enclosing function variable?
+
+Answer:
+
+```text
+nonlocal
+```
+
+Q3. Which keyword modifies a module-level global binding?
+
+Answer:
+
+```text
+global
+```
+
+Q4. What is the output?
+
+```python
+funcs = [
+    lambda: i
+    for i in range(3)
+]
+
+print([f() for f in funcs])
+```
+
+Answer:
+
+```text
+[2, 2, 2]
+```
+
+Reason: the lambdas reference the same loop variable binding.
+
+Q5. How can the previous example be fixed?
+
+Answer:
+
+```python
+funcs = [
+    lambda i=i: i
+    for i in range(3)
+]
+```
+
+Result:
+
+```text
+[0, 1, 2]
+```
+
+Q6. What does `/` mean in a function signature?
+
+Answer:
+
+Parameters before `/` are positional-only.
+
+Q7. What does `*` mean in a function signature when it is not `*args`?
+
+Answer:
+
+Parameters after `*` are keyword-only.
+
+Q8. What does `@decorator` represent?
+
+Answer:
+
+Conceptually:
+
+```python
+function = decorator(function)
+```
+
+48. PRACTICE QUESTIONS
+
+Problem 1:
+
+Implement:
+
+```python
+@validate_types
+```
+
+which validates selected arguments against their annotations at runtime.
+
+Problem 2:
+
+Implement:
+
+```python
+@execution_timer
+```
+
+which records function execution time.
+
+Problem 3:
+
+Implement:
+
+```python
+@retry(max_attempts=3)
+```
+
+which retries only `ConnectionError`.
+
+Problem 4:
+
+Implement a closure:
+
+```python
+counter = create_counter()
+```
+
+with:
+
+```text
+increment()
+decrement()
+reset()
+```
+
+Problem 5:
+
+Implement:
+
+```python
+compose(f, g)
+```
+
+so that:
+
+```python
+compose(f, g)(x)
+```
+
+computes:
+
+```text
+f(g(x))
+```
+
+Problem 6:
+
+Implement a TTL cache decorator.
+
+Requirements:
+
+* Store cached values.
+* Store expiration times.
+* Recompute expired entries.
+* Use hashable arguments as keys.
+
+Problem 7:
+
+Write a lambda that sorts:
+
+```python
+students = [
+    ("Alice", 85),
+    ("Bob", 92),
+    ("Charlie", 78)
+]
+```
+
+by score from highest to lowest.
+
+Problem 8:
+
+Write a decorator that logs:
+
+* Function name.
+* Arguments.
+* Return value.
+* Execution time.
+
+49. ADVANCED PRACTICE — CLOSURE VS CLASS
+
+Implement the same counter in two ways.
+
+Using a closure:
+
+```python
+def create_counter():
+    ...
+```
+
+Using a class:
+
+```python
+class Counter:
+    ...
+```
+
+Compare:
+
+* State management.
+* Readability.
+* Encapsulation.
+* Extensibility.
+* Introspection.
+* Testing.
+
+50. SUMMARY
+
+Python functions are first-class callable objects that support flexible parameter passing, lexical scope, closures, anonymous functions, higher-order programming, and decorators.
+
+The central concepts are:
+
+```text
+FUNCTION
+   ↓
+PARAMETERS
+   ↓
+ARGUMENTS
+   ↓
+RETURN VALUE
+   ↓
+SCOPE
+   ↓
+CLOSURE
+   ↓
+HIGHER-ORDER FUNCTION
+   ↓
+DECORATOR
+```
+
+Important parameter features include:
+
+```text
+/       → positional-only
+*       → keyword-only separator
+*args   → extra positional arguments
+**kwargs → extra keyword arguments
+```
+
+Name resolution can be understood as:
+
+```text
+Local
+  ↓
+Enclosing
+  ↓
+Global
+  ↓
+Built-in
+```
+
+Closures allow functions to retain enclosing state.
+
+Decorators allow reusable behavior to wrap callables.
+
+Lambda expressions provide compact anonymous functions.
+
+`functools` provides useful tools such as:
+
+```text
+wraps
+partial
+cache
+lru_cache
+```
+
+51. KEY TAKEAWAYS
+
+* Functions are first-class callable objects.
+* Parameters and arguments are different concepts.
+* A function without an executed `return` returns `None`.
+* Multiple returned values are normally packaged as a tuple.
+* `/` defines positional-only parameters.
+* `*` defines keyword-only parameters when used as a separator.
+* `*args` collects extra positional arguments.
+* `**kwargs` collects extra keyword arguments.
+* Default argument expressions are evaluated when the function definition executes.
+* Avoid mutable default arguments unless shared state is intentional.
+* LEGB describes the common name-resolution hierarchy.
+* Use `global` to rebind a module-level variable.
+* Use `nonlocal` to rebind an existing variable in an enclosing function scope.
+* Closures retain access to enclosing variables.
+* Lambda expressions contain a single expression.
+* `sorted()`, `map()`, `filter()`, and other APIs can accept callable objects.
+* Decorators transform or wrap callables.
+* Multiple decorators are applied from the function outward.
+* Use `functools.wraps` when implementing function decorators.
+* Use `cache` or `lru_cache` only when cached results are appropriate.
+* Closures can unintentionally keep large objects alive.
+* Avoid unnecessary global state.
+* Avoid shadowing important built-in names.
+* Use decorators carefully in security- and performance-sensitive code.
+  ================================================================================
+  END OF KNOWLEDGE BASE
+  ================================================================================

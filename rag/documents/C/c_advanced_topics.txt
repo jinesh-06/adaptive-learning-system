@@ -1,0 +1,1978 @@
+COURSE: C PROGRAMMING
+TOPIC: CONTROL FLOW AND STATEMENTS
+LEVEL: BEGINNER TO ADVANCED
+DOCUMENT TYPE: RAG KNOWLEDGE BASE
+VERSION: IMPROVED OFFICIAL-SOURCE EDITION
+
+======================================================================
+1. PURPOSE AND SCOPE
+======================================================================
+
+Control flow determines the order in which C statements are executed.
+C normally executes statements in sequence, but selection, iteration,
+and jump statements allow a program to make decisions, repeat work,
+skip iterations, terminate constructs, and transfer control.
+
+This document is designed for:
+- C programming study
+- college laboratory and examination preparation
+- interview preparation
+- RAG ingestion and semantic retrieval
+- beginner-to-advanced revision
+
+The document focuses on standard C behavior. Compiler-specific
+extensions are identified separately.
+
+======================================================================
+2. AUTHORITATIVE REFERENCES
+======================================================================
+
+Primary references used for this document:
+
+1. GNU C Reference Manual
+   https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html
+
+2. GNU C Reference Manual PDF
+   https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.pdf
+
+3. GNU C Intro and Reference Manual
+   https://www.gnu.org/software/c-intro-and-ref/manual/
+
+4. cppreference — C language
+   https://en.cppreference.com/c/language
+
+5. cppreference — C statements
+   https://en.cppreference.com/c/language/statements
+
+6. cppreference — C break
+   https://en.cppreference.com/c/language/break
+
+7. cppreference — C continue
+   https://en.cppreference.com/c/language/continue
+
+8. cppreference — C goto
+   https://en.cppreference.com/c/language/goto
+
+The document is a synthesized explanation. It is not a reproduction of
+the source material.
+
+======================================================================
+3. LEARNING OBJECTIVES
+======================================================================
+
+After studying this topic, the learner should be able to:
+
+- define control flow
+- identify C statement categories
+- write if and if-else statements
+- build else-if chains
+- understand C condition evaluation
+- use logical operators
+- explain short-circuit evaluation
+- use switch, case, and default
+- explain switch fall-through
+- use while, do-while, and for
+- design nested loops
+- use break and continue correctly
+- use return in functions
+- understand labels and goto
+- recognize null statements
+- trace execution manually
+- identify loop boundary errors
+- design input-validation loops
+- create menu-driven programs
+- apply control flow to searching and state machines
+- debug control-flow problems
+- recognize control-flow-related security risks
+
+======================================================================
+4. C STATEMENT CATEGORIES
+======================================================================
+
+According to the C language statement model, important categories are:
+
+1. Compound statements
+2. Expression statements
+3. Selection statements
+4. Iteration statements
+5. Jump statements
+
+Labels are used with labeled statements and switch cases.
+
+Selection:
+- if
+- if with else
+- switch
+
+Iteration:
+- while
+- do-while
+- for
+
+Jump:
+- break
+- continue
+- return
+- goto
+
+A compound statement is a block enclosed by braces.
+
+Example:
+
+{
+    int x = 10;
+    printf("%d\n", x);
+}
+
+======================================================================
+5. CONDITIONS AND TRUTH VALUES
+======================================================================
+
+C uses the value of an expression when evaluating a condition.
+
+For ordinary conditional evaluation:
+- zero is false
+- non-zero is true
+
+Example:
+
+int x = 5;
+
+if (x)
+{
+    printf("true\n");
+}
+
+Because x is non-zero, the body executes.
+
+Example:
+
+int x = 0;
+
+if (x)
+{
+    printf("not executed\n");
+}
+
+Because x is zero, the body is skipped.
+
+Relational operators:
+
+==    equal
+!=    not equal
+<     less than
+>     greater than
+<=    less than or equal
+>=    greater than or equal
+
+Logical operators:
+
+!     logical NOT
+&&    logical AND
+||    logical OR
+
+C also has _Bool and, in C99 and later, the <stdbool.h> facilities for
+boolean-style programming. C23 additionally provides true and false as
+keywords. Do not confuse the language's logical evaluation rules with
+the type system.
+
+======================================================================
+6. if STATEMENT
+======================================================================
+
+Purpose:
+Execute a statement when the controlling expression is true.
+
+Syntax:
+
+if (expression)
+{
+    statements;
+}
+
+Example:
+
+int marks = 75;
+
+if (marks >= 50)
+{
+    printf("Pass\n");
+}
+
+Execution:
+1. Evaluate expression.
+2. If the result is non-zero, execute the controlled statement.
+3. If the result is zero, skip the controlled statement.
+4. Continue after the if statement.
+
+======================================================================
+7. if-else STATEMENT
+======================================================================
+
+Purpose:
+Select one of two alternatives.
+
+Syntax:
+
+if (expression)
+{
+    statements_for_true;
+}
+else
+{
+    statements_for_false;
+}
+
+Example:
+
+int n = 8;
+
+if (n % 2 == 0)
+{
+    printf("Even\n");
+}
+else
+{
+    printf("Odd\n");
+}
+
+Exactly one branch of this if-else construct is selected.
+
+======================================================================
+8. ELSE-IF CHAINS
+======================================================================
+
+An else-if chain provides multiple alternatives.
+
+Example:
+
+int score = 82;
+
+if (score >= 90)
+{
+    printf("A\n");
+}
+else if (score >= 80)
+{
+    printf("B\n");
+}
+else if (score >= 70)
+{
+    printf("C\n");
+}
+else
+{
+    printf("Below C\n");
+}
+
+Conditions are tested from top to bottom. Once a selected branch is
+executed, later branches in the same chain are skipped.
+
+When conditions overlap, their order matters.
+
+======================================================================
+9. NESTED if
+======================================================================
+
+An if can contain another if.
+
+Example:
+
+if (age >= 18)
+{
+    if (has_id)
+    {
+        printf("Allowed\n");
+    }
+}
+
+Nested conditions are useful when the second decision depends on the
+first.
+
+Deep nesting can make code harder to understand. Functions and clearer
+conditions may reduce unnecessary nesting.
+
+======================================================================
+10. LOGICAL OPERATORS
+======================================================================
+
+Logical AND:
+
+A && B
+
+The result is true when both operands are logically true.
+
+Logical OR:
+
+A || B
+
+The result is true when at least one operand is logically true.
+
+Logical NOT:
+
+!A
+
+The logical value is reversed.
+
+Example:
+
+if (age >= 18 && age <= 60)
+{
+    printf("Within range\n");
+}
+
+Example:
+
+if (choice == 1 || choice == 2)
+{
+    printf("Valid choice\n");
+}
+
+======================================================================
+11. SHORT-CIRCUIT EVALUATION
+======================================================================
+
+The logical operators && and || perform short-circuit evaluation.
+
+For:
+
+A && B
+
+If A is false, B is not evaluated.
+
+For:
+
+A || B
+
+If A is true, B is not evaluated.
+
+Example:
+
+if (ptr != NULL && *ptr == 42)
+{
+    printf("Value is 42\n");
+}
+
+If ptr is NULL, the second operand is not evaluated.
+
+Short-circuiting also means that side effects in a skipped operand do
+not occur.
+
+Example:
+
+int x = 0;
+
+if (0 && ++x)
+{
+    printf("not reached\n");
+}
+
+x remains 0.
+
+Important:
+&& and || are logical operators. They are not the same as the
+bitwise operators & and |.
+
+======================================================================
+12. SWITCH STATEMENT
+======================================================================
+
+switch provides multi-way selection based on its controlling
+expression.
+
+Syntax:
+
+switch (expression)
+{
+    case constant_expression:
+        statements;
+        break;
+
+    default:
+        statements;
+        break;
+}
+
+In standard C, the controlling expression is subject to the integer-type
+requirements of switch. Case labels use appropriate integer constant
+expressions.
+
+Example:
+
+int choice = 2;
+
+switch (choice)
+{
+    case 1:
+        printf("Add\n");
+        break;
+
+    case 2:
+        printf("Update\n");
+        break;
+
+    case 3:
+        printf("Delete\n");
+        break;
+
+    default:
+        printf("Invalid choice\n");
+        break;
+}
+
+======================================================================
+13. case LABEL
+======================================================================
+
+A case label specifies a possible matching value in a switch.
+
+Example:
+
+switch (day)
+{
+    case 1:
+        printf("Monday\n");
+        break;
+
+    case 2:
+        printf("Tuesday\n");
+        break;
+}
+
+Case values must satisfy the language requirements for switch case
+labels and must be suitable constant expressions.
+
+======================================================================
+14. default LABEL
+======================================================================
+
+The default label provides a path when no listed case matches.
+
+Example:
+
+switch (command)
+{
+    case 1:
+        start();
+        break;
+
+    case 2:
+        stop();
+        break;
+
+    default:
+        printf("Unknown command\n");
+        break;
+}
+
+default is optional.
+
+If there is no matching case and no default, no selected case statement
+is executed.
+
+======================================================================
+15. SWITCH FALL-THROUGH
+======================================================================
+
+After a matching case begins execution, control continues through later
+statements until control is transferred elsewhere.
+
+Example:
+
+switch (x)
+{
+    case 1:
+        printf("One\n");
+
+    case 2:
+        printf("Two\n");
+        break;
+}
+
+If x is 1, both messages can be printed.
+
+This is called fall-through.
+
+Accidental fall-through can cause bugs. Intentional fall-through should
+be made clear to readers and should use the facilities appropriate to
+the C version/compiler being used.
+
+======================================================================
+16. if VERSUS switch
+======================================================================
+
+Use if/else when:
+- conditions involve ranges
+- conditions use several expressions
+- complex logical conditions are required
+
+Use switch when:
+- one expression is matched against discrete constant alternatives
+- command or menu choices are being dispatched
+- enum/integer alternatives are natural
+
+Example:
+
+if (temperature > 40)
+{
+    printf("High\n");
+}
+else if (temperature > 30)
+{
+    printf("Medium\n");
+}
+else
+{
+    printf("Low\n");
+}
+
+switch example:
+
+switch (command)
+{
+    case 1:
+        start();
+        break;
+
+    case 2:
+        stop();
+        break;
+
+    default:
+        invalid();
+        break;
+}
+
+======================================================================
+17. while LOOP
+======================================================================
+
+while is an entry-controlled iteration statement.
+
+Syntax:
+
+while (expression)
+{
+    statements;
+}
+
+Execution:
+1. Evaluate expression.
+2. If zero, leave the loop.
+3. If non-zero, execute the body.
+4. Repeat the condition test.
+
+Example:
+
+int i = 1;
+
+while (i <= 5)
+{
+    printf("%d\n", i);
+    i++;
+}
+
+Output:
+
+1
+2
+3
+4
+5
+
+A while loop can execute zero times.
+
+======================================================================
+18. do-while LOOP
+======================================================================
+
+do-while is an iteration statement whose condition is evaluated after
+the body.
+
+Syntax:
+
+do
+{
+    statements;
+}
+while (expression);
+
+Example:
+
+int i = 1;
+
+do
+{
+    printf("%d\n", i);
+    i++;
+}
+while (i <= 5);
+
+The body executes at least once.
+
+The semicolon after the while condition is required.
+
+======================================================================
+19. for LOOP
+======================================================================
+
+The for statement provides initialization, a controlling expression, and
+an iteration expression.
+
+Syntax:
+
+for (initialization; condition; update)
+{
+    statements;
+}
+
+Example:
+
+for (int i = 1; i <= 5; i++)
+{
+    printf("%d\n", i);
+}
+
+Typical execution order:
+
+1. initialization
+2. condition
+3. body
+4. update
+5. condition
+6. body
+7. update
+8. repeat
+
+Any of the expressions can be omitted where the syntax permits it.
+
+Example:
+
+for (;;)
+{
+    /* intentionally repeated */
+}
+
+Such a loop requires another control path to terminate.
+
+======================================================================
+20. NESTED LOOPS
+======================================================================
+
+A loop may contain another loop.
+
+Example:
+
+for (int i = 1; i <= 3; i++)
+{
+    for (int j = 1; j <= 3; j++)
+    {
+        printf("%d %d\n", i, j);
+    }
+}
+
+Applications:
+- matrices
+- tables
+- grids
+- combinations
+- pair comparisons
+- pattern generation
+
+======================================================================
+21. break STATEMENT
+======================================================================
+
+break terminates the nearest enclosing:
+- for
+- while
+- do-while
+- switch
+
+Example:
+
+for (int i = 1; i <= 10; i++)
+{
+    if (i == 6)
+        break;
+
+    printf("%d ", i);
+}
+
+Output:
+
+1 2 3 4 5
+
+In nested loops, break affects only the nearest enclosing loop or
+switch.
+
+It cannot directly terminate multiple nested loops.
+
+======================================================================
+22. continue STATEMENT
+======================================================================
+
+continue skips the remaining portion of the current iteration of the
+nearest enclosing loop.
+
+Example:
+
+for (int i = 1; i <= 5; i++)
+{
+    if (i == 3)
+        continue;
+
+    printf("%d ", i);
+}
+
+Output:
+
+1 2 4 5
+
+Important loop-specific behavior:
+
+- in while, control proceeds to the loop's condition test
+- in do-while, control proceeds to its condition test
+- in for, control proceeds to the iteration expression, then the
+  condition is tested
+
+======================================================================
+23. break VERSUS continue
+======================================================================
+
+break:
+- terminates the nearest loop or switch
+- continues after that construct
+
+continue:
+- skips the remaining body of the current iteration
+- keeps the loop active
+
+Use break when the enclosing construct should end.
+
+Use continue when the current item should be skipped and processing
+should proceed with the next iteration.
+
+======================================================================
+24. return STATEMENT
+======================================================================
+
+return terminates the current function.
+
+Example:
+
+int square(int x)
+{
+    return x * x;
+}
+
+A void function can use:
+
+return;
+
+Example:
+
+void stop(void)
+{
+    return;
+}
+
+A return statement can also be used for early error handling.
+
+Example:
+
+int process(int value)
+{
+    if (value < 0)
+        return -1;
+
+    return value * 2;
+}
+
+======================================================================
+25. LABELS
+======================================================================
+
+A label identifies a location within a function.
+
+Syntax:
+
+label_name:
+    statement;
+
+Example:
+
+start:
+    printf("Start\n");
+
+A label does not itself transfer control.
+
+A goto statement can transfer control to a label in the same function,
+subject to the C language's rules for valid control transfers.
+
+======================================================================
+26. goto STATEMENT
+======================================================================
+
+Syntax:
+
+goto label;
+
+label:
+    statement;
+
+goto performs an unconditional transfer to a named label in the same
+function.
+
+Example:
+
+int i = 1;
+
+start:
+printf("%d\n", i);
+i++;
+
+if (i <= 5)
+    goto start;
+
+For ordinary repetition, for, while, and do-while normally communicate
+the algorithm more clearly.
+
+A suitable low-level use of goto is centralized cleanup after partial
+resource acquisition.
+
+Example:
+
+int process(void)
+{
+    int *a = NULL;
+    int *b = NULL;
+    int status = -1;
+
+    a = allocate_a();
+    if (!a)
+        goto cleanup;
+
+    b = allocate_b();
+    if (!b)
+        goto cleanup_a;
+
+    status = 0;
+
+cleanup_b:
+    free(b);
+
+cleanup_a:
+    free(a);
+
+cleanup:
+    return status;
+}
+
+The cleanup structure must match which resources have actually been
+acquired.
+
+======================================================================
+27. NULL STATEMENT
+======================================================================
+
+A null statement is a semicolon by itself.
+
+Example:
+
+;
+
+It performs no operation.
+
+It can intentionally be used as the body of a loop.
+
+Example:
+
+while (*ptr != '\0')
+    ;
+
+A null statement can also accidentally appear because of an extra
+semicolon.
+
+Wrong:
+
+while (x < 10);
+{
+    printf("%d\n", x);
+    x++;
+}
+
+The semicolon is the loop body, so the following block is not controlled
+by the while.
+
+======================================================================
+28. EXPRESSION STATEMENTS
+======================================================================
+
+An expression followed by a semicolon forms an expression statement.
+
+Examples:
+
+x++;
+y = x + 10;
+printf("Hello\n");
+function_call();
+
+Expression statements are often used for operations that produce side
+effects.
+
+======================================================================
+29. COMPOUND STATEMENTS / BLOCKS
+======================================================================
+
+A compound statement is a sequence of declarations and statements
+enclosed in braces.
+
+Example:
+
+{
+    int x = 10;
+    printf("%d\n", x);
+}
+
+Blocks provide a structural unit for:
+- if branches
+- loop bodies
+- switch bodies
+- function bodies
+- nested scopes
+
+Using braces consistently improves readability and reduces ambiguity.
+
+======================================================================
+30. EXECUTION TRACE
+======================================================================
+
+Example:
+
+int x = 3;
+
+if (x > 0)
+{
+    printf("Positive\n");
+}
+else
+{
+    printf("Non-positive\n");
+}
+
+Trace:
+
+1. x receives 3.
+2. x > 0 is evaluated.
+3. The result is non-zero.
+4. The first block executes.
+5. The else block is skipped.
+6. Execution continues after the if statement.
+
+Loop trace:
+
+int i = 1;
+
+while (i <= 3)
+{
+    printf("%d\n", i);
+    i++;
+}
+
+Trace:
+
+i=1 -> true -> print 1 -> i=2
+i=2 -> true -> print 2 -> i=3
+i=3 -> true -> print 3 -> i=4
+i=4 -> false -> exit
+
+======================================================================
+31. INPUT VALIDATION
+======================================================================
+
+Loops are useful for repeated validation.
+
+Example:
+
+int age;
+
+do
+{
+    printf("Enter age 1-120: ");
+
+    if (scanf("%d", &age) != 1)
+    {
+        printf("Invalid input\n");
+        return 1;
+    }
+}
+while (age < 1 || age > 120);
+
+printf("Accepted: %d\n", age);
+
+For production-quality input handling, failed conversions and leftover
+input should be handled according to the input interface being used.
+
+======================================================================
+32. MENU-DRIVEN PROGRAM
+======================================================================
+
+A common C pattern combines do-while and switch.
+
+Example:
+
+#include <stdio.h>
+
+int main(void)
+{
+    int choice;
+
+    do
+    {
+        printf("\n1. Add\n");
+        printf("2. View\n");
+        printf("3. Exit\n");
+        printf("Choice: ");
+
+        if (scanf("%d", &choice) != 1)
+            return 1;
+
+        switch (choice)
+        {
+            case 1:
+                printf("Add selected\n");
+                break;
+
+            case 2:
+                printf("View selected\n");
+                break;
+
+            case 3:
+                printf("Exit\n");
+                break;
+
+            default:
+                printf("Invalid choice\n");
+        }
+    }
+    while (choice != 3);
+
+    return 0;
+}
+
+Control-flow roles:
+- do-while repeats the menu
+- switch selects an operation
+- break exits a switch
+- the loop condition determines termination
+
+======================================================================
+33. CONTROL FLOW WITH ARRAYS
+======================================================================
+
+Example:
+
+int a[] = {10, 20, 30, 40, 50};
+int n = 5;
+
+for (int i = 0; i < n; i++)
+{
+    printf("%d\n", a[i]);
+}
+
+For an array containing n elements with normal zero-based indexing,
+valid indexes are 0 through n-1.
+
+Incorrect loop bounds can produce out-of-bounds access.
+
+======================================================================
+34. CONTROL FLOW WITH STRINGS
+======================================================================
+
+A C string is represented by characters ending in a null character.
+
+Example:
+
+char text[] = "C language";
+
+for (int i = 0; text[i] != '\0'; i++)
+{
+    printf("%c\n", text[i]);
+}
+
+The loop stops when the null terminator is reached.
+
+String processing must remain within the bounds of the allocated object.
+
+======================================================================
+35. LINEAR SEARCH
+======================================================================
+
+Example:
+
+int linear_search(const int a[], int n, int target)
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] == target)
+            return i;
+    }
+
+    return -1;
+}
+
+Control flow:
+- for visits each element
+- if compares the target
+- return exits immediately when found
+- final return indicates not found
+
+Typical worst-case time complexity: O(n).
+
+======================================================================
+36. BINARY SEARCH
+======================================================================
+
+Binary search requires sorted data.
+
+Example:
+
+int binary_search(const int a[], int n, int target)
+{
+    int low = 0;
+    int high = n - 1;
+
+    while (low <= high)
+    {
+        int mid = low + (high - low) / 2;
+
+        if (a[mid] == target)
+            return mid;
+        else if (a[mid] < target)
+            low = mid + 1;
+        else
+            high = mid - 1;
+    }
+
+    return -1;
+}
+
+Typical worst-case time complexity: O(log n).
+
+The midpoint expression avoids directly forming low + high, which can
+matter when integer overflow is possible.
+
+======================================================================
+37. FILE-PROCESSING CONTROL FLOW
+======================================================================
+
+Control flow is frequently used to process input until an operation
+reports that no more records are available.
+
+Conceptual form:
+
+while (read_next_record())
+{
+    process_record();
+}
+
+The exact condition depends on the C library/API.
+
+Robust file processing should distinguish:
+- successful input
+- end-of-file
+- input errors
+
+Do not assume that every unsuccessful read means end-of-file.
+
+======================================================================
+38. ERROR HANDLING
+======================================================================
+
+C does not use a built-in exception mechanism like many higher-level
+languages.
+
+C programs commonly communicate errors through:
+- return values
+- status codes
+- output parameters
+- errno-related conventions
+- API-specific mechanisms
+
+Example:
+
+int result = perform_operation();
+
+if (result != 0)
+{
+    printf("Operation failed\n");
+    return 1;
+}
+
+printf("Operation succeeded\n");
+
+Control flow determines how the program responds to success and failure.
+
+======================================================================
+39. INFINITE LOOPS
+======================================================================
+
+An infinite loop continues without reaching a normal terminating
+condition.
+
+Example:
+
+while (1)
+{
+    /* repeated processing */
+}
+
+Controlled form:
+
+while (1)
+{
+    int choice;
+
+    if (scanf("%d", &choice) != 1)
+        break;
+
+    if (choice == 0)
+        break;
+}
+
+Infinite loops are valid in some event-driven systems, servers, and
+interactive programs, but termination and resource behavior should be
+intentional.
+
+======================================================================
+40. LOOP BOUNDARIES AND OFF-BY-ONE ERRORS
+======================================================================
+
+Example:
+
+for (int i = 0; i < 5; i++)
+
+Values:
+0 1 2 3 4
+
+Five iterations.
+
+Example:
+
+for (int i = 1; i <= 5; i++)
+
+Values:
+1 2 3 4 5
+
+Five iterations.
+
+These are different ranges.
+
+Common mistakes:
+- <= instead of <
+- wrong initial value
+- missing increment/decrement
+- incrementing twice
+- accessing index n in an n-element array
+- using the wrong termination condition
+
+======================================================================
+41. COMMON CONTROL-FLOW ERRORS
+======================================================================
+
+1. Assignment instead of comparison
+
+Wrong:
+
+if (x = 5)
+
+Usually intended:
+
+if (x == 5)
+
+2. Accidental semicolon
+
+Wrong:
+
+while (x < 10);
+
+3. Missing loop update
+
+Wrong:
+
+int i = 0;
+
+while (i < 10)
+{
+    printf("%d\n", i);
+}
+
+If i never changes, the loop does not reach its intended condition.
+
+4. Missing break in switch
+
+Execution can continue into later case statements.
+
+5. Wrong boundary
+
+i < n and i <= n represent different ranges.
+
+6. Misunderstanding continue
+
+continue does not terminate the loop.
+
+7. Misunderstanding nested break
+
+break affects only the nearest enclosing loop or switch.
+
+8. Assuming input conversion always succeeds
+
+scanf and other input operations can fail. Return values should be
+checked when correctness depends on successful conversion.
+
+======================================================================
+42. CONTROL FLOW AND COMPLEXITY
+======================================================================
+
+One loop over n items commonly performs O(n) work when the loop body is
+constant-time.
+
+Two nested loops that each run n times commonly perform O(n^2) work.
+
+Example:
+
+for (int i = 0; i < n; i++)
+{
+    for (int j = 0; j < n; j++)
+    {
+        /* constant work */
+    }
+}
+
+Actual complexity depends on the loop bounds and the work performed.
+
+An early break or return can reduce work for particular inputs without
+necessarily changing worst-case complexity.
+
+======================================================================
+43. PERFORMANCE AND COMPILERS
+======================================================================
+
+The C language specifies program behavior; it does not require one
+specific machine-level implementation of a loop or switch.
+
+A compiler may transform control flow during optimization.
+
+Do not assume:
+- every switch uses a jump table
+- every if becomes one machine branch
+- every loop has the same hardware cost
+
+Compiler decisions depend on:
+- target architecture
+- compiler
+- optimization level
+- code structure
+- profile information
+- case density and other implementation details
+
+Optimize after establishing a real performance requirement and measuring
+where appropriate.
+
+======================================================================
+44. DEBUGGING CONTROL FLOW
+======================================================================
+
+When execution is incorrect:
+
+1. Record the input.
+2. Check initial variable values.
+3. Evaluate each condition.
+4. Check loop initialization.
+5. Check loop termination.
+6. Check update expressions.
+7. Check break locations.
+8. Check continue locations.
+9. Check switch case selection.
+10. Check function return paths.
+11. Compile with warnings.
+12. Use a debugger when necessary.
+
+Useful GCC warning options include:
+
+-Wall
+-Wextra
+-Wpedantic
+-Wimplicit-fallthrough
+
+Example:
+
+gcc -Wall -Wextra -Wpedantic program.c -o program
+
+Warning behavior depends on compiler version and language mode.
+
+======================================================================
+45. SECURITY AND ROBUSTNESS
+======================================================================
+
+Control-flow mistakes can contribute to security and reliability
+problems.
+
+Examples:
+- infinite loops can cause excessive resource use
+- incorrect bounds can cause out-of-bounds memory access
+- unchecked input can reach unintended branches
+- integer arithmetic can affect loop termination
+- incorrect state transitions can bypass required checks
+- cleanup mistakes can cause resource leaks
+
+Recommended practices:
+- validate external input
+- establish explicit bounds
+- check important return values
+- test boundary cases
+- keep state transitions understandable
+- use compiler diagnostics and analysis tools
+
+======================================================================
+46. STATE MACHINES
+======================================================================
+
+A state machine represents program behavior using states and
+transitions.
+
+Example:
+
+enum State
+{
+    START,
+    RUNNING,
+    STOP
+};
+
+switch (state)
+{
+    case START:
+        initialize();
+        state = RUNNING;
+        break;
+
+    case RUNNING:
+        process();
+        break;
+
+    case STOP:
+        shutdown();
+        break;
+}
+
+State-machine control flow is useful for:
+- protocol processing
+- command interpreters
+- parsers
+- embedded applications
+- event-driven software
+- interactive programs
+
+======================================================================
+47. PRACTICAL PROGRAM — POSITIVE / NEGATIVE / ZERO
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int n;
+
+    printf("Enter number: ");
+    scanf("%d", &n);
+
+    if (n > 0)
+        printf("Positive\n");
+    else if (n < 0)
+        printf("Negative\n");
+    else
+        printf("Zero\n");
+
+    return 0;
+}
+
+======================================================================
+48. PRACTICAL PROGRAM — EVEN / ODD
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int n;
+
+    printf("Enter number: ");
+    scanf("%d", &n);
+
+    if (n % 2 == 0)
+        printf("Even\n");
+    else
+        printf("Odd\n");
+
+    return 0;
+}
+
+======================================================================
+49. PRACTICAL PROGRAM — FOR LOOP
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 1; i <= 10; i++)
+        printf("%d\n", i);
+
+    return 0;
+}
+
+======================================================================
+50. PRACTICAL PROGRAM — WHILE SUM
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int i = 1;
+    int sum = 0;
+
+    while (i <= 10)
+    {
+        sum += i;
+        i++;
+    }
+
+    printf("Sum = %d\n", sum);
+
+    return 0;
+}
+
+======================================================================
+51. PRACTICAL PROGRAM — SWITCH CALCULATOR
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int choice;
+    double a, b;
+
+    printf("1. Add\n");
+    printf("2. Subtract\n");
+    printf("3. Multiply\n");
+    printf("4. Divide\n");
+
+    printf("Choice: ");
+    scanf("%d", &choice);
+
+    printf("Enter two numbers: ");
+    scanf("%lf %lf", &a, &b);
+
+    switch (choice)
+    {
+        case 1:
+            printf("%.2f\n", a + b);
+            break;
+
+        case 2:
+            printf("%.2f\n", a - b);
+            break;
+
+        case 3:
+            printf("%.2f\n", a * b);
+            break;
+
+        case 4:
+            if (b == 0.0)
+                printf("Division by zero is not allowed\n");
+            else
+                printf("%.2f\n", a / b);
+            break;
+
+        default:
+            printf("Invalid choice\n");
+    }
+
+    return 0;
+}
+
+======================================================================
+52. PRACTICAL PROGRAM — BREAK
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 1; i <= 10; i++)
+    {
+        if (i == 6)
+            break;
+
+        printf("%d ", i);
+    }
+
+    return 0;
+}
+
+Output:
+1 2 3 4 5
+
+======================================================================
+53. PRACTICAL PROGRAM — CONTINUE
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    for (int i = 1; i <= 10; i++)
+    {
+        if (i % 3 == 0)
+            continue;
+
+        printf("%d ", i);
+    }
+
+    return 0;
+}
+
+======================================================================
+54. PRACTICAL PROGRAM — DO-WHILE MENU
+======================================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int choice;
+
+    do
+    {
+        printf("\n1. Hello\n");
+        printf("2. About\n");
+        printf("3. Exit\n");
+        printf("Enter choice: ");
+
+        if (scanf("%d", &choice) != 1)
+            return 1;
+
+        switch (choice)
+        {
+            case 1:
+                printf("Hello\n");
+                break;
+
+            case 2:
+                printf("C Control Flow\n");
+                break;
+
+            case 3:
+                printf("Goodbye\n");
+                break;
+
+            default:
+                printf("Invalid choice\n");
+        }
+    }
+    while (choice != 3);
+
+    return 0;
+}
+
+======================================================================
+55. EXAM QUESTIONS
+======================================================================
+
+SHORT ANSWER:
+
+1. What is control flow?
+2. What is a compound statement?
+3. What is an expression statement?
+4. What is an if statement?
+5. What is an if-else statement?
+6. What is a switch statement?
+7. What is a case label?
+8. What is a default label?
+9. What is switch fall-through?
+10. What is a while loop?
+11. What is a do-while loop?
+12. What is a for loop?
+13. What does break do?
+14. What does continue do?
+15. What does return do?
+16. What is goto?
+17. What is a null statement?
+18. What is short-circuit evaluation?
+19. What is an infinite loop?
+20. What is an off-by-one error?
+
+LONG ANSWER:
+
+1. Explain C selection statements with syntax and examples.
+2. Explain while, do-while, and for loops.
+3. Explain switch fall-through and break.
+4. Compare break and continue.
+5. Explain labels and goto.
+6. Explain short-circuit evaluation.
+7. Design a menu-driven C program.
+8. Explain input validation using loops.
+9. Explain control-flow debugging.
+10. Explain control-flow-related security and boundary problems.
+
+======================================================================
+56. INTERVIEW QUESTIONS AND ANSWERS
+======================================================================
+
+Q1. Does while always execute its body?
+A:
+No. Its condition is tested before the body.
+
+Q2. Does do-while execute at least once?
+A:
+Yes. The body is executed before its condition is tested.
+
+Q3. What does break do?
+A:
+It terminates the nearest enclosing loop or switch.
+
+Q4. What does continue do?
+A:
+It skips the remaining part of the current iteration of the nearest
+enclosing loop.
+
+Q5. Can break exit multiple nested loops?
+A:
+No. A break affects only the nearest enclosing loop or switch.
+
+Q6. Why is break commonly used in switch?
+A:
+To prevent execution from continuing into subsequent case statements
+when that behavior is not intended.
+
+Q7. Can switch directly test a range such as x > 10?
+A:
+Standard switch matches the controlling expression with case constant
+values. Range conditions are normally written using if/else.
+
+Q8. What is short-circuit evaluation?
+A:
+For &&, a false left operand prevents evaluation of the right operand.
+For ||, a true left operand prevents evaluation of the right operand.
+
+Q9. Where can goto transfer control?
+A:
+To a label in the same function, subject to the C language's control-
+transfer rules.
+
+Q10. What is a null statement?
+A:
+A statement consisting only of a semicolon.
+
+======================================================================
+57. PRACTICE PROBLEMS
+======================================================================
+
+BEGINNER:
+1. Positive, negative, or zero.
+2. Even or odd.
+3. Largest of two numbers.
+4. Largest of three numbers.
+5. Print 1 to 100.
+6. Print even numbers.
+7. Print odd numbers.
+8. Sum of first n integers.
+9. Factorial using a loop.
+10. Reverse an integer.
+
+INTERMEDIATE:
+11. Calculator using switch.
+12. Menu using do-while.
+13. Multiplication table.
+14. Prime number check.
+15. Prime numbers in a range.
+16. GCD using while.
+17. Linear search.
+18. Binary search.
+19. Digit counting.
+20. Integer palindrome.
+
+ADVANCED:
+21. State machine using switch.
+22. Command-processing loop.
+23. Robust input-validation loop.
+24. Matrix traversal using nested loops.
+25. Resource cleanup with labeled cleanup paths.
+26. Debug a broken control-flow program.
+27. Compare loop implementations.
+28. Design a parser-style state machine.
+
+======================================================================
+58. RAG RETRIEVAL KEYWORDS
+======================================================================
+
+C control flow
+C statements
+C compound statement
+C expression statement
+C selection statement
+C iteration statement
+C jump statement
+C if
+C if else
+C else if
+C nested if
+C switch
+C case
+C default
+C fall through
+C while
+C do while
+C for
+C nested loops
+C break
+C continue
+C return
+C goto
+C labels
+C null statement
+C conditions
+C truth values
+C zero false nonzero true
+C logical AND
+C logical OR
+C logical NOT
+C short circuit evaluation
+C infinite loop
+C loop boundary
+C off by one
+C input validation
+C menu driven program
+C state machine
+C linear search
+C binary search
+C compiler warnings
+C debugging
+C control flow security
+C resource cleanup
+C goto cleanup
+C break versus continue
+C while versus do while
+C if versus switch
+
+======================================================================
+59. QUICK REFERENCE TABLE
+======================================================================
+
+if:
+Conditional selection.
+
+if-else:
+Two-way selection.
+
+switch:
+Multi-way selection using discrete case values.
+
+while:
+Entry-controlled repetition.
+
+do-while:
+Repetition with condition tested after the body.
+
+for:
+Iteration with initialization, condition, and update structure.
+
+break:
+Terminates the nearest enclosing loop or switch.
+
+continue:
+Skips the remainder of the current loop iteration.
+
+return:
+Terminates the current function.
+
+goto:
+Transfers control to a label in the same function.
+
+======================================================================
+60. FINAL SUMMARY
+======================================================================
+
+C control flow provides the fundamental mechanisms for decisions,
+repetition, skipping, and transfer of execution.
+
+Selection:
+- if
+- if-else
+- switch
+
+Iteration:
+- while
+- do-while
+- for
+
+Jump:
+- break
+- continue
+- return
+- goto
+
+A learner should be able to trace each path through a program, explain
+why a branch is selected, identify how a loop terminates, and recognize
+where control is transferred.
+
+For RAG systems, section headings, syntax, examples, definitions,
+common mistakes, questions, and retrieval keywords are intentionally
+included so that queries can retrieve focused portions of the document.
+
+======================================================================
+61. SOURCE AND VERSION NOTES
+======================================================================
+
+This document is based on official/authoritative C-language references,
+especially the GNU C Reference Manual and cppreference's C language
+reference.
+
+C23 is the current published ISO C revision represented by cppreference.
+Where a feature differs by language version, the document identifies
+the relevant version where practical.
+
+Important distinction:
+GNU documentation may include GNU C extensions. Standard C behavior
+should be distinguished from GNU-only extensions when implementing
+portable C programs.
+
+Official source URLs:
+
+GNU C Reference Manual:
+https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html
+
+GNU C Reference Manual PDF:
+https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.pdf
+
+GNU C Intro and Reference Manual:
+https://www.gnu.org/software/c-intro-and-ref/manual/
+
+cppreference C language:
+https://en.cppreference.com/c/language
+
+cppreference C statements:
+https://en.cppreference.com/c/language/statements
+
+cppreference C break:
+https://en.cppreference.com/c/language/break
+
+cppreference C continue:
+https://en.cppreference.com/c/language/continue
+
+cppreference C goto:
+https://en.cppreference.com/c/language/goto

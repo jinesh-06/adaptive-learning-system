@@ -1,0 +1,1800 @@
+COURSE: C
+TOPIC: ARRAYS_STRINGS
+LEVEL: INTERMEDIATE
+SOURCE: c_arrays_strings_official_improved.txt
+
+TITLE: Deep C Arrays and Strings — Storage, Array Types, Pointer Decay, Multidimensional Arrays, and Safe String Handling
+
+SOURCE BASIS
+------------
+Primary official references:
+1. GNU C Reference Manual — Arrays, Multidimensional Arrays, Arrays as Strings, Array Subscripts, String Constants
+   https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html
+2. GNU C Language Manual — Arrays and Strings
+   https://www.gnu.org/software/c-intro-and-ref/manual/c-intro-and-ref.html
+3. cppreference — C language, String literals
+   https://en.cppreference.com/c/language/string_literal
+
+IMPORTANT SOURCE NOTE
+---------------------
+The GNU C Reference Manual documents C as implemented by GCC and also discusses GNU extensions.
+Portable ISO C and GNU C extensions must be distinguished. Library-function details should be
+checked against the C standard/library reference appropriate to the compiler and C version.
+
+============================================================
+1. INTRODUCTION
+============================================================
+
+An array is a C object containing a fixed number of elements of one element type. Array elements
+are indexed from zero and are stored consecutively in memory.
+
+A multidimensional array in C is an array whose elements are themselves arrays. A two-dimensional
+array therefore has an array type for each row rather than being an array of unrelated pointers.
+
+A C string is a sequence of characters terminated by a null character, '\0'. C has no separate
+built-in "string object" type equivalent to a high-level language string class. Character arrays
+are commonly used to store modifiable strings, while string literals create static character
+arrays that must not be modified.
+
+Important ideas:
+- array indexing starts at 0
+- arrays have a fixed type and number of elements
+- array elements are contiguous
+- array subscripting is defined through pointer arithmetic
+- arrays do not carry a runtime length field
+- in many expressions an array is converted to a pointer to its first element
+- this conversion does not occur in every context
+- strings require a terminating null character when used as C strings
+- safe string programming requires explicit capacity management
+
+============================================================
+2. LEARNING OBJECTIVES
+============================================================
+
+- Declare, initialize, access, and traverse one-dimensional arrays.
+- Calculate array size with sizeof when the actual array object is in scope.
+- Understand array subscripting and pointer arithmetic.
+- Distinguish an array object from a pointer.
+- Understand array-to-pointer conversion and its important exceptions.
+- Work with multidimensional arrays and nested array types.
+- Understand row/element layout of multidimensional arrays.
+- Pass arrays and multidimensional arrays to functions correctly.
+- Understand variable-length arrays where supported by the selected C standard/compiler.
+- Represent strings using character arrays and null termination.
+- Understand string literal type and non-modifiability.
+- Use standard string and character-processing interfaces safely.
+- Avoid out-of-bounds access, missing terminators, and unsafe input patterns.
+
+============================================================
+3. PREREQUISITES
+============================================================
+
+- C data types
+- variables
+- expressions and operators
+- loops
+- functions
+- basic pointers
+- sizeof
+- basic memory concepts
+
+============================================================
+4. ARRAY FUNDAMENTALS
+============================================================
+
+4.1 Declaration
+
+Syntax:
+
+type name[SIZE];
+
+Examples:
+
+int marks[5];
+double values[10];
+char buffer[100];
+
+For an ordinary standard C array declaration, the number of elements must be a positive value.
+GCC may support additional extensions; do not confuse those extensions with portable ISO C.
+
+4.2 Indexing
+
+For:
+
+int a[5];
+
+valid element indexes are:
+
+a[0]
+a[1]
+a[2]
+a[3]
+a[4]
+
+The last valid index is SIZE - 1.
+
+Accessing a[5] is outside the array object.
+
+4.3 Initialization
+
+Examples:
+
+int a[5] = {10, 20, 30, 40, 50};
+
+int b[] = {1, 2, 3};
+
+The compiler determines the number of elements of b from its initializer.
+
+Partial initialization:
+
+int c[5] = {1, 2};
+
+The remaining elements are initialized to zero.
+
+4.4 Designated initializers
+
+C supports designated initializers.
+
+Example:
+
+int a[5] = {
+    [0] = 10,
+    [3] = 40
+};
+
+Unspecified elements are initialized according to the rules for static/aggregate initialization;
+for this initialized automatic object, omitted elements are initialized to zero.
+
+============================================================
+5. ARRAY MEMORY LAYOUT
+============================================================
+
+Array elements are allocated consecutively in memory.
+
+For:
+
+int arr[5];
+
+the objects arr[0], arr[1], ..., arr[4] occur in array order without gaps between elements
+caused by padding between the array elements.
+
+The byte distance between adjacent elements is sizeof(int).
+
+Conceptually:
+
+address(arr[i]) = address(arr[0]) + i * sizeof(arr[0])
+
+The exact numeric address is implementation-dependent; the important C rule is that pointer
+arithmetic and array subscripting follow the element type and array object.
+
+Do not assume sizeof(int) is always 4 bytes. Its size is implementation-dependent.
+
+============================================================
+6. ARRAY SUBSCRIPTING AND POINTER ARITHMETIC
+============================================================
+
+C defines:
+
+a[i]
+
+as equivalent to:
+
+*(a + i)
+
+Therefore:
+
+a[0]  == *(a + 0)
+a[1]  == *(a + 1)
+a[2]  == *(a + 2)
+
+The indexing expression also works with the commuted operands:
+
+i[a]
+
+is equivalent to:
+
+*(i + a)
+
+This is legal C but should normally not be used because a[i] is clearer.
+
+Pointer arithmetic is scaled by the pointed-to type. If p is an int *, p + 1 points to the
+next int, not one byte after p.
+
+============================================================
+7. ARRAY-TO-POINTER CONVERSION
+============================================================
+
+In most expressions, an expression of array type is converted to a pointer to its first element.
+
+For:
+
+int a[5];
+
+the expression a commonly converts to:
+
+int *
+
+pointing to a[0].
+
+Important exceptions include contexts involving:
+- sizeof
+- unary &
+- string literal initialization of an array
+- other language contexts where the array type is required
+
+Example:
+
+int a[5];
+
+sizeof(a)
+
+produces the size of the complete array object.
+
+But:
+
+void f(int a[])
+{
+    sizeof(a);
+}
+
+Inside the function parameter declaration, a is adjusted to a pointer parameter, so sizeof(a)
+is the size of the pointer, not the original array.
+
+============================================================
+8. sizeof ARRAY VERSUS sizeof POINTER
+============================================================
+
+Example:
+
+int a[10];
+
+sizeof(a)
+
+is:
+
+10 * sizeof(int)
+
+because a is an actual array object.
+
+For:
+
+int *p = a;
+
+sizeof(p)
+
+is the size of a pointer.
+
+The two expressions answer different questions:
+- sizeof(a): size of the complete array object
+- sizeof(p): size of the pointer object
+
+Do not use sizeof(pointer) to infer the number of elements in an array.
+
+A common element-count expression is:
+
+sizeof(a) / sizeof(a[0])
+
+This works only while a is an actual array object, not after it has decayed to a pointer.
+
+============================================================
+9. PASSING ARRAYS TO FUNCTIONS
+============================================================
+
+Example:
+
+void print_array(int a[], size_t n);
+
+This parameter declaration is adjusted to a pointer parameter. It is commonly written:
+
+void print_array(int *a, size_t n);
+
+The function therefore does not automatically know the original array length.
+
+Example:
+
+void print_array(const int a[], size_t n)
+{
+    for (size_t i = 0; i < n; ++i)
+        printf("%d\n", a[i]);
+}
+
+The caller supplies the number of valid elements.
+
+The const qualifier in this example expresses that the function does not modify the elements
+through a.
+
+============================================================
+10. ARRAY PARAMETERS WITH STATIC AND QUALIFIERS
+============================================================
+
+C supports additional array-parameter syntax such as:
+
+void process(int a[static 10]);
+
+This communicates a minimum-access requirement to the implementation: the argument should
+provide access to at least 10 elements.
+
+Qualifiers can also appear in array parameter declarators according to C syntax.
+
+These forms are useful for expressing interfaces more precisely, but they do not turn an array
+parameter into an object containing its own runtime length.
+
+============================================================
+11. MULTIDIMENSIONAL ARRAYS
+============================================================
+
+A declaration:
+
+int matrix[3][4];
+
+means:
+
+matrix is an array of 3 elements,
+and each element is an array of 4 int.
+
+It is therefore an array of arrays.
+
+Access:
+
+matrix[0][0]
+matrix[0][1]
+...
+matrix[2][3]
+
+The second index selects an element inside a row.
+
+============================================================
+12. MULTIDIMENSIONAL MEMORY ORDER
+============================================================
+
+C stores the elements of an array of arrays in array order.
+
+For:
+
+int matrix[2][3] = {
+    {10, 20, 30},
+    {40, 50, 60}
+};
+
+the element sequence is:
+
+10 20 30 40 50 60
+
+The first row is followed by the second row.
+
+For a conceptual flattened offset:
+
+offset = row * number_of_columns + column
+
+This formula describes the element order for a conventional two-dimensional array.
+
+For a real object, use the declared array type and correct bounds rather than manually treating
+arbitrary memory as a flattened array.
+
+============================================================
+13. MULTIDIMENSIONAL ARRAY SIZE
+============================================================
+
+For:
+
+int matrix[3][4];
+
+the complete object contains:
+
+3 * 4 = 12 int elements.
+
+Its size is:
+
+sizeof(matrix)
+
+which equals:
+
+3 * 4 * sizeof(int)
+
+Do not replace sizeof(int) with a hard-coded 4 unless the implementation is known to use
+4-byte int.
+
+============================================================
+14. PASSING 2D ARRAYS TO FUNCTIONS
+============================================================
+
+Because matrix is an array of arrays, the function must know the size/type of each row needed
+for pointer arithmetic.
+
+Example:
+
+#define COLS 4
+
+void print_matrix(int matrix[][COLS], int rows)
+{
+    for (int r = 0; r < rows; ++r)
+    {
+        for (int c = 0; c < COLS; ++c)
+            printf("%d ", matrix[r][c]);
+
+        printf("\n");
+    }
+}
+
+The parameter:
+
+int matrix[][COLS]
+
+is adjusted appropriately as a pointer to an array of COLS int.
+
+Equivalent pointer-style form:
+
+int (*matrix)[COLS]
+
+The column dimension is therefore part of the type information needed to access an element.
+
+============================================================
+15. VARIABLE-LENGTH ARRAYS (VLA)
+============================================================
+
+C99 introduced variable-length arrays.
+
+Example:
+
+void process(size_t n)
+{
+    int a[n];
+
+    for (size_t i = 0; i < n; ++i)
+        a[i] = 0;
+}
+
+The bound is evaluated at runtime when the VLA is created.
+
+VLA support depends on the C version and compiler. C23 changed the standard status of some
+VLA-related requirements, so portable code should be written with the selected standard and
+compiler support in mind.
+
+Do not confuse a VLA with dynamic allocation using malloc. A VLA has automatic storage duration
+when declared in a block with automatic storage duration; malloc allocates dynamically and must
+be released with free.
+
+============================================================
+16. STRINGS IN C
+============================================================
+
+A C string is a sequence of characters terminated by a null character:
+
+'\0'
+
+Example:
+
+char text[] = "Hello";
+
+The array contains:
+
+'H' 'e' 'l' 'l' 'o' '\0'
+
+There are 5 visible characters but 6 array elements.
+
+The null character is not the same as the character '0'.
+
+============================================================
+17. STRING LITERAL TYPE AND SIZE
+============================================================
+
+A narrow C string literal such as:
+
+"Hello"
+
+creates an array of characters containing:
+
+'H' 'e' 'l' 'l' 'o' '\0'
+
+Its array size includes the terminating null character.
+
+Therefore:
+
+sizeof("Hello")
+
+is 6.
+
+The C standard treats a string literal as an array object. In C, the literal's type is an array
+of char for a narrow string literal. String literals must not be modified.
+
+============================================================
+18. CHAR ARRAY INITIALIZED FROM A STRING LITERAL
+============================================================
+
+Example:
+
+char text[] = "Hello";
+
+This creates a separate character array initialized with the literal's characters including
+the terminating null character.
+
+The array is modifiable:
+
+text[0] = 'h';
+
+Now text represents:
+
+"hello"
+
+============================================================
+19. POINTER TO A STRING LITERAL
+============================================================
+
+Example:
+
+const char *p = "Hello";
+
+p points to the string literal and should be treated as pointing to non-modifiable characters.
+
+Attempting to modify the literal has undefined behavior.
+
+Example of invalid operation:
+
+char *p = "Hello";
+p[0] = 'h';
+
+The declaration using char * is permitted in C for compatibility reasons, but the program must
+not attempt to modify the literal.
+
+Using:
+
+const char *p = "Hello";
+
+expresses the intended read-only use.
+
+A particular implementation may store literals in read-only memory, but the language rule is
+that modifying a string literal is undefined behavior; do not rely on SIGSEGV as the definition
+of the rule.
+
+============================================================
+20. STRING CAPACITY AND TERMINATION
+============================================================
+
+To store a C string of N characters, the character array needs room for:
+
+N + 1
+
+elements when the terminating null character is required.
+
+Example:
+
+char name[6] = "Alice";
+
+"Alice" contains 5 characters and needs one additional element for '\0'.
+
+A buffer:
+
+char name[5] = "Alice";
+
+does not provide space for the null terminator. Such an object is an array of five characters,
+not a valid null-terminated C string.
+
+A character array does not automatically become a string simply because it contains printable
+characters.
+
+============================================================
+21. EMPTY STRING
+============================================================
+
+The empty string is:
+
+""
+
+It contains one array element:
+
+'\0'
+
+Therefore:
+
+sizeof("") == 1
+strlen("") == 0
+
+============================================================
+22. CHARACTER ARRAY VERSUS STRING
+============================================================
+
+These are not identical concepts.
+
+Character array:
+
+char data[3] = {'A', 'B', 'C'};
+
+This array has no terminating null character and therefore is not a C string.
+
+String:
+
+char text[4] = {'A', 'B', 'C', '\0'};
+
+This is a valid C string.
+
+String functions that require null-terminated strings must not be given arbitrary character
+arrays without a valid terminator.
+
+============================================================
+23. STANDARD STRING FUNCTIONS
+============================================================
+
+The <string.h> header declares standard string and byte-processing functions.
+
+Common string functions include:
+
+strlen
+strcpy
+strncpy
+strcat
+strncat
+strcmp
+strncmp
+strchr
+strrchr
+strstr
+strtok
+
+The functions have specific preconditions. They do not automatically know the capacity of
+destination arrays.
+
+============================================================
+24. strlen
+============================================================
+
+strlen counts characters before the first null character.
+
+Example:
+
+char s[] = "Hello";
+
+strlen(s) == 5
+
+The null terminator is not counted.
+
+strlen requires its argument to point to a valid null-terminated string.
+
+If no null character is present within the accessible object, calling strlen can result in
+an out-of-bounds read and undefined behavior.
+
+============================================================
+25. strcpy
+============================================================
+
+strcpy copies the source string, including its terminating null character, into the destination.
+
+Example:
+
+char dest[20];
+
+strcpy(dest, "Hello");
+
+The destination must have enough space for all source characters plus the terminating null.
+
+strcpy does not receive the destination capacity. It therefore cannot prevent overflow when the
+destination is too small.
+
+Use it only when the destination capacity is known to be sufficient.
+
+============================================================
+26. strncpy
+============================================================
+
+strncpy copies up to n characters from the source.
+
+Important behavior:
+- if the source length is less than n, the destination is padded with null characters
+- if the source length is at least n, the destination is not necessarily null-terminated
+
+Therefore:
+
+strncpy(dest, src, sizeof(dest));
+
+does not guarantee that dest is a C string.
+
+If a string is required, the program must arrange for a terminating null character and ensure
+the resulting operation is within the destination object.
+
+============================================================
+27. strcat
+============================================================
+
+strcat appends the source string to the end of the destination string.
+
+The destination must already be a valid null-terminated string and must have enough capacity
+for the resulting string including its terminating null character.
+
+Example:
+
+char s[20] = "Hello";
+strcat(s, " C");
+
+The result is:
+
+"Hello C"
+
+The function does not know the capacity of s.
+
+============================================================
+28. strncat
+============================================================
+
+strncat appends at most a specified number of characters from the source and then writes a
+terminating null character.
+
+The destination must still have enough remaining capacity for the resulting string and null
+terminator.
+
+The n parameter does not mean total destination capacity.
+
+============================================================
+29. strcmp
+============================================================
+
+strcmp compares two null-terminated byte strings lexicographically.
+
+Result:
+- negative value if first string compares less than second
+- zero if equal
+- positive value if first string compares greater than second
+
+Do not assume the result is exactly -1, 0, or 1. Only its sign and zero/nonzero relationship
+should be relied upon.
+
+Example:
+
+if (strcmp(a, b) == 0)
+    printf("Equal\n");
+
+============================================================
+30. strncmp
+============================================================
+
+strncmp compares up to n characters.
+
+It is useful when the comparison length is deliberately bounded, but its exact semantics still
+depend on valid accessible objects and the comparison rules.
+
+Do not treat strncmp as a general-purpose security replacement for all string handling.
+
+============================================================
+31. strchr AND strrchr
+============================================================
+
+strchr finds the first occurrence of a character in a string.
+
+strrchr finds the last occurrence.
+
+Example:
+
+char *p = strchr("hello", 'l');
+
+p points to the first 'l' in the literal.
+
+The functions return NULL if the character is not found.
+
+============================================================
+32. strstr
+============================================================
+
+strstr searches for a substring inside another string.
+
+Example:
+
+char *p = strstr("C programming", "program");
+
+If found, p points to the first matching occurrence.
+
+If not found, it returns NULL.
+
+============================================================
+33. strtok
+============================================================
+
+strtok splits a modifiable string into tokens separated by delimiter characters.
+
+Example:
+
+char text[] = "red,green,blue";
+
+char *token = strtok(text, ",");
+
+while (token != NULL)
+{
+    printf("%s\n", token);
+    token = strtok(NULL, ",");
+}
+
+Important:
+- strtok modifies the input array
+- delimiters are replaced as part of tokenization
+- the first call receives the string
+- subsequent calls use NULL to continue the same tokenization sequence
+- strtok maintains internal state and is not suitable for independent concurrent tokenization
+  contexts
+- a string literal must not be passed as the modifiable input
+
+For platform-specific reentrant alternatives, consult the platform documentation. They are not
+part of ISO C simply because they exist on a particular Unix/POSIX system.
+
+============================================================
+34. FGETS FOR LINE INPUT
+============================================================
+
+A common bounded line-input pattern is:
+
+char buffer[100];
+
+if (fgets(buffer, sizeof buffer, stdin) != NULL)
+{
+    printf("%s", buffer);
+}
+
+fgets receives the destination size and limits how many characters it stores.
+
+If the input line fits, the newline character may be retained. Programs often need to remove
+that newline explicitly when processing the line.
+
+============================================================
+35. WHY gets MUST NOT BE USED
+============================================================
+
+The historical gets function cannot specify the destination buffer size and therefore cannot
+safely prevent overflow.
+
+It was removed from the C standard in C11.
+
+Do not use gets in new programs.
+
+Use a bounded input strategy such as fgets and then validate/process the received data.
+
+============================================================
+36. SNPRINTF
+============================================================
+
+snprintf is useful for bounded formatted output into a character array.
+
+Example:
+
+int n = snprintf(buffer, sizeof buffer, "User: %s", name);
+
+When the size is nonzero, snprintf writes at most size-1 characters plus a terminating null
+character.
+
+Its return value is the number of characters that would have been written, excluding the null
+character, if the buffer were sufficiently large.
+
+A common truncation test is:
+
+if (n < 0)
+{
+    /* encoding/output error */
+}
+else if ((size_t)n >= sizeof buffer)
+{
+    /* output was truncated */
+}
+
+Always ensure the size argument correctly represents the destination object capacity.
+
+============================================================
+37. SAFE STRING COPY PATTERN
+============================================================
+
+A simple explicit bounded copy can be written as:
+
+#include <stdbool.h>
+#include <stddef.h>
+
+bool safe_copy(char *dest, size_t capacity, const char *src)
+{
+    if (dest == NULL || src == NULL || capacity == 0)
+        return false;
+
+    size_t i = 0;
+
+    while (i + 1 < capacity && src[i] != '\0')
+    {
+        dest[i] = src[i];
+        ++i;
+    }
+
+    dest[i] = '\0';
+
+    return src[i] == '\0';
+}
+
+This function:
+- checks null pointers
+- checks zero capacity
+- reserves one element for '\0'
+- terminates the destination
+- reports whether the complete source was copied
+
+The caller must still ensure dest actually points to at least capacity writable elements.
+
+============================================================
+38. COMMON ARRAY ERRORS
+============================================================
+
+1. Index too large
+
+int a[5];
+a[5] = 10;     /* outside the array */
+
+2. Negative index
+
+a[-1]           /* outside the array */
+
+3. Wrong loop bound
+
+for (int i = 0; i <= 5; ++i)
+
+for an array of five elements.
+
+Correct:
+
+for (int i = 0; i < 5; ++i)
+
+4. sizeof pointer mistaken for array size
+
+void f(int *p)
+{
+    sizeof(p);  /* pointer size */
+}
+
+5. Using an uninitialized automatic array
+
+int a[10];
+printf("%d\n", a[0]);  /* indeterminate value */
+
+6. Treating non-string data as a string
+
+char data[3] = {'A', 'B', 'C'};
+printf("%s\n", data);  /* no terminating null */
+
+============================================================
+39. COMMON STRING ERRORS
+============================================================
+
+1. Destination too small for strcpy.
+
+2. Forgetting the null terminator.
+
+3. Assuming strncpy always terminates.
+
+4. Calling strlen on a non-string character array.
+
+5. Calling strcat without enough destination capacity.
+
+6. Modifying a string literal.
+
+7. Passing a string literal to strtok.
+
+8. Assuming strcmp returns exactly -1 or +1.
+
+9. Confusing '\0' with '0'.
+
+10. Ignoring input truncation from fgets.
+
+============================================================
+40. ARRAY OF POINTERS VERSUS 2D ARRAY
+============================================================
+
+These types are different:
+
+char *rows[3];
+
+and:
+
+char matrix[3][20];
+
+The first is an array of three pointers to char.
+
+The second is an array of three arrays, each containing 20 char.
+
+The memory representation and allocation requirements are different.
+
+An array of pointers can point to strings of different lengths.
+
+A two-dimensional character array provides fixed-size storage for each row.
+
+============================================================
+41. FLAT ARRAY REPRESENTATION
+============================================================
+
+A matrix can sometimes be represented as a one-dimensional array.
+
+Example:
+
+#define ROWS 3
+#define COLS 4
+
+int data[ROWS * COLS];
+
+Conceptual index:
+
+index = row * COLS + column;
+
+This can be useful when an API expects a flat buffer.
+
+The program must maintain correct bounds and use a consistent mapping.
+
+============================================================
+42. POINTER-TO-ARRAY TYPES
+============================================================
+
+For:
+
+int matrix[3][4];
+
+the expression:
+
+matrix
+
+commonly converts to a pointer to its first element.
+
+The first element has type:
+
+int [4]
+
+Therefore the converted pointer has type:
+
+int (*)[4]
+
+This is why:
+
+matrix + 1
+
+moves by one complete row of four int elements.
+
+This is different from an int **.
+
+============================================================
+43. int ** IS NOT A GENERAL SUBSTITUTE FOR int [][COLS]
+============================================================
+
+A parameter such as:
+
+void f(int **p);
+
+cannot be used as a general replacement for:
+
+void f(int p[][4]);
+
+The pointer types describe different memory structures.
+
+A true 2D array:
+
+int a[3][4];
+
+has contiguous row arrays.
+
+An int ** normally points to an int * object, which then points elsewhere.
+
+Passing one where the other is expected is a type/interface error and can lead to invalid memory
+access.
+
+============================================================
+44. MULTIDIMENSIONAL ARRAY PERFORMANCE
+============================================================
+
+For a normal C multidimensional array, traversing elements in array order is usually favorable
+for spatial locality because adjacent elements are adjacent in memory.
+
+Example:
+
+for (int r = 0; r < rows; ++r)
+    for (int c = 0; c < cols; ++c)
+        sum += matrix[r][c];
+
+This accesses each row sequentially.
+
+A column-wise traversal may use a larger stride:
+
+for (int c = 0; c < cols; ++c)
+    for (int r = 0; r < rows; ++r)
+        sum += matrix[r][c];
+
+Actual performance depends on the implementation, cache hierarchy, matrix dimensions, compiler,
+optimization, and workload. Therefore describe row-major locality as a memory-layout property,
+not as a guaranteed numerical speedup.
+
+============================================================
+45. ARRAYS OF STRUCTURES
+============================================================
+
+Arrays can contain structures.
+
+Example:
+
+struct Student
+{
+    int id;
+    double mark;
+};
+
+struct Student students[10];
+
+Access:
+
+students[0].id
+students[0].mark
+
+The array stores the structure objects consecutively, subject to the structure's own alignment
+and padding.
+
+============================================================
+46. ARRAYS OF POINTERS
+============================================================
+
+Example:
+
+char *names[3] = {
+    "Alice",
+    "Bob",
+    "Carol"
+};
+
+This is an array of three pointers.
+
+The pointed-to string literals must not be modified.
+
+For mutable character storage, use writable arrays.
+
+============================================================
+47. ARRAYS AS FUNCTION RETURN VALUES
+============================================================
+
+A C function cannot return an array type directly as its function return type.
+
+Common alternatives:
+- return a pointer to dynamically allocated storage
+- have the caller provide an output array
+- return a structure containing an array
+- use static storage carefully when appropriate
+
+Example caller-provided output:
+
+void fill(int out[], size_t n)
+{
+    for (size_t i = 0; i < n; ++i)
+        out[i] = (int)i;
+}
+
+============================================================
+48. CONST ARRAY PARAMETERS
+============================================================
+
+For read-only processing:
+
+void print_values(const int a[], size_t n);
+
+The const qualifier prevents modification of the pointed-to elements through a.
+
+This is useful for documenting function intent and catching accidental writes.
+
+============================================================
+49. MEMORY SAFETY RULES
+============================================================
+
+For every array/string operation, identify:
+
+1. base object
+2. element type
+3. number of accessible elements
+4. current index
+5. destination capacity
+6. null-termination requirement
+7. lifetime of the object
+8. whether the object is writable
+
+Before calling a string function, confirm that its preconditions are satisfied.
+
+============================================================
+50. DEBUGGING ARRAY AND STRING BUGS
+============================================================
+
+Recommended workflow:
+
+1. Compile with warnings.
+2. Check every array bound.
+3. Check every string capacity.
+4. Check every input conversion.
+5. Check null termination.
+6. Use a debugger to inspect indexes/pointers.
+7. Use AddressSanitizer when available.
+8. Test empty, minimum, maximum, and oversized inputs.
+9. Test exact-fit buffers.
+10. Test one-character-over-capacity inputs.
+
+Example GCC command:
+
+gcc -Wall -Wextra -Wpedantic -g program.c -o program
+
+AddressSanitizer example:
+
+gcc -Wall -Wextra -g -fsanitize=address program.c -o program
+
+Compiler and sanitizer support depends on the toolchain.
+
+============================================================
+51. PRACTICAL PROGRAM — ARRAY AVERAGE
+============================================================
+
+#include <stdio.h>
+
+int main(void)
+{
+    int scores[] = {88, 92, 79, 95, 84};
+    size_t n = sizeof scores / sizeof scores[0];
+    int total = 0;
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        printf("%d ", scores[i]);
+        total += scores[i];
+    }
+
+    printf("\nAverage = %.2f\n", (double)total / n);
+
+    return 0;
+}
+
+============================================================
+52. PRACTICAL PROGRAM — 2D ARRAY
+============================================================
+
+#include <stdio.h>
+
+#define COLS 3
+
+void print_matrix(size_t rows, const int matrix[rows][COLS])
+{
+    for (size_t r = 0; r < rows; ++r)
+    {
+        for (size_t c = 0; c < COLS; ++c)
+            printf("%d ", matrix[r][c]);
+
+        printf("\n");
+    }
+}
+
+int main(void)
+{
+    int matrix[2][COLS] = {
+        {10, 20, 30},
+        {40, 50, 60}
+    };
+
+    print_matrix(2, matrix);
+
+    return 0;
+}
+
+============================================================
+53. PRACTICAL PROGRAM — STRING LENGTH
+============================================================
+
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    char text[] = "C programming";
+
+    printf("String: %s\n", text);
+    printf("Length: %zu\n", strlen(text));
+
+    return 0;
+}
+
+============================================================
+54. PRACTICAL PROGRAM — STRING SEARCH
+============================================================
+
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    const char *text = "C programming language";
+    const char *p = strstr(text, "programming");
+
+    if (p != NULL)
+        printf("Substring found: %s\n", p);
+    else
+        printf("Substring not found\n");
+
+    return 0;
+}
+
+============================================================
+55. PRACTICAL PROGRAM — TOKENIZATION
+============================================================
+
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    char line[] = "C,Python,Java";
+
+    char *token = strtok(line, ",");
+
+    while (token != NULL)
+    {
+        printf("%s\n", token);
+        token = strtok(NULL, ",");
+    }
+
+    return 0;
+}
+
+============================================================
+56. PRACTICAL PROGRAM — SAFE LINE INPUT
+============================================================
+
+#include <stdio.h>
+#include <string.h>
+
+int main(void)
+{
+    char name[50];
+
+    printf("Enter name: ");
+
+    if (fgets(name, sizeof name, stdin) == NULL)
+        return 1;
+
+    name[strcspn(name, "\n")] = '\0';
+
+    printf("Name: %s\n", name);
+
+    return 0;
+}
+
+============================================================
+57. PRACTICAL PROGRAM — IN-PLACE STRING REVERSAL
+============================================================
+
+#include <stdio.h>
+#include <string.h>
+
+void reverse_string(char *s)
+{
+    if (s == NULL)
+        return;
+
+    size_t left = 0;
+    size_t len = strlen(s);
+
+    if (len == 0)
+        return;
+
+    size_t right = len - 1;
+
+    while (left < right)
+    {
+        char temp = s[left];
+        s[left] = s[right];
+        s[right] = temp;
+
+        ++left;
+        --right;
+    }
+}
+
+int main(void)
+{
+    char text[] = "C Arrays";
+
+    printf("Before: %s\n", text);
+
+    reverse_string(text);
+
+    printf("After: %s\n", text);
+
+    return 0;
+}
+
+============================================================
+58. PRACTICAL PROGRAM — LINEAR SEARCH
+============================================================
+
+#include <stdio.h>
+#include <stddef.h>
+
+int linear_search(const int a[], size_t n, int target)
+{
+    for (size_t i = 0; i < n; ++i)
+    {
+        if (a[i] == target)
+            return (int)i;
+    }
+
+    return -1;
+}
+
+int main(void)
+{
+    int a[] = {10, 20, 30, 40, 50};
+    size_t n = sizeof a / sizeof a[0];
+
+    int index = linear_search(a, n, 30);
+
+    if (index >= 0)
+        printf("Found at index %d\n", index);
+    else
+        printf("Not found\n");
+
+    return 0;
+}
+
+============================================================
+59. REAL-WORLD APPLICATIONS
+============================================================
+
+Arrays:
+- tables and numeric data
+- image/pixel buffers
+- matrix operations
+- lookup tables
+- packet/data buffers
+- collections of structures
+
+Strings:
+- text processing
+- configuration data
+- command parsing
+- protocol fields
+- filenames and paths
+- formatted output
+
+These applications require careful bounds, lifetime, encoding, and input validation.
+
+============================================================
+60. SECURITY CONSIDERATIONS
+============================================================
+
+Array and string errors can produce memory-safety vulnerabilities.
+
+Important classes of problems:
+- out-of-bounds read
+- out-of-bounds write
+- stack buffer overflow
+- unterminated string access
+- use-after-lifetime
+- invalid pointer access
+- integer overflow affecting allocation/bounds calculations
+
+Security practice:
+- validate lengths
+- preserve capacity information
+- use bounded interfaces
+- check return values
+- avoid obsolete unsafe input functions
+- test boundary cases
+- enable compiler warnings and runtime sanitizers
+
+Do not describe a buffer overflow as automatically giving arbitrary code execution. Exploitability
+depends on the program, platform, mitigations, and bug.
+
+============================================================
+61. COMPARISON TABLE
+============================================================
+
+Array:
+- owns storage for a fixed number of elements
+- elements have one declared element type
+- size is part of the array type/object
+
+Pointer:
+- stores an address
+- does not inherently store the size of the pointed-to object
+
+C string:
+- character sequence terminated by '\0'
+- length can be found by scanning for the terminator
+
+char array:
+- may or may not contain a null terminator
+- therefore may or may not be a C string
+
+2D array:
+- array of arrays
+- rows are stored as array elements
+
+array of pointers:
+- elements are pointer objects
+- pointed-to objects may be located elsewhere
+
+============================================================
+62. FAQ
+============================================================
+
+Q: Why does sizeof("hello") equal 6?
+A: The string literal contains five characters plus a terminating null character.
+
+Q: Does an array store its own length?
+A: No. The array type/object has a compile-time or runtime bound depending on the array type,
+but a pointer passed to a function does not carry the original array length.
+
+Q: Why does sizeof work differently for an array parameter?
+A: An array parameter declaration is adjusted to a pointer parameter.
+
+Q: Is char *p = "hello" safe?
+A: The declaration is permitted, but the pointed-to string literal must not be modified.
+Using const char * better expresses read-only intent.
+
+Q: Does strncpy always produce a string?
+A: No. If the source has length at least n, it may not append a null terminator.
+
+Q: Does strcmp return -1, 0, or 1?
+A: Only the sign of the nonzero result is specified for ordering; do not require exactly -1
+or +1.
+
+Q: Can int ** replace int matrix[][4]?
+A: No. These represent different pointer/array types and memory organizations.
+
+============================================================
+63. INTERVIEW QUESTIONS
+============================================================
+
+BEGINNER
+1. What is an array in C?
+2. Why does array indexing start at zero?
+3. What is the difference between an array and a pointer?
+4. What is a C string?
+5. What is '\0'?
+6. Why does "hello" need six array elements?
+
+INTERMEDIATE
+1. Explain array-to-pointer conversion.
+2. Explain sizeof(array) versus sizeof(pointer).
+3. How are 2D arrays represented?
+4. Why is the column dimension important in a 2D array parameter?
+5. Explain the difference between char str[] and const char *str.
+6. Why can strcpy overflow a buffer?
+7. Why does strncpy not always terminate the destination?
+8. What does strcmp return?
+9. What does strtok modify?
+10. Why should fgets be preferred over obsolete unbounded input?
+
+ADVANCED
+1. Explain int (*)[4] versus int **.
+2. Explain VLA semantics and implementation support.
+3. Explain array object lifetime and pointer validity.
+4. Explain how string termination affects strlen.
+5. Explain how multidimensional array layout affects traversal.
+6. Explain how to design a bounded string-copy interface.
+7. Explain why a character array without '\0' is not automatically a string.
+
+============================================================
+64. EXAM QUESTIONS
+============================================================
+
+SHORT ANSWER
+1. Define an array.
+2. What is array indexing?
+3. What is array decay?
+4. What is a multidimensional array?
+5. What is a C string?
+6. What is a null terminator?
+7. What does strlen return?
+8. What does strcmp return?
+9. What is the purpose of fgets?
+10. Why is gets unsafe?
+
+MEDIUM ANSWER
+1. Explain array initialization.
+2. Explain array-to-pointer conversion.
+3. Explain sizeof with arrays.
+4. Explain passing arrays to functions.
+5. Explain 2D array storage.
+6. Explain string literals.
+7. Explain strcpy and strncpy.
+8. Explain strtok.
+9. Explain common string buffer errors.
+
+LONG ANSWER
+1. Explain C arrays from declaration through function parameters.
+2. Explain multidimensional arrays and pointer-to-array types.
+3. Explain C strings and standard string operations.
+4. Explain safe string input and bounded copying.
+5. Compare arrays, pointers, 2D arrays, and arrays of pointers.
+6. Analyze memory-safety issues in array/string programming.
+
+============================================================
+65. PRACTICE QUESTIONS
+============================================================
+
+1. Implement strlen without using <string.h>.
+2. Implement strcmp without using <string.h>.
+3. Implement a bounded string copy that reports truncation.
+4. Reverse a string in place.
+5. Check whether a string is a palindrome.
+6. Count vowels, consonants, digits, and spaces.
+7. Find the largest element in an array.
+8. Search an array using linear search.
+9. Implement binary search on a sorted array.
+10. Add two matrices.
+11. Transpose a matrix.
+12. Tokenize a comma-separated line.
+13. Remove a trailing newline after fgets.
+14. Demonstrate sizeof(array) and sizeof(pointer).
+15. Demonstrate why int ** is not a substitute for int [][COLS].
+16. Write a program that safely rejects input longer than its buffer.
+
+============================================================
+66. RAG RETRIEVAL KEYWORDS
+============================================================
+
+C arrays
+array declaration
+array initialization
+array indexing
+array elements
+array bounds
+array memory
+contiguous array
+sizeof array
+sizeof pointer
+array to pointer conversion
+array decay
+array subscripting
+pointer arithmetic
+multidimensional arrays
+2D arrays
+array of arrays
+row order
+row-major
+matrix
+pointer to array
+int pointer to array
+int **
+VLA
+variable length array
+C strings
+string literal
+string constant
+null terminator
+null character
+char array
+empty string
+strlen
+strcpy
+strncpy
+strcat
+strncat
+strcmp
+strncmp
+strchr
+strrchr
+strstr
+strtok
+fgets
+snprintf
+string capacity
+buffer overflow
+out of bounds
+safe string copy
+string truncation
+string input
+array parameter
+const array parameter
+array of pointers
+flat array
+matrix flattening
+linear index
+string search
+string tokenization
+C memory safety
+AddressSanitizer
+C compiler warnings
+
+============================================================
+67. QUICK REFERENCE
+============================================================
+
+int a[5];
+Five int elements.
+
+int a[] = {1,2,3};
+Compiler determines the element count from the initializer.
+
+sizeof a
+Size of the complete array object when a is an actual array.
+
+sizeof a / sizeof a[0]
+Number of elements when a is an actual array object.
+
+a[i]
+Equivalent to *(a + i).
+
+char s[] = "hello";
+Writable character array containing the terminating null character.
+
+const char *s = "hello";
+Pointer to a non-modifiable string literal.
+
+strlen(s)
+Number of characters before '\0'.
+
+strcpy(dest, src)
+Copies a string; destination must be large enough.
+
+strncpy(dest, src, n)
+Copies up to n characters; may not terminate when source length >= n.
+
+strcmp(a, b)
+Lexicographic comparison; use sign/zero, not exact nonzero values.
+
+strtok(s, delim)
+Tokenizes a modifiable string and changes it.
+
+fgets(buf, sizeof buf, stdin)
+Bounded line input.
+
+snprintf(buf, sizeof buf, ...)
+Bounded formatted output; inspect return value for truncation.
+
+============================================================
+68. OFFICIAL SOURCE MAP
+============================================================
+
+GNU C Reference Manual:
+https://www.gnu.org/software/gnu-c-manual/gnu-c-manual.html
+
+Relevant GNU C Reference Manual topics:
+- String Constants
+- Arrays
+- Declaring Arrays
+- Initializing Arrays
+- Accessing Array Elements
+- Multidimensional Arrays
+- Arrays as Strings
+- Array Subscripts
+- Pointers
+- sizeof
+
+GNU C Language Manual:
+https://www.gnu.org/software/c-intro-and-ref/manual/c-intro-and-ref.html
+
+Relevant topics:
+- Arrays
+- Strings
+- Multidimensional Arrays
+- Variable Length Arrays
+- Limitations of C Arrays
+
+cppreference:
+https://en.cppreference.com/c/language/
+
+String literals:
+https://en.cppreference.com/c/language/string_literal
+
+============================================================
+69. FINAL SUMMARY
+============================================================
+
+C arrays are typed objects containing consecutive elements. Array subscripting is defined in
+terms of pointer arithmetic, but an array is not itself a pointer. In most expressions an array
+is converted to a pointer to its first element, while contexts such as sizeof and unary & retain
+the array type.
+
+Multidimensional arrays are arrays of arrays. Their element type and dimensions determine how
+pointer arithmetic reaches each row and element.
+
+C strings are null-terminated character sequences. Correct string programming depends on knowing
+the destination capacity, preserving the terminating null character, validating input, and
+respecting the rules of each string-library function.
+
+The most important practical rules are:
+- track array length explicitly when passing arrays to functions
+- use sizeof on actual array objects, not pointers, for element counts
+- never access outside array bounds
+- distinguish character arrays from valid C strings
+- reserve space for '\0'
+- never modify a string literal
+- use bounded input such as fgets
+- understand the exact semantics of strncpy, strcat, strtok, and snprintf
+- check truncation and error conditions
+- use compiler warnings and sanitizers during development
+
+END OF DOCUMENT
