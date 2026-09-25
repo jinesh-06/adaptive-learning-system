@@ -1,0 +1,1488 @@
+COURSE: Python Programming
+TOPIC: Data Structures: Lists, Tuples, Sets, Dictionaries, and Collections Module
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation — Tutorial, Standard Library Documentation, and Language Reference
+
+================================================================================
+DATA STRUCTURES: LISTS, TUPLES, SETS, DICTIONARIES, AND COLLECTIONS MODULE
+==========================================================================
+
+1. INTRODUCTION
+
+Python provides several built-in data structures for organizing and processing collections of data. The most commonly used are:
+
+* Lists (`list`) — mutable ordered sequences.
+* Tuples (`tuple`) — immutable ordered sequences.
+* Sets (`set`) — collections of unique hashable elements.
+* Dictionaries (`dict`) — mappings from hashable keys to values.
+
+Python's standard library also provides specialized containers and algorithms, including:
+
+* `collections.deque` — efficient operations at both ends.
+* `collections.Counter` — frequency counting.
+* `collections.defaultdict` — automatic values for missing keys.
+* `collections.namedtuple` — tuple-based records with named fields.
+* `collections.OrderedDict` — specialized ordered dictionary operations.
+* `heapq` — heap-based priority queues.
+* `bisect` — binary-search-based insertion-point operations.
+
+The Python language defines the behavior and interfaces of these structures. Details such as memory layout, allocation strategies, hash-table implementation, and internal algorithms can depend on the Python implementation, especially CPython. Therefore, implementation-specific details should not be treated as language guarantees.
+
+Python dictionaries preserve insertion order as part of the language specification. Sets, however, should not be relied upon for a particular iteration or display order.
+
+2. LEARNING OBJECTIVES
+
+* Understand creation, indexing, slicing, updating, and deletion of lists, tuples, sets, and dictionaries.
+* Understand mutable and immutable data structures.
+* Understand the concept of hashable objects and why dictionary keys and set elements must be hashable.
+* Analyze common operations using time-complexity notation.
+* Use `collections.defaultdict`, `Counter`, `deque`, `namedtuple`, and `OrderedDict`.
+* Use `heapq` to implement priority queues and heaps.
+* Use `bisect` to search for insertion positions in sorted sequences.
+* Select suitable data structures according to access patterns and application requirements.
+* Understand the difference between Python language guarantees and CPython implementation details.
+
+3. PREREQUISITES
+
+* Python variables and data types.
+* Operators and expressions.
+* Conditional statements and loops.
+* Functions.
+* Basic understanding of object references and mutability.
+
+4. BEGINNER CONCEPTS
+
+4.1 LISTS
+
+A list is a mutable ordered sequence.
+
+Example:
+
+```python
+numbers = [10, 20, 30, 40]
+mixed = [1, "Python", 3.14, True]
+```
+
+Common operations:
+
+```python
+numbers.append(50)
+numbers.extend([60, 70])
+numbers.insert(1, 15)
+numbers.pop()
+numbers.remove(20)
+numbers.clear()
+numbers.index(30)
+numbers.count(30)
+numbers.sort()
+numbers.reverse()
+```
+
+Lists support:
+
+* Indexing.
+* Slicing.
+* Iteration.
+* Duplicate values.
+* Different object types.
+* In-place modification.
+
+4.2 TUPLES
+
+A tuple is an immutable ordered sequence.
+
+```python
+t = (10, 20, 30)
+single = (10,)
+```
+
+Tuples are useful for:
+
+* Fixed collections of values.
+* Returning multiple values from functions.
+* Records that should not be modified.
+* Dictionary keys when all contained elements are hashable.
+
+Example:
+
+```python
+student = ("Alice", 20, "AIML")
+name, age, course = student
+```
+
+4.3 SETS
+
+A set is an unordered collection of unique hashable elements.
+
+```python
+numbers = {1, 2, 3, 4}
+empty_set = set()
+```
+
+Important:
+
+```python
+{}
+```
+
+creates an empty dictionary, not an empty set.
+
+Set operations:
+
+```python
+a | b    # Union
+a & b    # Intersection
+a - b    # Difference
+a ^ b    # Symmetric difference
+```
+
+Sets are particularly useful for membership testing and removing duplicates.
+
+4.4 DICTIONARIES
+
+A dictionary is a mutable mapping containing key-value pairs.
+
+```python
+student = {
+    "name": "Alice",
+    "age": 20,
+    "course": "AIML"
+}
+```
+
+Common operations:
+
+```python
+student["name"]
+student.get("grade", "Not available")
+student.keys()
+student.values()
+student.items()
+student.update({"age": 21})
+student.pop("age")
+student.setdefault("city", "Chennai")
+```
+
+Dictionary keys must be hashable and keys are unique.
+
+Dictionaries preserve insertion order.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 SLICING
+
+General syntax:
+
+```python
+sequence[start:stop:step]
+```
+
+Examples:
+
+```python
+numbers = [0, 1, 2, 3, 4, 5]
+
+print(numbers[1:4])
+print(numbers[::2])
+print(numbers[::-1])
+```
+
+Output:
+
+```text
+[1, 2, 3]
+[0, 2, 4]
+[5, 4, 3, 2, 1, 0]
+```
+
+Lists also support slice assignment:
+
+```python
+numbers[1:3] = [10, 20, 30]
+```
+
+This can change the length of the list.
+
+5.2 HASHABLE OBJECTS
+
+An object is hashable when:
+
+* It has a hash value that does not change during its lifetime.
+* It can be compared for equality.
+* Equal objects must have equal hash values.
+
+Hashable objects can be used as:
+
+* Dictionary keys.
+* Set elements.
+
+Examples commonly used as hashable objects:
+
+```python
+int
+str
+bytes
+frozenset
+```
+
+Tuples are hashable only when all their elements are hashable.
+
+Example:
+
+```python
+valid_key = (1, "Python", 3.14)
+
+invalid_key = (1, [2, 3])
+```
+
+The second tuple is not hashable because it contains a list.
+
+Mutable built-in containers such as `list`, `dict`, and `set` are not hashable.
+
+5.3 COLLECTIONS MODULE
+
+The `collections` module provides specialized container datatypes.
+
+Important types include:
+
+`defaultdict`
+
+Automatically creates a value when a missing key is accessed through `__getitem__`.
+
+```python
+from collections import defaultdict
+
+groups = defaultdict(list)
+groups["A"].append("Alice")
+groups["A"].append("Arun")
+```
+
+`Counter`
+
+A dictionary subclass designed for counting hashable objects.
+
+```python
+from collections import Counter
+
+counts = Counter("banana")
+print(counts)
+```
+
+`deque`
+
+A double-ended queue supporting efficient appends and pops from both ends.
+
+```python
+from collections import deque
+
+queue = deque([1, 2, 3])
+queue.append(4)
+queue.appendleft(0)
+queue.pop()
+queue.popleft()
+```
+
+`namedtuple`
+
+A factory for creating tuple subclasses with named fields.
+
+```python
+from collections import namedtuple
+
+Point = namedtuple("Point", ["x", "y"])
+p = Point(10, 20)
+
+print(p.x)
+print(p.y)
+```
+
+`OrderedDict`
+
+`dict` already preserves insertion order in modern Python. `OrderedDict` remains useful when specialized ordering operations such as `move_to_end()` are required.
+
+6. ADVANCED CONCEPTS
+
+6.1 PYTHON IMPLEMENTATION DETAILS
+
+Python's language specification does not require one particular internal memory layout for lists, dictionaries, or sets.
+
+In CPython, lists are implemented using a dynamically allocated array of references to Python objects. This supports efficient indexing and amortized efficient appending.
+
+However, exact allocation formulas, pointer sizes, memory addresses, and resizing strategies are CPython implementation details and may change between Python releases.
+
+Therefore, avoid depending on exact formulas such as:
+
+```text
+new_allocated = ...
+```
+
+in application code.
+
+6.2 DICTIONARY AND SET IMPLEMENTATION
+
+CPython implements dictionaries and sets using hash-table techniques.
+
+The general process for dictionary lookup is conceptually:
+
+1. Calculate a hash for the key.
+2. Use the hash to locate candidate storage.
+3. Resolve collisions when necessary.
+4. Compare keys for equality.
+5. Return the corresponding value.
+
+The exact collision-resolution algorithm and internal table representation are CPython implementation details.
+
+The important programming-level rule is:
+
+```text
+Dictionary lookup and set membership are O(1) on average.
+```
+
+Poor collision behavior can result in slower operations in pathological cases.
+
+6.3 HEAPS WITH `heapq`
+
+The `heapq` module implements heap queue algorithms.
+
+A min-heap maintains the property:
+
+```text
+heap[k] <= heap[2*k+1]
+heap[k] <= heap[2*k+2]
+```
+
+where those child positions exist.
+
+Therefore:
+
+```python
+heap[0]
+```
+
+contains the smallest element.
+
+Important functions:
+
+```python
+heapq.heapify()
+heapq.heappush()
+heapq.heappop()
+heapq.heappushpop()
+heapq.heapreplace()
+heapq.nlargest()
+heapq.nsmallest()
+```
+
+Python 3.14 also provides max-heap functions:
+
+```python
+heapq.heapify_max()
+heapq.heappush_max()
+heapq.heappop_max()
+heapq.heappushpop_max()
+heapq.heapreplace_max()
+```
+
+The max-heap APIs were added in Python 3.14.
+
+7. DETAILED THEORY
+
+7.1 COMMON COMPLEXITIES
+
+| Data Structure    | Operation                  | Typical Complexity |
+| ----------------- | -------------------------- | -----------------: |
+| `list`            | Indexing `lst[i]`          |               O(1) |
+| `list`            | Append                     |     O(1) amortized |
+| `list`            | Insert at beginning        |               O(N) |
+| `list`            | Delete at beginning        |               O(N) |
+| `list`            | Search                     |               O(N) |
+| `deque`           | Append right               |               O(1) |
+| `deque`           | Append left                |               O(1) |
+| `deque`           | Pop right                  |               O(1) |
+| `deque`           | Pop left                   |               O(1) |
+| `deque`           | Middle indexing            | O(N) approximately |
+| `dict`            | Lookup                     |       O(1) average |
+| `dict`            | Insert                     |       O(1) average |
+| `dict`            | Delete                     |       O(1) average |
+| `set`             | Membership                 |       O(1) average |
+| `set`             | Add                        |       O(1) average |
+| `set`             | Remove                     |       O(1) average |
+| `heapq`           | Push                       |           O(log N) |
+| `heapq`           | Pop                        |           O(log N) |
+| `heapq`           | Heapify                    |               O(N) |
+| `bisect`          | Search for insertion point |           O(log N) |
+| `bisect.insort()` | Search + insertion         |               O(N) |
+
+The complexity of `bisect.insort()` is O(N), because although locating the insertion point takes O(log N), inserting into a Python list can require shifting elements.
+
+8. SYNTAX
+
+```python
+from collections import defaultdict, Counter, deque, namedtuple, OrderedDict
+import heapq
+import bisect
+
+# namedtuple
+Point3D = namedtuple("Point3D", ["x", "y", "z"])
+p = Point3D(10, 20, 30)
+
+# defaultdict
+dd = defaultdict(list)
+dd["Python"].append("Data Structures")
+
+# Counter
+counts = Counter(["a", "b", "a", "c", "a", "b"])
+
+# deque
+dq = deque([1, 2, 3])
+dq.appendleft(0)
+dq.append(4)
+
+# heap
+heap = [5, 1, 8, 3]
+heapq.heapify(heap)
+
+heapq.heappush(heap, 2)
+minimum = heapq.heappop(heap)
+
+# bisect
+values = [10, 20, 30, 40]
+position = bisect.bisect_left(values, 25)
+```
+
+9. BASIC EXAMPLES
+
+```python
+def demonstrate_basic_structures():
+    # 1. List
+    numbers = [10, 20, 30, 40]
+
+    numbers.append(50)
+    numbers.insert(1, 15)
+
+    popped = numbers.pop()
+
+    print(f"List: {numbers}, Popped: {popped}")
+
+    # 2. Tuple
+    record = ("Alice", 28, "Engineering")
+
+    name, age, dept = record
+
+    print(
+        f"Tuple record: Name={name}, "
+        f"Age={age}, Dept={dept}"
+    )
+
+    # 3. Set
+    set_a = {1, 2, 3, 4}
+    set_b = {3, 4, 5, 6}
+
+    print(f"Union: {set_a | set_b}")
+    print(f"Intersection: {set_a & set_b}")
+    print(f"Difference (A - B): {set_a - set_b}")
+
+    # 4. Dictionary
+    inventory = {
+        "apples": 10,
+        "bananas": 5
+    }
+
+    inventory["oranges"] = 8
+
+    peaches = inventory.get("peaches", 0)
+
+    print(
+        f"Inventory: {inventory}, "
+        f"Peaches: {peaches}"
+    )
+
+
+if __name__ == "__main__":
+    demonstrate_basic_structures()
+```
+
+10. INTERMEDIATE EXAMPLES
+
+```python
+from collections import defaultdict, Counter, deque, namedtuple
+
+
+def demonstrate_collections():
+
+    # 1. defaultdict for grouping
+    words = [
+        "apple",
+        "banana",
+        "avocado",
+        "blueberry",
+        "cherry",
+        "apricot"
+    ]
+
+    by_letter = defaultdict(list)
+
+    for word in words:
+        by_letter[word[0]].append(word)
+
+    print(f"Grouped by letter: {dict(by_letter)}")
+
+    # 2. Counter for frequency analysis
+    text = (
+        "the quick brown fox jumps over "
+        "the lazy dog the fox was quick"
+    )
+
+    word_counts = Counter(text.split())
+
+    print(
+        f"Top 2 most common words: "
+        f"{word_counts.most_common(2)}"
+    )
+
+    # 3. deque as a sliding window
+    sliding_window = deque(maxlen=3)
+
+    for value in [10, 20, 30, 40, 50]:
+        sliding_window.append(value)
+
+        print(
+            f"Window after adding {value}: "
+            f"{list(sliding_window)}"
+        )
+
+    # 4. namedtuple
+    Transaction = namedtuple(
+        "Transaction",
+        ["tx_id", "user_id", "amount", "currency"]
+    )
+
+    tx = Transaction(
+        "tx_101",
+        "u_88",
+        250.75,
+        "USD"
+    )
+
+    print(
+        f"Transaction ID: {tx.tx_id}, "
+        f"Amount: {tx.amount} {tx.currency}"
+    )
+
+
+if __name__ == "__main__":
+    demonstrate_collections()
+```
+
+11. ADVANCED EXAMPLES
+
+```python
+import heapq
+import bisect
+
+from dataclasses import dataclass, field
+from typing import Any
+
+
+@dataclass(order=True)
+class PriorityTask:
+    priority: int
+    task_id: str = field(compare=False)
+    payload: Any = field(compare=False)
+
+
+def demonstrate_heap_and_bisect():
+
+    # -------------------------------------------------
+    # 1. Priority Queue using heapq
+    # -------------------------------------------------
+
+    pq: list[PriorityTask] = []
+
+    heapq.heappush(
+        pq,
+        PriorityTask(
+            priority=3,
+            task_id="task_low",
+            payload="Clean logs"
+        )
+    )
+
+    heapq.heappush(
+        pq,
+        PriorityTask(
+            priority=1,
+            task_id="task_critical",
+            payload="Fix crash"
+        )
+    )
+
+    heapq.heappush(
+        pq,
+        PriorityTask(
+            priority=2,
+            task_id="task_medium",
+            payload="Send report"
+        )
+    )
+
+    print("Executing tasks in priority order:")
+
+    while pq:
+        task = heapq.heappop(pq)
+
+        print(
+            f"  [Priority {task.priority}] "
+            f"Executing {task.task_id}: {task.payload}"
+        )
+
+    # -------------------------------------------------
+    # 2. Binary search using bisect
+    # -------------------------------------------------
+
+    sorted_scores = [100, 250, 400, 600, 850]
+    new_score = 500
+
+    insert_idx = bisect.bisect_left(
+        sorted_scores,
+        new_score
+    )
+
+    print(
+        f"Score {new_score} belongs at "
+        f"index {insert_idx}"
+    )
+
+    bisect.insort_left(
+        sorted_scores,
+        new_score
+    )
+
+    print(
+        f"Updated sorted scores: {sorted_scores}"
+    )
+
+    # -------------------------------------------------
+    # 3. Grade mapping
+    # -------------------------------------------------
+
+    breakpoints = [60, 70, 80, 90]
+    grades = ["F", "D", "C", "B", "A"]
+
+    student_score = 83
+
+    grade_idx = bisect.bisect(
+        breakpoints,
+        student_score
+    )
+
+    print(
+        f"Score {student_score} "
+        f"-> Grade '{grades[grade_idx]}'"
+    )
+
+
+if __name__ == "__main__":
+    demonstrate_heap_and_bisect()
+```
+
+12. CODE WALKTHROUGHS
+
+12.1 `PriorityTask`
+
+```python
+@dataclass(order=True)
+class PriorityTask:
+```
+
+`@dataclass(order=True)` generates ordering methods based on the fields participating in comparison.
+
+```python
+field(compare=False)
+```
+
+prevents `task_id` and `payload` from being used when comparing priorities.
+
+Therefore, the heap primarily compares:
+
+```python
+priority
+```
+
+12.2 `heapq.heappush()`
+
+```python
+heapq.heappush(pq, task)
+```
+
+Adds an item while preserving the heap invariant.
+
+The operation is O(log N).
+
+12.3 `heapq.heappop()`
+
+```python
+task = heapq.heappop(pq)
+```
+
+Removes and returns the smallest item from a min-heap.
+
+The operation is O(log N).
+
+12.4 `bisect_left()`
+
+```python
+index = bisect.bisect_left(values, x)
+```
+
+Returns the leftmost position where `x` can be inserted while maintaining sorted order.
+
+The search itself is O(log N).
+
+12.5 `bisect.insort_left()`
+
+```python
+bisect.insort_left(values, x)
+```
+
+Finds the insertion position and then inserts the value.
+
+The search is O(log N), but list insertion can require O(N) element movement, so the overall operation is O(N).
+
+13. EXPECTED OUTPUT
+
+BASIC EXAMPLE:
+
+```text
+List: [10, 15, 20, 30, 40], Popped: 50
+Tuple record: Name=Alice, Age=28, Dept=Engineering
+Union: {1, 2, 3, 4, 5, 6}
+Intersection: {3, 4}
+Difference (A - B): {1, 2}
+Inventory: {'apples': 10, 'bananas': 5, 'oranges': 8}, Peaches: 0
+```
+
+INTERMEDIATE EXAMPLE:
+
+```text
+Grouped by letter: {'a': ['apple', 'avocado', 'apricot'], 'b': ['banana', 'blueberry'], 'c': ['cherry']}
+Top 2 most common words: [('the', 3), ('quick', 2)]
+Window after adding 10: [10]
+Window after adding 20: [10, 20]
+Window after adding 30: [10, 20, 30]
+Window after adding 40: [20, 30, 40]
+Window after adding 50: [30, 40, 50]
+Transaction ID: tx_101, Amount: 250.75 USD
+```
+
+ADVANCED EXAMPLE:
+
+```text
+Executing tasks in priority order:
+  [Priority 1] Executing task_critical: Fix crash
+  [Priority 2] Executing task_medium: Send report
+  [Priority 3] Executing task_low: Clean logs
+Score 500 belongs at index 3
+Updated sorted scores: [100, 250, 400, 500, 600, 850]
+Score 83 -> Grade 'B'
+```
+
+Note: Set display order should not be relied upon. The exact printed representation of a set may vary.
+
+14. EXECUTION FLOW
+
+At the Python-language level:
+
+1. A container object is created.
+2. Python stores references to the objects contained in the container.
+3. Operations such as indexing, insertion, deletion, hashing, and iteration are performed according to the container's defined behavior.
+4. Lists provide efficient indexed access.
+5. Dictionaries and sets use hashing for average-case fast lookup and membership.
+6. `deque` is designed for efficient operations at both ends.
+7. `heapq` maintains a heap invariant over a Python list.
+8. `bisect` searches for insertion positions in sorted sequences.
+
+CPython may use specific internal memory layouts and algorithms, but those details are implementation-specific.
+
+15. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Implement an LRU cache supporting efficient `get()` and `put()` operations using `collections.OrderedDict` or a combination of a dictionary and linked structure.
+
+Problem 2:
+Build a Top-K Frequent Words system using:
+
+* `Counter`
+* `heapq`
+* Dictionary/set operations
+
+Problem 3:
+Given intervals:
+
+```python
+[[1, 3], [2, 6], [8, 10], [9, 12]]
+```
+
+merge overlapping intervals using sorting and linear scanning after sorting.
+
+Problem 4:
+Implement a task scheduler using `heapq` where lower priority numbers are processed first.
+
+Problem 5:
+Maintain a sorted list of student scores using `bisect.insort()`.
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 CACHING
+
+Dictionaries are commonly used for fast key-based lookup.
+
+Examples:
+
+* Session data.
+* Configuration data.
+* In-memory caches.
+* Lookup tables.
+
+16.2 QUEUES
+
+`collections.deque` is suitable for:
+
+* Queues.
+* Breadth-first search.
+* Sliding windows.
+* Double-ended processing.
+
+The Python documentation specifically recommends `deque` for queue operations requiring efficient appends and pops from both ends.
+
+16.3 FREQUENCY ANALYSIS
+
+`Counter` can be used for:
+
+* Word frequencies.
+* Character frequencies.
+* Event counting.
+* Log analysis.
+* Category statistics.
+
+16.4 PRIORITY QUEUES
+
+`heapq` can be used for:
+
+* Task scheduling.
+* Dijkstra's algorithm.
+* A* search.
+* Event scheduling.
+* Top-K problems.
+
+16.5 SORTED DATA
+
+`bisect` can be used to maintain a sorted list when insertion positions need to be found efficiently.
+
+17. COMMON MISTAKES
+
+17.1 USING A LIST AS A FIFO QUEUE
+
+Avoid:
+
+```python
+queue.pop(0)
+```
+
+for large queues because removing the first list element can require shifting the remaining elements.
+
+Prefer:
+
+```python
+from collections import deque
+
+queue = deque()
+
+queue.append("A")
+queue.append("B")
+
+item = queue.popleft()
+```
+
+17.2 USING UNHASHABLE OBJECTS AS KEYS
+
+Incorrect:
+
+```python
+data = {
+    [1, 2, 3]: "value"
+}
+```
+
+This raises:
+
+```text
+TypeError: unhashable type: 'list'
+```
+
+17.3 ASSUMING SET ORDER
+
+Do not write code that depends on:
+
+```python
+set
+```
+
+being printed or iterated in a particular order.
+
+17.4 CONFUSING `bisect()` WITH INSERTION
+
+```python
+bisect.bisect_left()
+```
+
+finds a position.
+
+It does not modify the list.
+
+```python
+bisect.insort_left()
+```
+
+finds the position and inserts the value.
+
+18. COMMON ERRORS
+
+18.1 `KeyError`
+
+```python
+student["missing"]
+```
+
+may raise:
+
+```text
+KeyError
+```
+
+Use:
+
+```python
+student.get("missing")
+```
+
+when an absent key is expected.
+
+18.2 `IndexError`
+
+```python
+numbers = [10, 20]
+print(numbers[5])
+```
+
+raises:
+
+```text
+IndexError: list index out of range
+```
+
+18.3 `TypeError: unhashable type`
+
+```python
+set_data = {[1, 2, 3]}
+```
+
+raises a `TypeError` because lists are unhashable.
+
+19. DEBUGGING TECHNIQUES
+
+INCORRECT CODE:
+
+```python
+queue = []
+
+for i in range(100000):
+    queue.append(i)
+
+while queue:
+    item = queue.pop(0)
+```
+
+PROBLEM:
+
+`pop(0)` removes the first element from a list and can require moving the remaining elements.
+
+For repeated FIFO operations, this can result in poor performance.
+
+CORRECT CODE:
+
+```python
+from collections import deque
+
+queue = deque()
+
+for i in range(100000):
+    queue.append(i)
+
+while queue:
+    item = queue.popleft()
+```
+
+WHY THE FIX WORKS:
+
+`deque` is specifically designed for efficient appends and pops at both ends.
+
+20. EDGE CASES
+
+20.1 EMPTY SET
+
+```python
+empty = set()
+```
+
+not:
+
+```python
+empty = {}
+```
+
+20.2 SINGLE-ELEMENT TUPLE
+
+Correct:
+
+```python
+t = (10,)
+```
+
+Incorrect:
+
+```python
+t = (10)
+```
+
+The second expression is simply the integer `10`.
+
+20.3 UNHASHABLE TUPLE
+
+```python
+t = (1, [2, 3])
+```
+
+The tuple cannot be used as a dictionary key because the contained list is unhashable.
+
+20.4 DUPLICATE DICTIONARY KEYS
+
+```python
+data = {
+    "x": 10,
+    "x": 20
+}
+```
+
+The resulting dictionary contains one `"x"` key with value `20`.
+
+20.5 HASH COLLISIONS
+
+Different objects can have the same hash value.
+
+Python uses equality checking in addition to hashing to determine whether keys or set elements are actually equal.
+
+21. BEST PRACTICES
+
+* Use `list` for general ordered mutable sequences.
+* Use `tuple` for immutable sequence-like records.
+* Use `set` for uniqueness and average-case fast membership testing.
+* Use `dict` for key-value mappings.
+* Use `deque` for queues and efficient operations at both ends.
+* Use `Counter` for frequency counting.
+* Use `defaultdict` for convenient grouping and accumulation.
+* Use `heapq` for priority queues and heap-based algorithms.
+* Use `bisect` when maintaining insertion positions in sorted lists.
+* Do not rely on CPython-specific memory layouts unless writing implementation-specific code.
+* Benchmark real workloads instead of assuming a theoretical optimization will always be faster.
+* Prefer clear data structures over unnecessarily complex implementations.
+
+22. PERFORMANCE CONSIDERATIONS
+
+22.1 LIST SEARCH VS SET MEMBERSHIP
+
+For:
+
+```python
+x in large_list
+```
+
+Python may need to inspect many elements, giving O(N) search complexity.
+
+For:
+
+```python
+x in large_set
+```
+
+membership is O(1) on average.
+
+However, creating a set has its own time and memory cost, so converting a list to a set is most useful when repeated membership tests justify the conversion.
+
+22.2 `list` VS `deque`
+
+Use:
+
+```python
+list.append()
+list.pop()
+```
+
+for stack-like operations at the right end.
+
+Use:
+
+```python
+deque.appendleft()
+deque.popleft()
+```
+
+for efficient operations at the left end.
+
+22.3 `bisect`
+
+Binary search itself is O(log N), but inserting into a Python list is O(N).
+
+Therefore:
+
+```python
+bisect.insort()
+```
+
+should not be described as an O(log N) insertion operation.
+
+22.4 HEAP OPERATIONS
+
+Typical heap operations:
+
+```text
+heapify  -> O(N)
+push     -> O(log N)
+pop      -> O(log N)
+```
+
+23. MEMORY CONSIDERATIONS
+
+Python containers generally store references to Python objects rather than raw primitive values embedded directly in the container.
+
+For example:
+
+```python
+numbers = [1, 2, 3]
+```
+
+stores references to Python integer objects.
+
+The exact memory usage depends on:
+
+* Python implementation.
+* Platform.
+* Object types.
+* Object sizes.
+* Container capacity.
+* Allocator behavior.
+
+Therefore, avoid hard-coded claims such as:
+
+```text
+Every integer always occupies exactly 28 bytes.
+Every list pointer is always exactly 8 bytes.
+```
+
+Those are implementation/platform-specific observations, not universal Python language guarantees.
+
+For large numerical arrays, specialized tools such as `array` or third-party libraries such as NumPy may provide more compact representations.
+
+24. SECURITY CONSIDERATIONS
+
+24.1 HASH-BASED ATTACKS
+
+Hash tables can theoretically suffer from large numbers of collisions.
+
+Python implementations use randomized hashing for relevant built-in hashable types to make certain collision-based attacks harder to construct predictably across processes.
+
+Applications processing untrusted data should still use:
+
+* Input validation.
+* Resource limits.
+* Request-size limits.
+* Timeouts where appropriate.
+* Appropriate data structures.
+
+Do not assume that a theoretically O(1) operation is immune to denial-of-service risks under all conditions.
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+| Feature              | `list`           | `deque`                                | `set`                 | `dict`               |
+| -------------------- | ---------------- | -------------------------------------- | --------------------- | -------------------- |
+| Ordered sequence     | Yes              | Yes, sequence-like                     | No guaranteed order   | Yes, insertion order |
+| Mutable              | Yes              | Yes                                    | Yes                   | Yes                  |
+| Duplicates           | Allowed          | Allowed                                | No                    | Keys unique          |
+| Indexing             | Supported        | Supported, but middle access is slower | Not supported         | Key-based            |
+| Main use             | General sequence | Queue/deque                            | Membership/uniqueness | Key-value mapping    |
+| Membership           | O(N) typical     | O(N) typical                           | O(1) average          | O(1) average         |
+| Left-end operations  | O(N)             | O(1)                                   | Not applicable        | Not applicable       |
+| Right-end operations | O(1) append/pop  | O(1) append/pop                        | Not applicable        | Not applicable       |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1: Why can a tuple be used as a dictionary key?
+
+A:
+
+A tuple can be used as a dictionary key if all of its elements are hashable.
+
+Example:
+
+```python
+key = (10, "Python", 3.14)
+```
+
+But:
+
+```python
+key = (10, [20, 30])
+```
+
+is not hashable because it contains a list.
+
+Q2: Are dictionaries ordered?
+
+A:
+
+Yes. Python dictionaries preserve insertion order.
+
+Q3: Are sets ordered?
+
+A:
+
+No ordering guarantee should be assumed for sets.
+
+Q4: When should I use `deque` instead of `list`?
+
+A:
+
+Use `deque` when efficient insertion and removal from both ends are required.
+
+Q5: When should I use `heapq`?
+
+A:
+
+Use `heapq` when you repeatedly need access to the smallest or largest priority item through a heap-based structure.
+
+Q6: When should I use `bisect`?
+
+A:
+
+Use `bisect` when working with a sorted sequence and you need to locate an appropriate insertion point efficiently.
+
+Q7: Is `bisect.insort()` O(log N)?
+
+A:
+
+No. The search is O(log N), but the list insertion step is O(N), so the overall insertion is O(N).
+
+27. INTERVIEW QUESTIONS
+
+Q1: What is the difference between a list and a tuple?
+
+Answer:
+
+A list is mutable, while a tuple is immutable.
+
+Q2: Why can't a list be a dictionary key?
+
+Answer:
+
+Lists are mutable and therefore unhashable.
+
+Q3: What is the average complexity of dictionary lookup?
+
+Answer:
+
+O(1) average case, although pathological collision behavior can result in slower performance.
+
+Q4: What is the difference between `list.pop(0)` and `deque.popleft()`?
+
+Answer:
+
+`list.pop(0)` can require shifting remaining elements and is O(N), while `deque.popleft()` is designed for O(1) end operations.
+
+Q5: What is a heap?
+
+Answer:
+
+A heap is a tree-based ordering structure represented efficiently using an array/list. In a min-heap, the smallest element is at index 0.
+
+Q6: What does `bisect_left()` return?
+
+Answer:
+
+It returns the leftmost insertion position that maintains sorted order.
+
+Q7: What does `Counter` do?
+
+Answer:
+
+`Counter` counts hashable objects and stores the counts as dictionary-like key-value pairs.
+
+Q8: What is `defaultdict`?
+
+Answer:
+
+`defaultdict` is a dictionary subclass that uses a factory function to provide a value for a missing key when accessed through `[]`.
+
+28. EXAM QUESTIONS
+
+Q1:
+
+What is the result of:
+
+```python
+{1, 1.0, "1"}
+```
+
+Answer:
+
+The set contains two elements because:
+
+```python
+1 == 1.0
+```
+
+and:
+
+```python
+hash(1) == hash(1.0)
+```
+
+Therefore, `1` and `1.0` represent the same set element.
+
+The exact printed representation may preserve either `1` or `1.0` depending on which equal value is retained during construction.
+
+Q2:
+
+True or False:
+
+```python
+t = (1, [2, 3])
+```
+
+can be used as a dictionary key.
+
+Answer:
+
+False.
+
+The tuple contains a list, which is unhashable.
+
+Q3:
+
+What is the complexity of:
+
+```python
+heapq.heapify(values)
+```
+
+Answer:
+
+O(N).
+
+Q4:
+
+What is the complexity of:
+
+```python
+bisect.bisect_left(values, x)
+```
+
+Answer:
+
+O(log N).
+
+29. PRACTICE QUESTIONS
+
+Q1:
+
+Implement a frequency stack where the most frequent element is returned first.
+
+Q2:
+
+Write:
+
+```python
+k_closest_points(
+    points: list[tuple[int, int]],
+    k: int
+)
+```
+
+using `heapq`.
+
+Q3:
+
+Write a program to determine whether two strings are anagrams using `Counter`.
+
+Q4:
+
+Implement a queue using `collections.deque`.
+
+Q5:
+
+Group student names by department using `defaultdict(list)`.
+
+Q6:
+
+Maintain a sorted list of marks using `bisect.insort()`.
+
+Q7:
+
+Implement an LRU cache using `OrderedDict`.
+
+30. SUMMARY
+
+Python provides several built-in and specialized data structures for solving different classes of problems.
+
+Lists are suitable for general mutable sequences and efficient indexed access.
+
+Tuples provide immutable sequences and can serve as dictionary keys when all contained elements are hashable.
+
+Sets store unique hashable elements and provide efficient average-case membership testing.
+
+Dictionaries provide key-value mappings and preserve insertion order.
+
+The `collections` module provides specialized containers such as:
+
+```text
+deque
+Counter
+defaultdict
+namedtuple
+OrderedDict
+```
+
+The `heapq` module provides heap-based priority queues, while `bisect` provides binary-search-based insertion-point operations.
+
+The most important principle is to select the data structure according to the required operations rather than relying only on implementation details.
+
+31. KEY TAKEAWAYS
+
+* Use `list` for general ordered mutable sequences.
+* Use `tuple` for immutable sequence-like data.
+* Use `set` for uniqueness and average-case fast membership testing.
+* Use `dict` for key-value mappings.
+* Dictionary keys and set elements must be hashable.
+* Tuples are hashable only when all their elements are hashable.
+* `list.append()` is O(1) amortized.
+* `list.insert(0, x)` and `list.pop(0)` are O(N).
+* `deque` is designed for efficient operations at both ends.
+* `dict` and `set` provide O(1) average-case lookup/membership.
+* `Counter` is useful for frequency analysis.
+* `defaultdict` simplifies grouping and accumulation.
+* `heapq.heapify()` is O(N).
+* Heap push/pop operations are O(log N).
+* Python 3.14 provides dedicated max-heap APIs in `heapq`.
+* `bisect` searches for insertion positions in O(log N).
+* `bisect.insort()` is O(N) overall because list insertion is linear.
+* Do not treat CPython implementation details as universal Python guarantees.
+* Benchmark actual workloads when performance matters.

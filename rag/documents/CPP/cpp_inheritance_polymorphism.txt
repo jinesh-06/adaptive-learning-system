@@ -1,0 +1,2027 @@
+COURSE: CPP
+TOPIC: INHERITANCE POLYMORPHISM
+LEVEL: INTERMEDIATE
+SOURCE: cpp_inheritance_polymorphism.txt
+
+TITLE: C++ Inheritance, Virtual Functions, Polymorphism, Abstract Classes, RTTI, and Virtual Inheritance
+
+============================================================
+
+1. INTRODUCTION
+   ============================================================
+
+Inheritance and polymorphism are important object-oriented programming features in C++.
+
+Inheritance allows a class to derive from another class and reuse or specialize its members. It represents relationships between a more general base type and a more specialized derived type.
+
+Polymorphism means that the same interface can represent different behaviors. In C++, runtime polymorphism is primarily achieved through virtual functions. A derived class can override a virtual function, and a call made through a base-class pointer or reference can invoke the final overrider associated with the actual object.
+
+Example:
+
+class Shape {
+public:
+virtual void draw() const = 0;
+virtual ~Shape() = default;
+};
+
+class Circle : public Shape {
+public:
+void draw() const override {
+std::cout << "Drawing Circle\n";
+}
+};
+
+A Shape reference can refer to a Circle object:
+
+Circle c;
+Shape& s = c;
+s.draw();
+
+The call invokes Circle::draw() because draw() is virtual.
+
+IMPORTANT:
+The C++ standard specifies the behavior and semantics of virtual functions, but it does NOT require a particular implementation using a VTable or vptr. VTables and vptrs are common implementation techniques used by major C++ compilers, but their exact layout, size, location, and calling sequence are implementation-specific.
+
+============================================================
+2. LEARNING OBJECTIVES
+======================
+
+After completing this topic, the learner should be able to:
+
+* Explain base classes and derived classes.
+* Implement single, multilevel, multiple, and hierarchical inheritance.
+* Understand public, protected, and private inheritance.
+* Explain virtual functions and dynamic dispatch.
+* Use override and final correctly.
+* Design abstract classes using pure virtual functions.
+* Understand polymorphic base-class destructors.
+* Explain object slicing and how to avoid it.
+* Understand multiple inheritance and the diamond problem.
+* Use virtual inheritance to share a common virtual base.
+* Use dynamic_cast for runtime-checked conversions.
+* Use typeid and std::type_info for runtime type information.
+* Understand the conceptual role of VTables and vptrs without treating them as standard-mandated implementation details.
+* Distinguish compile-time/static polymorphism from runtime/dynamic polymorphism.
+* Apply inheritance and polymorphism safely using RAII and smart pointers.
+
+============================================================
+3. PREREQUISITES
+================
+
+Recommended prerequisites:
+
+* C++ classes and objects
+* Constructors and destructors
+* Access specifiers
+* Pointers and references
+* RAII
+* Smart pointers
+* Function overriding
+* Basic memory management
+* Basic understanding of templates
+
+============================================================
+4. C++ STANDARD AND VERSION CONTEXT
+===================================
+
+The current published ISO C++ standard is:
+
+ISO/IEC 14882:2024
+
+This edition specifies C++23.
+
+Earlier standards include:
+
+* C++98
+* C++03
+* C++11
+* C++14
+* C++17
+* C++20
+* C++23
+
+Major inheritance and polymorphism-related features include:
+
+C++98:
+
+* Classes
+* Inheritance
+* Virtual functions
+* Multiple inheritance
+* RTTI
+
+C++11:
+
+* override
+* final
+* nullptr
+* Smart pointers
+* Move semantics
+* Modern initialization
+
+C++17:
+
+* if constexpr
+* Structured bindings
+* Improved language and library facilities
+
+C++20:
+
+* Concepts
+* Modules
+* Coroutines
+* consteval
+* std::span
+* Additional compile-time facilities
+
+C++23:
+
+* Further library and language improvements
+* std::expected
+* std::print
+* Additional ranges functionality
+* Additional improvements to modern C++
+
+============================================================
+5. INHERITANCE
+==============
+
+Inheritance allows a derived class to acquire accessible members of a base class and add or modify behavior.
+
+Basic syntax:
+
+class Base {
+public:
+void show() {
+std::cout << "Base\n";
+}
+};
+
+class Derived : public Base {
+public:
+void display() {
+std::cout << "Derived\n";
+}
+};
+
+int main() {
+Derived d;
+
+```
+d.show();
+d.display();
+```
+
+}
+
+Output:
+
+Base
+Derived
+
+The derived object contains a base-class subobject as part of its complete object.
+
+============================================================
+6. TYPES OF INHERITANCE
+=======================
+
+6.1 SINGLE INHERITANCE
+
+One derived class inherits from one base class.
+
+class Animal {
+public:
+void eat() {
+std::cout << "Eating\n";
+}
+};
+
+class Dog : public Animal {
+public:
+void bark() {
+std::cout << "Barking\n";
+}
+};
+
+Relationship:
+
+Animal
+|
+Dog
+
+6.2 MULTILEVEL INHERITANCE
+
+A derived class becomes the base of another class.
+
+class A {
+public:
+void showA() {}
+};
+
+class B : public A {
+public:
+void showB() {}
+};
+
+class C : public B {
+public:
+void showC() {}
+};
+
+Relationship:
+
+A
+|
+B
+|
+C
+
+6.3 HIERARCHICAL INHERITANCE
+
+Multiple derived classes inherit from the same base class.
+
+class Animal {
+public:
+void eat() {}
+};
+
+class Dog : public Animal {};
+class Cat : public Animal {};
+class Bird : public Animal {};
+
+Relationship:
+
+```
+    Animal
+   /  |  \
+ Dog Cat Bird
+```
+
+6.4 MULTIPLE INHERITANCE
+
+A class can inherit from more than one base class.
+
+class Printer {
+public:
+void print() {
+std::cout << "Printing\n";
+}
+};
+
+class Scanner {
+public:
+void scan() {
+std::cout << "Scanning\n";
+}
+};
+
+class MultiFunctionDevice : public Printer, public Scanner {
+};
+
+A MultiFunctionDevice object contains a Printer base subobject and a Scanner base subobject.
+
+6.5 HYBRID INHERITANCE
+
+Hybrid inheritance combines multiple inheritance structures.
+
+Complex inheritance hierarchies should be designed carefully because they can introduce ambiguity and maintenance difficulties.
+
+============================================================
+7. ACCESS SPECIFIERS IN INHERITANCE
+===================================
+
+C++ supports:
+
+* public
+* protected
+* private
+
+For public inheritance:
+
+class Derived : public Base {};
+
+Base public members remain public in Derived.
+
+Base protected members remain protected in Derived.
+
+Base private members remain inaccessible directly from Derived.
+
+Example:
+
+class Base {
+public:
+int public_value;
+
+protected:
+int protected_value;
+
+private:
+int private_value;
+};
+
+class Derived : public Base {
+public:
+void test() {
+public_value = 10;       // OK
+protected_value = 20;    // OK
+// private_value = 30;   // ERROR
+}
+};
+
+Public inheritance commonly represents an "is-a" relationship.
+
+============================================================
+8. VIRTUAL FUNCTIONS
+====================
+
+A virtual function supports dynamic dispatch.
+
+Example:
+
+#include <iostream>
+
+class Animal {
+public:
+virtual void speak() const {
+std::cout << "Animal sound\n";
+}
+
+```
+virtual ~Animal() = default;
+```
+
+};
+
+class Dog : public Animal {
+public:
+void speak() const override {
+std::cout << "Dog barks\n";
+}
+};
+
+int main() {
+Dog dog;
+Animal& animal = dog;
+
+```
+animal.speak();
+```
+
+}
+
+Output:
+
+Dog barks
+
+The static type of animal is Animal&, but the object referred to by animal is a Dog.
+
+Because speak() is virtual, the final overrider is selected dynamically.
+
+============================================================
+9. OVERRIDE SPECIFIER
+=====================
+
+override was introduced in C++11.
+
+It tells the compiler that a derived member function is intended to override a virtual function from a base class.
+
+Example:
+
+class Base {
+public:
+virtual void show() const {
+std::cout << "Base\n";
+}
+};
+
+class Derived : public Base {
+public:
+void show() const override {
+std::cout << "Derived\n";
+}
+};
+
+If the function signature does not correctly override a virtual function, the compiler reports an error.
+
+Example:
+
+class Base {
+public:
+virtual void show() const;
+};
+
+class Derived : public Base {
+public:
+void show() override;   // ERROR: missing const
+};
+
+Using override is strongly recommended because it catches accidental mismatches.
+
+============================================================
+10. FINAL SPECIFIER
+===================
+
+final can prevent further overriding of a virtual function.
+
+class Base {
+public:
+virtual void show() final {
+std::cout << "Base\n";
+}
+};
+
+A derived class cannot override show().
+
+final can also prevent inheritance:
+
+class FinalClass final {
+};
+
+class Another : public FinalClass {
+};   // ERROR
+
+The final specifier is available since C++11.
+
+============================================================
+11. ABSTRACT CLASSES
+====================
+
+A class is abstract when it has at least one pure virtual final overrider.
+
+A pure virtual function is declared using:
+
+virtual void function() = 0;
+
+Example:
+
+class Shape {
+public:
+virtual double area() const = 0;
+virtual ~Shape() = default;
+};
+
+Shape is abstract and cannot be instantiated directly.
+
+This is invalid:
+
+Shape s;   // ERROR
+
+But a pointer or reference to Shape can refer to a derived object:
+
+class Circle : public Shape {
+public:
+double area() const override {
+return 3.14159;
+}
+};
+
+Circle c;
+Shape& shape = c;
+
+============================================================
+12. PURE VIRTUAL FUNCTIONS
+==========================
+
+A pure virtual function establishes an interface requirement for derived classes.
+
+Example:
+
+class Payment {
+public:
+virtual bool process(double amount) = 0;
+virtual ~Payment() = default;
+};
+
+A concrete derived class should provide the required override:
+
+class CreditCardPayment : public Payment {
+public:
+bool process(double amount) override {
+std::cout << "Processing: " << amount << '\n';
+return true;
+}
+};
+
+A pure virtual function may have a definition in some cases. However, a pure virtual destructor requires a definition because the base destructor is ultimately called during destruction.
+
+============================================================
+13. INTERFACE-STYLE DESIGN
+==========================
+
+C++ does not have a separate interface keyword like some other languages.
+
+An interface-like abstraction is commonly implemented using an abstract class containing pure virtual functions.
+
+Example:
+
+class IShape {
+public:
+virtual double area() const = 0;
+virtual void render() const = 0;
+virtual ~IShape() = default;
+};
+
+class Circle : public IShape {
+private:
+double radius;
+
+public:
+explicit Circle(double r) : radius(r) {}
+
+```
+double area() const override {
+    return 3.141592653589793 * radius * radius;
+}
+
+void render() const override {
+    std::cout << "Rendering Circle (r="
+              << radius << ")\n";
+}
+```
+
+};
+
+============================================================
+14. VIRTUAL DESTRUCTORS
+=======================
+
+A polymorphic base class generally needs a virtual destructor when objects may be destroyed through a base-class pointer.
+
+Example:
+
+class Base {
+public:
+virtual ~Base() = default;
+};
+
+class Derived : public Base {
+};
+
+Base* p = new Derived();
+delete p;
+
+Because the destructor is virtual, destruction proceeds through the appropriate derived destructor and then the base destructor.
+
+A common safe design is:
+
+class Base {
+public:
+virtual ~Base() = default;
+};
+
+Modern C++ should generally prefer smart pointers instead of explicit new/delete:
+
+std::unique_ptr<Base> p = std::make_unique<Derived>();
+
+IMPORTANT:
+
+It is not correct to say that every class containing a virtual function absolutely MUST have a public virtual destructor.
+
+A base class can instead have a protected non-virtual destructor when deletion through a base pointer is intentionally prohibited.
+
+The correct rule depends on the ownership and deletion design.
+
+============================================================
+15. OBJECT SLICING
+==================
+
+Object slicing occurs when a derived object is copied into a base object by value.
+
+Example:
+
+class Base {
+public:
+virtual void show() const {
+std::cout << "Base\n";
+}
+};
+
+class Derived : public Base {
+public:
+void show() const override {
+std::cout << "Derived\n";
+}
+};
+
+void process(Base b) {
+b.show();
+}
+
+int main() {
+Derived d;
+process(d);
+}
+
+The parameter b is a separate Base object.
+
+The Derived-specific portion is not part of that Base object.
+
+Therefore:
+
+Base
+
+is used as the object type inside process().
+
+To preserve polymorphism, use a reference or pointer:
+
+void process(const Base& b) {
+b.show();
+}
+
+Now:
+
+Derived d;
+process(d);
+
+calls:
+
+Derived::show()
+
+============================================================
+16. POLYMORPHISM USING SMART POINTERS
+=====================================
+
+Modern C++ commonly uses std::unique_ptr for owning polymorphic objects.
+
+Example:
+
+#include <iostream>
+#include <memory>
+#include <vector>
+
+class Shape {
+public:
+virtual void draw() const = 0;
+virtual ~Shape() = default;
+};
+
+class Circle : public Shape {
+public:
+void draw() const override {
+std::cout << "Circle\n";
+}
+};
+
+class Rectangle : public Shape {
+public:
+void draw() const override {
+std::cout << "Rectangle\n";
+}
+};
+
+int main() {
+std::vector<std::unique_ptr<Shape>> shapes;
+
+```
+shapes.push_back(std::make_unique<Circle>());
+shapes.push_back(std::make_unique<Rectangle>());
+
+for (const auto& shape : shapes) {
+    shape->draw();
+}
+```
+
+}
+
+Output:
+
+Circle
+Rectangle
+
+============================================================
+17. MULTIPLE INHERITANCE
+========================
+
+A class can have multiple direct base classes.
+
+Example:
+
+class Camera {
+public:
+void takePhoto() {
+std::cout << "Photo captured\n";
+}
+};
+
+class GPS {
+public:
+void locate() {
+std::cout << "Location found\n";
+}
+};
+
+class Smartphone : public Camera, public GPS {
+};
+
+A Smartphone object can use members from both base classes.
+
+============================================================
+18. DIAMOND PROBLEM
+===================
+
+Consider:
+
+```
+    A
+   / \
+  B   C
+   \ /
+    D
+```
+
+Without virtual inheritance:
+
+class A {
+public:
+int value;
+};
+
+class B : public A {};
+class C : public A {};
+
+class D : public B, public C {};
+
+A D object contains two A base subobjects:
+
+D
+├── B
+│   └── A
+└── C
+└── A
+
+Therefore:
+
+D d;
+
+d.value = 10;
+
+is ambiguous because the compiler cannot determine whether the B::A or C::A subobject is intended.
+
+============================================================
+19. VIRTUAL INHERITANCE
+=======================
+
+Virtual inheritance ensures that a most-derived object contains one shared virtual base subobject.
+
+Example:
+
+class A {
+public:
+int value = 0;
+};
+
+class B : virtual public A {
+};
+
+class C : virtual public A {
+};
+
+class D : public B, public C {
+};
+
+Now D contains one A virtual base subobject.
+
+The most-derived class is responsible for initializing the virtual base.
+
+Example:
+
+class Entity {
+public:
+std::string name;
+
+```
+explicit Entity(const std::string& n)
+    : name(n) {}
+```
+
+};
+
+class Character : virtual public Entity {
+public:
+explicit Character(const std::string& n)
+: Entity(n) {}
+};
+
+class Renderable : virtual public Entity {
+public:
+explicit Renderable(const std::string& n)
+: Entity(n) {}
+};
+
+class Player : public Character, public Renderable {
+public:
+explicit Player(const std::string& n)
+: Entity(n), Character(n), Renderable(n) {}
+};
+
+For a Player object, Player initializes the virtual Entity base.
+
+The Entity initializers written in Character and Renderable are not responsible for constructing the virtual base when Player is the most-derived class.
+
+============================================================
+20. VTABLE AND VPTR
+===================
+
+VTable and vptr are common compiler implementation techniques for virtual dispatch.
+
+IMPORTANT:
+
+The C++ standard does NOT require:
+
+* a VTable
+* a vptr
+* an 8-byte vptr
+* a specific VTable layout
+* a specific VTable location
+* a particular function-pointer slot order
+
+Therefore, the following description is conceptual rather than standard-mandated.
+
+A typical implementation may represent a polymorphic object approximately as:
+
+Object
++----------------+
+| hidden vptr    |
++----------------+
+| data member 1  |
++----------------+
+| data member 2  |
++----------------+
+
+The vptr may point to compiler-generated metadata containing addresses or information used to implement virtual calls.
+
+Conceptually:
+
+object
+|
+vptr
+|
+VTable
+|
++--> Derived::function()
++--> Derived::~Derived()
++--> other virtual functions
+
+A virtual call can be thought of conceptually as:
+
+base_ptr -> virtual_dispatch -> final_overrider
+
+This is NOT a required source-to-machine-code transformation. Actual implementation details vary between compilers, architectures, optimization levels, ABI rules, and class hierarchies.
+
+============================================================
+21. MEMORY SIZE OF POLYMORPHIC OBJECTS
+======================================
+
+A common misconception is:
+
+"Adding a virtual function always adds exactly 8 bytes."
+
+This is NOT guaranteed by the C++ standard.
+
+On many 64-bit implementations, a polymorphic object may contain a pointer-sized hidden field, often resulting in additional storage.
+
+For example, a particular compiler might produce:
+
+sizeof(Base) = 16
+
+for:
+
+class Base {
+virtual void f();
+int value;
+};
+
+However, this is implementation-dependent.
+
+Correct approach:
+
+std::cout << sizeof(Base) << '\n';
+
+Do not assume a fixed object size from the C++ standard.
+
+============================================================
+22. RUNTIME TYPE INFORMATION
+============================
+
+A polymorphic class can participate in runtime type identification.
+
+The main facilities are:
+
+* dynamic_cast
+* typeid
+* std::type_info
+
+Example:
+
+#include <iostream>
+#include <typeinfo>
+
+class Base {
+public:
+virtual ~Base() = default;
+};
+
+class Derived : public Base {
+};
+
+int main() {
+Derived d;
+Base* base = &d;
+
+```
+if (Derived* p = dynamic_cast<Derived*>(base)) {
+    std::cout << "Cast successful\n";
+}
+```
+
+}
+
+Output:
+
+Cast successful
+
+============================================================
+23. DYNAMIC_CAST
+================
+
+dynamic_cast performs runtime-checked conversions within class hierarchies.
+
+For a pointer cast:
+
+Derived* p = dynamic_cast<Derived*>(base);
+
+If the conversion fails, the result is nullptr.
+
+For a reference cast:
+
+Derived& d = dynamic_cast<Derived&>(base);
+
+If the conversion cannot be performed, std::bad_cast is thrown.
+
+dynamic_cast is useful when runtime type information is genuinely required.
+
+However, frequent downcasting may indicate that the abstraction can be redesigned.
+
+============================================================
+24. TYPEID
+==========
+
+typeid can obtain runtime type information.
+
+Example:
+
+#include <iostream>
+#include <typeinfo>
+
+class Base {
+public:
+virtual ~Base() = default;
+};
+
+class Derived : public Base {
+};
+
+int main() {
+Derived d;
+Base& b = d;
+
+```
+std::cout << typeid(b).name() << '\n';
+```
+
+}
+
+The exact string returned by name() is implementation-dependent.
+
+Do not write programs that depend on a particular compiler's typeid(...).name() text.
+
+============================================================
+25. CONSTRUCTORS, DESTRUCTORS, AND VIRTUAL DISPATCH
+===================================================
+
+Virtual dispatch behaves differently during construction and destruction.
+
+Example:
+
+class Base {
+public:
+Base() {
+show();
+}
+
+```
+virtual void show() const {
+    std::cout << "Base::show\n";
+}
+
+virtual ~Base() = default;
+```
+
+};
+
+class Derived : public Base {
+public:
+void show() const override {
+std::cout << "Derived::show\n";
+}
+};
+
+When Base's constructor executes as part of constructing Derived, the Derived portion has not yet been constructed.
+
+Therefore the virtual call does not dispatch to Derived::show().
+
+Similarly, during Base destruction, the more-derived portion has already been destroyed.
+
+Best practice:
+
+Avoid relying on virtual dispatch from constructors and destructors.
+
+============================================================
+26. PURE VIRTUAL DESTRUCTOR
+===========================
+
+A destructor can be pure virtual:
+
+class Base {
+public:
+virtual ~Base() = 0;
+};
+
+But it still needs a definition:
+
+Base::~Base() {
+}
+
+A pure virtual destructor makes the class abstract while still requiring the destructor body to exist because destruction of a derived object ultimately invokes the base destructor.
+
+============================================================
+27. COVARIANT RETURN TYPES
+==========================
+
+A derived override can use a covariant pointer or reference return type in permitted class hierarchies.
+
+Example:
+
+class Animal {
+public:
+virtual Animal* clone() const = 0;
+virtual ~Animal() = default;
+};
+
+class Dog : public Animal {
+public:
+Dog* clone() const override {
+return new Dog(*this);
+}
+};
+
+The derived return type is more specific while satisfying the rules for covariant returns.
+
+In modern code, ownership should generally be expressed using smart pointers where appropriate.
+
+============================================================
+28. VIRTUAL FUNCTION HIDING VS OVERRIDING
+=========================================
+
+A function with the same name but a different parameter list does not necessarily override the base function.
+
+Example:
+
+class Base {
+public:
+virtual void show(int);
+};
+
+class Derived : public Base {
+public:
+void show(double);   // hides Base::show(int)
+};
+
+This can be corrected with:
+
+class Derived : public Base {
+public:
+using Base::show;
+
+```
+void show(double);
+```
+
+};
+
+Using override where an override is intended is also strongly recommended.
+
+============================================================
+29. BASIC EXAMPLE: PAYMENT SYSTEM
+=================================
+
+Problem:
+Create a polymorphic payment system.
+
+Code:
+
+#include <iostream>
+#include <memory>
+#include <vector>
+
+class PaymentGateway {
+public:
+virtual ~PaymentGateway() = default;
+
+```
+virtual bool process_payment(double amount) const = 0;
+```
+
+};
+
+class CreditCardGateway : public PaymentGateway {
+public:
+bool process_payment(double amount) const override {
+std::cout << "[CreditCard] Processing amount: "
+<< amount << '\n';
+return true;
+}
+};
+
+class BankTransferGateway : public PaymentGateway {
+public:
+bool process_payment(double amount) const override {
+std::cout << "[BankTransfer] Processing amount: "
+<< amount << '\n';
+return true;
+}
+};
+
+int main() {
+std::vector<std::unique_ptr<PaymentGateway>> gateways;
+
+```
+gateways.push_back(
+    std::make_unique<CreditCardGateway>()
+);
+
+gateways.push_back(
+    std::make_unique<BankTransferGateway>()
+);
+
+for (const auto& gateway : gateways) {
+    gateway->process_payment(250.0);
+}
+```
+
+}
+
+Possible output:
+
+[CreditCard] Processing amount: 250
+[BankTransfer] Processing amount: 250
+
+============================================================
+30. INTERMEDIATE EXAMPLE: DIAMOND PROBLEM
+=========================================
+
+Problem:
+Demonstrate virtual inheritance.
+
+Code:
+
+#include <iostream>
+#include <string>
+
+class Entity {
+public:
+std::string name;
+
+```
+explicit Entity(const std::string& n)
+    : name(n) {
+    std::cout << "Entity constructed\n";
+}
+
+virtual ~Entity() = default;
+```
+
+};
+
+class Character : virtual public Entity {
+public:
+explicit Character(const std::string& n)
+: Entity(n) {
+std::cout << "Character constructed\n";
+}
+};
+
+class Renderable : virtual public Entity {
+public:
+explicit Renderable(const std::string& n)
+: Entity(n) {
+std::cout << "Renderable constructed\n";
+}
+};
+
+class Player : public Character, public Renderable {
+public:
+explicit Player(const std::string& n)
+: Entity(n),
+Character(n),
+Renderable(n) {
+std::cout << "Player constructed\n";
+}
+};
+
+int main() {
+Player hero("ShadowKnight");
+
+```
+std::cout << "Name: "
+          << hero.name << '\n';
+```
+
+}
+
+Possible output:
+
+Entity constructed
+Character constructed
+Renderable constructed
+Player constructed
+Name: ShadowKnight
+
+The exact constructor output depends only on the explicit print statements; the important language rule is that the most-derived class initializes the virtual base.
+
+============================================================
+31. ADVANCED EXAMPLE: SLICING, POLYMORPHISM, AND DYNAMIC_CAST
+=============================================================
+
+Code:
+
+#include <iostream>
+#include <typeinfo>
+
+class Base {
+public:
+int base_value = 10;
+
+```
+virtual void speak() const {
+    std::cout << "Base::speak()\n";
+}
+
+virtual ~Base() = default;
+```
+
+};
+
+class Derived : public Base {
+public:
+int derived_value = 20;
+
+```
+void speak() const override {
+    std::cout << "Derived::speak()\n";
+}
+
+void specialized_method() const {
+    std::cout << "Derived-only operation\n";
+}
+```
+
+};
+
+void demonstrate_slicing(Base b) {
+std::cout << "[Slicing] ";
+b.speak();
+}
+
+void demonstrate_polymorphism(const Base& b) {
+std::cout << "[Polymorphism] ";
+b.speak();
+}
+
+int main() {
+Derived d;
+
+```
+demonstrate_slicing(d);
+demonstrate_polymorphism(d);
+
+Base* base_ptr = &d;
+
+if (Derived* derived_ptr =
+        dynamic_cast<Derived*>(base_ptr)) {
+
+    std::cout << "Dynamic cast successful\n";
+
+    derived_ptr->specialized_method();
+}
+
+std::cout << "Runtime type: "
+          << typeid(*base_ptr).name()
+          << '\n';
+```
+
+}
+
+Possible output:
+
+[Slicing] Base::speak()
+[Polymorphism] Derived::speak()
+Dynamic cast successful
+Derived-only operation
+Runtime type: <implementation-defined text>
+
+The exact typeid().name() output depends on the compiler and ABI.
+
+============================================================
+32. CODE WALKTHROUGH
+====================
+
+Example:
+
+void demonstrate_polymorphism(const Base& b)
+
+The parameter is a reference, so the original object is not sliced.
+
+Example:
+
+b.speak();
+
+Because speak() is virtual, the final overrider associated with the actual object is selected.
+
+Example:
+
+dynamic_cast<Derived*>(base_ptr)
+
+This requests a runtime-checked conversion from Base* to Derived*.
+
+If the object is not a suitable Derived object, the pointer result is nullptr.
+
+Example:
+
+typeid(*base_ptr)
+
+For a polymorphic type, typeid can obtain the dynamic type of the referred object.
+
+============================================================
+33. EXECUTION FLOW OF VIRTUAL DISPATCH
+======================================
+
+Conceptual flow:
+
+1. A class declares or inherits a virtual function.
+2. A derived class may override that function.
+3. An object of the derived class is created.
+4. A base-class pointer/reference refers to that object.
+5. A virtual function is called through the base interface.
+6. The implementation performs dynamic dispatch.
+7. The final overrider for the actual object is executed.
+
+Typical implementation model:
+
+Base pointer
+|
+v
+object metadata
+|
+v
+virtual dispatch information
+|
+v
+Derived implementation
+
+The exact mechanism is implementation-dependent.
+
+============================================================
+34. PRACTICAL PROGRAMMING PROBLEMS
+==================================
+
+1. Create an abstract Shape class with Circle, Rectangle, and Triangle subclasses.
+
+2. Create an abstract Employee class with Manager, Developer, and Tester subclasses.
+
+3. Create a notification system supporting:
+
+   * EmailNotification
+   * SMSNotification
+   * PushNotification
+
+4. Create a payment system supporting multiple payment methods.
+
+5. Build an abstract FileSystemNode hierarchy:
+
+   * File
+   * Directory
+
+6. Implement a UI component hierarchy:
+
+   * Widget
+   * Button
+   * TextBox
+   * Slider
+
+7. Implement an expression tree using polymorphic expression nodes.
+
+============================================================
+35. REAL-WORLD APPLICATIONS
+===========================
+
+Inheritance and polymorphism are commonly useful in:
+
+* GUI frameworks
+* Game engines
+* Graphics systems
+* Compiler and AST architectures
+* Plugin architectures
+* Device abstraction layers
+* File-system abstractions
+* Simulation software
+* Scientific software
+* Application frameworks
+* Serialization systems
+* Cross-platform abstraction layers
+
+The exact design used by a real project depends on its architecture; inheritance is only one possible abstraction technique.
+
+============================================================
+36. COMMON MISTAKES
+===================
+
+Mistake 1:
+Forgetting override.
+
+Better:
+
+void draw() const override;
+
+Mistake 2:
+Deleting a polymorphic object through a base pointer when the base destructor is not appropriate for polymorphic deletion.
+
+Better:
+
+virtual ~Base() = default;
+
+or deliberately use a protected non-virtual destructor when base-pointer deletion is prohibited.
+
+Mistake 3:
+Passing polymorphic objects by value.
+
+Bad:
+
+void process(Base obj);
+
+Usually preferable when polymorphism is intended:
+
+void process(const Base& obj);
+
+Mistake 4:
+Assuming every virtual call uses an 8-byte vptr.
+
+The standard does not specify such a representation.
+
+Mistake 5:
+Calling virtual functions from constructors expecting derived behavior.
+
+Avoid this design.
+
+Mistake 6:
+Using dynamic_cast everywhere.
+
+Frequent downcasting may indicate that the interface needs redesign.
+
+============================================================
+37. COMMON ERRORS
+=================
+
+ERROR:
+
+class Base {
+public:
+virtual void show() const;
+};
+
+class Derived : public Base {
+public:
+void show() override;   // ERROR if const is missing
+};
+
+Correct:
+
+class Derived : public Base {
+public:
+void show() const override;
+};
+
+---
+
+ERROR:
+
+class Base {
+public:
+virtual void show() = 0;
+};
+
+int main() {
+Base b;     // ERROR
+}
+
+Reason:
+Base is abstract.
+
+---
+
+ERROR:
+
+class Base final {
+};
+
+class Derived : public Base {
+};
+
+Reason:
+A final class cannot be used as a base class.
+
+============================================================
+38. DEBUGGING TECHNIQUES
+========================
+
+Use compiler warnings:
+
+GCC/Clang:
+
+g++ -std=c++23 -Wall -Wextra -Wpedantic main.cpp -o main
+
+Then execute:
+
+./main
+
+Useful debugging approaches:
+
+* Use override on intended overrides.
+* Use static_assert for compile-time assumptions.
+* Print sizeof() when investigating object layout.
+* Use debugger breakpoints on virtual functions.
+* Inspect compiler-generated assembly only when implementation details matter.
+* Use RTTI carefully with dynamic_cast and typeid.
+* Use sanitizers for memory and undefined-behavior detection.
+
+Example with GCC/Clang:
+
+g++ -std=c++23 -Wall -Wextra -fsanitize=address,undefined main.cpp
+
+Compiler options are implementation-specific tools and are not part of the ISO C++ language standard.
+
+============================================================
+39. EDGE CASES
+==============
+
+39.1 Pure Virtual Destructor
+
+A pure virtual destructor still requires a definition.
+
+39.2 Multiple Final Overriders
+
+Complex multiple-inheritance hierarchies can create more than one final overrider for the same virtual function, which can make the program ill-formed.
+
+39.3 Virtual Calls During Construction
+
+A virtual call made during construction does not dispatch to a more-derived class that has not yet been constructed.
+
+39.4 Virtual Calls During Destruction
+
+During destruction, dispatch is restricted to the class currently being destroyed and its bases.
+
+39.5 Non-Virtual Base Destructor
+
+If deletion through a base pointer is possible, the destructor design must support that ownership model.
+
+============================================================
+40. BEST PRACTICES
+==================
+
+1. Use public inheritance when the derived type genuinely represents the base abstraction.
+
+2. Use override on every intended override.
+
+3. Use virtual destructors for polymorphic base classes that permit deletion through the base interface.
+
+4. Prefer std::unique_ptr for exclusive ownership.
+
+5. Prefer std::shared_ptr only when shared ownership is actually required.
+
+6. Pass polymorphic objects by reference or pointer when ownership is not being transferred.
+
+7. Avoid object slicing when runtime polymorphism is required.
+
+8. Keep base-class interfaces small and focused.
+
+9. Prefer composition over inheritance when an "is-a" relationship does not exist.
+
+10. Use final when further overriding or inheritance is intentionally prohibited.
+
+11. Do not depend on compiler-specific VTable layouts in portable C++ programs.
+
+12. Use dynamic_cast when runtime type checking is genuinely necessary, not as a substitute for a good interface.
+
+============================================================
+41. PERFORMANCE CONSIDERATIONS
+==============================
+
+Virtual dispatch can introduce an indirect call and may make some optimizations more difficult.
+
+However:
+
+* The exact overhead depends on compiler, target architecture, optimization, and context.
+* A virtual call does not necessarily have one fixed performance cost.
+* Modern compilers can sometimes devirtualize calls when the dynamic type can be determined.
+* final can sometimes help the compiler prove that further overriding is impossible.
+* Inlining and devirtualization are compiler optimizations, not guarantees of the language.
+
+Do not assume:
+
+"virtual = always slow"
+
+or:
+
+"templates = always faster"
+
+Performance should be measured for the actual application.
+
+============================================================
+42. MEMORY CONSIDERATIONS
+=========================
+
+Inheritance affects object representation, but the exact representation is implementation-defined.
+
+Possible implementation overhead can include:
+
+* Virtual-dispatch metadata
+* Additional pointers or offsets
+* Multiple base subobjects
+* Virtual-base bookkeeping
+
+Virtual inheritance may require additional implementation metadata to locate virtual base subobjects.
+
+Do not hard-code assumptions such as:
+
+"Every polymorphic object has exactly one 8-byte vptr."
+
+Instead, inspect:
+
+sizeof(Type)
+
+when implementation-specific size information is required.
+
+============================================================
+43. SECURITY CONSIDERATIONS
+===========================
+
+Memory corruption can damage object state and implementation metadata used for virtual dispatch.
+
+For example, if an attacker can corrupt memory containing object metadata, virtual dispatch can potentially become part of an exploitation chain.
+
+Security best practices include:
+
+* Avoid buffer overflows.
+* Use RAII.
+* Prefer standard containers.
+* Avoid unnecessary raw memory management.
+* Use sanitizers during testing.
+* Validate external input.
+* Apply compiler security features where supported.
+* Keep dependencies updated.
+
+VTable exploitation is an implementation/security topic rather than a behavior defined by the ISO C++ standard.
+
+============================================================
+44. STATIC VS DYNAMIC POLYMORPHISM
+==================================
+
+Dynamic polymorphism:
+
+class Shape {
+public:
+virtual void draw() const = 0;
+virtual ~Shape() = default;
+};
+
+Characteristics:
+
+* Runtime dispatch
+* Base-class interface
+* Useful for heterogeneous collections
+* Supports runtime substitution
+
+Static polymorphism:
+
+template <typename T>
+void drawShape(const T& shape) {
+shape.draw();
+}
+
+Characteristics:
+
+* Compile-time type resolution
+* Often easier for optimization
+* Commonly used with templates and concepts
+* Does not require virtual dispatch
+
+Neither technique is universally superior.
+
+Choose according to the design requirements.
+
+============================================================
+45. COMPOSITION VS INHERITANCE
+==============================
+
+Inheritance:
+
+class Car : public Vehicle {
+};
+
+means Car is intended to be a Vehicle.
+
+Composition:
+
+class Car {
+private:
+Engine engine;
+};
+
+means Car has an Engine.
+
+Use inheritance when substitutability and shared interface behavior are appropriate.
+
+Use composition when one object owns or contains another object.
+
+============================================================
+46. FAQ
+=======
+
+Q1. What is inheritance?
+
+A:
+Inheritance allows a derived class to extend or specialize a base class.
+
+Q2. What is polymorphism?
+
+A:
+Polymorphism allows one interface to represent different implementations.
+
+Q3. What is a virtual function?
+
+A:
+A virtual function supports dynamic dispatch when called through an appropriate base-class pointer or reference.
+
+Q4. What does override do?
+
+A:
+override tells the compiler that a derived function is intended to override a virtual base function.
+
+Q5. What does final do?
+
+A:
+final prevents further overriding of a virtual function or prevents further derivation from a class.
+
+Q6. What is an abstract class?
+
+A:
+A class that has at least one pure virtual final overrider and therefore cannot be instantiated.
+
+Q7. What is object slicing?
+
+A:
+Object slicing occurs when a derived object is copied into a base object by value, removing the derived portion from the new base object.
+
+Q8. Why use a virtual destructor?
+
+A:
+When polymorphic deletion through a base pointer is part of the design, a virtual destructor ensures the appropriate derived destruction sequence.
+
+Q9. Is a VTable required by the C++ standard?
+
+A:
+No. VTables and vptrs are common implementation techniques, but their representation is not prescribed by the standard.
+
+Q10. Does every virtual function add exactly 8 bytes?
+
+A:
+No. Object representation and size are implementation-dependent.
+
+Q11. What is virtual inheritance?
+
+A:
+Virtual inheritance allows multiple inheritance paths to share one virtual base subobject in the most-derived object.
+
+Q12. What does dynamic_cast do?
+
+A:
+It performs runtime-checked conversions within supported class hierarchies.
+
+============================================================
+47. INTERVIEW QUESTIONS
+=======================
+
+BEGINNER:
+
+Q1. What is inheritance?
+
+Q2. What is a virtual function?
+
+Q3. What is function overriding?
+
+Q4. What is the purpose of override?
+
+Q5. What is an abstract class?
+
+INTERMEDIATE:
+
+Q6. Explain dynamic polymorphism.
+
+Q7. Explain object slicing.
+
+Q8. Why is a virtual destructor useful?
+
+Q9. What is multiple inheritance?
+
+Q10. What is the diamond problem?
+
+Q11. What is virtual inheritance?
+
+ADVANCED:
+
+Q12. Are VTables part of the C++ standard?
+
+Q13. How can a compiler implement dynamic dispatch?
+
+Q14. What happens to virtual dispatch during construction?
+
+Q15. What happens to virtual dispatch during destruction?
+
+Q16. Explain RTTI, dynamic_cast, and typeid.
+
+Q17. Compare runtime polymorphism and static polymorphism.
+
+============================================================
+48. EXAM QUESTIONS
+==================
+
+SHORT ANSWER:
+
+1. Define inheritance.
+2. Define polymorphism.
+3. What is a virtual function?
+4. What is an abstract class?
+5. What is object slicing?
+
+MEDIUM ANSWER:
+
+1. Explain virtual functions with an example.
+2. Explain override and final.
+3. Explain virtual destructors.
+4. Explain multiple inheritance.
+5. Explain the diamond problem.
+6. Explain dynamic_cast.
+
+LONG ANSWER:
+
+1. Explain runtime polymorphism in C++ with virtual functions and abstract classes.
+
+2. Explain the diamond problem and demonstrate how virtual inheritance solves it.
+
+3. Explain object slicing and compare pass-by-value with pass-by-reference.
+
+4. Explain VTable/vptr concepts and clearly distinguish common implementation techniques from requirements of the C++ standard.
+
+5. Explain RTTI using dynamic_cast and typeid.
+
+============================================================
+49. PRACTICE QUESTIONS
+======================
+
+1. Implement an abstract Shape class with:
+
+   * Circle
+   * Rectangle
+   * Triangle
+
+2. Create an abstract Employee class with:
+
+   * Manager
+   * Developer
+   * Tester
+
+3. Implement a Notification interface with:
+
+   * Email
+   * SMS
+   * Push
+
+4. Implement a FileSystemNode hierarchy with:
+
+   * File
+   * Directory
+
+5. Demonstrate object slicing.
+
+6. Demonstrate virtual dispatch using references.
+
+7. Demonstrate dynamic_cast with a polymorphic base.
+
+8. Implement the diamond problem without virtual inheritance.
+
+9. Modify the previous program to use virtual inheritance.
+
+10. Compare a virtual-function implementation with a template-based implementation.
+
+============================================================
+50. SUMMARY
+===========
+
+Inheritance enables a class to derive from another class and reuse or specialize behavior.
+
+Polymorphism allows a common interface to represent different implementations.
+
+Virtual functions enable dynamic dispatch through suitable base-class pointers and references.
+
+override provides compile-time checking that a derived member function correctly overrides a base virtual function.
+
+final prevents further overriding or inheritance.
+
+Pure virtual functions are used to create abstract classes and interface-style contracts.
+
+Virtual destructors are important when polymorphic objects can be deleted through base-class pointers.
+
+Object slicing occurs when a derived object is copied into a base object by value.
+
+Multiple inheritance can produce the diamond problem.
+
+Virtual inheritance provides a mechanism for sharing a virtual base subobject.
+
+dynamic_cast provides runtime-checked conversions within supported polymorphic class hierarchies.
+
+VTables and vptrs are common implementation techniques for virtual dispatch, but their exact representation is not specified by the C++ standard.
+
+============================================================
+51. KEY TAKEAWAYS
+=================
+
+* Inheritance models relationships between base and derived classes.
+* Public inheritance commonly represents an "is-a" relationship.
+* Virtual functions enable runtime polymorphism.
+* Use override for intended overrides.
+* Use final when further overriding or derivation should be prohibited.
+* Abstract classes cannot be instantiated.
+* Pure virtual functions define required derived behavior.
+* Use appropriate virtual destructor design for polymorphic ownership.
+* Pass polymorphic objects by reference or pointer to avoid slicing.
+* Virtual inheritance can solve the diamond inheritance problem.
+* dynamic_cast provides runtime-checked class conversions.
+* typeid provides runtime type information.
+* VTable/vptr terminology describes common implementations, not standard-mandated object layouts.
+* Object size and memory layout are implementation-dependent.
+* Prefer RAII and smart pointers over manual new/delete.
+* Prefer composition when inheritance does not represent the correct abstraction.
+* Measure performance instead of assuming that virtual functions or templates are always faster or slower.
+
+============================================================
+52. REFERENCE BASIS
+===================
+
+Primary standard:
+
+ISO/IEC 14882:2024
+Programming languages — C++
+C++23 edition
+International Organization for Standardization (ISO)
+
+Relevant language areas:
+
+* Classes
+* Derived classes
+* Virtual functions
+* Abstract classes
+* Inheritance
+* Runtime type information
+* dynamic_cast
+* typeid
+* Destructors
+* Object lifetime
+
+Secondary practical reference:
+
+cppreference C++ Language Reference
+
+Important documentation topics:
+
+* Virtual functions
+* override specifier
+* final specifier
+* Abstract classes
+* dynamic_cast
+* Derived classes
+* Constructors and destructors
+* Runtime type information
+
+NOTE:
+
+ISO/IEC 14882:2024 is the authoritative published C++ standard. Compiler-specific behavior such as VTable layout, vptr placement, object size, ABI details, generated assembly, and RTTI representation should not be treated as portable C++ language guarantees.

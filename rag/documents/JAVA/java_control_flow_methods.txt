@@ -1,0 +1,2256 @@
+COURSE: Java Programming
+TOPIC: Control Flow, Methods, Variable Scope, and Method Overloading
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE Documentation + Java Language Specification
+
+================================================================================
+CONTROL FLOW, METHODS, VARIABLE SCOPE, AND METHOD OVERLOADING
+=============================================================
+
+1. INTRODUCTION
+
+Control flow and methods are fundamental parts of Java programming.
+
+Control-flow statements determine the order in which program statements
+execute. Java provides:
+
+* if
+* if-else
+* else-if
+* switch statements
+* switch expressions
+* for loops
+* enhanced for loops
+* while loops
+* do-while loops
+* break
+* continue
+* labeled break and continue
+* return
+
+Methods provide modularity by grouping reusable operations into named units.
+
+Java also supports:
+
+* Method parameters and return values
+* Method overloading
+* Variable-length arguments (varargs)
+* Static and instance methods
+* Recursive methods
+* Generic methods
+* Javadoc documentation
+
+Java uses pass-by-value for every method invocation. For reference types,
+the value being copied is the reference to the object, not the object itself.
+
+Modern Java also provides switch expressions and pattern matching. Switch
+expressions became a permanent language feature in Java SE 14, while
+pattern matching for switch became permanent in Java SE 21.
+
+2. LEARNING OBJECTIVES
+
+* Understand conditional statements.
+* Use traditional and modern switch statements.
+* Use switch expressions with arrow labels and yield.
+* Understand pattern matching with switch.
+* Implement for, enhanced for, while, and do-while loops.
+* Use break and continue correctly.
+* Use labeled break and continue in nested control structures.
+* Understand local, parameter, block, instance, and static variable scope.
+* Declare and invoke methods.
+* Understand parameters, arguments, return types, and method signatures.
+* Understand Java's pass-by-value semantics.
+* Implement method overloading.
+* Understand compile-time overload resolution.
+* Use variable-length arguments (varargs).
+* Write useful Javadoc documentation.
+* Understand recursion and its stack implications.
+
+3. PREREQUISITES
+
+* Java syntax fundamentals
+* Primitive data types
+* Reference types
+* Operators
+* Classes and objects
+* Arrays
+* Basic inheritance and interfaces
+
+4. BEGINNER CONCEPTS
+
+4.1 IF STATEMENT
+
+The `if` statement executes a statement or block when a boolean expression
+is true.
+
+```java
+if (score >= 50) {
+    System.out.println("Pass");
+}
+```
+
+4.2 IF-ELSE
+
+```java
+if (score >= 50) {
+    System.out.println("Pass");
+} else {
+    System.out.println("Fail");
+}
+```
+
+4.3 ELSE-IF
+
+Multiple conditions can be evaluated sequentially.
+
+```java
+if (score >= 90) {
+    grade = 'A';
+} else if (score >= 80) {
+    grade = 'B';
+} else if (score >= 70) {
+    grade = 'C';
+} else {
+    grade = 'F';
+}
+```
+
+4.4 CONDITIONAL OPERATOR
+
+The conditional operator `?:` is an expression that selects one of two
+values.
+
+```java
+String result = score >= 50 ? "Pass" : "Fail";
+```
+
+4.5 FOR LOOP
+
+A `for` loop is commonly used when the iteration structure is known.
+
+```java
+for (int i = 1; i <= 5; i++) {
+    System.out.println(i);
+}
+```
+
+4.6 ENHANCED FOR LOOP
+
+The enhanced `for` statement can iterate over arrays and objects that
+implement `Iterable`.
+
+```java
+String[] fruits = {"Apple", "Banana", "Cherry"};
+
+for (String fruit : fruits) {
+    System.out.println(fruit);
+}
+```
+
+The enhanced `for` loop is useful when the program does not need to manage
+an index explicitly.
+
+4.7 WHILE LOOP
+
+A `while` loop evaluates its condition before executing its body.
+
+```java
+int count = 1;
+
+while (count <= 5) {
+    System.out.println(count);
+    count++;
+}
+```
+
+4.8 DO-WHILE LOOP
+
+A `do-while` loop executes its body before checking the condition.
+
+Therefore, its body executes at least once.
+
+```java
+int number = 1;
+
+do {
+    System.out.println(number);
+    number++;
+} while (number <= 5);
+```
+
+4.9 BREAK
+
+`break` terminates the nearest enclosing loop or switch statement.
+
+```java
+for (int i = 1; i <= 10; i++) {
+
+    if (i == 5) {
+        break;
+    }
+
+    System.out.println(i);
+}
+```
+
+4.10 CONTINUE
+
+`continue` skips the remaining body of the current loop iteration.
+
+```java
+for (int i = 1; i <= 5; i++) {
+
+    if (i == 3) {
+        continue;
+    }
+
+    System.out.println(i);
+}
+```
+
+4.11 METHODS
+
+A method declaration contains a return type, method name, parameter list,
+and method body.
+
+```java
+public static int calculateSum(int a, int b) {
+    return a + b;
+}
+```
+
+Calling the method:
+
+```java
+int result = calculateSum(10, 20);
+```
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 TRADITIONAL SWITCH STATEMENT
+
+A traditional switch statement can use colon labels.
+
+```java
+int day = 2;
+
+switch (day) {
+
+    case 1:
+        System.out.println("Monday");
+        break;
+
+    case 2:
+        System.out.println("Tuesday");
+        break;
+
+    default:
+        System.out.println("Unknown day");
+}
+```
+
+Without `break`, traditional switch cases can fall through into subsequent
+case statements.
+
+5.2 SWITCH EXPRESSIONS
+
+Switch expressions were finalized in Java SE 14.
+
+They produce a value.
+
+```java
+int month = 5;
+
+String quarter = switch (month) {
+
+    case 1, 2, 3 -> "Q1";
+    case 4, 5, 6 -> "Q2";
+    case 7, 8, 9 -> "Q3";
+    case 10, 11, 12 -> "Q4";
+
+    default -> "Invalid";
+};
+```
+
+The arrow form does not have the traditional fall-through behavior.
+
+5.3 YIELD
+
+A switch expression can use a block for a case.
+
+When the block needs to produce a value, `yield` provides the value of that
+case.
+
+```java
+int score = 85;
+
+String grade = switch (score / 10) {
+
+    case 10, 9 -> "A";
+
+    case 8 -> {
+        String result = "B";
+        yield result;
+    }
+
+    case 7 -> "C";
+
+    default -> "F";
+};
+```
+
+5.4 LABELED BREAK
+
+A label can identify an enclosing statement.
+
+```java
+search:
+for (int row = 0; row < 5; row++) {
+
+    for (int col = 0; col < 5; col++) {
+
+        if (row * col > 6) {
+            break search;
+        }
+    }
+}
+```
+
+The labeled `break` terminates the labeled statement.
+
+5.5 LABELED CONTINUE
+
+A labeled `continue` can continue an enclosing loop.
+
+```java
+outer:
+for (int i = 0; i < 3; i++) {
+
+    for (int j = 0; j < 3; j++) {
+
+        if (j == 1) {
+            continue outer;
+        }
+
+        System.out.println(i + "," + j);
+    }
+}
+```
+
+5.6 METHOD OVERLOADING
+
+Method overloading allows multiple methods in the same class to have the
+same name but different parameter lists.
+
+Valid differences include:
+
+* Different number of parameters
+* Different parameter types
+* Different order of parameter types
+
+Example:
+
+```java
+static int add(int a, int b) {
+    return a + b;
+}
+
+static double add(double a, double b) {
+    return a + b;
+}
+
+static int add(int a, int b, int c) {
+    return a + b + c;
+}
+```
+
+Return type alone cannot distinguish overloaded methods.
+
+Invalid:
+
+```java
+int calculate(int x) {
+    return x;
+}
+
+double calculate(int x) {
+    return x;
+}
+```
+
+This causes a compile-time error because the parameter lists are identical.
+
+6. ADVANCED CONCEPTS
+
+6.1 JAVA PASS-BY-VALUE
+
+Java is strictly pass-by-value.
+
+For every method invocation, the method receives values for its parameters.
+
+For primitive values:
+
+```java
+int x = 10;
+```
+
+the value `10` is copied into the parameter.
+
+For reference types:
+
+```java
+Account account = new Account();
+```
+
+the value of the reference is copied.
+
+The method therefore receives another reference value that refers to the
+same object.
+
+Important distinction:
+
+```text
+Caller variable
+      |
+      | reference value is copied
+      v
+Method parameter
+      |
+      v
+Same object
+```
+
+Changing the object's state through the parameter can therefore be visible
+to the caller.
+
+However, assigning the parameter to a different object does not change the
+caller's variable.
+
+6.2 PRIMITIVE PASS-BY-VALUE
+
+```java
+static void change(int value) {
+    value = 100;
+}
+
+int number = 10;
+
+change(number);
+
+System.out.println(number);
+```
+
+Output:
+
+```text
+10
+```
+
+The method changed only its local parameter.
+
+6.3 REFERENCE-TYPE PASS-BY-VALUE
+
+```java
+class Account {
+
+    int balance;
+
+    Account(int balance) {
+        this.balance = balance;
+    }
+}
+
+static void increase(Account account) {
+    account.balance += 50;
+}
+```
+
+Calling:
+
+```java
+Account a = new Account(100);
+
+increase(a);
+
+System.out.println(a.balance);
+```
+
+produces:
+
+```text
+150
+```
+
+The method modified the same object referred to by `a`.
+
+6.4 REASSIGNING A REFERENCE PARAMETER
+
+```java
+static void replace(Account account) {
+    account = new Account(999);
+}
+```
+
+This does not change the caller's reference.
+
+Example:
+
+```java
+Account a = new Account(100);
+
+replace(a);
+
+System.out.println(a.balance);
+```
+
+Output:
+
+```text
+100
+```
+
+The reassignment affected only the parameter variable.
+
+6.5 VARIABLE SCOPE
+
+Scope determines where a declared variable can be referenced.
+
+Important Java scopes include:
+
+* Class/member scope
+* Method parameter scope
+* Local variable scope
+* Block scope
+* Pattern-variable scope
+
+Example:
+
+```java
+class Example {
+
+    static int classVariable = 10;
+
+    void method(int parameter) {
+
+        int localVariable = 20;
+
+        if (localVariable > 10) {
+
+            int blockVariable = 30;
+
+            System.out.println(blockVariable);
+        }
+
+        // blockVariable is not accessible here
+    }
+}
+```
+
+A variable declared inside a block generally cannot be referenced outside
+that block.
+
+6.6 VARIABLE SHADOWING
+
+A local variable or parameter can hide a field with the same name.
+
+```java
+class Student {
+
+    private int mark;
+
+    Student(int mark) {
+        this.mark = mark;
+    }
+}
+```
+
+Here:
+
+```java
+this.mark
+```
+
+refers to the instance field, while:
+
+```java
+mark
+```
+
+refers to the constructor parameter.
+
+6.7 STATIC AND INSTANCE VARIABLES
+
+A static field belongs to the class.
+
+```java
+static int count;
+```
+
+An instance field belongs to an object.
+
+```java
+int age;
+```
+
+Static members can be accessed through the class name:
+
+```java
+Example.count;
+```
+
+Instance members require an appropriate object reference.
+
+6.8 VARARGS
+
+Variable arity parameters allow a method to accept zero or more arguments.
+
+Syntax:
+
+```java
+static int sum(int... values) {
+    int total = 0;
+
+    for (int value : values) {
+        total += value;
+    }
+
+    return total;
+}
+```
+
+Calls:
+
+```java
+sum();
+sum(10);
+sum(10, 20);
+sum(10, 20, 30);
+```
+
+A variable arity parameter must be the final parameter in a method
+declaration.
+
+Only one variable arity parameter can appear in a method declaration.
+
+Conceptually, the variable arguments are handled as an array by the
+method.
+
+6.9 PATTERN MATCHING WITH SWITCH
+
+Pattern matching for switch became a permanent Java language feature in
+Java SE 21.
+
+Example:
+
+```java
+static String formatObject(Object obj) {
+
+    return switch (obj) {
+
+        case null ->
+            "Null object";
+
+        case Integer i ->
+            "Integer: " + i;
+
+        case String s when s.length() > 5 ->
+            "Long String: " + s;
+
+        case String s ->
+            "Short String: " + s;
+
+        default ->
+            "Other type: " + obj;
+    };
+}
+```
+
+The `when` clause provides a guard for the pattern.
+
+Pattern matching for switch is not the same as the earlier preview versions
+of the feature. For modern Java, Java SE 21 is the important version for
+the finalized feature.
+
+7. DETAILED THEORY
+
+7.1 METHOD SIGNATURE
+
+For Java methods, the method signature is based on:
+
+* Method name
+* Number of formal parameters
+* Types of formal parameters
+* Order of formal parameter types
+
+Return type is not part of the method signature used to distinguish
+overloads.
+
+Example:
+
+```java
+void print(int x)
+void print(double x)
+void print(int x, int y)
+```
+
+These have different parameter lists.
+
+7.2 OVERLOAD RESOLUTION
+
+The Java Language Specification describes method overload resolution in
+three main applicability phases.
+
+Phase 1:
+
+* Strict invocation
+* No boxing or unboxing
+* No variable-arity invocation
+
+Phase 2:
+
+* Loose invocation
+* Boxing and unboxing are permitted
+* Variable-arity invocation is not used
+
+Phase 3:
+
+* Variable-arity invocation is permitted
+
+If multiple applicable methods remain, Java selects the most specific
+applicable method according to the language rules.
+
+Therefore, the simplified rule:
+
+```text
+exact -> widening -> boxing -> varargs
+```
+
+is useful for learning, but it is not the complete formal specification.
+
+7.3 EXAMPLE OF OVERLOAD RESOLUTION
+
+```java
+static void test(long value) {
+    System.out.println("long");
+}
+
+static void test(Integer value) {
+    System.out.println("Integer");
+}
+
+test(10);
+```
+
+The `int` argument can be widened to `long`, while boxing can convert it to
+`Integer`.
+
+The widening-compatible fixed-arity method is considered before the
+boxing-based alternative under the overload-resolution phases.
+
+7.4 AMBIGUOUS OVERLOADING
+
+Consider:
+
+```java
+static void test(String value) {
+}
+
+static void test(Integer value) {
+}
+```
+
+Calling:
+
+```java
+test(null);
+```
+
+is ambiguous because `null` can be converted to either reference type and
+neither parameter type is more specific than the other.
+
+7.5 VARARGS AND OVERLOADING
+
+Consider:
+
+```java
+static void print(int x) {
+    System.out.println("fixed");
+}
+
+static void print(int... values) {
+    System.out.println("varargs");
+}
+```
+
+For:
+
+```java
+print(10);
+```
+
+the fixed-arity method is preferred because variable-arity invocation is
+considered later.
+
+7.6 RETURN STATEMENTS
+
+A method with a non-void return type must return an appropriate value on
+every reachable execution path.
+
+Correct:
+
+```java
+static int maximum(int a, int b) {
+
+    if (a > b) {
+        return a;
+    }
+
+    return b;
+}
+```
+
+Incorrect:
+
+```java
+static int maximum(int a, int b) {
+
+    if (a > b) {
+        return a;
+    }
+}
+```
+
+This can produce:
+
+```text
+missing return statement
+```
+
+8. SYNTAX
+
+8.1 BASIC METHOD
+
+```java
+public static int add(int a, int b) {
+    return a + b;
+}
+```
+
+8.2 METHOD WITH Javadoc
+
+Java uses Javadoc comments for API documentation.
+
+```java
+/**
+ * Calculates compound interest.
+ *
+ * @param principal initial amount
+ * @param rate annual interest rate
+ * @param years number of years
+ * @return calculated future value
+ */
+public static double calculateInterest(
+        double principal,
+        double rate,
+        int years) {
+
+    return principal * Math.pow(1.0 + rate, years);
+}
+```
+
+8.3 METHOD OVERLOADING
+
+```java
+static int multiply(int a, int b) {
+    return a * b;
+}
+
+static double multiply(double a, double b) {
+    return a * b;
+}
+
+static int multiply(int a, int b, int c) {
+    return a * b * c;
+}
+```
+
+8.4 VARARGS
+
+```java
+static int sum(int... values) {
+
+    int total = 0;
+
+    for (int value : values) {
+        total += value;
+    }
+
+    return total;
+}
+```
+
+9. BASIC EXAMPLE
+
+```java
+public class BasicControlFlow {
+
+    public static void main(String[] args) {
+
+        int score = 88;
+
+        char grade = getGrade(score);
+
+        System.out.println(
+            "Score " + score + " yields Grade: " + grade
+        );
+
+        int sum = 0;
+
+        for (int i = 1; i <= 5; i++) {
+            sum += i;
+        }
+
+        System.out.println("Sum 1..5: " + sum);
+
+        int count = 3;
+
+        System.out.print("Countdown: ");
+
+        while (count > 0) {
+            System.out.print(count + " ");
+            count--;
+        }
+
+        System.out.println("BLASTOFF!");
+
+        String[] fruits = {
+            "Apple",
+            "Banana",
+            "Cherry"
+        };
+
+        System.out.print("Fruits: ");
+
+        for (String fruit : fruits) {
+            System.out.print(fruit + " ");
+        }
+
+        System.out.println();
+    }
+
+    public static char getGrade(int score) {
+
+        if (score >= 90) return 'A';
+        if (score >= 80) return 'B';
+        if (score >= 70) return 'C';
+        if (score >= 60) return 'D';
+
+        return 'F';
+    }
+}
+```
+
+10. INTERMEDIATE EXAMPLE
+
+```java
+public class IntermediateControlFlow {
+
+    public static void main(String[] args) {
+
+        String quarter = getQuarter(4);
+
+        System.out.println(
+            "Month 4 belongs to: " + quarter
+        );
+
+        int[][] matrix = {
+            {1, 2, 3},
+            {4, 99, 6},
+            {7, 8, 9}
+        };
+
+        int target = 99;
+
+        boolean found =
+            searchMatrix(matrix, target);
+
+        System.out.println(
+            "Target " + target +
+            " found in matrix: " + found
+        );
+
+        System.out.println(
+            "Overload int: " + add(10, 20)
+        );
+
+        System.out.println(
+            "Overload double: " + add(10.5, 20.2)
+        );
+
+        System.out.println(
+            "Overload 3 ints: " + add(1, 2, 3)
+        );
+    }
+
+    public static String getQuarter(int month) {
+
+        return switch (month) {
+
+            case 1, 2, 3 -> "Q1";
+            case 4, 5, 6 -> "Q2";
+            case 7, 8, 9 -> "Q3";
+            case 10, 11, 12 -> "Q4";
+
+            default -> "Invalid Month";
+        };
+    }
+
+    public static boolean searchMatrix(
+            int[][] matrix,
+            int target) {
+
+        searchBlock:
+
+        for (int row = 0;
+             row < matrix.length;
+             row++) {
+
+            for (int column = 0;
+                 column < matrix[row].length;
+                 column++) {
+
+                if (matrix[row][column] == target) {
+
+                    System.out.println(
+                        "Found " + target +
+                        " at row " + row +
+                        ", col " + column
+                    );
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static int add(int a, int b) {
+        return a + b;
+    }
+
+    public static double add(double a, double b) {
+        return a + b;
+    }
+
+    public static int add(int a, int b, int c) {
+        return a + b + c;
+    }
+}
+```
+
+Note: The label `searchBlock` is unnecessary in this particular version
+because `return true` exits the entire method. It is useful to demonstrate
+labeled control flow, but normal code should prefer the simplest correct
+control structure.
+
+11. ADVANCED EXAMPLE
+
+```java
+public class AdvancedControlFlow {
+
+    static class Account {
+
+        double balance;
+
+        Account(double balance) {
+            this.balance = balance;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        // 1. Primitive pass-by-value
+        int primitiveValue = 50;
+
+        modifyPrimitive(primitiveValue);
+
+        System.out.println(
+            "Primitive after modification: "
+            + primitiveValue
+        );
+
+        // 2. Reference value passed by value
+        Account account =
+            new Account(100.0);
+
+        modifyObjectState(account);
+
+        System.out.println(
+            "Balance after modification: "
+            + account.balance
+        );
+
+        // 3. Reassignment of local reference
+        reassignReference(account);
+
+        System.out.println(
+            "Balance after reassignment: "
+            + account.balance
+        );
+
+        // 4. Varargs
+        double average1 =
+            calculateAverage(
+                10.0, 20.0, 30.0, 40.0
+            );
+
+        double average2 =
+            calculateAverage(
+                100.0, 200.0
+            );
+
+        System.out.println(
+            "Average 1: " + average1
+        );
+
+        System.out.println(
+            "Average 2: " + average2
+        );
+
+        // 5. Pattern matching switch
+        System.out.println(
+            evaluatePattern(42)
+        );
+
+        System.out.println(
+            evaluatePattern(
+                "Java Enterprise Architecture"
+            )
+        );
+
+        System.out.println(
+            evaluatePattern(null)
+        );
+    }
+
+    static void modifyPrimitive(int value) {
+        value = 999;
+    }
+
+    static void modifyObjectState(Account account) {
+        account.balance += 50.0;
+    }
+
+    static void reassignReference(Account account) {
+        account = new Account(999.0);
+    }
+
+    static double calculateAverage(
+            double... values) {
+
+        if (values.length == 0) {
+            return 0.0;
+        }
+
+        double sum = 0.0;
+
+        for (double value : values) {
+            sum += value;
+        }
+
+        return sum / values.length;
+    }
+
+    static String evaluatePattern(Object obj) {
+
+        return switch (obj) {
+
+            case null ->
+                "Received null object.";
+
+            case Integer i ->
+                "Evaluated Integer with value: " + i;
+
+            case String s when s.length() > 5 ->
+                "Evaluated Long String of length "
+                + s.length() + ": " + s;
+
+            case String s ->
+                "Evaluated Short String: " + s;
+
+            default ->
+                "Unknown object type: "
+                + obj.getClass().getSimpleName();
+        };
+    }
+}
+```
+
+12. CODE WALKTHROUGH
+
+12.1 PRIMITIVE PARAMETER
+
+```java
+modifyPrimitive(primitiveValue);
+```
+
+The argument value is passed to the parameter.
+
+Changing the parameter does not modify the caller's variable.
+
+12.2 OBJECT PARAMETER
+
+```java
+modifyObjectState(account);
+```
+
+The method receives a copy of the reference value.
+
+Both the caller's variable and the parameter can therefore refer to the same
+object.
+
+Changing:
+
+```java
+account.balance
+```
+
+changes that shared object's state.
+
+12.3 REFERENCE REASSIGNMENT
+
+```java
+account = new Account(999.0);
+```
+
+Only the method parameter is reassigned.
+
+The caller's variable continues to refer to the original object.
+
+12.4 VARARGS
+
+A call such as:
+
+```java
+calculateAverage(10.0, 20.0, 30.0);
+```
+
+is handled by the variable-arity method as an array-like parameter.
+
+Inside the method:
+
+```java
+values.length
+```
+
+gives the number of supplied values.
+
+12.5 PATTERN SWITCH
+
+For:
+
+```java
+evaluatePattern(42)
+```
+
+the `Integer` pattern matches.
+
+For:
+
+```java
+evaluatePattern("Java")
+```
+
+the `String` pattern matches.
+
+The `when` guard is evaluated for the guarded string pattern.
+
+13. EXPECTED OUTPUT
+
+```text
+Score 88 yields Grade: B
+Sum 1..5: 15
+Countdown: 3 2 1 BLASTOFF!
+Fruits: Apple Banana Cherry
+
+Month 4 belongs to: Q2
+Found 99 at row 1, col 1
+Target 99 found in matrix: true
+Overload int: 30
+Overload double: 30.7
+Overload 3 ints: 6
+
+Primitive after modification: 50
+Balance after modification: 150.0
+Balance after reassignment: 150.0
+
+Average 1: 25.0
+Average 2: 150.0
+
+Evaluated Integer with value: 42
+Evaluated Long String of length 28: Java Enterprise Architecture
+Received null object.
+```
+
+14. EXECUTION FLOW
+
+A simplified source-level execution flow is:
+
+1. The `main()` method begins execution.
+2. Variables are initialized.
+3. Control-flow conditions are evaluated.
+4. Loop bodies execute while their conditions permit.
+5. Method calls evaluate their arguments.
+6. Parameter values are supplied to the called method.
+7. The called method executes.
+8. A `return` statement transfers a result back when applicable.
+9. Execution continues from the caller.
+
+The Java Language Specification defines the precise compile-time and
+run-time rules.
+
+The exact JVM bytecode instructions used to implement a particular
+`switch`, method call, or optimization are implementation details and
+should not be treated as guaranteed source-level behavior.
+
+15. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Implement iterative and recursive binary-search methods for a sorted
+integer array.
+
+Requirements:
+
+* Return the index if found.
+* Return `-1` otherwise.
+
+Problem 2:
+Create overloaded methods:
+
+```java
+formatCurrency(double amount)
+formatCurrency(double amount, String currency)
+formatCurrency(double amount, String currency, int decimals)
+```
+
+Problem 3:
+Implement a matrix search using nested loops and labeled `break`.
+
+Problem 4:
+Create a calculator using method overloading:
+
+```java
+calculate(int a, int b)
+calculate(double a, double b)
+calculate(int a, int b, int c)
+```
+
+Problem 5:
+Create a varargs method:
+
+```java
+double calculateAverage(double... values)
+```
+
+Problem 6:
+Write a method that determines whether a number is prime using a loop.
+
+Problem 7:
+Implement a recursive factorial method and compare it with an iterative
+implementation.
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 BUSINESS RULES
+
+`if`, `switch`, and switch expressions can implement:
+
+* Discount rules
+* Tax categories
+* User roles
+* Application states
+* Validation rules
+
+16.2 COMMAND PROCESSING
+
+Switch expressions can map commands to actions.
+
+```text
+command -> switch -> action
+```
+
+16.3 DATA PROCESSING
+
+Loops and methods are commonly used for:
+
+* Searching
+* Filtering
+* Aggregation
+* Validation
+* Transformation
+
+16.4 LIBRARIES AND APIs
+
+Method overloading allows an API to expose multiple convenient forms of
+an operation.
+
+For example:
+
+```java
+print(String value)
+print(String value, int count)
+```
+
+can provide related functionality with different parameter sets.
+
+16.5 STATE MACHINES
+
+Loops and switch statements can represent state transitions in:
+
+* Protocol processing
+* Workflow systems
+* User interfaces
+* Game logic
+
+17. COMMON MISTAKES
+
+17.1 THINKING JAVA IS PASS-BY-REFERENCE
+
+Incorrect:
+
+```text
+"Java passes objects by reference."
+```
+
+Correct:
+
+```text
+Java passes every argument by value.
+For a reference-type argument, the copied value is a reference.
+```
+
+17.2 RETURN TYPE OVERLOADING
+
+Incorrect:
+
+```java
+int calculate(int x)
+double calculate(int x)
+```
+
+Return type alone cannot distinguish methods.
+
+17.3 SWITCH FALL-THROUGH
+
+Traditional switch:
+
+```java
+case 1:
+    statement1;
+
+case 2:
+    statement2;
+```
+
+can execute both cases if no `break` or other control transfer occurs.
+
+Arrow switch rules avoid this traditional fall-through behavior.
+
+17.4 USING LABELS EVERYWHERE
+
+Labeled breaks and continues are valid Java features, but excessive use can
+make control flow harder to understand.
+
+Use them when they clearly simplify nested-loop logic.
+
+17.5 MODIFYING METHOD PARAMETERS UNNECESSARILY
+
+Parameter reassignment is legal, but excessive reassignment can make method
+logic harder to understand.
+
+Use meaningful local variables when clarity improves.
+
+18. COMMON ERRORS
+
+18.1 MISSING RETURN STATEMENT
+
+A non-void method must provide an appropriate return value on all reachable
+paths.
+
+Example:
+
+```java
+static int getValue(boolean condition) {
+
+    if (condition) {
+        return 10;
+    }
+
+    // Missing return
+}
+```
+
+18.2 UNREACHABLE STATEMENT
+
+Example:
+
+```java
+return;
+
+System.out.println("Hello");
+```
+
+The second statement cannot execute.
+
+18.3 INVALID VARARGS POSITION
+
+Invalid:
+
+```java
+void test(int... values, String name) {
+}
+```
+
+The variable-arity parameter must be last.
+
+18.4 AMBIGUOUS METHOD CALL
+
+Example:
+
+```java
+static void test(String value) {}
+static void test(Integer value) {}
+
+test(null);
+```
+
+This produces a compile-time ambiguity.
+
+18.5 INVALID LABEL
+
+A `break` or `continue` label must refer to an appropriate enclosing
+statement.
+
+19. DEBUGGING TECHNIQUES
+
+19.1 INCORRECT OBJECT SWAP
+
+```java
+static void swap(Integer a, Integer b) {
+
+    Integer temp = a;
+    a = b;
+    b = temp;
+}
+```
+
+Calling:
+
+```java
+Integer x = 10;
+Integer y = 20;
+
+swap(x, y);
+```
+
+does not exchange the caller's variables.
+
+The parameter variables are reassigned locally.
+
+19.2 CORRECT MUTABLE ARRAY EXAMPLE
+
+```java
+static void swap(int[] values, int i, int j) {
+
+    int temp = values[i];
+
+    values[i] = values[j];
+    values[j] = temp;
+}
+```
+
+Example:
+
+```java
+int[] values = {10, 20};
+
+swap(values, 0, 1);
+
+System.out.println(values[0]);
+System.out.println(values[1]);
+```
+
+Output:
+
+```text
+20
+10
+```
+
+The method modifies the elements of the array object.
+
+19.3 DEBUGGING LOOPS
+
+When debugging a loop, inspect:
+
+* Initial value
+* Loop condition
+* Update expression
+* Break conditions
+* Continue conditions
+* Array bounds
+* Number of iterations
+
+An infinite loop often occurs when the loop-control variable is never
+updated toward the termination condition.
+
+20. EDGE CASES
+
+20.1 ENHANCED FOR OVER NULL
+
+If the expression used by an enhanced `for` loop is `null`, a
+`NullPointerException` occurs.
+
+Example:
+
+```java
+List<String> names = null;
+
+for (String name : names) {
+    System.out.println(name);
+}
+```
+
+20.2 NULL WITH OVERLOADED METHODS
+
+```java
+static void test(String value) {}
+static void test(Integer value) {}
+```
+
+Then:
+
+```java
+test(null);
+```
+
+is ambiguous.
+
+20.3 ZERO VARARGS ARGUMENTS
+
+A varargs method can be called with no variable arguments.
+
+```java
+static void print(int... values) {
+    System.out.println(values.length);
+}
+
+print();
+```
+
+Output:
+
+```text
+0
+```
+
+20.4 ARRAY AS VARARGS ARGUMENT
+
+A compatible array can also be passed directly.
+
+```java
+int[] values = {1, 2, 3};
+
+sum(values);
+```
+
+The array is supplied as the variable-arity parameter.
+
+20.5 SWITCH NULL
+
+Modern pattern-matching switch supports an explicit:
+
+```java
+case null ->
+```
+
+when appropriate.
+
+Without a matching null case, the behavior depends on the applicable
+switch rules and selector type; developers should explicitly handle null
+when null is a valid input.
+
+21. BEST PRACTICES
+
+* Prefer clear structured control flow.
+* Use switch expressions when a switch naturally produces a value.
+* Use arrow switch rules when traditional fall-through is not required.
+* Use `when` guards for guarded pattern matching in modern Java.
+* Keep methods focused on one logical responsibility.
+* Use meaningful parameter and local-variable names.
+* Document public APIs using Javadoc.
+* Avoid unnecessary parameter reassignment.
+* Prefer immutable data where practical.
+* Validate method arguments when required by the API contract.
+* Use varargs when the number of arguments naturally varies.
+* Avoid varargs when a fixed-size parameter list communicates the API more
+  clearly.
+* Use labeled control flow only when it improves clarity.
+* Keep recursion within practical stack limits.
+* Do not depend on JVM-specific optimization behavior for correctness.
+
+22. PERFORMANCE CONSIDERATIONS
+
+22.1 METHOD CALLS
+
+Do not assume that every method invocation creates a permanently expensive
+operation.
+
+Modern JVMs perform runtime optimizations, including inlining where
+beneficial.
+
+The exact optimization decisions are implementation- and
+runtime-dependent.
+
+Therefore, avoid claims such as:
+
+```text
+"All methods smaller than exactly 35 bytecode bytes are always inlined."
+```
+
+That is not a Java language guarantee.
+
+22.2 VARARGS
+
+Varargs provide convenient syntax, but a variable-arity invocation can
+involve array handling.
+
+For performance-critical code, especially in very hot loops, avoid
+assuming varargs are allocation-free.
+
+If profiling demonstrates a real bottleneck, fixed-arity overloads or
+alternative APIs can be considered.
+
+22.3 LOOP PERFORMANCE
+
+Prefer simple loops when appropriate.
+
+Avoid unnecessary work inside loops.
+
+For large data processing tasks, consider:
+
+* Appropriate collection types
+* Streams where suitable
+* Algorithmic complexity
+* Memory locality
+* Input size
+
+23. MEMORY CONSIDERATIONS
+
+23.1 LOCAL VARIABLES
+
+Local variables and method parameters have a scope determined by the Java
+language rules.
+
+The JVM may represent them using implementation-specific runtime storage.
+
+Do not rely on a specific physical stack layout in Java source code.
+
+23.2 RECURSION
+
+Recursive calls require runtime state for each active invocation.
+
+Very deep recursion can eventually cause:
+
+```text
+StackOverflowError
+```
+
+The exact recursion depth that causes this is JVM- and environment-dependent.
+
+There is no universal Java rule such as:
+
+```text
+"10,000 recursive calls always cause StackOverflowError."
+```
+
+For potentially deep recursion, an iterative algorithm may be more
+appropriate.
+
+23.3 OBJECT REFERENCES
+
+A reference variable stores a reference value.
+
+Java source code does not expose raw memory addresses or pointer arithmetic.
+
+Therefore, explanations should use:
+
+```text
+reference
+```
+
+rather than:
+
+```text
+memory address / pointer
+```
+
+when describing normal Java semantics.
+
+24. SECURITY CONSIDERATIONS
+
+24.1 INPUT VALIDATION
+
+Methods that process external input should validate:
+
+* Null values
+* Numeric ranges
+* String lengths
+* Collection sizes
+* Array indexes
+* Recursion depth where applicable
+
+24.2 DEFENSIVE COPYING
+
+When a class exposes mutable internal state, external code may modify that
+state.
+
+Example:
+
+```java
+class Data {
+
+    private final int[] values;
+
+    Data(int[] values) {
+        this.values = values.clone();
+    }
+
+    public int[] getValues() {
+        return values.clone();
+    }
+}
+```
+
+Defensive copying can protect internal mutable state.
+
+24.3 COMMAND PROCESSING
+
+When using switch statements to process user commands, validate the command
+before performing sensitive operations.
+
+Control-flow syntax itself does not provide security.
+
+24.4 RESOURCE CONSUMPTION
+
+Uncontrolled recursion, extremely large loops, or huge varargs inputs can
+consume CPU or memory.
+
+Applications processing untrusted input should apply appropriate limits.
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+| Feature               | Java                          | C++                                              | Python                                                                              |
+| --------------------- | ----------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Parameter passing     | Pass-by-value                 | Pass-by-value; references can be used explicitly | Arguments are passed as object references/values according to Python's object model |
+| Method overloading    | Supported                     | Supported                                        | No traditional signature-based method overloading                                   |
+| Conditional syntax    | if/else                       | if/else                                          | if/elif/else                                                                        |
+| Switch-like construct | switch statements/expressions | switch                                           | match/case                                                                          |
+| Varargs               | `Type...`                     | Variadic mechanisms/templates                    | `*args`, `**kwargs`                                                                 |
+| Block scope           | Yes                           | Yes                                              | Different scope rules                                                               |
+| Documentation         | Javadoc                       | Doxygen commonly used                            | Docstrings                                                                          |
+| Pattern matching      | `instanceof`, switch patterns | Pattern features vary by standard/version        | Structural pattern matching                                                         |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1: Is Java pass-by-reference or pass-by-value?
+
+A:
+
+Java is pass-by-value.
+
+For an object argument, the copied value is a reference to the object.
+Therefore, a method can modify the referenced object's state, but assigning
+the parameter to another object does not change the caller's variable.
+
+Q2: Can methods be overloaded using only different return types?
+
+A:
+
+No.
+
+The parameter lists must differ.
+
+Q3: What is a switch expression?
+
+A:
+
+A switch expression evaluates to a value.
+
+Example:
+
+```java
+String result = switch (number) {
+    case 1 -> "One";
+    default -> "Other";
+};
+```
+
+Q4: What does yield do?
+
+A:
+
+`yield` supplies the value of a switch-expression case when that case uses
+a block containing multiple statements.
+
+Q5: When was switch pattern matching finalized?
+
+A:
+
+Pattern Matching for `switch` became a permanent feature in Java SE 21.
+
+Q6: What is varargs?
+
+A:
+
+Varargs allow a method to accept a variable number of arguments using
+syntax such as:
+
+```java
+void print(String... values)
+```
+
+Q7: Can a varargs parameter appear before another parameter?
+
+A:
+
+No.
+
+The variable-arity parameter must be the final parameter.
+
+Q8: Can a method have multiple varargs parameters?
+
+A:
+
+No.
+
+A method declaration can have at most one variable-arity parameter.
+
+Q9: What is variable scope?
+
+A:
+
+Variable scope is the region of the program where a declared variable can
+be referenced.
+
+Q10: What is method overloading?
+
+A:
+
+Method overloading is defining multiple methods with the same name but
+different parameter lists.
+
+27. INTERVIEW QUESTIONS
+
+Q1:
+Explain Java's pass-by-value model.
+
+Answer:
+
+Java passes every method argument by value. For primitives, the primitive
+value is copied. For reference types, the reference value is copied. Both
+the caller and parameter can therefore refer to the same object, but
+reassigning the parameter does not reassign the caller's variable.
+
+Q2:
+What are the three overload-resolution phases?
+
+Answer:
+
+1. Strict invocation without boxing/unboxing or variable-arity invocation.
+2. Loose invocation allowing boxing/unboxing but not variable-arity
+   invocation.
+3. Variable-arity invocation.
+
+If multiple methods are applicable, the most specific applicable method is
+selected.
+
+Q3:
+Can static methods be overloaded?
+
+Answer:
+
+Yes.
+
+Static methods can be overloaded when their parameter lists differ.
+
+Q4:
+Can an instance method and static method with the same signature be
+overloaded only by changing static?
+
+Answer:
+
+No.
+
+Changing only `static` does not create a valid overload with the same
+parameter list.
+
+Q5:
+What is the difference between break and continue?
+
+Answer:
+
+`break` terminates the applicable loop or switch.
+
+`continue` skips to the next iteration of the applicable loop.
+
+Q6:
+What is a labeled break?
+
+Answer:
+
+A labeled break terminates the statement associated with a specified
+enclosing label.
+
+Q7:
+What is method signature?
+
+Answer:
+
+For overload purposes, it is based on the method name and parameter types,
+including parameter order and arity. The return type is not sufficient to
+distinguish overloaded methods.
+
+Q8:
+What happens when overloaded methods receive null?
+
+Answer:
+
+The compiler selects the most specific applicable reference-type overload.
+If no single most-specific method exists, the invocation is ambiguous.
+
+28. EXAM QUESTIONS
+
+Q1:
+
+What is the output?
+
+```java
+int k = 2;
+
+String result = switch (k) {
+    case 1 -> "One";
+    case 2, 3 -> "Two or Three";
+    default -> "Other";
+};
+
+System.out.println(result);
+```
+
+Answer:
+
+```text
+Two or Three
+```
+
+Q2:
+
+True or False:
+
+```java
+void process(int[] values)
+void process(int... values)
+```
+
+can be declared together in the same class.
+
+Answer:
+
+False.
+
+The variable-arity declaration has an array parameter type for method
+signature purposes, so the declarations conflict.
+
+Q3:
+
+What is the output?
+
+```java
+static void test(int x) {
+    x = 100;
+}
+
+int value = 10;
+test(value);
+
+System.out.println(value);
+```
+
+Answer:
+
+```text
+10
+```
+
+Q4:
+
+What does `continue` do?
+
+Answer:
+
+It skips the remaining statements of the current loop iteration and
+proceeds according to the loop's continuation rules.
+
+Q5:
+
+Can return type alone overload a method?
+
+Answer:
+
+No.
+
+29. PRACTICE QUESTIONS
+
+Q1:
+Write:
+
+```java
+int fibonacci(int n)
+```
+
+using recursion and iteration.
+
+Q2:
+Create an overloaded calculator with methods for:
+
+```java
+add(int, int)
+add(double, double)
+add(int, int, int)
+```
+
+Q3:
+Create a command-line parser using a switch expression.
+
+Support:
+
+```text
+-h
+--help
+-v
+--verbose
+```
+
+Q4:
+Implement:
+
+```java
+double calculateAverage(double... values)
+```
+
+and handle zero arguments safely.
+
+Q5:
+Write a method to find the largest value in an integer array.
+
+Q6:
+Write a method that checks whether a string is a palindrome.
+
+Q7:
+Use nested loops and a labeled `break` to search for an element in a
+two-dimensional array.
+
+Q8:
+Create a program demonstrating the difference between:
+
+```text
+primitive modification
+object mutation
+reference reassignment
+```
+
+30. SUMMARY
+
+Java control flow provides structured mechanisms for decision-making,
+iteration, branching, and method execution.
+
+Core control-flow constructs include:
+
+```text
+if / else
+switch
+for
+enhanced for
+while
+do-while
+break
+continue
+return
+```
+
+Modern Java adds:
+
+```text
+switch expressions
+arrow case rules
+yield
+pattern matching for switch
+when guards
+```
+
+Methods provide reusable and modular program structure.
+
+Java supports:
+
+```text
+method parameters
+return values
+method overloading
+varargs
+static methods
+instance methods
+recursive methods
+Javadoc
+```
+
+Java is strictly pass-by-value. When an object is supplied as an argument,
+the copied value is a reference to that object.
+
+Method overload resolution occurs at compile time using the Java Language
+Specification's applicability phases.
+
+Variable scope determines where variables can be accessed and helps prevent
+unintended interference between different parts of a program.
+
+31. KEY TAKEAWAYS
+
+* Use `if`, `else`, and conditional operators for decision-making.
+* Use `switch` for multi-way selection.
+* Switch expressions can directly produce values.
+* `yield` provides a value from a block inside a switch expression.
+* Pattern matching for switch became permanent in Java SE 21.
+* Modern pattern switches support guarded patterns using `when`.
+* Use `for`, enhanced `for`, `while`, and `do-while` according to the
+  iteration requirement.
+* `break` terminates the applicable loop or switch.
+* `continue` skips the current loop iteration.
+* Labeled `break` and `continue` can control enclosing loops.
+* Java methods support parameters, return values, overloading, and varargs.
+* Java is strictly pass-by-value.
+* Object references are values that are copied when passed to methods.
+* Mutating an object through a copied reference can affect the same object
+  seen by the caller.
+* Reassigning a method parameter does not reassign the caller's variable.
+* Method overloading requires different parameter lists.
+* Return type alone cannot create an overload.
+* Overload resolution is performed at compile time.
+* Java overload resolution has strict, loose, and variable-arity phases.
+* Varargs must be the final parameter.
+* Variable scope determines where a variable can be referenced.
+* Javadoc is Java's standard documentation-comment mechanism.
+* Avoid depending on JVM-specific implementation details for language
+  semantics or performance guarantees.
+  ================================================================================
+  END OF DOCUMENT
+  ================================================================================

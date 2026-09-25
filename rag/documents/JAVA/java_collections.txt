@@ -1,0 +1,2038 @@
+COURSE: Java Programming
+TOPIC: Java Collections Framework: Lists, Sets, Maps, Queues, and HashMap Internals
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE Documentation + OpenJDK Implementation Notes
+
+================================================================================
+JAVA COLLECTIONS FRAMEWORK: LISTS, SETS, MAPS, QUEUES, AND HASHMAP INTERNALS
+============================================================================
+
+1. INTRODUCTION
+
+The Java Collections Framework (JCF) is a unified architecture for storing,
+accessing, processing, and manipulating groups of objects.
+
+The main collection interfaces include:
+
+* Iterable<E>
+* Collection<E>
+* List<E>
+* Set<E>
+* Queue<E>
+* Deque<E>
+* Map<K,V>
+
+`Map<K,V>` is part of the Collections Framework but does not extend
+`Collection<E>`.
+
+Common general-purpose implementations include:
+
+* List: `ArrayList`, `LinkedList`
+* Set: `HashSet`, `LinkedHashSet`, `TreeSet`
+* Queue/Deque: `ArrayDeque`, `LinkedList`, `PriorityQueue`
+* Map: `HashMap`, `LinkedHashMap`, `TreeMap`
+* Concurrent collections: `ConcurrentHashMap`, `CopyOnWriteArrayList`,
+  `ConcurrentSkipListMap`, and others
+
+The correct collection should be selected according to required ordering,
+lookup behavior, insertion/removal patterns, memory requirements, and
+concurrency requirements.
+
+The Java Collections Framework also provides utility algorithms and factory
+methods through classes such as `Collections` and interfaces such as `List`
+and `Map`.
+
+Oracle's documentation identifies `ArrayList`, `HashSet`, and `HashMap` as
+general-purpose implementations commonly used for typical applications.
+
+2. LEARNING OBJECTIVES
+
+* Understand the Java Collections Framework hierarchy.
+* Understand `List`, `Set`, `Queue`, `Deque`, and `Map`.
+* Select suitable collection implementations for different workloads.
+* Understand `ArrayList` as a resizable-array implementation.
+* Understand `LinkedList` as a doubly linked list implementing both `List`
+  and `Deque`.
+* Understand hashing, buckets, collisions, load factor, and resizing.
+* Understand `HashMap` implementation details in current OpenJDK.
+* Understand tree bins and Red-Black tree conversion in `HashMap`.
+* Correctly implement the `equals()` and `hashCode()` contract.
+* Understand `Comparable` and `Comparator`.
+* Understand immutable collection factory methods such as `List.of()`,
+  `Set.of()`, and `Map.of()`.
+* Understand fail-fast, snapshot, and weakly consistent iteration.
+* Understand concurrent collection implementations.
+
+3. PREREQUISITES
+
+* Java fundamentals
+* Arrays and strings
+* Classes and objects
+* Inheritance and interfaces
+* Generics
+* Exception handling
+* Basic time-complexity analysis
+* Basic knowledge of hashing
+
+4. BEGINNER CONCEPTS
+
+4.1 LIST
+
+`List<E>` represents an ordered collection.
+
+Properties:
+
+* Maintains an encounter order.
+* Allows duplicate elements.
+* Supports positional/index-based operations.
+* Elements can generally be accessed using an integer index.
+
+Common implementations:
+
+* `ArrayList`
+* `LinkedList`
+
+Example:
+
+```java
+List<String> languages = new ArrayList<>();
+
+languages.add("Java");
+languages.add("Python");
+languages.add("Java");
+
+System.out.println(languages);
+System.out.println(languages.get(1));
+```
+
+Output:
+
+```text
+[Java, Python, Java]
+Python
+```
+
+4.2 SET
+
+`Set<E>` represents a collection that does not contain duplicate elements.
+
+Common implementations:
+
+* `HashSet` - hash-based, no guaranteed iteration order
+* `LinkedHashSet` - maintains encounter order
+* `TreeSet` - sorted according to natural ordering or a comparator
+
+Example:
+
+```java
+Set<Integer> numbers = new HashSet<>();
+
+numbers.add(10);
+numbers.add(20);
+numbers.add(10);
+
+System.out.println(numbers);
+```
+
+The duplicate `10` is not added.
+
+4.3 QUEUE
+
+`Queue<E>` is designed primarily for holding elements before processing.
+
+Typical queue operations are:
+
+* `offer()` - inserts an element
+* `poll()` - retrieves and removes the head
+* `peek()` - retrieves without removing
+
+A FIFO queue processes the earliest inserted element first.
+
+Example:
+
+```java
+Queue<String> queue = new ArrayDeque<>();
+
+queue.offer("A");
+queue.offer("B");
+queue.offer("C");
+
+System.out.println(queue.poll());
+System.out.println(queue.peek());
+```
+
+Output:
+
+```text
+A
+B
+```
+
+4.4 DEQUE
+
+`Deque<E>` means double-ended queue.
+
+Elements can be inserted and removed from both ends.
+
+Common operations:
+
+```java
+addFirst()
+addLast()
+removeFirst()
+removeLast()
+peekFirst()
+peekLast()
+```
+
+`ArrayDeque` is a general-purpose implementation of `Deque`.
+
+`ArrayDeque` does not permit `null` elements and is not synchronized.
+
+4.5 MAP
+
+`Map<K,V>` stores mappings between keys and values.
+
+Properties:
+
+* Each key can map to at most one value.
+* A key can be associated with a new value using `put()`.
+* Calling `put()` with an existing key replaces its previous value.
+
+Example:
+
+```java
+Map<String, Integer> marks = new HashMap<>();
+
+marks.put("Alice", 95);
+marks.put("Bob", 88);
+
+System.out.println(marks.get("Alice"));
+```
+
+Output:
+
+```text
+95
+```
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 ARRAYLIST VS LINKEDLIST
+
+`ArrayList` is a resizable-array implementation of `List`.
+
+Its:
+
+* `get()` operation is constant time.
+* `set()` operation is constant time.
+* `add()` at the end is amortized constant time.
+* Insertions/removals in the middle generally require shifting elements.
+
+`LinkedList` is a doubly linked list and also implements `Deque`.
+
+Its indexed operations require traversal from the beginning or end,
+whichever is closer.
+
+Therefore, `ArrayList` is usually preferable for general-purpose lists,
+especially when frequent indexed access or iteration is required.
+
+However, collection selection should depend on the actual workload rather
+than an unconditional rule.
+
+The exact `ArrayList` capacity-growth policy is not part of the public API.
+Applications should rely on the documented amortized performance rather than
+on a particular growth multiplier.
+
+5.2 HASHSET VS TREESET VS LINKEDHASHSET
+
+`HashSet`:
+
+* Hash-table based.
+* No guaranteed iteration order.
+* Average constant-time basic operations when hashing is well distributed.
+* Permits one `null` element.
+
+`LinkedHashSet`:
+
+* Hash-table based.
+* Maintains a well-defined encounter order.
+* Useful when uniqueness and predictable iteration order are both required.
+
+`TreeSet`:
+
+* Sorted set.
+* Based on a tree structure.
+* Provides logarithmic-time basic operations.
+* Uses natural ordering or a supplied `Comparator`.
+
+5.3 HASHMAP VS LINKEDHASHMAP VS TREEMAP
+
+`HashMap`:
+
+* Hash-table based.
+* No guaranteed iteration order.
+* Average constant-time `get()` and `put()` when hashing is well distributed.
+* Allows `null` keys and values.
+* Not synchronized.
+
+`LinkedHashMap`:
+
+* Hash table plus linked structure.
+* Maintains a well-defined encounter order.
+* Can be configured for insertion-order or access-order behavior.
+* Useful for cache-like structures such as LRU designs.
+
+`TreeMap`:
+
+* Red-Black tree-based `NavigableMap`.
+* Maintains keys according to natural ordering or a supplied comparator.
+* `get`, `put`, `remove`, and `containsKey` have guaranteed logarithmic
+  time complexity.
+
+5.4 COMPARABLE VS COMPARATOR
+
+`Comparable<T>` defines the natural ordering of a class.
+
+Example:
+
+```java
+class Student implements Comparable<Student> {
+
+    int mark;
+
+    Student(int mark) {
+        this.mark = mark;
+    }
+
+    @Override
+    public int compareTo(Student other) {
+        return Integer.compare(this.mark, other.mark);
+    }
+}
+```
+
+`Comparator<T>` defines an external ordering.
+
+Example:
+
+```java
+students.sort(
+    Comparator.comparingInt(Student::getMark)
+              .reversed()
+);
+```
+
+Use `Comparable` when a class has a natural ordering.
+
+Use `Comparator` when different sorting strategies are required.
+
+6. ADVANCED CONCEPTS
+
+6.1 HASHMAP INTERNAL ARCHITECTURE
+
+The following details describe the current OpenJDK implementation and are
+implementation details rather than guarantees of the `Map` interface.
+
+A `HashMap` uses an internal table of buckets.
+
+Important current OpenJDK implementation constants include:
+
+```text
+DEFAULT_INITIAL_CAPACITY = 16
+DEFAULT_LOAD_FACTOR      = 0.75
+TREEIFY_THRESHOLD        = 8
+UNTREEIFY_THRESHOLD      = 6
+MIN_TREEIFY_CAPACITY     = 64
+```
+
+The default initial capacity is 16 and the default load factor is 0.75.
+
+The approximate resize threshold is:
+
+```text
+capacity × load factor
+```
+
+For example:
+
+```text
+16 × 0.75 = 12
+```
+
+When the number of mappings exceeds the threshold, the table is resized.
+
+The current OpenJDK implementation normally doubles the table capacity
+during resizing.
+
+6.2 HASH SPREADING
+
+Current OpenJDK `HashMap` implementation uses a hash-spreading operation
+based on:
+
+```java
+(h = key.hashCode()) ^ (h >>> 16)
+```
+
+This mixes higher-order hash bits into lower-order bits.
+
+This is an implementation detail and should not be treated as a general
+Java `Map` API rule.
+
+6.3 BUCKET INDEX
+
+For the current OpenJDK implementation, when the table length is `n`, the
+bucket position is calculated using:
+
+```java
+(n - 1) & hash
+```
+
+This works efficiently because the table capacity is maintained as a
+power of two.
+
+This calculation is an OpenJDK implementation detail.
+
+6.4 COLLISION HANDLING
+
+A collision occurs when different keys are assigned to the same bucket.
+
+Conceptually:
+
+```text
+Key A ──> Bucket 5
+Key B ──> Bucket 5
+Key C ──> Bucket 5
+```
+
+The implementation must distinguish the keys using their hash values and
+`equals()` comparisons.
+
+Current OpenJDK `HashMap` uses ordinary nodes for normal bins and can use
+tree nodes for heavily populated bins.
+
+6.5 TREEIFICATION
+
+Current OpenJDK uses tree bins to improve behavior when a bucket becomes
+heavily populated.
+
+Important thresholds are:
+
+```text
+TREEIFY_THRESHOLD    = 8
+MIN_TREEIFY_CAPACITY = 64
+UNTREEIFY_THRESHOLD   = 6
+```
+
+When a bin becomes sufficiently populated, the implementation may convert
+the bin into a Red-Black tree if the table is large enough.
+
+If the table is smaller than the minimum treeification capacity, resizing
+is preferred instead.
+
+When a tree bin becomes sufficiently small during removal/resizing, it may
+be converted back to ordinary nodes.
+
+These thresholds are implementation details and can change between JDK
+implementations or versions.
+
+6.6 HASHMAP COMPLEXITY
+
+For a well-distributed hash function:
+
+```text
+get()    -> O(1) average
+put()    -> O(1) average
+remove() -> O(1) average
+```
+
+Heavy collisions can degrade performance.
+
+The current OpenJDK tree-bin mechanism is designed to improve worst-case
+behavior for heavily collided bins, but applications should not depend on
+the exact internal treeification thresholds.
+
+6.7 EQUALS AND HASHCODE CONTRACT
+
+The fundamental rule is:
+
+```text
+If a.equals(b) == true
+then
+a.hashCode() == b.hashCode()
+```
+
+The reverse is not required.
+
+Two different objects can have the same hash code:
+
+```text
+same hash code
+      ↓
+possible collision
+      ↓
+equals() decides whether keys are actually equal
+```
+
+Incorrect implementation can cause collection lookups to fail.
+
+Example:
+
+```java
+class Student {
+
+    private final int id;
+
+    Student(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Student other)) return false;
+
+        return id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
+}
+```
+
+Both methods are implemented consistently.
+
+6.8 MUTABLE HASHMAP KEYS
+
+A key should generally be immutable with respect to fields used by
+`equals()` and `hashCode()`.
+
+Incorrect pattern:
+
+```java
+Map<Student, String> map = new HashMap<>();
+
+Student s = new Student(101);
+map.put(s, "Alice");
+
+// Changing fields that affect hashCode() can make the mapping
+// difficult or impossible to retrieve.
+```
+
+If a key's hash-relevant state changes after insertion, the object may no
+longer be found in the expected bucket.
+
+Prefer immutable key classes or records when appropriate.
+
+7. DETAILED THEORY
+
+7.1 TIME COMPLEXITY
+
+| Collection      | Main Structure        | Access/Search |            Insert/Add |          Remove/Delete |
+| --------------- | --------------------- | ------------: | --------------------: | ---------------------: |
+| `ArrayList`     | Resizable array       |    O(1) index | O(1) amortized at end |            O(N) middle |
+| `LinkedList`    | Doubly linked list    |  O(N) indexed |          O(1) at ends |   O(1) with known node |
+| `ArrayDeque`    | Resizable array deque |  O(1) at ends |        O(1) amortized | O(1) amortized at ends |
+| `HashSet`       | Hash table            |  O(1) average |          O(1) average |           O(1) average |
+| `TreeSet`       | Balanced tree         |      O(log N) |              O(log N) |               O(log N) |
+| `HashMap`       | Hash table            |  O(1) average |          O(1) average |           O(1) average |
+| `TreeMap`       | Red-Black tree        |      O(log N) |              O(log N) |               O(log N) |
+| `PriorityQueue` | Priority heap         |     O(1) peek |              O(log N) |          O(log N) poll |
+
+Complexity values for hash-based structures assume appropriate hash
+distribution.
+
+For `PriorityQueue`, arbitrary `contains()` and `remove(Object)` are not
+logarithmic; they can require linear-time search.
+
+7.2 ARRAYLIST
+
+`ArrayList` internally manages a resizable array.
+
+Conceptually:
+
+```text
+ArrayList
+   |
+   +---- element[0]
+   +---- element[1]
+   +---- element[2]
+   +---- element[3]
+```
+
+When capacity is insufficient, a larger internal array is created and
+elements are copied.
+
+The Java API specifies amortized constant-time append performance but does
+not specify a fixed growth factor.
+
+Applications that know the approximate size can use:
+
+```java
+ArrayList<String> names = new ArrayList<>(1000);
+```
+
+or:
+
+```java
+names.ensureCapacity(1000);
+```
+
+7.3 LINKEDLIST
+
+`LinkedList` consists conceptually of nodes:
+
+```text
+null <- [A] <-> [B] <-> [C] -> null
+```
+
+Each node maintains references to neighboring nodes.
+
+Indexed access requires traversal.
+
+Therefore:
+
+```java
+list.get(5000);
+```
+
+may require traversal through a large portion of the list.
+
+`LinkedList` is also a `Deque`, so it provides operations such as:
+
+```java
+addFirst()
+addLast()
+removeFirst()
+removeLast()
+```
+
+7.4 ARRAYDEQUE
+
+`ArrayDeque` is a resizable-array implementation of `Deque`.
+
+It supports efficient operations at both ends and is suitable for:
+
+* Stack behavior
+* FIFO queues
+* Double-ended queues
+
+Example:
+
+```java
+Deque<Integer> stack = new ArrayDeque<>();
+
+stack.push(10);
+stack.push(20);
+stack.push(30);
+
+System.out.println(stack.pop());
+```
+
+Output:
+
+```text
+30
+```
+
+`ArrayDeque` does not permit `null` elements.
+
+7.5 PRIORITYQUEUE
+
+`PriorityQueue` is an unbounded priority queue based on a priority heap.
+
+By default, the least element according to the ordering is at the head.
+
+Example:
+
+```java
+PriorityQueue<Integer> pq = new PriorityQueue<>();
+
+pq.offer(40);
+pq.offer(10);
+pq.offer(30);
+
+System.out.println(pq.poll());
+```
+
+Output:
+
+```text
+10
+```
+
+Important:
+
+```text
+peek() -> O(1)
+offer() -> O(log N)
+poll() -> O(log N)
+```
+
+The iterator of a `PriorityQueue` does not guarantee sorted traversal order.
+To process elements according to priority, repeatedly use `poll()`.
+
+7.6 LINKEDHASHMAP
+
+`LinkedHashMap` combines hash-table behavior with a linked ordering
+structure.
+
+It can maintain:
+
+* Insertion order
+* Access order
+
+Access-order maps are useful for implementing LRU-style caches.
+
+Example:
+
+```java
+LinkedHashMap<String, Integer> cache =
+    new LinkedHashMap<>(16, 0.75f, true);
+```
+
+7.7 TREEMAP
+
+`TreeMap` is a Red-Black tree-based `NavigableMap`.
+
+It maintains sorted keys.
+
+Example:
+
+```java
+TreeMap<Integer, String> students = new TreeMap<>();
+
+students.put(103, "C");
+students.put(101, "A");
+students.put(102, "B");
+
+System.out.println(students);
+```
+
+The keys are encountered in sorted order.
+
+8. SYNTAX
+
+8.1 MUTABLE COLLECTIONS
+
+```java
+List<String> list = new ArrayList<>();
+
+Set<Integer> set = new HashSet<>();
+
+Queue<String> queue = new ArrayDeque<>();
+
+Deque<String> deque = new ArrayDeque<>();
+
+Map<String, Integer> map = new HashMap<>();
+```
+
+8.2 IMMUTABLE FACTORY COLLECTIONS
+
+Java provides convenient factory methods:
+
+```java
+List<String> list = List.of("A", "B", "C");
+
+Set<Integer> set = Set.of(1, 2, 3);
+
+Map<String, Integer> map =
+    Map.of("Java", 100, "Python", 90);
+```
+
+These factory-created collections do not support structural modification.
+
+For example:
+
+```java
+list.add("D");
+```
+
+throws:
+
+```text
+UnsupportedOperationException
+```
+
+8.3 COMPARATOR CHAINING
+
+```java
+users.sort(
+    Comparator.comparing(User::getLastName)
+              .thenComparing(User::getFirstName)
+);
+```
+
+Descending order can be requested where appropriate:
+
+```java
+users.sort(
+    Comparator.comparing(User::getLastName)
+              .thenComparing(User::getFirstName)
+              .reversed()
+);
+```
+
+9. BASIC EXAMPLE
+
+```java
+import java.util.*;
+
+public class BasicCollections {
+
+    public static void main(String[] args) {
+
+        // 1. List
+        List<String> fruits = new ArrayList<>();
+
+        fruits.add("Apple");
+        fruits.add("Banana");
+        fruits.add("Apple");
+
+        System.out.println("Fruits List: " + fruits);
+        System.out.println("Item at index 1: " + fruits.get(1));
+
+        // 2. Set
+        Set<String> uniqueFruits = new HashSet<>(fruits);
+
+        System.out.println("Unique Fruits Set: " + uniqueFruits);
+        System.out.println(
+            "Contains Banana: " + uniqueFruits.contains("Banana")
+        );
+
+        // 3. Map
+        Map<String, Integer> stock = new HashMap<>();
+
+        stock.put("Apple", 50);
+        stock.put("Banana", 30);
+        stock.put("Orange", 20);
+
+        int mangoStock = stock.getOrDefault("Mango", 0);
+
+        System.out.println("Mango Stock: " + mangoStock);
+
+        System.out.println("=== Inventory Report ===");
+
+        for (Map.Entry<String, Integer> entry : stock.entrySet()) {
+            System.out.println(
+                entry.getKey() + " -> " +
+                entry.getValue() + " units"
+            );
+        }
+    }
+}
+```
+
+IMPORTANT:
+
+`HashSet` and `HashMap` do not guarantee a particular iteration order.
+Therefore, the displayed order of their elements should not be used as a
+programming assumption.
+
+10. INTERMEDIATE EXAMPLE
+
+```java
+import java.util.*;
+
+public class IntermediateCollections {
+
+    static class Product implements Comparable<Product> {
+
+        private final String name;
+        private final double price;
+        private final int rating;
+
+        public Product(String name, double price, int rating) {
+            this.name = name;
+            this.price = price;
+            this.rating = rating;
+        }
+
+        @Override
+        public int compareTo(Product other) {
+            return Double.compare(this.price, other.price);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public double getPrice() {
+            return price;
+        }
+
+        public int getRating() {
+            return rating;
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "%s ($%.2f, %d stars)",
+                name,
+                price,
+                rating
+            );
+        }
+    }
+
+    public static void main(String[] args) {
+
+        List<Product> products = new ArrayList<>(
+            Arrays.asList(
+                new Product("Laptop", 1200.0, 5),
+                new Product("Mouse", 25.0, 4),
+                new Product("Keyboard", 80.0, 5),
+                new Product("Monitor", 300.0, 4)
+            )
+        );
+
+        // Natural ordering: price ascending
+        Collections.sort(products);
+
+        System.out.println(
+            "Sorted by Price: " + products
+        );
+
+        // Custom ordering: rating descending,
+        // then name ascending
+        products.sort(
+            Comparator.comparingInt(Product::getRating)
+                      .reversed()
+                      .thenComparing(Product::getName)
+        );
+
+        System.out.println(
+            "Sorted by Rating: " + products
+        );
+
+        // PriorityQueue uses Product's natural ordering
+        PriorityQueue<Product> pq =
+            new PriorityQueue<>(products);
+
+        System.out.println(
+            "\nPriorityQueue polling:"
+        );
+
+        while (!pq.isEmpty()) {
+            System.out.println("  " + pq.poll());
+        }
+    }
+}
+```
+
+11. ADVANCED EXAMPLE
+
+```java
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class AdvancedCollections {
+
+    public static final class EmployeeKey {
+
+        private final int employeeId;
+        private final String department;
+
+        public EmployeeKey(int employeeId, String department) {
+            this.employeeId = employeeId;
+            this.department =
+                Objects.requireNonNull(
+                    department,
+                    "Department cannot be null"
+                );
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+
+            if (this == obj)
+                return true;
+
+            if (!(obj instanceof EmployeeKey other))
+                return false;
+
+            return employeeId == other.employeeId
+                    && department.equals(other.department);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(employeeId, department);
+        }
+
+        @Override
+        public String toString() {
+            return "[" + employeeId + ":" + department + "]";
+        }
+    }
+
+    public static void main(String[] args) {
+
+        // HashMap with custom key
+        Map<EmployeeKey, String> employeeTitles =
+            new HashMap<>();
+
+        EmployeeKey key1 =
+            new EmployeeKey(101, "Engineering");
+
+        employeeTitles.put(
+            key1,
+            "Principal Architect"
+        );
+
+        // Different object with equal logical state
+        EmployeeKey lookupKey =
+            new EmployeeKey(101, "Engineering");
+
+        System.out.println(
+            "key1 == lookupKey: " +
+            (key1 == lookupKey)
+        );
+
+        System.out.println(
+            "HashMap lookup: " +
+            employeeTitles.get(lookupKey)
+        );
+
+        // ConcurrentHashMap
+        ConcurrentHashMap<String, Integer> pageViews =
+            new ConcurrentHashMap<>();
+
+        pageViews.put("home", 100);
+
+        pageViews.compute(
+            "home",
+            (key, count) ->
+                count == null ? 1 : count + 1
+        );
+
+        pageViews.merge(
+            "about",
+            1,
+            Integer::sum
+        );
+
+        pageViews.merge(
+            "about",
+            5,
+            Integer::sum
+        );
+
+        System.out.println(
+            "\nConcurrentHashMap:"
+        );
+
+        pageViews.forEach(
+            (key, value) ->
+                System.out.println(
+                    key + " -> " + value
+                )
+        );
+    }
+}
+```
+
+12. CODE WALKTHROUGH
+
+12.1 EQUALS AND HASHCODE
+
+The two objects:
+
+```java
+EmployeeKey key1 =
+    new EmployeeKey(101, "Engineering");
+
+EmployeeKey lookupKey =
+    new EmployeeKey(101, "Engineering");
+```
+
+are different object references.
+
+Therefore:
+
+```java
+key1 == lookupKey
+```
+
+is:
+
+```text
+false
+```
+
+However:
+
+```java
+key1.equals(lookupKey)
+```
+
+is:
+
+```text
+true
+```
+
+because both objects contain the same logical state.
+
+Their `hashCode()` values are also equal.
+
+Therefore `HashMap` can locate the mapping using the second object.
+
+12.2 CONCURRENTHASHMAP
+
+`ConcurrentHashMap` provides thread-safe concurrent access.
+
+It supports atomic methods such as:
+
+```java
+putIfAbsent()
+compute()
+computeIfAbsent()
+computeIfPresent()
+merge()
+replace()
+```
+
+Its design is intended for concurrent access rather than using one global
+lock around the entire map.
+
+Current Java documentation describes `ConcurrentHashMap` as supporting
+concurrent retrievals and high expected concurrency for updates.
+
+13. EXPECTED OUTPUT
+
+The exact order of `HashSet`, `HashMap`, and `ConcurrentHashMap` traversal
+should not be assumed.
+
+A possible output is:
+
+```text
+Fruits List: [Apple, Banana, Apple]
+Item at index 1: Banana
+Unique Fruits Set: [Apple, Banana]
+Contains Banana: true
+Mango Stock: 0
+
+=== Inventory Report ===
+Apple -> 50 units
+Banana -> 30 units
+Orange -> 20 units
+
+Sorted by Price:
+[Mouse ($25.00, 4 stars),
+ Keyboard ($80.00, 5 stars),
+ Monitor ($300.00, 4 stars),
+ Laptop ($1200.00, 5 stars)]
+
+Sorted by Rating:
+[Keyboard ($80.00, 5 stars),
+ Laptop ($1200.00, 5 stars),
+ Monitor ($300.00, 4 stars),
+ Mouse ($25.00, 4 stars)]
+
+PriorityQueue polling:
+Mouse ($25.00, 4 stars)
+Keyboard ($80.00, 5 stars)
+Monitor ($300.00, 4 stars)
+Laptop ($1200.00, 5 stars)
+
+key1 == lookupKey: false
+HashMap lookup: Principal Architect
+
+ConcurrentHashMap:
+home -> 101
+about -> 6
+```
+
+The order of the concurrent map output is not guaranteed.
+
+14. EXECUTION FLOW
+
+Typical `HashMap.put(key, value)` processing can be described conceptually as:
+
+1. Calculate or obtain the key's hash code.
+
+2. The implementation derives a hash value used for bucket selection.
+
+3. Determine the appropriate bucket.
+
+4. If the bucket is empty, create a mapping node.
+
+5. If the bucket is occupied, compare the existing key and new key.
+
+6. Use `equals()` when necessary to determine key equality.
+
+7. If a matching key exists, replace its value.
+
+8. Otherwise add a new mapping.
+
+9. If the size exceeds the resize threshold, resize the table.
+
+10. In current OpenJDK, heavily populated bins may be converted into tree
+    bins when the implementation's treeification conditions are met.
+
+11. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Implement an LRU cache using `LinkedHashMap` and `removeEldestEntry()`.
+
+Problem 2:
+Given an integer array, find the K most frequent elements using:
+
+* `HashMap`
+* `PriorityQueue`
+
+Target complexity:
+
+```text
+O(N log K)
+```
+
+Problem 3:
+Implement a word-frequency counter using:
+
+```java
+Map<String, Integer>
+```
+
+Problem 4:
+Group students according to department using:
+
+```java
+Map<String, List<Student>>
+```
+
+Problem 5:
+Implement a task scheduler using:
+
+```java
+PriorityQueue<Task>
+```
+
+Problem 6:
+Implement a concurrent request counter using:
+
+```java
+ConcurrentHashMap<String, Long>
+```
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 WEB APPLICATIONS
+
+`HashMap` and `ConcurrentHashMap` can be used for in-memory mappings such as
+configuration data, counters, and application state.
+
+16.2 CACHING
+
+`LinkedHashMap` can be used to build simple LRU-style cache structures.
+
+For production caching systems, specialized libraries may provide more
+advanced eviction, concurrency, expiration, and memory-management features.
+
+16.3 JOB SCHEDULING
+
+`PriorityQueue` can organize tasks according to:
+
+* Deadline
+* Priority
+* Scheduled time
+
+16.4 DATA PROCESSING
+
+Collections are widely used for:
+
+* Frequency counting
+* Grouping
+* Deduplication
+* Sorting
+* Searching
+* Aggregation
+
+17. COMMON MISTAKES
+
+Mistake 1:
+Assuming `HashMap` preserves insertion order.
+
+Correction:
+
+```text
+HashMap -> no guaranteed encounter order
+LinkedHashMap -> well-defined encounter order
+TreeMap -> sorted key order
+```
+
+Mistake 2:
+Overriding `equals()` but not `hashCode()`.
+
+Correction:
+
+Always maintain the `equals()`/`hashCode()` contract.
+
+Mistake 3:
+Using mutable objects as hash-based keys when hash-relevant state can
+change.
+
+Correction:
+
+Use immutable keys.
+
+Mistake 4:
+Assuming `PriorityQueue` iteration produces sorted output.
+
+Correction:
+
+Use repeated `poll()` to process elements by priority.
+
+Mistake 5:
+Assuming `ConcurrentModificationException` is a concurrency-control
+mechanism.
+
+Correction:
+
+Fail-fast behavior is intended primarily to detect bugs and is only
+best-effort.
+
+18. COMMON ERRORS
+
+18.1 CONCURRENTMODIFICATIONEXCEPTION
+
+Can occur when a collection is structurally modified during iteration
+outside the iterator's supported modification operations.
+
+18.2 CLASSCASTEXCEPTION
+
+Can occur when a sorted collection relies on natural ordering but receives
+objects that cannot be compared according to that ordering.
+
+18.3 UNSUPPORTEDOPERATIONEXCEPTION
+
+Can occur when attempting to modify an unmodifiable collection.
+
+Example:
+
+```java
+List<String> names =
+    List.of("A", "B", "C");
+
+names.add("D");
+```
+
+This throws:
+
+```text
+UnsupportedOperationException
+```
+
+18.4 NULLPOINTEREXCEPTION
+
+Can occur when a collection implementation or ordering configuration does
+not permit `null` and a null element/key is supplied.
+
+For example:
+
+```java
+ArrayDeque<String> queue = new ArrayDeque<>();
+queue.add(null);
+```
+
+is invalid because `ArrayDeque` does not permit null elements.
+
+19. DEBUGGING TECHNIQUES
+
+INCORRECT CODE:
+
+```java
+List<String> items =
+    new ArrayList<>(
+        Arrays.asList("A", "B", "C", "D")
+    );
+
+for (String item : items) {
+
+    if (item.equals("B")) {
+        items.remove(item);
+    }
+}
+```
+
+This may result in:
+
+```text
+ConcurrentModificationException
+```
+
+CORRECT APPROACH:
+
+```java
+List<String> items =
+    new ArrayList<>(
+        Arrays.asList("A", "B", "C", "D")
+    );
+
+items.removeIf(item -> item.equals("B"));
+
+System.out.println(items);
+```
+
+Output:
+
+```text
+[A, C, D]
+```
+
+Another correct approach is to use an explicit iterator:
+
+```java
+Iterator<String> iterator = items.iterator();
+
+while (iterator.hasNext()) {
+
+    String item = iterator.next();
+
+    if (item.equals("B")) {
+        iterator.remove();
+    }
+}
+```
+
+20. EDGE CASES
+
+20.1 NULL VALUES
+
+`HashMap`:
+
+* Allows one `null` key.
+* Allows multiple `null` values.
+
+`HashSet`:
+
+* Permits one `null` element.
+
+`ArrayDeque`:
+
+* Does not permit `null`.
+
+`PriorityQueue`:
+
+* Does not permit `null`.
+
+`ConcurrentHashMap`:
+
+* Does not permit `null` keys or values.
+
+`TreeMap`:
+
+* Natural ordering does not permit null keys.
+* A custom comparator may define different comparison behavior, but this
+  should be deliberate.
+
+20.2 HASH COLLISIONS
+
+Two different keys can have the same hash code.
+
+Example:
+
+```text
+Key A -> hash 100
+Key B -> hash 100
+```
+
+A hash collision does not mean the keys are equal.
+
+The map uses key comparison to distinguish mappings.
+
+20.3 DUPLICATES
+
+For:
+
+```java
+Set<Integer> set = new HashSet<>();
+
+set.add(10);
+set.add(10);
+```
+
+the second insertion does not add another element.
+
+The `add()` operation returns:
+
+```text
+true  -> element was added
+false -> element was already present
+```
+
+21. BEST PRACTICES
+
+22. Prefer interface types for variable declarations:
+
+```java
+List<String> names = new ArrayList<>();
+Map<String, Integer> marks = new HashMap<>();
+Set<Integer> ids = new HashSet<>();
+```
+
+2. Use `ArrayList` for most general-purpose list workloads.
+
+3. Use `HashSet` when uniqueness is required without sorted ordering.
+
+4. Use `LinkedHashSet` when uniqueness plus predictable encounter order is
+   required.
+
+5. Use `TreeSet` when sorted set behavior is required.
+
+6. Use `HashMap` for general key-value mappings.
+
+7. Use `LinkedHashMap` when encounter order matters.
+
+8. Use `TreeMap` when sorted key operations are required.
+
+9. Use `ArrayDeque` for typical stack and queue operations.
+
+10. Use `PriorityQueue` when processing according to priority is required.
+
+11. Override `equals()` and `hashCode()` consistently.
+
+12. Prefer immutable keys for hash-based collections.
+
+13. Use `List.of()`, `Set.of()`, and `Map.of()` for fixed immutable data.
+
+14. Use `ConcurrentHashMap` for appropriate high-concurrency map workloads.
+
+15. If the expected collection size is known, consider supplying an
+    appropriate initial capacity or using the relevant capacity-management
+    methods to reduce resizing.
+
+16. PERFORMANCE CONSIDERATIONS
+
+22.1 ARRAYLIST
+
+Documented performance:
+
+```text
+get() -> O(1)
+set() -> O(1)
+add() -> amortized O(1)
+```
+
+The exact capacity-growth strategy is an implementation detail.
+
+Do not write application logic that depends on a particular growth
+multiplier.
+
+22.2 HASHMAP
+
+For a well-distributed hash function:
+
+```text
+get()    -> O(1) average
+put()    -> O(1) average
+remove() -> O(1) average
+```
+
+The default load factor is:
+
+```text
+0.75
+```
+
+A larger load factor can reduce space overhead but can increase lookup cost.
+
+22.3 TREEMAP
+
+`TreeMap` guarantees logarithmic-time cost for:
+
+```text
+get()
+put()
+remove()
+containsKey()
+```
+
+22.4 PRIORITYQUEUE
+
+Typical operations:
+
+```text
+peek()  -> O(1)
+offer() -> O(log N)
+poll()  -> O(log N)
+```
+
+Searching for an arbitrary element can be O(N).
+
+23. MEMORY CONSIDERATIONS
+
+`ArrayList` stores references in a resizable array.
+
+`LinkedList` stores elements in linked nodes, each containing references
+needed to connect neighboring nodes.
+
+Therefore, `LinkedList` generally has greater per-element memory overhead
+than `ArrayList`.
+
+Exact memory usage depends on:
+
+* JVM implementation
+* Object headers
+* Reference size
+* Alignment
+* Compressed references
+* Element type
+* JVM configuration
+
+Therefore, fixed claims such as "each LinkedList node always consumes
+exactly X bytes" should not be used as portable Java facts.
+
+24. SECURITY CONSIDERATIONS
+
+24.1 HASH COLLISION ATTACKS
+
+Poorly distributed hashes can cause performance degradation in hash tables.
+
+Current OpenJDK `HashMap` includes tree-bin mechanisms that can improve
+worst-case behavior for heavily collided bins.
+
+However, developers should still:
+
+* Use appropriate key types.
+* Implement `hashCode()` correctly.
+* Avoid intentionally poor hash functions.
+* Avoid accepting uncontrolled huge collections without resource limits.
+
+24.2 IMMUTABLE KEYS
+
+Immutable keys reduce the risk of lookup failures caused by changing
+hash-relevant state.
+
+24.3 CONCURRENT ACCESS
+
+Do not use an ordinary `HashMap` as though it were thread-safe.
+
+Use:
+
+```java
+ConcurrentHashMap<K, V>
+```
+
+when its concurrency model matches the application.
+
+24.4 RESOURCE EXHAUSTION
+
+Large collections, uncontrolled user input, or intentionally expensive
+hashing/comparison operations can consume substantial CPU or memory.
+
+Applications should validate input sizes and apply appropriate resource
+limits.
+
+25. COMPARISON WITH RELATED COLLECTIONS
+
+| Feature         | ArrayList       | LinkedList         | HashSet         | TreeSet                                                               | HashMap                  |
+| --------------- | --------------- | ------------------ | --------------- | --------------------------------------------------------------------- | ------------------------ |
+| Main purpose    | Ordered list    | List + Deque       | Unique elements | Sorted unique elements                                                | Key-value mapping        |
+| Duplicates      | Allowed         | Allowed            | Not allowed     | Not allowed                                                           | Keys unique              |
+| Encounter order | List order      | List order         | Not guaranteed  | Sorted                                                                | Not guaranteed           |
+| Index access    | Yes             | Yes, O(N)          | No              | No                                                                    | No                       |
+| Null            | Permitted       | Permitted          | One null        | Depends on ordering/comparator; natural ordering does not permit null | Null key/value permitted |
+| Main structure  | Resizable array | Doubly linked list | Hash table      | Tree                                                                  | Hash table               |
+| Typical lookup  | O(1) index      | O(N) index         | O(1) average    | O(log N)                                                              | O(1) average             |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1: What is a Collection?
+
+A:
+`Collection` is the root interface for many collection types such as
+`List`, `Set`, and `Queue`.
+
+`Map` is separate and does not extend `Collection`.
+
+Q2: What is the default HashMap load factor?
+
+A:
+
+```text
+0.75
+```
+
+The default initial capacity is:
+
+```text
+16
+```
+
+Q3: Does HashMap preserve insertion order?
+
+A:
+
+No. `HashMap` provides no guarantee about encounter order.
+
+Use `LinkedHashMap` when a defined encounter order is required.
+
+Q4: Why is ArrayList usually preferred over LinkedList?
+
+A:
+
+`ArrayList` provides constant-time indexed access and generally has lower
+memory and traversal overhead.
+
+`LinkedList` can be useful when operations at the ends or specific
+linked-list/deque behavior are important.
+
+Q5: What is treeification in HashMap?
+
+A:
+
+In the current OpenJDK implementation, a heavily populated hash bin can be
+converted into a tree structure when the implementation's thresholds and
+table-capacity conditions are satisfied.
+
+Q6: What is the equals/hashCode contract?
+
+A:
+
+If:
+
+```java
+a.equals(b)
+```
+
+is true, then:
+
+```java
+a.hashCode() == b.hashCode()
+```
+
+must also be true.
+
+Q7: Is ConcurrentModificationException guaranteed?
+
+A:
+
+No. Fail-fast behavior is best-effort and should be used for detecting
+programming errors, not as a correctness mechanism.
+
+Q8: Why use ArrayDeque?
+
+A:
+
+It provides an efficient general-purpose implementation of `Deque` and is
+typically preferable to legacy `Stack` for stack behavior and often to
+`LinkedList` for queue/deque workloads.
+
+Q9: Does PriorityQueue iterate in sorted order?
+
+A:
+
+No.
+
+The head is the least element according to the queue's ordering, but the
+iterator does not promise sorted traversal.
+
+27. INTERVIEW QUESTIONS
+
+Q1: Explain HashMap.put().
+
+Answer:
+
+Conceptually:
+
+1. Obtain the key hash.
+2. Derive a hash value used for bucket selection.
+3. Locate the bucket.
+4. If empty, insert a new mapping.
+5. If occupied, compare candidate keys.
+6. If an equal key exists, replace its value.
+7. Otherwise add a new mapping.
+8. Resize when the implementation's threshold is exceeded.
+9. Current OpenJDK may treeify heavily populated bins under its
+   implementation-specific conditions.
+
+Q2: Difference between HashMap and TreeMap?
+
+Answer:
+
+`HashMap` provides hash-based lookup with no guaranteed ordering.
+
+`TreeMap` maintains sorted keys and provides guaranteed logarithmic-time
+basic operations.
+
+Q3: Difference between ArrayList and LinkedList?
+
+Answer:
+
+`ArrayList` uses a resizable array and provides constant-time indexed access.
+
+`LinkedList` uses a doubly linked structure and indexed access requires
+traversal.
+
+Q4: What is the difference between Comparable and Comparator?
+
+Answer:
+
+`Comparable` defines a class's natural ordering.
+
+`Comparator` defines an external/custom ordering.
+
+Q5: What happens when two keys have the same hash code?
+
+Answer:
+
+A hash collision occurs.
+
+The keys can still be stored separately if they are not equal according to
+`equals()`.
+
+Q6: Why should HashMap keys be immutable?
+
+Answer:
+
+Changing fields used by `equals()` or `hashCode()` after insertion can make
+the mapping difficult or impossible to locate.
+
+Q7: What is ConcurrentHashMap?
+
+Answer:
+
+It is a thread-safe map designed for concurrent access, providing
+concurrent retrievals and high expected concurrency for updates.
+
+Q8: What is fail-fast iteration?
+
+Answer:
+
+An iterator may detect structural modification after iterator creation and
+throw `ConcurrentModificationException`.
+
+This behavior is best-effort and should not be relied upon for program
+correctness.
+
+Q9: What is weakly consistent iteration?
+
+Answer:
+
+Concurrent collection iterators can proceed while other threads modify the
+collection. They do not throw `ConcurrentModificationException` merely
+because concurrent modification occurs.
+
+28. EXAM QUESTIONS
+
+Q1:
+What happens when a duplicate element is added to a Set?
+
+Answer:
+
+The duplicate is not inserted and `add()` returns `false`.
+
+Q2:
+Does Map extend Collection?
+
+Answer:
+
+No.
+
+`Map<K,V>` is a separate interface hierarchy.
+
+Q3:
+Which collection provides sorted keys?
+
+Answer:
+
+`TreeMap`.
+
+Q4:
+Which collection is commonly used for unique elements with hash-based
+lookup?
+
+Answer:
+
+`HashSet`.
+
+Q5:
+Which collection provides index-based constant-time access?
+
+Answer:
+
+`ArrayList`.
+
+Q6:
+Which collection is suitable for a priority-based processing queue?
+
+Answer:
+
+`PriorityQueue`.
+
+Q7:
+Which collection is designed for concurrent map access?
+
+Answer:
+
+`ConcurrentHashMap`.
+
+Q8:
+Does ArrayDeque permit null elements?
+
+Answer:
+
+No.
+
+29. PRACTICE QUESTIONS
+
+Q1:
+Implement a student management system using:
+
+```text
+ArrayList<Student>
+```
+
+Requirements:
+
+* Add student
+* Remove student
+* Search student
+* Sort students
+* Display students
+
+Q2:
+Write a program to count word frequencies using:
+
+```java
+HashMap<String, Integer>
+```
+
+Q3:
+Remove duplicate integers from an array using:
+
+```java
+HashSet<Integer>
+```
+
+Q4:
+Sort employees by:
+
+1. Department
+2. Salary descending
+3. Name ascending
+
+using a `Comparator`.
+
+Q5:
+Implement a task scheduler using:
+
+```java
+PriorityQueue<Task>
+```
+
+Q6:
+Implement an LRU cache using:
+
+```java
+LinkedHashMap<K,V>
+```
+
+Q7:
+Create an immutable configuration using:
+
+```java
+List.of()
+Set.of()
+Map.of()
+```
+
+Q8:
+Implement a concurrent page-view counter using:
+
+```java
+ConcurrentHashMap<String, Long>
+```
+
+30. SUMMARY
+
+The Java Collections Framework provides reusable interfaces and
+implementations for storing and processing groups of objects.
+
+Important structures include:
+
+```text
+List
+ ├── ArrayList
+ └── LinkedList
+
+Set
+ ├── HashSet
+ ├── LinkedHashSet
+ └── TreeSet
+
+Queue / Deque
+ ├── ArrayDeque
+ ├── LinkedList
+ └── PriorityQueue
+
+Map
+ ├── HashMap
+ ├── LinkedHashMap
+ └── TreeMap
+```
+
+For concurrent applications, Java also provides:
+
+```text
+ConcurrentHashMap
+CopyOnWriteArrayList
+ConcurrentLinkedQueue
+ConcurrentSkipListMap
+ConcurrentSkipListSet
+BlockingQueue implementations
+```
+
+Understanding collection interfaces is more important than memorizing only
+specific classes.
+
+Choose a collection based on:
+
+* Ordering requirements
+* Uniqueness
+* Lookup requirements
+* Insertion/removal pattern
+* Memory usage
+* Sorting requirements
+* Concurrency requirements
+
+31. KEY TAKEAWAYS
+
+* `List` allows duplicates and maintains list order.
+* `Set` represents unique elements.
+* `Queue` supports processing elements in queue-oriented order.
+* `Deque` supports operations at both ends.
+* `Map` stores key-value mappings and is separate from `Collection`.
+* `ArrayList` provides constant-time indexed access.
+* `LinkedList` is a doubly linked `List` and `Deque`.
+* `HashSet` is backed by a hash table and does not guarantee iteration order.
+* `TreeSet` maintains sorted elements.
+* `HashMap` provides average constant-time basic operations when hashing is
+  well distributed.
+* `LinkedHashMap` provides a well-defined encounter order.
+* `TreeMap` provides sorted keys and logarithmic-time basic operations.
+* `PriorityQueue` is heap-based and provides efficient priority processing.
+* `ArrayDeque` is an efficient general-purpose `Deque` and does not permit
+  null elements.
+* `equals()` and `hashCode()` must obey their contract.
+* Hash-based keys should generally be immutable with respect to
+  hash-relevant state.
+* `HashMap` treeification thresholds such as 8, 6, and 64 are OpenJDK
+  implementation details, not general Java API guarantees.
+* `ArrayList`'s exact growth factor is also an implementation detail; rely
+  on documented amortized performance instead.
+* `ConcurrentHashMap` is designed for concurrent map access.
+* Do not treat `ConcurrentModificationException` as a synchronization
+  mechanism.
+* Use immutable factory methods such as `List.of()`, `Set.of()`, and
+  `Map.of()` when mutable operations are not required.
+* Select collections according to the application's actual requirements
+  rather than relying on one collection for every problem.
+  ================================================================================
+  END OF DOCUMENT
+  ================================================================================

@@ -1,0 +1,1648 @@
+COURSE: Java Programming
+TOPIC: Inheritance, Polymorphism, Abstract Classes, Interfaces, and Sealed Types
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE / Java Language Specification (JLS) / Java Virtual Machine Specification (JVMS)
+
+================================================================================
+INHERITANCE, POLYMORPHISM, ABSTRACT CLASSES, INTERFACES, AND SEALED TYPES
+=========================================================================
+
+1. INTRODUCTION
+
+Inheritance and polymorphism are fundamental object-oriented programming mechanisms in Java. Inheritance allows a class to derive behavior and structure from another class, while polymorphism allows one reference type to work with objects of different concrete types.
+
+Java supports:
+
+* Single inheritance between classes using `extends`.
+* Multiple interface implementation using `implements`.
+* Interface inheritance using `extends`.
+* Abstract classes and abstract methods.
+* Method overriding and runtime polymorphism.
+* Method overloading for compile-time polymorphism.
+* `final` classes and methods to restrict inheritance and overriding.
+* Interface `default`, `static`, and `private` methods.
+* Sealed classes and interfaces using `sealed`, `permits`, and `non-sealed`.
+* Pattern matching features that can work particularly well with sealed hierarchies.
+
+A Java class has only one direct superclass, while a class may implement multiple interfaces. Every ordinary Java class ultimately derives from `java.lang.Object`.
+
+Java language and JVM specifications define the rules for inheritance, overriding, and method invocation. Specific JVM implementations may use different internal dispatch optimizations.
+
+2. LEARNING OBJECTIVES
+
+After studying this topic, learners should be able to:
+
+* Understand class inheritance using `extends`.
+* Use `super()` and `super(...)` to invoke superclass constructors.
+* Understand method overriding and the `@Override` annotation.
+* Distinguish method overloading from method overriding.
+* Explain compile-time and runtime polymorphism.
+* Understand abstract classes and abstract methods.
+* Design interfaces and implement multiple interfaces.
+* Use interface `default`, `static`, and `private` methods.
+* Resolve conflicting interface default methods.
+* Use `final` to restrict inheritance and overriding.
+* Understand covariant return types.
+* Design restricted class hierarchies using sealed classes and interfaces.
+* Use exhaustive pattern matching with sealed types where supported by the Java language version.
+* Understand JVM method invocation instructions at a specification level.
+
+3. PREREQUISITES
+
+Students should understand:
+
+* Java variables and data types.
+* Classes and objects.
+* Methods and constructors.
+* Access modifiers.
+* Encapsulation.
+* Basic exception handling.
+* Basic Java syntax.
+
+4. BEGINNER CONCEPTS
+
+4.1 CLASS INHERITANCE
+
+A class can extend one direct superclass using the `extends` keyword.
+
+Example:
+
+```java
+class Animal {
+    protected String name;
+
+    public Animal(String name) {
+        this.name = name;
+    }
+
+    public void makeSound() {
+        System.out.println("Generic animal sound");
+    }
+}
+
+class Dog extends Animal {
+
+    public Dog(String name) {
+        super(name);
+    }
+
+    @Override
+    public void makeSound() {
+        System.out.println(name + " barks: Woof!");
+    }
+}
+```
+
+`Dog` is a subclass of `Animal`.
+
+The subclass can inherit accessible members from its superclass. Private members are not directly accessible by the subclass.
+
+4.2 THE `super` KEYWORD
+
+`super` can be used to:
+
+* Invoke a superclass constructor.
+* Access an accessible superclass field.
+* Invoke a superclass method.
+
+Example:
+
+```java
+class Parent {
+    int value = 10;
+
+    void display() {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+    int value = 20;
+
+    void show() {
+        System.out.println(super.value);
+        super.display();
+    }
+}
+```
+
+A superclass constructor invocation must occur as the first statement of a constructor when explicitly written.
+
+4.3 METHOD OVERRIDING
+
+A subclass overrides an inherited instance method when it provides a compatible method declaration according to Java's overriding rules.
+
+Example:
+
+```java
+class Animal {
+    void sound() {
+        System.out.println("Animal sound");
+    }
+}
+
+class Dog extends Animal {
+    @Override
+    void sound() {
+        System.out.println("Dog barks");
+    }
+}
+```
+
+The `@Override` annotation tells the compiler that the programmer intends to override an inherited method. It helps detect accidental signature mistakes.
+
+4.4 RUNTIME POLYMORPHISM
+
+A superclass reference can refer to a subclass object:
+
+```java
+Animal animal = new Dog("Buddy");
+animal.makeSound();
+```
+
+The reference type is `Animal`, but the actual object is a `Dog`.
+
+The overridden instance method is selected according to Java's runtime method-dispatch rules.
+
+Output:
+
+```text
+Buddy barks: Woof!
+```
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 METHOD OVERLOADING
+
+Method overloading means defining multiple methods with the same name but different parameter lists.
+
+```java
+class Calculator {
+
+    int add(int a, int b) {
+        return a + b;
+    }
+
+    double add(double a, double b) {
+        return a + b;
+    }
+
+    int add(int a, int b, int c) {
+        return a + b + c;
+    }
+}
+```
+
+Overload selection is primarily determined at compile time.
+
+5.2 METHOD OVERRIDING
+
+Overriding occurs when a subclass provides a new implementation for an inherited instance method.
+
+```java
+class Vehicle {
+    void start() {
+        System.out.println("Vehicle starts");
+    }
+}
+
+class Car extends Vehicle {
+
+    @Override
+    void start() {
+        System.out.println("Car starts");
+    }
+}
+```
+
+5.3 COMPILE-TIME VS RUNTIME POLYMORPHISM
+
+Compile-time polymorphism:
+
+```java
+calculator.add(10, 20);
+calculator.add(10.5, 20.5);
+```
+
+The compiler determines which overloaded method is applicable.
+
+Runtime polymorphism:
+
+```java
+Vehicle vehicle = new Car();
+vehicle.start();
+```
+
+The implementation associated with the runtime object is selected according to Java's virtual method invocation rules.
+
+5.4 ABSTRACT CLASSES
+
+An abstract class is declared using `abstract`.
+
+It can contain:
+
+* Instance fields.
+* Constructors.
+* Concrete methods.
+* Abstract methods.
+* Static members.
+* Final members.
+
+Example:
+
+```java
+abstract class Shape {
+
+    protected String color;
+
+    public Shape(String color) {
+        this.color = color;
+    }
+
+    abstract double area();
+
+    public void displayColor() {
+        System.out.println("Color: " + color);
+    }
+}
+
+class Circle extends Shape {
+
+    private double radius;
+
+    public Circle(String color, double radius) {
+        super(color);
+        this.radius = radius;
+    }
+
+    @Override
+    double area() {
+        return Math.PI * radius * radius;
+    }
+}
+```
+
+An abstract class cannot be directly instantiated:
+
+```java
+// Shape s = new Shape("Red");   // Compilation error
+```
+
+5.5 INTERFACES
+
+An interface defines a type that classes can implement.
+
+```java
+interface Printable {
+    void print();
+}
+
+class Report implements Printable {
+
+    @Override
+    public void print() {
+        System.out.println("Printing report");
+    }
+}
+```
+
+A class can implement multiple interfaces:
+
+```java
+class SmartPrinter implements Printable, Scannable {
+    // implementations
+}
+```
+
+Interfaces can also extend multiple interfaces.
+
+5.6 ABSTRACT CLASS VS INTERFACE
+
+| Feature              | Abstract Class              | Interface                              |
+| -------------------- | --------------------------- | -------------------------------------- |
+| Keyword              | `abstract class`            | `interface`                            |
+| Class inheritance    | One direct superclass       | Multiple interfaces can be implemented |
+| Instance fields      | Yes                         | No instance fields                     |
+| Constructors         | Yes                         | No constructors                        |
+| Abstract methods     | Yes                         | Yes                                    |
+| Concrete methods     | Yes                         | Yes, including `default` methods       |
+| Static methods       | Yes                         | Yes                                    |
+| Private methods      | Yes                         | Yes                                    |
+| Multiple inheritance | No                          | Multiple interfaces                    |
+| Typical purpose      | Shared state/implementation | Contract/capability                    |
+
+Interface fields are implicitly `public`, `static`, and `final`.
+
+6. ADVANCED CONCEPTS
+
+6.1 INTERFACE DEFAULT METHODS
+
+Java interfaces can provide default implementations.
+
+```java
+interface Logger {
+
+    default void log(String message) {
+        System.out.println("LOG: " + message);
+    }
+}
+
+class Application implements Logger {
+}
+```
+
+The class automatically receives the default implementation unless it provides its own implementation.
+
+6.2 INTERFACE STATIC METHODS
+
+Interfaces can contain static methods.
+
+```java
+interface MathUtil {
+
+    static int square(int value) {
+        return value * value;
+    }
+}
+
+class Test {
+    public static void main(String[] args) {
+        System.out.println(MathUtil.square(5));
+    }
+}
+```
+
+The static method is invoked using the interface name.
+
+6.3 PRIVATE INTERFACE METHODS
+
+Interfaces can contain private methods that support their own default or static methods.
+
+```java
+interface Logger {
+
+    default void log(String message) {
+        System.out.println(format(message));
+    }
+
+    private String format(String message) {
+        return "[LOG] " + message;
+    }
+}
+```
+
+Private interface methods are not inherited or overridden by implementing classes.
+
+6.4 MULTIPLE INTERFACE DEFAULT METHOD CONFLICT
+
+If two interfaces provide conflicting default methods with the same signature, the implementing class must resolve the conflict.
+
+```java
+interface A {
+    default void execute() {
+        System.out.println("A");
+    }
+}
+
+interface B {
+    default void execute() {
+        System.out.println("B");
+    }
+}
+
+class Service implements A, B {
+
+    @Override
+    public void execute() {
+        A.super.execute();
+    }
+}
+```
+
+The class may choose one default implementation or provide its own implementation.
+
+6.5 `final` CLASSES
+
+A `final` class cannot be extended.
+
+```java
+final class SecurityToken {
+}
+```
+
+This is invalid:
+
+```java
+// class CustomToken extends SecurityToken { }
+```
+
+6.6 `final` METHODS
+
+A final instance method cannot be overridden by subclasses.
+
+```java
+class Parent {
+
+    final void display() {
+        System.out.println("Fixed behavior");
+    }
+}
+```
+
+6.7 COVARIANT RETURN TYPES
+
+An overriding method can return a subtype of the return type declared by the overridden method.
+
+```java
+class Animal {
+}
+
+class Dog extends Animal {
+}
+
+class AnimalFactory {
+    Animal create() {
+        return new Animal();
+    }
+}
+
+class DogFactory extends AnimalFactory {
+
+    @Override
+    Dog create() {
+        return new Dog();
+    }
+}
+```
+
+7. SEALED CLASSES AND INTERFACES
+
+Sealed types allow a class or interface to explicitly restrict which types may directly extend or implement it.
+
+Example:
+
+```java
+sealed interface PaymentResult
+        permits Success, Failure, Pending {
+}
+```
+
+Permitted subclasses must follow the sealing rules.
+
+They can generally be declared as:
+
+* `final`
+* `sealed`
+* `non-sealed`
+
+Example:
+
+```java
+sealed interface PaymentResult
+        permits Success, Failure, Pending {
+}
+
+record Success(String transactionId) implements PaymentResult {
+}
+
+record Failure(String reason) implements PaymentResult {
+}
+
+record Pending(String transactionId) implements PaymentResult {
+}
+```
+
+Records are implicitly final, so they are suitable as terminal implementations of a sealed hierarchy.
+
+7.1 `final`, `sealed`, AND `non-sealed`
+
+```java
+sealed class Payment
+        permits CardPayment, CashPayment, OnlinePayment {
+}
+
+final class CardPayment extends Payment {
+}
+
+sealed class CashPayment extends Payment
+        permits IndianCashPayment {
+}
+
+final class IndianCashPayment extends CashPayment {
+}
+
+non-sealed class OnlinePayment extends Payment {
+}
+```
+
+Meaning:
+
+* `final`: no further subclassing.
+* `sealed`: further subclasses are restricted.
+* `non-sealed`: removes the sealing restriction for that branch.
+
+7.2 SEALED INTERFACE
+
+```java
+sealed interface Result
+        permits Success, Error {
+}
+
+final class Success implements Result {
+}
+
+final class Error implements Result {
+}
+```
+
+A variable declared as `Result` can refer to either permitted implementation.
+
+8. JVM METHOD INVOCATION
+
+The JVM specification defines several method invocation instructions.
+
+Important instructions include:
+
+### `invokevirtual`
+
+Used for normal instance method invocation where virtual dispatch applies.
+
+```java
+animal.makeSound();
+```
+
+### `invokeinterface`
+
+Used for interface method invocation.
+
+```java
+printer.print();
+```
+
+### `invokestatic`
+
+Used to invoke static methods.
+
+```java
+MathUtil.square(5);
+```
+
+### `invokespecial`
+
+Used for special invocation cases such as:
+
+* Constructors.
+* Certain superclass method invocations.
+* Private instance methods.
+
+Important:
+
+The JVM specification defines these instructions and their behavior, but it does not require every JVM implementation to use a specific `vtable`, `itable`, pointer layout, or fixed-time lookup algorithm.
+
+Therefore, `vtable` and `itable` are useful implementation concepts, especially for understanding HotSpot-style JVMs, but they should not be presented as universal JVM requirements.
+
+9. BASIC EXAMPLE
+
+```java
+public class BasicInheritance {
+
+    static class Employee {
+        protected String name;
+        protected double baseSalary;
+
+        public Employee(String name, double baseSalary) {
+            this.name = name;
+            this.baseSalary = baseSalary;
+        }
+
+        public double calculatePay() {
+            return baseSalary;
+        }
+
+        public void printBadge() {
+            System.out.println(
+                "Employee: " + name +
+                " | Base Pay: $" + baseSalary
+            );
+        }
+    }
+
+    static class Manager extends Employee {
+        private double bonus;
+
+        public Manager(String name, double baseSalary, double bonus) {
+            super(name, baseSalary);
+            this.bonus = bonus;
+        }
+
+        @Override
+        public double calculatePay() {
+            return baseSalary + bonus;
+        }
+
+        @Override
+        public void printBadge() {
+            super.printBadge();
+            System.out.println(
+                "  -> Role: Manager | Bonus: $" + bonus
+            );
+        }
+    }
+
+    public static void main(String[] args) {
+
+        Employee emp =
+            new Employee("Alice", 60000);
+
+        Employee mgr =
+            new Manager("Bob", 90000, 25000);
+
+        System.out.println(
+            "Emp Pay: $" + emp.calculatePay()
+        );
+
+        System.out.println(
+            "Mgr Pay: $" + mgr.calculatePay()
+        );
+
+        mgr.printBadge();
+    }
+}
+```
+
+10. INTERMEDIATE INTERFACE EXAMPLE
+
+```java
+public class IntermediateInterfaces {
+
+    interface Loggable {
+
+        default void log(String message) {
+            System.out.println(
+                "[LOG] " + format(message)
+            );
+        }
+
+        private String format(String message) {
+            return System.currentTimeMillis()
+                    + " - " + message;
+        }
+    }
+
+    interface Auditable {
+
+        default void log(String message) {
+            System.out.println(
+                "[AUDIT] " + message
+            );
+        }
+    }
+
+    static class OrderProcessor
+            implements Loggable, Auditable {
+
+        private String orderId;
+
+        public OrderProcessor(String orderId) {
+            this.orderId = orderId;
+        }
+
+        @Override
+        public void log(String message) {
+            Loggable.super.log(
+                "Order " + orderId + ": " + message
+            );
+
+            Auditable.super.log(
+                "Order " + orderId + ": " + message
+            );
+        }
+
+        public void process() {
+            log("Order transaction committed.");
+        }
+    }
+
+    public static void main(String[] args) {
+
+        OrderProcessor processor =
+            new OrderProcessor("ORD-8821");
+
+        processor.process();
+    }
+}
+```
+
+11. ADVANCED SEALED-TYPE EXAMPLE
+
+```java
+public class AdvancedSealedTypes {
+
+    sealed interface PaymentStatus
+            permits Authorized, Settled, Declined {
+    }
+
+    record Authorized(
+            String authCode,
+            double amount
+    ) implements PaymentStatus {
+    }
+
+    record Settled(
+            String transactionId,
+            double amount
+    ) implements PaymentStatus {
+    }
+
+    record Declined(
+            String errorCode,
+            String reason
+    ) implements PaymentStatus {
+    }
+
+    public static String evaluatePayment(
+            PaymentStatus status) {
+
+        return switch (status) {
+
+            case Authorized auth ->
+                String.format(
+                    "Payment Authorized: Code %s for $%.2f",
+                    auth.authCode(),
+                    auth.amount()
+                );
+
+            case Settled settled ->
+                String.format(
+                    "Payment Settled: Tx %s for $%.2f",
+                    settled.transactionId(),
+                    settled.amount()
+                );
+
+            case Declined declined ->
+                String.format(
+                    "Payment DECLINED [%s]: %s",
+                    declined.errorCode(),
+                    declined.reason()
+                );
+        };
+    }
+
+    public static void main(String[] args) {
+
+        PaymentStatus s1 =
+            new Authorized("AUTH-991", 249.99);
+
+        PaymentStatus s2 =
+            new Settled("TX-77182", 249.99);
+
+        PaymentStatus s3 =
+            new Declined(
+                "ERR_INSUFFICIENT_FUNDS",
+                "Card balance exceeded limit"
+            );
+
+        System.out.println(evaluatePayment(s1));
+        System.out.println(evaluatePayment(s2));
+        System.out.println(evaluatePayment(s3));
+    }
+}
+```
+
+This example relies on Java's pattern-matching `switch` support available in modern Java versions. A sealed hierarchy can provide the compiler with the information needed to determine whether the cases are exhaustive.
+
+12. CODE WALKTHROUGHS
+
+12.1 BASIC INHERITANCE
+
+```java
+Employee mgr = new Manager("Bob", 90000, 25000);
+```
+
+The declared type of `mgr` is `Employee`.
+
+The actual object is a `Manager`.
+
+Therefore:
+
+```java
+mgr.calculatePay();
+```
+
+uses the overridden implementation applicable to the actual object.
+
+12.2 SUPERCLASS CONSTRUCTOR
+
+```java
+super(name, baseSalary);
+```
+
+This invokes the constructor of the direct superclass.
+
+Superclass construction occurs before the subclass constructor body continues.
+
+12.3 INTERFACE DEFAULT METHODS
+
+When `OrderProcessor` implements both `Loggable` and `Auditable`, both interfaces provide a `log()` default method.
+
+Therefore, `OrderProcessor` explicitly overrides `log()` and chooses how to use the inherited default implementations.
+
+12.4 SEALED TYPES
+
+```java
+sealed interface PaymentStatus
+        permits Authorized, Settled, Declined
+```
+
+This establishes a restricted set of permitted direct implementations.
+
+The compiler can use this type information when checking applicable pattern matching constructs.
+
+13. EXPECTED OUTPUT
+
+For the basic example:
+
+```text
+Emp Pay: $60000.0
+Mgr Pay: $115000.0
+Employee: Bob | Base Pay: $90000.0
+  -> Role: Manager | Bonus: $25000.0
+```
+
+For the interface example, the timestamp is environment-dependent:
+
+```text
+[LOG] 1750000000000 - Order ORD-8821: Order transaction committed.
+[AUDIT] Order ORD-8821: Order transaction committed.
+```
+
+For the sealed example:
+
+```text
+Payment Authorized: Code AUTH-991 for $249.99
+Payment Settled: Tx TX-77182 for $249.99
+Payment DECLINED [ERR_INSUFFICIENT_FUNDS]: Card balance exceeded limit
+```
+
+14. EXECUTION FLOW
+
+A simplified Java execution flow is:
+
+1. Java source code is compiled into class files.
+2. The JVM loads classes when required.
+3. Classes are linked and initialized according to JVM and Java language rules.
+4. Constructors execute when objects are created.
+5. A superclass constructor is completed before the subclass constructor body continues.
+6. Instance method calls follow Java's method invocation and overriding rules.
+7. The JVM may interpret bytecode and/or compile frequently executed code into native machine code.
+8. JVM implementations may apply optimizations such as method inlining and devirtualization.
+9. Garbage collection automatically manages unreachable objects.
+
+The exact internal implementation of method dispatch is JVM-dependent.
+
+15. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Implement an employee hierarchy:
+
+```text
+Employee
+├── Developer
+├── Manager
+└── Tester
+```
+
+Override a method such as:
+
+```java
+calculateSalary()
+```
+
+and demonstrate runtime polymorphism.
+
+Problem 2:
+
+Create an abstract `Shape` class with:
+
+```java
+area()
+perimeter()
+```
+
+Implement:
+
+```text
+Circle
+Rectangle
+Triangle
+```
+
+Problem 3:
+
+Create a `Payment` interface with:
+
+```java
+pay()
+refund()
+```
+
+Implement:
+
+```text
+CardPayment
+UPIPayment
+CashPayment
+```
+
+Problem 4:
+
+Create a sealed hierarchy:
+
+```text
+sealed interface Transaction
+├── Deposit
+├── Withdrawal
+└── Transfer
+```
+
+Use pattern matching to process each transaction type.
+
+Problem 5:
+
+Create two interfaces with the same default method and explicitly resolve the conflict in an implementing class.
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 DOMAIN MODELING
+
+Sealed types can model a fixed set of domain states:
+
+```text
+OrderState
+├── Created
+├── Paid
+├── Shipped
+└── Cancelled
+```
+
+This is useful when the application intentionally controls the possible direct variants.
+
+16.2 PAYMENT SYSTEMS
+
+Interfaces can provide a common contract:
+
+```java
+interface PaymentProcessor {
+    void process();
+}
+```
+
+Different implementations can support:
+
+```text
+CardPayment
+UPIPayment
+BankTransfer
+```
+
+16.3 PLUGIN ARCHITECTURES
+
+Interfaces can define extension points:
+
+```java
+interface Plugin {
+    void start();
+    void stop();
+}
+```
+
+Different plugins can implement the same contract.
+
+16.4 GAME DEVELOPMENT
+
+A common superclass or interface can represent game entities while different implementations provide specialized behavior.
+
+17. COMMON MISTAKES
+
+17.1 CALLING OVERRIDABLE METHODS FROM CONSTRUCTORS
+
+Avoid calling overridable instance methods from constructors.
+
+Example:
+
+```java
+class Parent {
+
+    Parent() {
+        display();
+    }
+
+    void display() {
+        System.out.println("Parent");
+    }
+}
+```
+
+If a subclass overrides `display()`, dynamic dispatch can invoke the subclass implementation while the subclass is still being initialized.
+
+This can expose partially initialized state.
+
+17.2 FORGETTING `@Override`
+
+Instead of:
+
+```java
+void diplay() {
+}
+```
+
+use:
+
+```java
+@Override
+void display() {
+}
+```
+
+The annotation allows the compiler to verify the intended override.
+
+17.3 DEFAULT METHOD CONFLICTS
+
+If unrelated interfaces provide conflicting defaults, the implementing class may need to override the method.
+
+17.4 CONFUSING OVERLOADING AND OVERRIDING
+
+Overloading:
+
+```java
+void print(int x)
+void print(String x)
+```
+
+Overriding:
+
+```java
+class Child extends Parent {
+    @Override
+    void print() {
+    }
+}
+```
+
+18. COMMON ERRORS
+
+18.1 EXTENDING A FINAL CLASS
+
+```text
+cannot inherit from final ClassName
+```
+
+Cause:
+
+```java
+final class A {
+}
+
+class B extends A {
+}
+```
+
+18.2 INVALID SEALED SUBCLASS
+
+A class directly extending or implementing a sealed type must satisfy the sealed hierarchy rules.
+
+18.3 CONFLICTING DEFAULT METHODS
+
+Example:
+
+```text
+class inherits unrelated defaults for method ...
+```
+
+Cause:
+
+Two interfaces provide incompatible default implementations and the class does not resolve the conflict.
+
+18.4 INCOMPLETE ABSTRACT IMPLEMENTATION
+
+A non-abstract subclass must implement the required inherited abstract methods.
+
+19. DEBUGGING TECHNIQUES
+
+19.1 INCORRECT DESIGN
+
+```java
+class Parent {
+
+    Parent() {
+        printState();
+    }
+
+    void printState() {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+
+    private String childField = "Initialized";
+
+    @Override
+    void printState() {
+        System.out.println(childField.toUpperCase());
+    }
+}
+```
+
+When:
+
+```java
+new Child();
+```
+
+is executed, superclass construction occurs before the subclass's instance field initializers and constructor body have completed.
+
+The call to the overridable method can therefore observe incompletely initialized subclass state.
+
+19.2 BETTER DESIGN
+
+```java
+class Parent {
+
+    Parent() {
+        // Initialize parent state only.
+    }
+
+    void printState() {
+        System.out.println("Parent");
+    }
+}
+
+class Child extends Parent {
+
+    private String childField = "Initialized";
+
+    Child() {
+        printState();
+    }
+
+    @Override
+    void printState() {
+        System.out.println(childField.toUpperCase());
+    }
+}
+```
+
+The method is called after the subclass's field initialization has completed.
+
+20. EDGE CASES
+
+20.1 COVARIANT RETURN TYPES
+
+A subclass may return a more specific type:
+
+```java
+Animal create();
+```
+
+can be overridden as:
+
+```java
+Dog create();
+```
+
+when `Dog` is a subtype of `Animal`.
+
+20.2 PRIVATE METHODS
+
+Private methods are not overridden because they are not inherited by subclasses.
+
+20.3 STATIC METHODS
+
+Static methods are hidden rather than overridden.
+
+```java
+class Parent {
+    static void show() {
+    }
+}
+
+class Child extends Parent {
+    static void show() {
+    }
+}
+```
+
+This is different from instance-method overriding.
+
+20.4 FINAL METHODS
+
+A final method cannot be overridden.
+
+20.5 ABSTRACT + FINAL
+
+A method cannot meaningfully be both `abstract` and `final`, because an abstract method requires implementation by a subclass while a final method forbids overriding.
+
+21. BEST PRACTICES
+
+* Prefer composition over inheritance when a strict "is-a" relationship is not appropriate.
+* Use `@Override` for every intended override.
+* Keep inheritance hierarchies shallow where practical.
+* Use interfaces for contracts and capabilities.
+* Keep interfaces cohesive and focused.
+* Use abstract classes when shared state or implementation is important.
+* Use sealed types when the set of permitted direct subtypes is intentionally restricted.
+* Use `final` when extension is not part of the design.
+* Avoid calling overridable methods from constructors.
+* Do not depend on JVM-specific internal layouts unless writing JVM-specific documentation or tooling.
+* Prefer immutable domain objects where appropriate.
+
+22. PERFORMANCE CONSIDERATIONS
+
+Virtual and interface method calls have runtime dispatch semantics, but modern JVM implementations can optimize frequently executed code.
+
+Possible JVM optimizations include:
+
+* Method inlining.
+* Devirtualization.
+* Type profiling.
+* Escape analysis.
+* Dead-code elimination.
+* Other JIT compiler optimizations.
+
+For example:
+
+```java
+Animal animal = new Dog();
+animal.makeSound();
+```
+
+A JVM implementation may optimize the call when it can prove or strongly infer the target type.
+
+Important:
+
+Do not assume that every virtual call requires a literal `vtable` lookup at runtime. JIT compilation can transform or eliminate dispatch overhead.
+
+Performance should be measured using appropriate profiling and benchmarking techniques rather than assumed from source-level syntax.
+
+23. MEMORY CONSIDERATIONS
+
+Inheritance and polymorphism do not define a universal object-memory layout.
+
+The Java language specification does not specify:
+
+* A fixed object header size.
+* A universal reference size.
+* A fixed `vtable` size.
+* A universal `itable` layout.
+* A fixed amount of memory consumed by every subclass object.
+
+These details depend on the JVM implementation, architecture, runtime options, and optimization strategy.
+
+A useful conceptual model is:
+
+```text
+Reference
+   |
+   v
+Object
+ ├── inherited state
+ ├── subclass state
+ └── implementation-specific runtime metadata
+```
+
+However, the exact physical memory layout should not be assumed from this diagram.
+
+24. SECURITY CONSIDERATIONS
+
+Inheritance can affect security-sensitive code because subclasses may change behavior through overriding.
+
+For security-sensitive designs:
+
+* Use `final` when subclassing is not intended.
+* Use sealed hierarchies when a controlled set of implementations is appropriate.
+* Restrict access to sensitive state using appropriate access modifiers.
+* Validate inputs at security boundaries.
+* Avoid exposing mutable internal state unnecessarily.
+* Avoid relying only on inheritance restrictions for security; use proper authorization and validation mechanisms.
+* Follow the security requirements of the specific API or framework being used.
+
+The use of `final` or `sealed` should be based on the intended extension model, not treated as a complete security mechanism by itself.
+
+25. COMPARISON WITH RELATED LANGUAGES
+
+| Feature                           | Java                     | C++                                                            | Python                                        |
+| --------------------------------- | ------------------------ | -------------------------------------------------------------- | --------------------------------------------- |
+| Class inheritance                 | Single direct superclass | Multiple inheritance supported                                 | Multiple inheritance supported                |
+| Interface concept                 | Interfaces               | Abstract classes / multiple inheritance                        | ABCs / protocols / duck typing                |
+| Runtime polymorphism              | Supported                | Supported through virtual functions                            | Dynamic dispatch                              |
+| Multiple interface-like contracts | Multiple interfaces      | Multiple base classes / abstract classes                       | Multiple inheritance / protocols              |
+| Sealed/restricted hierarchy       | `sealed` / `permits`     | `final` and other language mechanisms                          | Type-system mechanisms vary                   |
+| Method overriding                 | Supported                | Supported                                                      | Supported                                     |
+| Garbage collection                | JVM-managed              | Generally manual/RAII, implementation-specific tools may exist | Implementation-dependent                      |
+| Static typing                     | Yes                      | Yes                                                            | Dynamically typed language                    |
+| `final` class                     | Yes                      | `final` class                                                  | No direct equivalent with identical semantics |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1. Why does Java not support multiple class inheritance?
+
+A:
+
+A Java class has one direct superclass. Java uses interfaces to provide multiple inheritance of type and behavior contracts while avoiding the complexities associated with multiple superclass state and implementation inheritance.
+
+Q2. What is runtime polymorphism?
+
+A:
+
+Runtime polymorphism occurs when an overridden instance method is invoked through a superclass or interface reference and the implementation associated with the runtime object is selected.
+
+Example:
+
+```java
+Animal a = new Dog();
+a.makeSound();
+```
+
+Q3. What is an abstract class?
+
+A:
+
+An abstract class is a class that cannot be directly instantiated and may contain abstract methods that subclasses must implement.
+
+Q4. Can an abstract class have a constructor?
+
+A:
+
+Yes. An abstract class can define constructors, and those constructors participate in superclass construction when a concrete subclass is instantiated.
+
+Q5. Can an interface have implemented methods?
+
+A:
+
+Yes. Modern Java interfaces can contain default, static, and private methods in addition to abstract methods.
+
+Q6. What is a sealed class?
+
+A:
+
+A sealed class restricts which classes may directly extend it.
+
+Example:
+
+```java
+sealed class Vehicle
+        permits Car, Bike {
+}
+```
+
+Q7. What is `non-sealed`?
+
+A:
+
+`non-sealed` allows a branch of a sealed hierarchy to become freely extensible.
+
+Q8. Can a record implement a sealed interface?
+
+A:
+
+Yes. A record is implicitly final and can be a permitted implementation of a sealed interface.
+
+Q9. What is the difference between `this()` and `super()`?
+
+A:
+
+`this()` invokes another constructor in the same class.
+
+```java
+this(...);
+```
+
+`super()` invokes a constructor in the direct superclass.
+
+```java
+super(...);
+```
+
+Both constructor invocations must appear as required by Java's constructor invocation rules.
+
+27. INTERVIEW QUESTIONS
+
+Q1. What is the difference between overloading and overriding?
+
+Answer:
+
+Overloading defines multiple methods with different parameter lists and is resolved during compilation.
+
+Overriding provides a subclass implementation for an inherited instance method and participates in runtime dispatch.
+
+Q2. Why is `@Override` recommended?
+
+Answer:
+
+It tells the compiler that a method is intended to override another method. If the method does not actually override a valid inherited method, compilation fails.
+
+Q3. What is the difference between an abstract class and an interface?
+
+Answer:
+
+An abstract class can contain instance state and constructors and a class can extend only one direct superclass.
+
+An interface defines a contract and a class can implement multiple interfaces. Interfaces can also contain default, static, and private methods.
+
+Q4. What happens when two interfaces contain the same default method?
+
+Answer:
+
+Java's inheritance rules determine whether one method takes precedence. If an actual conflict remains, the implementing class must provide an implementation.
+
+Q5. What is a sealed type?
+
+Answer:
+
+A sealed class or interface restricts its direct subclasses or subinterfaces/implementations to a specified set.
+
+Q6. What are the three important modifiers for permitted subclasses of a sealed class?
+
+Answer:
+
+A permitted direct subclass can be:
+
+```text
+final
+sealed
+non-sealed
+```
+
+Q7. What is `invokevirtual`?
+
+Answer:
+
+`invokevirtual` is a JVM instruction used for instance method invocation with virtual dispatch semantics.
+
+Q8. What is `invokeinterface`?
+
+Answer:
+
+`invokeinterface` is a JVM instruction used to invoke an interface method.
+
+Q9. Does the JVM specification require a `vtable`?
+
+Answer:
+
+No. The JVM specification defines method invocation behavior but does not require a particular internal data structure such as a `vtable`.
+
+28. EXAM QUESTIONS
+
+Q1. What is inheritance in Java?
+
+Answer:
+
+Inheritance is the mechanism by which a class derives from another class using `extends`, allowing it to reuse and specialize accessible inherited members.
+
+Q2. What is runtime polymorphism?
+
+Answer:
+
+Runtime polymorphism occurs when an overridden instance method is selected based on the runtime object rather than only the declared reference type.
+
+Q3. Can Java support multiple inheritance?
+
+Answer:
+
+Java does not allow a class to extend multiple classes, but a class can implement multiple interfaces.
+
+Q4. Can an interface contain a private method?
+
+Answer:
+
+Yes. Private interface methods can be used internally by the interface's own methods and cannot be overridden by implementing classes.
+
+Q5. Can a final class be extended?
+
+Answer:
+
+No.
+
+Q6. Can an abstract class contain concrete methods?
+
+Answer:
+
+Yes.
+
+Q7. Can an interface extend multiple interfaces?
+
+Answer:
+
+Yes.
+
+Q8. What is the purpose of a sealed class?
+
+Answer:
+
+It restricts the set of permitted direct subclasses and enables controlled class hierarchies.
+
+29. PRACTICE QUESTIONS
+
+30. Create an abstract `Vehicle` class with `start()` and `stop()` methods. Implement `Car` and `Bike`.
+
+31. Create a `Payment` interface and implement:
+
+    * `CardPayment`
+    * `UPIPayment`
+    * `BankTransfer`
+
+32. Demonstrate runtime polymorphism using:
+
+```java
+Payment payment = new UPIPayment();
+```
+
+4. Create two interfaces containing the same default method and resolve the conflict.
+
+5. Demonstrate covariant return types using:
+
+```text
+Shape
+Circle
+ShapeFactory
+CircleFactory
+```
+
+6. Create a sealed interface:
+
+```text
+Transaction
+├── Deposit
+├── Withdrawal
+└── Transfer
+```
+
+and process each type using pattern matching.
+
+7. Create a sealed expression hierarchy:
+
+```text
+Expr
+├── NumberExpr
+├── AddExpr
+├── SubExpr
+├── MulExpr
+└── DivExpr
+```
+
+Implement an evaluator.
+
+8. Create a plugin system using an interface with default lifecycle methods.
+
+9. SUMMARY
+
+Inheritance allows Java classes to reuse and specialize behavior from a single direct superclass.
+
+Polymorphism allows a superclass or interface reference to work with different concrete object types.
+
+Abstract classes provide partially implemented base abstractions, while interfaces provide contracts and support multiple inheritance of type.
+
+Java interfaces can contain abstract, default, static, and private methods.
+
+Method overriding enables runtime polymorphism, while method overloading is primarily resolved at compile time.
+
+The JVM provides instructions such as:
+
+```text
+invokevirtual
+invokeinterface
+invokestatic
+invokespecial
+```
+
+for different categories of method invocation.
+
+Sealed classes and interfaces provide controlled type hierarchies and are particularly useful when an application has a known set of domain variants.
+
+31. KEY TAKEAWAYS
+
+* Java supports one direct superclass per class.
+* Java supports multiple interface implementation.
+* Use `extends` for class inheritance.
+* Use `implements` for class-interface relationships.
+* Use `@Override` when overriding methods.
+* Method overloading and method overriding are different mechanisms.
+* Runtime polymorphism is based on Java's instance-method dispatch rules.
+* Abstract classes can contain state, constructors, concrete methods, and abstract methods.
+* Interfaces can contain abstract, default, static, and private methods.
+* Conflicting interface defaults may require explicit resolution.
+* `final` prevents further inheritance or overriding where applicable.
+* Sealed types restrict their permitted direct subclasses or implementations.
+* Permitted subclasses of a sealed class must follow the `final`, `sealed`, or `non-sealed` rules.
+* Records are implicitly final and can participate in sealed hierarchies.
+* The JVM specification defines method invocation behavior but does not mandate a particular `vtable` or `itable` implementation.
+* Exact object memory layout and dispatch implementation are JVM-dependent.
+* Avoid calling overridable methods from constructors.
+* Prefer composition when inheritance does not represent a genuine "is-a" relationship.
+* Use sealed types when a domain intentionally has a restricted set of variants.
+
+================================================================================
+END OF DOCUMENT
+===============

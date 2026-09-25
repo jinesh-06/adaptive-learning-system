@@ -1,0 +1,1966 @@
+COURSE: Java Programming
+TOPIC: Java Fundamentals, JVM Architecture, Primitive Types, and Memory Model
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE / Java Language Specification / Java Virtual Machine Specification
+
+================================================================================
+JAVA FUNDAMENTALS, JVM ARCHITECTURE, PRIMITIVE TYPES, AND MEMORY MODEL
+======================================================================
+
+1. INTRODUCTION
+
+Java is a statically typed, strongly typed, class-based programming language designed at Sun Microsystems and first released publicly in 1995. Java source code is normally compiled into JVM bytecode stored in class files, which can then be executed by a Java Virtual Machine (JVM).
+
+Java's platform-independent execution model is commonly summarized as:
+
+```
+Write Once, Run Anywhere
+```
+
+The Java programming language defines primitive types and reference types. Java also provides automatic storage management, normally through garbage collection, instead of requiring programmers to explicitly free objects.
+
+The Java Virtual Machine Specification defines an abstract execution environment and runtime data areas. Individual JVM implementations, such as HotSpot, may use additional implementation techniques such as generational garbage collection, JIT compilation, compressed references, and specific memory layouts.
+
+Important distinction:
+
+```
+Java Language Specification (JLS)
+    -> Defines the Java programming language
+
+Java Virtual Machine Specification (JVMS)
+    -> Defines the JVM execution model and class-file/runtime behavior
+
+JDK
+    -> Provides the tools and libraries used to develop and run Java applications
+```
+
+2. LEARNING OBJECTIVES
+
+* Understand Java source code, compilation, bytecode, and JVM execution.
+* Differentiate the JDK, JVM, and the runtime libraries used by Java applications.
+* Understand the JVM's abstract runtime data areas.
+* Understand the eight Java primitive types.
+* Understand signed integer representation and overflow behavior.
+* Understand floating-point values, `NaN`, and infinity.
+* Understand widening and narrowing primitive conversions.
+* Understand reference types and wrapper classes.
+* Understand boxing and unboxing.
+* Understand operator behavior and type promotion.
+* Understand stack frames, the heap, method area, and runtime constant pool.
+* Understand the difference between JVM specification concepts and HotSpot implementation details.
+* Understand garbage collection at a conceptual level.
+* Understand how memory-management assumptions affect Java programming.
+
+3. PREREQUISITES
+
+* Basic programming concepts.
+* Variables and data types.
+* Operators and expressions.
+* Basic object-oriented programming.
+* Basic understanding of CPU, memory, and operating systems.
+
+4. BEGINNER CONCEPTS
+
+4.1 JDK, JVM, AND JAVA RUNTIME
+
+JVM — Java Virtual Machine
+
+The JVM is an abstract machine specified by the Java Virtual Machine Specification. It executes Java class files containing JVM instructions.
+
+JDK — Java Development Kit
+
+The JDK provides tools and libraries required for Java development and execution.
+
+Common JDK tools include:
+
+```
+javac
+java
+jar
+javadoc
+jdb
+jcmd
+jconsole
+jshell
+jpackage
+```
+
+Important clarification:
+
+The terms JDK, JRE, and JVM are useful conceptually, but modern Oracle JDK distributions are not simply packaged as "JRE + development tools." A JDK contains the JVM and the runtime libraries together with development tools.
+
+JRE — Java Runtime Environment
+
+"JRE" is commonly used as a conceptual term for the environment needed to run Java applications, consisting of the JVM plus the required Java runtime libraries. It should not be confused with a separately distributed Oracle JRE package in modern JDK releases.
+
+4.2 COMPILATION AND EXECUTION WORKFLOW
+
+Typical workflow:
+
+```
+Java Source
+     |
+     | javac
+     v
+Class File / Bytecode
+     |
+     | java launcher
+     v
+JVM
+     |
+     +--> Class loading
+     |
+     +--> Verification / linking
+     |
+     +--> Initialization
+     |
+     +--> Execution
+               |
+               +--> Interpreter
+               |
+               +--> JIT compilation in suitable JVM implementations
+```
+
+Example:
+
+```java
+public class HelloWorld {
+
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+```
+
+Compile:
+
+```text
+javac HelloWorld.java
+```
+
+Run:
+
+```text
+java HelloWorld
+```
+
+4.3 THE main METHOD
+
+A conventional Java application entry point is:
+
+```java
+public static void main(String[] args)
+```
+
+Meaning:
+
+* `public`: The method is accessible according to Java access-control rules.
+* `static`: It can be invoked without first creating an instance of the class.
+* `void`: The method does not return a value.
+* `main`: The conventional launcher-recognized method name.
+* `String[] args`: Contains command-line arguments.
+
+Do not describe `public` as meaning "accessible from any ClassLoader." Access control and class loading are separate concepts.
+
+Example:
+
+```java
+public class Application {
+
+    public static void main(String[] args) {
+
+        System.out.println("Java application started.");
+
+        for (String arg : args) {
+            System.out.println("Argument: " + arg);
+        }
+    }
+}
+```
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 JAVA PRIMITIVE TYPES
+
+Java has eight primitive types:
+
+| Type      | Category       | Size/Representation | Typical Range/Values     |
+| --------- | -------------- | ------------------- | ------------------------ |
+| `byte`    | Integral       | 8-bit signed        | -128 to 127              |
+| `short`   | Integral       | 16-bit signed       | -32,768 to 32,767        |
+| `int`     | Integral       | 32-bit signed       | -2³¹ to 2³¹-1            |
+| `long`    | Integral       | 64-bit signed       | -2⁶³ to 2⁶³-1            |
+| `float`   | Floating-point | 32-bit              | IEEE 754 binary32 values |
+| `double`  | Floating-point | 64-bit              | IEEE 754 binary64 values |
+| `char`    | Integral       | 16-bit unsigned     | 0 to 65,535              |
+| `boolean` | Boolean        | Language-defined    | `true` / `false`         |
+
+Important:
+
+The Java language does NOT specify a byte size such as "1 byte" or "4 bytes" for `boolean`.
+
+The Java language also does not specify how primitive local variables must physically be stored in registers, stack memory, or another location.
+
+The Java Language Specification defines the values and semantics of the primitive types. The JVM specification additionally defines JVM-level representations and computational types.
+
+5.2 INTEGRAL TYPES
+
+The integral types are:
+
+```text
+byte
+short
+int
+long
+char
+```
+
+`byte`, `short`, `int`, and `long` are signed two's-complement integer types.
+
+`char` represents a UTF-16 code unit and has values from:
+
+```text
+\u0000 to \uffff
+```
+
+or:
+
+```text
+0 to 65,535
+```
+
+5.3 FLOATING-POINT TYPES
+
+Java provides:
+
+```text
+float
+double
+```
+
+They are based on IEEE 754 floating-point semantics.
+
+Examples of special values include:
+
+```java
+Double.NaN
+Double.POSITIVE_INFINITY
+Double.NEGATIVE_INFINITY
+```
+
+5.4 TYPE CONVERSION
+
+Widening primitive conversion can convert a value to a type with a larger range or representation.
+
+Examples:
+
+```java
+byte  -> short
+short -> int
+int   -> long
+int   -> float
+long  -> float
+float -> double
+```
+
+Important:
+
+"Widening" does NOT always mean "exactly preserves the numeric value."
+
+For example:
+
+```java
+long large = 16777217L;
+float value = large;
+```
+
+A `float` does not have enough precision to represent every `long` value exactly.
+
+5.5 NARROWING CONVERSION
+
+Narrowing conversions generally require an explicit cast.
+
+```java
+double price = 19.99;
+int value = (int) price;
+
+System.out.println(value);
+```
+
+Output:
+
+```text
+19
+```
+
+The fractional portion is discarded during the conversion.
+
+5.6 WRAPPER CLASSES
+
+Each primitive type has a corresponding wrapper class:
+
+```text
+byte    -> Byte
+short   -> Short
+int     -> Integer
+long    -> Long
+float   -> Float
+double  -> Double
+char    -> Character
+boolean -> Boolean
+```
+
+Wrapper classes are reference types and are useful when an object is required.
+
+Example:
+
+```java
+Integer number = 100;
+```
+
+5.7 AUTOBOXING
+
+Autoboxing converts a primitive value to the corresponding wrapper type.
+
+```java
+int value = 100;
+
+Integer object = value;
+```
+
+Conceptually, this uses a boxing conversion such as:
+
+```java
+Integer.valueOf(value)
+```
+
+5.8 UNBOXING
+
+Unboxing converts a wrapper object to a primitive value.
+
+```java
+Integer object = 100;
+
+int value = object;
+```
+
+If the wrapper reference is `null`, unboxing can throw:
+
+```text
+NullPointerException
+```
+
+5.9 INTEGER CACHING
+
+Wrapper classes may cache commonly used values.
+
+For `Integer.valueOf(int)`, values in the range:
+
+```text
+-128 to 127
+```
+
+are guaranteed to be cached by the API contract, while implementations may cache additional values.
+
+Therefore this is unsafe:
+
+```java
+Integer a = 200;
+Integer b = 200;
+
+System.out.println(a == b);
+```
+
+The result should not be used as a value-comparison mechanism.
+
+Use:
+
+```java
+a.equals(b)
+```
+
+for value comparison.
+
+The official `Integer.valueOf()` documentation states that `-128` through `127` are always cached and that additional values may also be cached.
+
+6. ADVANCED CONCEPTS
+
+6.1 JVM RUNTIME DATA AREAS
+
+The JVM Specification defines several runtime data areas.
+
+Major areas include:
+
+1. Program Counter (`pc`) Register
+2. JVM Stacks
+3. Heap
+4. Method Area
+5. Runtime Constant Pool
+6. Native Method Stacks
+
+These are JVM specification concepts.
+
+A specific JVM implementation can organize the underlying memory differently.
+
+6.2 PROGRAM COUNTER
+
+Each JVM thread has its own program counter.
+
+Conceptually, it identifies the JVM instruction currently being executed by that thread.
+
+For a thread executing a Java method, the PC identifies the next JVM instruction.
+
+6.3 JVM STACK
+
+Each JVM thread has its own JVM stack.
+
+A JVM stack contains frames associated with method invocations.
+
+A frame conceptually contains:
+
+* Local variables
+* Operand stack
+* Dynamic linking information
+* Information needed for method return
+* Information used for exception dispatch
+
+When a method is called, a new frame is created for that invocation.
+
+When the method completes, the frame is discarded.
+
+6.4 HEAP
+
+The heap is a shared runtime area from which memory for objects and arrays is allocated.
+
+The JVM specification does not require a particular heap-generation layout.
+
+For example, a particular JVM implementation may use:
+
+```text
+Young generation
+    |
+    +-- Eden
+    +-- Survivor areas
+
+Old generation
+```
+
+But this is an implementation strategy, not a universal JVM rule.
+
+6.5 METHOD AREA
+
+The JVM specification defines a method area shared by JVM threads.
+
+It contains per-class structures such as:
+
+* Runtime constant pool
+* Field information
+* Method information
+* Code associated with methods and constructors
+
+The JVM specification does not mandate a specific physical memory location for the method area.
+
+6.6 METASPACE
+
+"Metaspace" is primarily a HotSpot JVM implementation concept.
+
+HotSpot uses native memory for class metadata rather than the old PermGen arrangement.
+
+Therefore:
+
+```text
+JVM Specification:
+    Method Area
+
+HotSpot implementation:
+    Metaspace is used for class metadata
+```
+
+These terms should not be treated as exact synonyms for every JVM implementation.
+
+6.7 RUNTIME CONSTANT POOL
+
+Each class or interface has a runtime constant pool associated with it.
+
+It contains information derived from the class file's constant pool, including symbolic references used for:
+
+* Classes
+* Methods
+* Fields
+* Constants
+* Dynamic linking
+
+6.8 NATIVE METHOD STACKS
+
+The JVM specification allows support for native methods through implementation-specific mechanisms.
+
+Native method stacks are associated with execution of native methods.
+
+The exact implementation is JVM dependent.
+
+6.9 GARBAGE COLLECTION
+
+Java provides automatic storage management.
+
+The language does not require one particular garbage collector or one universal generational layout.
+
+Modern JVMs can provide collectors such as:
+
+* G1
+* ZGC
+* Shenandoah
+* Serial
+* Parallel
+
+The available collectors and their behavior depend on the JVM distribution and version.
+
+6.10 JIT COMPILATION
+
+JIT means Just-In-Time compilation.
+
+A JIT compiler can compile frequently executed bytecode into native machine code during program execution.
+
+HotSpot uses tiered compilation and has historically included C1 and C2 compiler technologies.
+
+However, compiler tiers, optimization heuristics, thresholds, and generated machine code are implementation details.
+
+Do not treat statements such as:
+
+```text
+"Tier 4 always means C2"
+"Methods smaller than X bytes are always inlined"
+```
+
+as Java language guarantees.
+
+7. DETAILED THEORY
+
+7.1 TWO'S COMPLEMENT INTEGER REPRESENTATION
+
+Java's signed integer types use two's-complement representation.
+
+For example, an 8-bit `byte` has:
+
+```text
+Minimum = -128
+Maximum = 127
+```
+
+Binary:
+
+```text
+127  = 01111111
+-128 = 10000000
+```
+
+7.2 INTEGER OVERFLOW
+
+Java integer arithmetic is performed using fixed-width primitive types.
+
+Example:
+
+```java
+int max = Integer.MAX_VALUE;
+
+int result = max + 1;
+
+System.out.println(result);
+```
+
+Output:
+
+```text
+-2147483648
+```
+
+For ordinary integer arithmetic, overflow does not automatically throw an exception.
+
+7.3 EXACT ARITHMETIC
+
+Java provides methods such as:
+
+```java
+Math.addExact()
+Math.subtractExact()
+Math.multiplyExact()
+Math.incrementExact()
+Math.decrementExact()
+Math.toIntExact()
+```
+
+Example:
+
+```java
+int result =
+    Math.addExact(Integer.MAX_VALUE, 1);
+```
+
+This throws:
+
+```text
+ArithmeticException
+```
+
+instead of silently wrapping.
+
+7.4 INTEGER PROMOTION
+
+Small integral types are commonly promoted to `int` during arithmetic.
+
+Example:
+
+```java
+byte a = 10;
+byte b = 20;
+
+int result = a + b;
+```
+
+This is why:
+
+```java
+byte result = a + b;
+```
+
+does not compile without an explicit cast.
+
+7.5 REFERENCE TYPES
+
+Java has reference types including:
+
+* Class types
+* Interface types
+* Array types
+
+Example:
+
+```java
+String name = "Java";
+int[] values = {10, 20, 30};
+```
+
+The variables contain reference values that refer to objects or arrays.
+
+7.6 OBJECT IDENTITY VS VALUE
+
+For wrapper objects:
+
+```java
+Integer a = 100;
+Integer b = 100;
+```
+
+`==` compares references.
+
+`equals()` compares values according to the wrapper's equality contract.
+
+Therefore:
+
+```java
+a == b
+```
+
+should not be used as a general numeric value comparison.
+
+Use:
+
+```java
+a.equals(b)
+```
+
+or unbox to primitives when appropriate.
+
+7.7 STRINGS
+
+`String` is a reference type.
+
+Example:
+
+```java
+String s1 = "Java";
+String s2 = "Java";
+
+System.out.println(s1.equals(s2));
+```
+
+Output:
+
+```text
+true
+```
+
+For strings, use:
+
+```java
+equals()
+```
+
+for content comparison.
+
+---
+
+8. SYNTAX
+
+8.1 VARIABLES AND CONSTANTS
+
+```java
+int count = 10;
+
+final int MAX_RETRIES = 5;
+```
+
+8.2 LOCAL VARIABLE TYPE INFERENCE
+
+Java supports `var` for local variable declarations:
+
+```java
+var message = "Hello Java";
+var number = 100;
+```
+
+The compiler determines the variable's static type from its initializer.
+
+`var` does not make Java dynamically typed.
+
+For example:
+
+```java
+var number = 100;
+```
+
+is still statically typed as `int`.
+
+8.3 EXPLICIT CAST
+
+```java
+long value = 1000L;
+
+int result = (int) value;
+```
+
+8.4 BOXING AND UNBOXING
+
+```java
+int value = 100;
+
+Integer object = value;
+
+int result = object;
+```
+
+8.5 BITWISE OPERATORS
+
+```text
+&   AND
+|   OR
+^   XOR
+~   NOT
+<<  left shift
+>>  signed right shift
+>>> unsigned right shift
+```
+
+Example:
+
+```java
+int flags = 0b0000_1010;
+
+int READ_MASK = 0b0000_0010;
+
+boolean canRead =
+    (flags & READ_MASK) != 0;
+```
+
+9. BASIC EXAMPLE
+
+```java
+public class BasicFundamentals {
+
+    public static void main(String[] args) {
+
+        byte byteVal = 100;
+        int intVal = 42000;
+        double price = 19.99;
+        char grade = 'A';
+        boolean isActive = true;
+
+        // Widening conversion
+        double widened = intVal;
+
+        // Narrowing conversion
+        int truncatedPrice = (int) price;
+
+        System.out.println("=== Primitive Values ===");
+        System.out.println("Byte value: " + byteVal);
+        System.out.println(
+            "Widened int to double: " + widened
+        );
+        System.out.println(
+            "Truncated price: " + truncatedPrice
+        );
+        System.out.println(
+            "Grade: " + grade +
+            " | Active: " + isActive
+        );
+
+        String formatted = String.format(
+            "Product Report: Grade %c, Unit Price: %.2f",
+            grade,
+            price
+        );
+
+        System.out.println(formatted);
+    }
+}
+```
+
+10. INTERMEDIATE EXAMPLE
+
+```java
+public class IntermediateFundamentals {
+
+    public static void main(String[] args) {
+
+        Integer cached1 = 100;
+        Integer cached2 = 100;
+
+        System.out.println(
+            "cached1 == cached2: "
+            + (cached1 == cached2)
+        );
+
+        Integer value1 = 200;
+        Integer value2 = 200;
+
+        System.out.println(
+            "value1.equals(value2): "
+            + value1.equals(value2)
+        );
+
+        int flags = 0b0000_1010;
+
+        int READ_MASK = 0b0000_0010;
+        int WRITE_MASK = 0b0000_1000;
+
+        boolean canRead =
+            (flags & READ_MASK) != 0;
+
+        boolean canWrite =
+            (flags & WRITE_MASK) != 0;
+
+        System.out.println("Can read: " + canRead);
+        System.out.println("Can write: " + canWrite);
+
+        try {
+
+            int max = Integer.MAX_VALUE;
+
+            int result =
+                Math.addExact(max, 1);
+
+            System.out.println(
+                "Result: " + result
+            );
+
+        }
+        catch (ArithmeticException e) {
+
+            System.out.println(
+                "Integer overflow detected."
+            );
+        }
+    }
+}
+```
+
+Important:
+
+The program does NOT assume that:
+
+```java
+Integer.valueOf(200) != Integer.valueOf(200)
+```
+
+is guaranteed by the API.
+
+It only demonstrates that `==` is the wrong mechanism for comparing wrapper values.
+
+11. ADVANCED EXAMPLE
+
+```java
+public class AdvancedMemoryModel {
+
+    private static final String APP_NAME =
+        "MemoryInspector";
+
+    static class DataNode {
+
+        int id;
+        long timestamp;
+
+        DataNode(int id, long timestamp) {
+            this.id = id;
+            this.timestamp = timestamp;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        int localPrimitive = 42;
+
+        DataNode node =
+            new DataNode(
+                101,
+                System.currentTimeMillis()
+            );
+
+        Runtime runtime =
+            Runtime.getRuntime();
+
+        long totalMemory =
+            runtime.totalMemory();
+
+        long freeMemory =
+            runtime.freeMemory();
+
+        long maxMemory =
+            runtime.maxMemory();
+
+        System.out.println(
+            "=== JVM Memory Statistics ==="
+        );
+
+        System.out.println(
+            "Application: " + APP_NAME
+        );
+
+        System.out.println(
+            "Local value: " + localPrimitive
+        );
+
+        System.out.println(
+            "Object ID: " + node.id
+        );
+
+        System.out.println(
+            "Total JVM Memory: "
+            + totalMemory / (1024 * 1024)
+            + " MB"
+        );
+
+        System.out.println(
+            "Free JVM Memory: "
+            + freeMemory / (1024 * 1024)
+            + " MB"
+        );
+
+        System.out.println(
+            "Maximum JVM Memory: "
+            + maxMemory / (1024 * 1024)
+            + " MB"
+        );
+
+        System.out.println(
+            "Available Processors: "
+            + runtime.availableProcessors()
+        );
+    }
+}
+```
+
+Important:
+
+Do not interpret:
+
+```java
+int localPrimitive = 42;
+```
+
+as a Java-language guarantee that the value is physically stored on the thread's stack.
+
+The JVM specification defines stack frames and local variables abstractly. A JIT compiler may optimize values into registers or eliminate storage altogether.
+
+Similarly, the Java language does not guarantee that every `new DataNode(...)` must remain physically allocated on the heap for its entire lifetime.
+
+12. CODE WALKTHROUGHS
+
+12.1 INTEGER BOXING
+
+Code:
+
+```java
+Integer value = 100;
+```
+
+Conceptually involves boxing conversion.
+
+For an `int` value, the wrapper API can use:
+
+```java
+Integer.valueOf(100)
+```
+
+The official API guarantees caching for values from `-128` through `127`, while allowing implementations to cache additional values.
+
+Therefore:
+
+```java
+Integer a = 100;
+Integer b = 100;
+
+a == b
+```
+
+may be `true`.
+
+But wrapper identity should not be used for numeric comparison.
+
+Use:
+
+```java
+a.equals(b)
+```
+
+12.2 INTEGER OVERFLOW
+
+```java
+int x = Integer.MAX_VALUE;
+
+int y = x + 1;
+```
+
+The result wraps according to Java's integer arithmetic rules.
+
+For checked arithmetic:
+
+```java
+int y =
+    Math.addExact(x, 1);
+```
+
+An `ArithmeticException` is thrown if the result cannot be represented.
+
+12.3 JVM MEMORY
+
+Conceptual model:
+
+```text
+                 JVM
+                  |
+       +----------+----------+
+       |          |          |
+     Heap       Stacks    Method Area
+       |          |          |
+    Objects    Frames     Class Data
+    Arrays     Locals    Runtime CP
+                  |
+               Threads
+```
+
+This is a conceptual model based on the JVM specification. A concrete JVM implementation can organize physical memory differently.
+
+13. EXPECTED OUTPUT
+
+```text
+=== Primitive Values ===
+Byte value: 100
+Widened int to double: 42000.0
+Truncated price: 19
+Grade: A | Active: true
+Product Report: Grade A, Unit Price: 19.99
+
+cached1 == cached2: true
+value1.equals(value2): true
+Can read: true
+Can write: true
+Integer overflow detected.
+
+=== JVM Memory Statistics ===
+Application: MemoryInspector
+Local value: 42
+Object ID: 101
+Total JVM Memory: ... MB
+Free JVM Memory: ... MB
+Maximum JVM Memory: ... MB
+Available Processors: ...
+```
+
+Memory statistics vary between machines and JVM configurations.
+
+14. EXECUTION FLOW
+
+15. The Java source file is compiled using `javac`.
+
+16. The compiler produces class-file bytecode.
+
+17. The Java launcher starts a JVM.
+
+18. Required classes are loaded by the JVM's class-loading subsystem.
+
+19. The JVM links and initializes classes as required.
+
+20. The `main` method begins execution for a conventional application.
+
+21. JVM instructions are interpreted and/or compiled by the JVM implementation.
+
+22. Frequently executed code may be optimized by a JIT compiler.
+
+23. Objects are automatically managed by the JVM's storage-management system.
+
+24. Garbage collection reclaims storage associated with objects that are no longer reachable.
+
+25. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Implement a base converter supporting bases 2 through 36 without using:
+
+```java
+Long.toString(value, radix)
+```
+
+Problem 2:
+
+Create a `BitSet32` class using an `int`.
+
+Implement:
+
+```java
+setBit(int position)
+clearBit(int position)
+isBitSet(int position)
+toggleBit(int position)
+```
+
+Problem 3:
+
+Compare the memory behavior of:
+
+```java
+int[]
+```
+
+and:
+
+```java
+Integer[]
+```
+
+for a large number of elements.
+
+Use measurements carefully because object layout and JVM behavior are implementation dependent.
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 ENTERPRISE APPLICATIONS
+
+Java's static typing, automatic storage management, concurrency support, and extensive standard libraries make it suitable for large server-side applications.
+
+16.2 HIGH-PERFORMANCE APPLICATIONS
+
+Applications can use primitives and appropriate data structures to reduce unnecessary object creation.
+
+However, performance should be measured rather than assumed.
+
+16.3 JVM MEMORY MANAGEMENT
+
+JVM configuration can involve options such as:
+
+```text
+-Xms
+-Xmx
+```
+
+and collector-specific options.
+
+The appropriate settings depend on:
+
+* Application workload
+* Available system memory
+* Allocation rate
+* Latency requirements
+* JVM implementation
+
+16.4 ANDROID
+
+Java language concepts such as primitive/reference distinctions remain useful for understanding Android development, although Android uses its own runtime and platform APIs rather than the standard desktop/server JVM.
+
+17. COMMON MISTAKES
+
+17.1 USING == FOR WRAPPER VALUES
+
+Incorrect:
+
+```java
+Integer a = 1000;
+Integer b = 1000;
+
+if (a == b) {
+    // Do not use this for value comparison
+}
+```
+
+Correct:
+
+```java
+if (a.equals(b)) {
+    // Value comparison
+}
+```
+
+17.2 NULL UNBOXING
+
+```java
+Integer value = null;
+
+int number = value;
+```
+
+This can throw:
+
+```text
+NullPointerException
+```
+
+17.3 INTEGER OVERFLOW
+
+```java
+int seconds =
+    1000 * 60 * 60 * 24;
+```
+
+All literals are initially `int`, so the arithmetic can overflow before assignment to a `long`.
+
+Safer:
+
+```java
+long seconds =
+    1000L * 60 * 60 * 24;
+```
+
+17.4 ASSUMING PRIMITIVES ALWAYS LIVE ON THE STACK
+
+Java does not specify a simple rule such as:
+
+```text
+primitive -> stack
+object -> heap
+```
+
+The language and JVM specifications define semantics, not a fixed physical layout for every variable.
+
+18. COMMON ERRORS
+
+18.1 NullPointerException
+
+Example:
+
+```java
+Integer x = null;
+
+int y = x;
+```
+
+The unboxing operation requires a non-null wrapper reference.
+
+18.2 ClassCastException
+
+Example:
+
+```java
+Object value = "Java";
+
+Integer number = (Integer) value;
+```
+
+This throws `ClassCastException`.
+
+18.3 OutOfMemoryError
+
+Can occur when the JVM cannot satisfy a memory allocation request.
+
+Possible causes include:
+
+* Excessive live objects.
+* Very large allocations.
+* Class metadata pressure.
+* Native-memory pressure.
+* JVM configuration limitations.
+
+The exact cause depends on the JVM and environment.
+
+19. DEBUGGING TECHNIQUES
+
+INCORRECT:
+
+```java
+Long sum = 0L;
+
+for (long i = 0; i < 10_000_000; i++) {
+    sum += i;
+}
+```
+
+The expression involves repeated unboxing and boxing because `sum` is a `Long`.
+
+CORRECT WHEN AN OBJECT IS NOT REQUIRED:
+
+```java
+long sum = 0L;
+
+for (long i = 0; i < 10_000_000; i++) {
+    sum += i;
+}
+```
+
+The primitive version generally avoids the wrapper operations.
+
+However, do not claim that it guarantees "zero heap allocations," "CPU-register storage," or a fixed speedup such as "50x faster." JIT optimization, escape analysis, hardware, and benchmark methodology can all affect the result.
+
+20. EDGE CASES
+
+20.1 NaN
+
+```java
+double x = Double.NaN;
+
+System.out.println(x == Double.NaN);
+```
+
+Output:
+
+```text
+false
+```
+
+Use:
+
+```java
+Double.isNaN(x)
+```
+
+to test for NaN.
+
+20.2 INFINITY
+
+```java
+double x =
+    Double.POSITIVE_INFINITY;
+```
+
+20.3 FLOATING-POINT PRECISION
+
+```java
+System.out.println(0.1 + 0.2);
+```
+
+The result is not necessarily represented as exactly decimal `0.3`.
+
+For exact decimal financial calculations, consider:
+
+```java
+BigDecimal
+```
+
+with appropriate construction and rounding rules.
+
+20.4 CHAR AND UNICODE
+
+`char` represents a UTF-16 code unit, not necessarily a complete Unicode code point.
+
+Some Unicode characters require two `char` values because they are represented by a surrogate pair.
+
+For code-point-aware processing, APIs such as:
+
+```java
+String.codePointAt()
+Character.codePointAt()
+```
+
+can be used.
+
+21. BEST PRACTICES
+
+* Use primitives when an object is not required.
+* Use `.equals()` for wrapper and string value comparison.
+* Handle possible `null` values before unboxing.
+* Use `Math.addExact()` and related methods when overflow must be detected.
+* Use `BigDecimal` for exact decimal financial calculations when appropriate.
+* Keep variables within the smallest useful scope.
+* Use `final` for values that should not be reassigned.
+* Use `var` when it improves readability, not merely to shorten code.
+* Do not depend on implementation-specific object sizes.
+* Do not assume a primitive is physically stored on the stack.
+* Do not assume every object necessarily remains physically allocated on the heap.
+* Measure performance with proper benchmarks rather than relying on assumptions about JIT behavior.
+
+22. PERFORMANCE CONSIDERATIONS
+
+22.1 PRIMITIVE VS WRAPPER
+
+Primitive:
+
+```java
+int value = 100;
+```
+
+Wrapper:
+
+```java
+Integer value = 100;
+```
+
+A wrapper is an object/reference type and can involve boxing.
+
+However, exact memory and allocation costs depend on the JVM implementation.
+
+22.2 JIT OPTIMIZATION
+
+Modern JVMs can optimize code using techniques such as:
+
+* Method inlining
+* Escape analysis
+* Dead-code elimination
+* Loop optimizations
+* Scalar replacement
+
+These are implementation-level optimizations.
+
+Do not assume a particular optimization will always occur.
+
+22.3 OBJECT SIZE
+
+Statements such as:
+
+```text
+"Integer always occupies exactly 16 bytes"
+```
+
+are not portable Java rules.
+
+Object layout depends on the JVM implementation, architecture, alignment, and runtime options.
+
+Oracle's `Runtime` documentation explicitly notes that the amount of memory required to hold an object can be implementation dependent.
+
+23. MEMORY CONSIDERATIONS
+
+23.1 JVM HEAP MEMORY
+
+The JVM heap is shared among JVM threads and is used for object and array allocation.
+
+The JVM specification does not require a particular generation structure.
+
+23.2 STACK MEMORY
+
+Each JVM thread has a JVM stack containing frames.
+
+The Java language does not specify a fixed byte size for a stack frame.
+
+23.3 MEMORY STATISTICS
+
+Java provides:
+
+```java
+Runtime.getRuntime().totalMemory()
+Runtime.getRuntime().freeMemory()
+Runtime.getRuntime().maxMemory()
+```
+
+These values describe JVM memory-management information and are not a complete measurement of all process memory.
+
+`Runtime.totalMemory()` and `Runtime.freeMemory()` are runtime estimates, while `maxMemory()` represents the maximum memory the JVM will attempt to use under its memory-management configuration.
+
+23.4 GARBAGE COLLECTION
+
+An object becomes eligible for garbage collection when it is no longer reachable according to the JVM's reachability rules.
+
+Eligibility does not mean that garbage collection happens immediately.
+
+24. SECURITY CONSIDERATIONS
+
+24.1 MEMORY-SENSITIVE DATA
+
+Sensitive data should be handled carefully.
+
+For example:
+
+```java
+char[] password
+```
+
+can be cleared explicitly:
+
+```java
+Arrays.fill(password, '\0');
+```
+
+However, this does not make memory handling completely secure. Copies, temporary objects, logging, JVM optimizations, and application design can affect where data may exist.
+
+24.2 STRING SENSITIVITY
+
+Strings are immutable.
+
+Once a sensitive value is placed into a `String`, application code cannot modify the character contents of that particular `String` object.
+
+Therefore, APIs that specifically support mutable character arrays may be preferable for some password-handling scenarios.
+
+24.3 INTEGER OVERFLOW
+
+Security-sensitive arithmetic should consider overflow.
+
+For example:
+
+```java
+int size =
+    Math.multiplyExact(count, elementSize);
+```
+
+can detect overflow instead of silently wrapping.
+
+24.4 INPUT VALIDATION
+
+Do not assume numeric input is safe simply because it uses a Java primitive.
+
+Validate:
+
+* Range
+* Sign
+* Length
+* Expected format
+* Arithmetic bounds
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+| Feature              | Java                                      | C++                              | Python                                                             |
+| -------------------- | ----------------------------------------- | -------------------------------- | ------------------------------------------------------------------ |
+| Typing               | Static and strong                         | Static                           | Dynamic                                                            |
+| Main execution model | JVM bytecode + JVM execution              | Native compilation commonly used | Python implementation dependent                                    |
+| Primitive types      | 8 primitive types                         | Built-in/value types             | No Java-style primitive type category                              |
+| Object types         | Classes/interfaces/arrays                 | Classes and other types          | Objects are central to the language                                |
+| Memory management    | Automatic storage management              | RAII + manual/dynamic mechanisms | Automatic memory management                                        |
+| Pointer arithmetic   | Not available in ordinary Java            | Supported                        | Not exposed as C-style pointer arithmetic                          |
+| Integer size         | Fixed-width primitive integer types       | Depends on type                  | `int` supports arbitrary-precision integers                        |
+| JIT                  | JVM implementations may use JIT           | Optional/compiler dependent      | Implementation dependent                                           |
+| Garbage collection   | JVM provides automatic storage management | Not required                     | Common Python implementations use GC/reference counting mechanisms |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1: What is the difference between JDK and JVM?
+
+A:
+
+The JVM executes JVM class files.
+
+The JDK provides the JVM together with Java development tools and libraries required for development and execution.
+
+Q2: What is bytecode?
+
+A:
+
+Bytecode is the instruction format stored in Java class files and defined by the JVM specification.
+
+Q3: Does Java always compile directly to machine code?
+
+A:
+
+No.
+
+Java source is normally compiled into JVM bytecode. A JVM may interpret bytecode and/or compile frequently executed code into native machine code.
+
+Q4: How many primitive types does Java have?
+
+A:
+
+Java has eight primitive types:
+
+```text
+byte
+short
+int
+long
+float
+double
+char
+boolean
+```
+
+Q5: Is boolean exactly one byte?
+
+A:
+
+No Java language rule specifies a one-byte or four-byte representation for `boolean`.
+
+The language specifies only that it has the values:
+
+```text
+true
+false
+```
+
+Q6: Is char the same as a Unicode character?
+
+A:
+
+`char` is a 16-bit UTF-16 code unit.
+
+A Unicode code point outside the Basic Multilingual Plane may require two `char` values.
+
+Q7: Why is `Integer a = 100; Integer b = 100; a == b` often true?
+
+A:
+
+Boxing commonly uses `Integer.valueOf()`, whose API guarantees caching from `-128` through `127`.
+
+Q8: Is `a == b` safe for Integer comparison?
+
+A:
+
+No.
+
+Use:
+
+```java
+a.equals(b)
+```
+
+for value comparison.
+
+Q9: Does integer overflow throw an exception?
+
+A:
+
+Ordinary integer arithmetic does not automatically throw an exception.
+
+Use methods such as:
+
+```java
+Math.addExact()
+Math.multiplyExact()
+```
+
+when overflow detection is required.
+
+Q10: Are all Java objects stored on the heap?
+
+A:
+
+The JVM specification defines the heap as the runtime area used for object and array allocation, but Java source code should not rely on a simplistic physical-memory model. JIT optimization can change the physical representation of values and allocations.
+
+27. INTERVIEW QUESTIONS
+
+Q1: What is the JVM?
+
+Answer:
+
+The JVM is an abstract machine specified by the Java Virtual Machine Specification. It executes JVM class files and provides the runtime execution environment for Java bytecode.
+
+Q2: What are JVM runtime data areas?
+
+Answer:
+
+Major areas include:
+
+* PC register
+* JVM stacks
+* Heap
+* Method area
+* Runtime constant pool
+* Native method stacks
+
+Q3: What is Metaspace?
+
+Answer:
+
+Metaspace is a HotSpot implementation mechanism for storing class metadata in native memory. It should not be confused with the abstract JVM specification term "method area."
+
+Q4: What is a stack frame?
+
+Answer:
+
+A frame is created for each method invocation. It contains local variables, an operand stack, and other information required for method execution and completion.
+
+Q5: What is JIT compilation?
+
+Answer:
+
+JIT compilation dynamically compiles suitable bytecode into native machine code during program execution.
+
+Q6: What is the difference between primitive and reference types?
+
+Answer:
+
+Primitive variables hold primitive values such as `int`, `double`, or `boolean`.
+
+Reference variables hold reference values that refer to objects or arrays.
+
+Q7: What is autoboxing?
+
+Answer:
+
+Autoboxing is automatic conversion from a primitive value to its corresponding wrapper type.
+
+Example:
+
+```java
+Integer x = 10;
+```
+
+Q8: What is unboxing?
+
+Answer:
+
+Unboxing converts a wrapper object to its corresponding primitive value.
+
+Example:
+
+```java
+Integer x = 10;
+
+int y = x;
+```
+
+Q9: Why can unboxing cause NullPointerException?
+
+Answer:
+
+Because a wrapper reference may be `null`:
+
+```java
+Integer x = null;
+int y = x;
+```
+
+Q10: What is integer overflow?
+
+Answer:
+
+It occurs when an arithmetic result cannot be represented by the fixed-width integer type being used.
+
+28. EXAM QUESTIONS
+
+Q1: What are the eight primitive types in Java?
+
+Answer:
+
+```text
+byte
+short
+int
+long
+float
+double
+char
+boolean
+```
+
+Q2: What is the output?
+
+```java
+int x = 10;
+
+System.out.println(x++ + ++x);
+```
+
+Answer:
+
+```text
+22
+```
+
+Explanation:
+
+```text
+x++ -> produces 10, then x becomes 11
+++x -> x becomes 12, produces 12
+10 + 12 = 22
+```
+
+Q3: What is the default value of a boolean instance field?
+
+Answer:
+
+```text
+false
+```
+
+Important distinction:
+
+Local variables do not receive automatic default values in the same way fields do. A local variable must be definitely assigned before it is read.
+
+Q4: What is the maximum value of int?
+
+Answer:
+
+```java
+Integer.MAX_VALUE
+```
+
+which is:
+
+```text
+2147483647
+```
+
+Q5: What is the minimum value of int?
+
+Answer:
+
+```java
+Integer.MIN_VALUE
+```
+
+which is:
+
+```text
+-2147483648
+```
+
+29. PRACTICE QUESTIONS
+
+Q1:
+
+Write a Java program to display the binary representation of a negative integer using:
+
+```text
+&
+>>>
+```
+
+Q2:
+
+Implement:
+
+```java
+boolean isPowerOfTwo(int n)
+```
+
+using bitwise operations.
+
+Q3:
+
+Write a program demonstrating integer overflow and then rewrite it using:
+
+```java
+Math.addExact()
+```
+
+Q4:
+
+Write a program comparing:
+
+```java
+int
+Integer
+```
+
+and demonstrate boxing and unboxing.
+
+Q5:
+
+Create a program that demonstrates:
+
+```text
+NaN
+Infinity
+negative Infinity
+```
+
+Q6:
+
+Create a program that demonstrates UTF-16 `char` values and Unicode code points.
+
+Q7:
+
+Use `Runtime.getRuntime()` to display JVM memory statistics and explain why these values can change during program execution.
+
+Q8:
+
+Write a benchmark comparing primitive and boxed arithmetic. Use repeated measurements and explain why a simple single timing is not a reliable performance benchmark.
+
+30. SUMMARY
+
+Java is a statically and strongly typed programming language that normally compiles source code into JVM class files.
+
+The JVM provides a standardized abstract execution environment, while individual JVM implementations provide implementation-specific features such as JIT compilation, garbage collectors, object layouts, and memory-management strategies.
+
+Java has eight primitive types:
+
+```text
+byte
+short
+int
+long
+float
+double
+char
+boolean
+```
+
+The JVM specification defines runtime areas including:
+
+```text
+PC Register
+JVM Stacks
+Heap
+Method Area
+Runtime Constant Pool
+Native Method Stacks
+```
+
+A key distinction is:
+
+```text
+Java specification
+        |
+        +--> defines behavior and abstract runtime model
+
+JVM implementation
+        |
+        +--> chooses physical memory layout
+        +--> chooses garbage collector
+        +--> chooses JIT strategies
+        +--> performs runtime optimizations
+```
+
+Understanding this distinction prevents incorrect assumptions such as:
+
+```text
+"all local primitives are always on the stack"
+"all objects always remain on the heap"
+"Metaspace is part of the JVM specification"
+"Integer 200 is always a different object"
+"boolean always occupies one byte"
+```
+
+These are not universal Java language guarantees.
+
+31. KEY TAKEAWAYS
+
+* Java is statically and strongly typed.
+* Java source code is normally compiled into JVM class files.
+* The JVM executes JVM bytecode.
+* The JDK provides Java development tools and runtime components.
+* Java has eight primitive types.
+* `byte`, `short`, `int`, and `long` are signed two's-complement integer types.
+* `char` is a 16-bit UTF-16 code unit.
+* `boolean` has two values: `true` and `false`.
+* Java does not specify a fixed memory size for `boolean`.
+* Widening conversion does not always guarantee exact numeric precision.
+* Narrowing conversion can lose information.
+* Wrapper classes represent primitive values as objects.
+* Boxing and unboxing convert between primitives and wrappers.
+* `Integer.valueOf()` guarantees caching for `-128` through `127`, while additional caching is permitted.
+* Use `.equals()` rather than `==` for wrapper value comparison.
+* Ordinary integer overflow does not throw automatically.
+* Use `Math.addExact()` and related methods when overflow detection is required.
+* The JVM specification defines abstract runtime data areas.
+* Metaspace is a HotSpot implementation concept, not the universal JVM name for the method area.
+* Heap organization and garbage-collection generations are JVM implementation details.
+* JVM stacks contain method frames.
+* JIT compilation is an implementation technique used by JVMs such as HotSpot.
+* Exact object sizes and physical storage locations are implementation dependent.
+* Java provides automatic storage management and garbage collection.
+* Performance claims should be verified with proper benchmarks.
+  ================================================================================
+  END OF DOCUMENT
+  ================================================================================

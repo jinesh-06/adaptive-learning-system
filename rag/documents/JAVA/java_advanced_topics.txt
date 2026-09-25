@@ -1,0 +1,2192 @@
+COURSE: Java Programming
+TOPIC: Advanced Java: Generics & Type Erasure, Streams & Lambdas, Concurrency, and JVM Garbage Collectors
+LEVEL: Advanced
+SOURCE: Oracle Java SE Documentation / HotSpot JVM Documentation
+
+================================================================================
+ADVANCED JAVA: GENERICS & TYPE ERASURE, STREAMS & LAMBDAS, CONCURRENCY, AND JVM GARBAGE COLLECTORS
+==================================================================================================
+
+1. INTRODUCTION
+
+Advanced Java programming requires an understanding of compile-time type safety, functional programming, concurrent execution, asynchronous computation, and JVM memory management.
+
+This chapter covers four major areas:
+
+1. Java Generics and Type Erasure
+2. Lambda Expressions and the Stream API
+3. Modern Java Concurrency and Virtual Threads
+4. JVM Garbage Collection and memory management
+
+Important technologies covered include:
+
+* Generic classes and methods
+* Bounded type parameters
+* Wildcards and PECS
+* Type erasure and bridge methods
+* Functional interfaces and method references
+* Stream operations such as map(), filter(), flatMap(), reduce(), and collect()
+* Optional and Collectors
+* ExecutorService and CompletableFuture
+* ReentrantLock and Atomic variables
+* Java Memory Model and volatile
+* Java 21+ Virtual Threads
+* HotSpot G1 and ZGC
+* Garbage collection roots, generations, regions, and pause-time considerations
+
+Modern Java should be understood from both a language perspective and a JVM/runtime perspective. Generics primarily provide compile-time type safety, while Streams provide a declarative data-processing model. Concurrency APIs provide multiple ways to coordinate work, while garbage collectors automatically reclaim objects that are no longer reachable.
+
+2. LEARNING OBJECTIVES
+
+After completing this chapter, the learner should be able to:
+
+* Create and use generic classes, interfaces, and methods.
+* Apply bounded type parameters such as <T extends Number>.
+* Understand upper-bounded, lower-bounded, and unbounded wildcards.
+* Apply the PECS principle: Producer Extends, Consumer Super.
+* Explain Java type erasure and its runtime consequences.
+* Understand non-reifiable generic types and generic-array restrictions.
+* Use lambda expressions and method references.
+* Use Predicate, Function, Consumer, Supplier, and related functional interfaces.
+* Build Stream pipelines using intermediate and terminal operations.
+* Use map(), filter(), flatMap(), reduce(), collect(), groupingBy(), and partitioningBy().
+* Understand lazy stream evaluation.
+* Distinguish sequential and parallel streams.
+* Use ExecutorService for task execution.
+* Compose asynchronous operations with CompletableFuture.
+* Use AtomicInteger and other atomic classes for atomic state updates.
+* Use ReentrantLock and Condition for explicit synchronization.
+* Understand volatile and happens-before relationships.
+* Explain the purpose and behavior of Java Virtual Threads.
+* Understand GC roots, reachability, generational collection, and heap regions.
+* Understand the major characteristics of G1 and ZGC.
+* Select concurrency and memory-management techniques based on application requirements.
+
+3. PREREQUISITES
+
+The learner should already understand:
+
+* Java syntax
+* Classes and objects
+* Inheritance and interfaces
+* Exception handling
+* Collections Framework
+* Arrays and strings
+* Basic multithreading
+* Basic JVM concepts
+* Basic OOP principles
+
+4. BEGINNER CONCEPTS
+
+4.1 Generic Class
+
+Generics allow classes and methods to operate on different types while preserving compile-time type checking.
+
+```java
+public class Box<T> {
+    private T value;
+
+    public void set(T value) {
+        this.value = value;
+    }
+
+    public T get() {
+        return value;
+    }
+}
+```
+
+Example:
+
+```java
+Box<String> box = new Box<>();
+box.set("Java");
+
+String value = box.get();
+System.out.println(value);
+```
+
+The compiler ensures that the Box<String> is used with String values.
+
+4.2 Generic Method
+
+```java
+public static <T> void printValue(T value) {
+    System.out.println(value);
+}
+```
+
+Usage:
+
+```java
+printValue("Java");
+printValue(100);
+printValue(10.5);
+```
+
+4.3 Bounded Type Parameter
+
+A type parameter can be restricted using extends.
+
+```java
+public static <T extends Number> double square(T value) {
+    double n = value.doubleValue();
+    return n * n;
+}
+```
+
+This method accepts types that extend Number, such as Integer, Double, Float, and Long.
+
+4.4 Basic Lambda Expression
+
+A lambda expression provides an implementation of a functional interface.
+
+```java
+Runnable task = () ->
+    System.out.println("Executing task");
+```
+
+The lambda can be executed using:
+
+```java
+task.run();
+```
+
+4.5 Basic Stream Pipeline
+
+```java
+List<String> names =
+    List.of("Alice", "Bob", "Charlie");
+
+List<String> uppercase =
+    names.stream()
+         .map(String::toUpperCase)
+         .toList();
+
+System.out.println(uppercase);
+```
+
+A Stream does not normally store data itself. It processes elements supplied by a source such as a collection.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 Wildcards
+
+A wildcard represents an unknown type.
+
+There are three major forms:
+
+* `List<?>`
+* `List<? extends T>`
+* `List<? super T>`
+
+5.2 Upper-Bounded Wildcard
+
+```java
+List<? extends Number>
+```
+
+The exact subtype is unknown, but every element can safely be read as Number.
+
+Example:
+
+```java
+public static double sum(List<? extends Number> values) {
+    double total = 0;
+
+    for (Number value : values) {
+        total += value.doubleValue();
+    }
+
+    return total;
+}
+```
+
+You generally cannot add a concrete Number such as Integer to `List<? extends Number>` because the actual list might be `List<Double>`.
+
+5.3 Lower-Bounded Wildcard
+
+```java
+List<? super Integer>
+```
+
+This represents a list whose element type is Integer or one of Integer's supertypes.
+
+```java
+public static void addNumbers(List<? super Integer> list) {
+    list.add(10);
+    list.add(20);
+}
+```
+
+5.4 Unbounded Wildcard
+
+```java
+List<?> list;
+```
+
+This is useful when the exact element type is not important.
+
+You can safely perform operations such as:
+
+```java
+list.size();
+list.clear();
+```
+
+but you generally cannot add a non-null value because the actual element type is unknown.
+
+5.5 PECS
+
+PECS means:
+
+Producer Extends
+Consumer Super
+
+Use:
+
+```text
+? extends T
+```
+
+when a parameter produces values for your code to read.
+
+Use:
+
+```text
+? super T
+```
+
+when a parameter consumes values that your code wants to write.
+
+Example:
+
+```java
+public static <T> void copy(
+        List<? extends T> source,
+        List<? super T> destination) {
+
+    for (T item : source) {
+        destination.add(item);
+    }
+}
+```
+
+5.6 Functional Interfaces
+
+Common interfaces in `java.util.function` include:
+
+| Interface         | Main Purpose |
+| ----------------- | ------------ |
+| Predicate<T>      | T -> boolean |
+| Function<T,R>     | T -> R       |
+| Consumer<T>       | T -> void    |
+| Supplier<T>       | () -> T      |
+| UnaryOperator<T>  | T -> T       |
+| BinaryOperator<T> | (T,T) -> T   |
+
+Example:
+
+```java
+Predicate<Integer> positive = n -> n > 0;
+
+Function<String, Integer> length =
+    String::length;
+
+Consumer<String> printer =
+    System.out::println;
+
+Supplier<Double> randomValue =
+    Math::random;
+```
+
+5.7 Method References
+
+A method reference provides a compact form of a lambda when an existing method already matches the required functional interface.
+
+Examples:
+
+```java
+String::toUpperCase
+System.out::println
+Math::abs
+Integer::parseInt
+```
+
+5.8 Stream Operations
+
+Intermediate operations return another Stream and are generally lazy.
+
+Examples:
+
+```text
+filter()
+map()
+flatMap()
+distinct()
+sorted()
+limit()
+skip()
+peek()
+```
+
+Terminal operations consume the stream.
+
+Examples:
+
+```text
+forEach()
+collect()
+reduce()
+count()
+min()
+max()
+anyMatch()
+allMatch()
+noneMatch()
+findFirst()
+findAny()
+toList()
+```
+
+A stream pipeline normally does not execute its intermediate operations until a terminal operation is invoked.
+
+5.9 map()
+
+`map()` transforms each element into another value.
+
+```java
+List<String> names =
+    List.of("Alice", "Bob", "Charlie");
+
+List<Integer> lengths =
+    names.stream()
+         .map(String::length)
+         .toList();
+```
+
+5.10 filter()
+
+`filter()` keeps elements that satisfy a predicate.
+
+```java
+List<Integer> values =
+    List.of(10, 15, 20, 25, 30);
+
+List<Integer> even =
+    values.stream()
+          .filter(n -> n % 2 == 0)
+          .toList();
+```
+
+5.11 flatMap()
+
+`flatMap()` maps each element to a stream and then flattens the resulting streams.
+
+```java
+List<List<String>> data = List.of(
+    List.of("A", "B"),
+    List.of("C", "D")
+);
+
+List<String> result =
+    data.stream()
+        .flatMap(List::stream)
+        .toList();
+```
+
+Result:
+
+```text
+[A, B, C, D]
+```
+
+5.12 reduce()
+
+`reduce()` combines stream elements into a result.
+
+```java
+int total =
+    List.of(10, 20, 30)
+        .stream()
+        .reduce(0, Integer::sum);
+```
+
+For reduction, the accumulator should satisfy the requirements needed for the selected execution mode, particularly associativity when parallel execution is possible.
+
+5.13 collect()
+
+`collect()` performs a mutable reduction and is commonly used with `Collectors`.
+
+```java
+Map<String, List<Employee>> grouped =
+    employees.stream()
+             .collect(
+                 Collectors.groupingBy(
+                     Employee::getDepartment
+                 )
+             );
+```
+
+5.14 Optional
+
+`Optional<T>` represents a value that may or may not be present.
+
+Example:
+
+```java
+Optional<String> name =
+    Optional.of("Java");
+
+name.ifPresent(System.out::println);
+```
+
+It is useful for expressing an optional result, especially from operations such as `findFirst()` or `findAny()`.
+
+6. ADVANCED CONCEPTS
+
+6.1 Type Erasure
+
+Java implements generics primarily through type erasure.
+
+During compilation, type parameters are erased:
+
+* An unbounded type parameter is replaced by Object.
+* A bounded type parameter is replaced by its first bound.
+* Necessary casts are inserted by the compiler.
+* Bridge methods can be generated to preserve polymorphism in some generic inheritance situations.
+
+For example:
+
+```java
+class Box<T> {
+    private T value;
+
+    public T get() {
+        return value;
+    }
+}
+```
+
+For an unbounded T, the erased representation uses Object at the relevant bytecode level.
+
+Type erasure means parameterized types such as:
+
+```java
+List<String>
+List<Integer>
+```
+
+do not have separate runtime classes such as StringList.class and IntegerList.class.
+
+The runtime does not retain the complete parameterized type information.
+
+6.2 Consequences of Type Erasure
+
+Because generic type arguments are not generally reified at runtime:
+
+```java
+new T()
+```
+
+is not directly allowed.
+
+Likewise:
+
+```java
+new T[10]
+```
+
+is not directly allowed.
+
+This is also why code such as:
+
+```java
+if (value instanceof List<String>)
+```
+
+is generally invalid because the runtime cannot test the erased String type argument.
+
+An unbounded wildcard can be used where appropriate:
+
+```java
+if (value instanceof List<?> list) {
+    System.out.println(list.size());
+}
+```
+
+6.3 Non-Reifiable Types
+
+A parameterized type such as:
+
+```java
+List<String>
+```
+
+is non-reifiable because its complete type argument is not available to the JVM at runtime.
+
+Examples of reifiable types include:
+
+```text
+int
+String
+Object
+List<?>
+```
+
+This distinction is important for:
+
+* instanceof
+* generic arrays
+* varargs with generic types
+* unchecked casts
+
+6.4 Bridge Methods
+
+The compiler can generate bridge methods when type erasure would otherwise break overriding relationships involving generics.
+
+This allows generic code to preserve polymorphic behavior after erasure.
+
+6.5 Java Memory Model
+
+The Java Memory Model (JMM) defines how threads interact through memory.
+
+Important concepts include:
+
+* visibility
+* atomicity
+* ordering
+* happens-before relationships
+
+A correct concurrent program must ensure that shared state is accessed according to appropriate synchronization rules.
+
+6.6 volatile
+
+The `volatile` keyword provides visibility and ordering guarantees for accesses to a variable.
+
+Example:
+
+```java
+private volatile boolean running = true;
+```
+
+If one thread changes `running`, another thread performing a volatile read can observe the updated value according to the Java Memory Model.
+
+However:
+
+```java
+count++;
+```
+
+is not made atomic merely because `count` is volatile.
+
+The operation consists conceptually of:
+
+```text
+read
+modify
+write
+```
+
+For compound atomic updates, use synchronization or appropriate atomic classes.
+
+6.7 Atomic Variables
+
+Java provides classes such as:
+
+```text
+AtomicInteger
+AtomicLong
+AtomicBoolean
+AtomicReference
+```
+
+Example:
+
+```java
+AtomicInteger counter =
+    new AtomicInteger(0);
+
+counter.incrementAndGet();
+```
+
+Atomic classes provide atomic operations such as:
+
+```java
+incrementAndGet()
+addAndGet()
+compareAndSet()
+getAndIncrement()
+```
+
+They are useful for specific shared-state operations without requiring a traditional lock for every update.
+
+6.8 ReentrantLock
+
+`ReentrantLock` provides explicit locking capabilities.
+
+Example:
+
+```java
+private final ReentrantLock lock =
+    new ReentrantLock();
+
+lock.lock();
+
+try {
+    // protected operation
+} finally {
+    lock.unlock();
+}
+```
+
+The `finally` block is important because the lock must be released even if an exception occurs.
+
+`ReentrantLock` also supports features such as:
+
+* tryLock()
+* timed locking
+* interruptible locking
+* fairness configuration
+* Condition objects
+
+6.9 CompletableFuture
+
+`CompletableFuture<T>` represents a future result and supports asynchronous composition.
+
+Common operations include:
+
+```text
+supplyAsync()
+runAsync()
+thenApply()
+thenCompose()
+thenCombine()
+thenAccept()
+exceptionally()
+handle()
+allOf()
+anyOf()
+```
+
+Example:
+
+```java
+CompletableFuture<String> future =
+    CompletableFuture
+        .supplyAsync(() -> fetchData())
+        .thenApply(String::toUpperCase);
+```
+
+By default, `supplyAsync()` without an executor uses the `ForkJoinPool.commonPool()` for its asynchronous task.
+
+An explicitly supplied executor can be used when application-specific execution control is required.
+
+6.10 thenApply vs thenCompose
+
+`thenApply()` transforms one result into another:
+
+```java
+future.thenApply(value -> transform(value));
+```
+
+`thenCompose()` is useful when the transformation itself returns another `CompletionStage`:
+
+```java
+future.thenCompose(value -> fetchMoreData(value));
+```
+
+This avoids unnecessary nesting such as:
+
+```text
+CompletableFuture<CompletableFuture<T>>
+```
+
+6.11 thenCombine
+
+`thenCombine()` combines two independently completing stages.
+
+```java
+CompletableFuture<String> user =
+    CompletableFuture.supplyAsync(
+        () -> fetchUser()
+    );
+
+CompletableFuture<String> score =
+    CompletableFuture.supplyAsync(
+        () -> fetchScore()
+    );
+
+CompletableFuture<String> result =
+    user.thenCombine(
+        score,
+        (u, s) -> u + " : " + s
+    );
+```
+
+The combination stage executes after both stages complete normally.
+
+6.12 Virtual Threads
+
+Virtual Threads were finalized in Java 21.
+
+They are instances of `java.lang.Thread`, but unlike platform threads, they are not permanently tied to a particular operating-system thread.
+
+When a virtual thread performs a blocking operation supported by the runtime, the virtual thread can be suspended while its carrier thread performs other work.
+
+Virtual threads are designed primarily for high-throughput applications containing large numbers of tasks that spend substantial time waiting, especially on I/O.
+
+They are not inherently faster than platform threads. Their primary benefit is scalability and higher concurrency for suitable workloads.
+
+6.13 Creating a Virtual Thread
+
+```java
+Thread thread =
+    Thread.ofVirtual()
+          .start(() ->
+              System.out.println("Hello from virtual thread")
+          );
+
+thread.join();
+```
+
+6.14 Virtual Thread Executor
+
+```java
+try (var executor =
+         Executors.newVirtualThreadPerTaskExecutor()) {
+
+    executor.submit(() ->
+        processRequest()
+    );
+}
+```
+
+The executor creates a new virtual thread for each submitted task.
+
+Virtual threads should not normally be treated like scarce platform threads that must be pooled. Application tasks can instead be represented directly by virtual threads.
+
+6.15 Virtual Thread Limitations
+
+Virtual threads are not a universal replacement for every concurrency mechanism.
+
+They are especially useful for I/O-bound workloads.
+
+CPU-intensive work is still limited by available processor resources.
+
+Developers should also consider:
+
+* synchronization
+* external resource limits
+* database connection pools
+* network limits
+* thread pinning
+* memory consumption
+* task cancellation
+* structured concurrency where available
+
+7. JVM GARBAGE COLLECTION
+
+7.1 Automatic Memory Management
+
+Java objects are allocated on the JVM heap.
+
+When an object is no longer reachable through the application, it can eventually be reclaimed by the garbage collector.
+
+Garbage collection reduces the need for explicit memory deallocation, but it does not eliminate all memory-related problems.
+
+Applications can still suffer from:
+
+* memory leaks caused by unintended references
+* excessive object creation
+* large retained object graphs
+* heap exhaustion
+* resource leaks outside the Java heap
+
+7.2 GC Roots
+
+Garbage collectors determine object reachability starting from GC roots.
+
+Examples of root-related references can include:
+
+* active thread stacks
+* static references
+* JNI references
+* other JVM-managed root references
+
+An object reachable from a GC root is considered live.
+
+An object that is no longer reachable can become eligible for collection.
+
+7.3 Generational Garbage Collection
+
+Many JVM collectors use the generational hypothesis:
+
+```text
+Most newly created objects become unreachable relatively quickly.
+```
+
+This motivates separating younger and older objects.
+
+A simplified model is:
+
+```text
+Young objects
+    |
+    +--> survive collections
+            |
+            v
+       Older objects
+```
+
+The exact organization depends on the collector.
+
+7.4 G1 Garbage Collector
+
+G1 means Garbage-First.
+
+G1 divides the heap into regions instead of relying on one permanently contiguous young/old layout.
+
+It is designed as a mostly concurrent collector and attempts to balance:
+
+* throughput
+* memory utilization
+* pause-time goals
+
+G1 can use a pause-time target such as:
+
+```text
+-XX:MaxGCPauseMillis
+```
+
+This is a goal rather than an absolute guarantee.
+
+7.5 G1 Region Model
+
+Conceptually:
+
+```text
++-------+-------+-------+-------+
+|Region |Region |Region |Region |
++-------+-------+-------+-------+
+|Region |Region |Region |Region |
++-------+-------+-------+-------+
+```
+
+Regions may participate in different logical roles during collection.
+
+G1 can prioritize regions with more reclaimable space, which is the basis of the "Garbage-First" name.
+
+7.6 Z Garbage Collector
+
+ZGC is a low-latency garbage collector in HotSpot.
+
+Its design performs substantial garbage-collection work concurrently with application execution.
+
+Oracle documentation describes ZGC as targeting very short maximum pause times, with pause times intended to remain largely independent of heap size.
+
+ZGC is appropriate for applications where response-time consistency is particularly important.
+
+Enable it with:
+
+```text
+-XX:+UseZGC
+```
+
+7.7 Shenandoah
+
+Shenandoah is another low-pause concurrent garbage collector available in some OpenJDK-based distributions.
+
+Its design focuses on performing substantial marking and evacuation work concurrently with application execution.
+
+Availability, implementation details, and supported features depend on the JDK distribution and version.
+
+7.8 Collector Selection
+
+Do not select a collector only because it has a low theoretical pause time.
+
+Collector selection should consider:
+
+* heap size
+* allocation rate
+* live-set size
+* CPU availability
+* throughput requirements
+* latency requirements
+* application workload
+* JDK distribution
+* measured GC behavior
+
+Benchmarking and GC logs should be used before making production tuning decisions.
+
+8. SYNTAX
+
+8.1 CompletableFuture Pipeline
+
+```java
+CompletableFuture
+    .supplyAsync(() -> fetchUserData(userId))
+    .thenApply(user -> enrichUser(user))
+    .thenAccept(profile -> renderDashboard(profile))
+    .exceptionally(ex -> {
+        logError(ex);
+        return null;
+    });
+```
+
+8.2 Virtual Thread Execution
+
+```java
+try (var executor =
+         Executors.newVirtualThreadPerTaskExecutor()) {
+
+    executor.submit(() ->
+        processOrder(orderId)
+    );
+}
+```
+
+8.3 Atomic Counter
+
+```java
+AtomicInteger counter =
+    new AtomicInteger();
+
+counter.incrementAndGet();
+
+System.out.println(counter.get());
+```
+
+8.4 ReentrantLock
+
+```java
+ReentrantLock lock =
+    new ReentrantLock();
+
+lock.lock();
+
+try {
+    performCriticalOperation();
+} finally {
+    lock.unlock();
+}
+```
+
+9. BASIC EXAMPLE
+
+```java
+import java.util.List;
+
+public class BasicGenericsStreams {
+
+    static class DataHolder<T> {
+        private T content;
+
+        public DataHolder(T content) {
+            this.content = content;
+        }
+
+        public T getContent() {
+            return content;
+        }
+
+        public void setContent(T content) {
+            this.content = content;
+        }
+    }
+
+    public static void main(String[] args) {
+
+        DataHolder<String> stringHolder =
+            new DataHolder<>("Java Architecture");
+
+        DataHolder<Integer> intHolder =
+            new DataHolder<>(2026);
+
+        System.out.println(
+            "Holder 1: " +
+            stringHolder.getContent().toUpperCase()
+        );
+
+        System.out.println(
+            "Holder 2: " +
+            (intHolder.getContent() * 2)
+        );
+
+        List<String> languages =
+            List.of(
+                "Java",
+                "C++",
+                "Python",
+                "JavaScript",
+                "Rust",
+                "Go"
+            );
+
+        List<String> filtered =
+            languages.stream()
+                     .filter(lang -> lang.length() > 3)
+                     .map(String::toUpperCase)
+                     .sorted()
+                     .toList();
+
+        System.out.println(
+            "Filtered Languages: " + filtered
+        );
+    }
+}
+```
+
+10. INTERMEDIATE EXAMPLE
+
+```java
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class IntermediateGenericsStreams {
+
+    static class Employee {
+
+        private final String name;
+        private final String department;
+        private final double salary;
+
+        public Employee(
+                String name,
+                String department,
+                double salary) {
+
+            this.name = name;
+            this.department = department;
+            this.salary = salary;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDepartment() {
+            return department;
+        }
+
+        public double getSalary() {
+            return salary;
+        }
+
+        @Override
+        public String toString() {
+            return name + " ($" + salary + ")";
+        }
+    }
+
+    public static <T extends Number>
+    double sumOfList(List<? extends T> values) {
+
+        double sum = 0.0;
+
+        for (T number : values) {
+            sum += number.doubleValue();
+        }
+
+        return sum;
+    }
+
+    public static void main(String[] args) {
+
+        List<Integer> intList =
+            List.of(10, 20, 30);
+
+        List<Double> doubleList =
+            List.of(1.5, 2.5, 3.5);
+
+        System.out.println(
+            "Sum of Integers: " +
+            sumOfList(intList)
+        );
+
+        System.out.println(
+            "Sum of Doubles: " +
+            sumOfList(doubleList)
+        );
+
+        List<Employee> roster =
+            List.of(
+                new Employee(
+                    "Alice",
+                    "Engineering",
+                    120000
+                ),
+                new Employee(
+                    "Bob",
+                    "Engineering",
+                    110000
+                ),
+                new Employee(
+                    "Charlie",
+                    "Marketing",
+                    85000
+                ),
+                new Employee(
+                    "David",
+                    "Marketing",
+                    90000
+                ),
+                new Employee(
+                    "Eve",
+                    "HR",
+                    75000
+                )
+            );
+
+        Map<String, Double> avgSalaryByDept =
+            roster.stream()
+                  .collect(
+                      Collectors.groupingBy(
+                          Employee::getDepartment,
+                          Collectors.averagingDouble(
+                              Employee::getSalary
+                          )
+                      )
+                  );
+
+        System.out.println(
+            "\n=== Average Salary by Department ==="
+        );
+
+        avgSalaryByDept.forEach(
+            (dept, avg) ->
+                System.out.printf(
+                    "  %-12s : $%.2f%n",
+                    dept,
+                    avg
+                )
+        );
+    }
+}
+```
+
+11. ADVANCED EXAMPLE
+
+```java
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class AdvancedConcurrency {
+
+    public static String fetchUserData(int userId) {
+        simulateDelay(200);
+        return "User_Data[" + userId + "]";
+    }
+
+    public static String fetchUserCreditScore(int userId) {
+        simulateDelay(300);
+        return "CreditScore[780]";
+    }
+
+    public static void simulateDelay(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public static void main(String[] args)
+            throws Exception {
+
+        System.out.println(
+            "=== CompletableFuture Pipeline ==="
+        );
+
+        long start =
+            System.currentTimeMillis();
+
+        CompletableFuture<String> userTask =
+            CompletableFuture.supplyAsync(
+                () -> fetchUserData(42)
+            );
+
+        CompletableFuture<String> creditTask =
+            CompletableFuture.supplyAsync(
+                () -> fetchUserCreditScore(42)
+            );
+
+        CompletableFuture<String> combinedReport =
+            userTask.thenCombine(
+                creditTask,
+                (user, credit) ->
+                    "Consolidated Report: "
+                    + user
+                    + " with "
+                    + credit
+            );
+
+        String result =
+            combinedReport.get(
+                2,
+                TimeUnit.SECONDS
+            );
+
+        long elapsed =
+            System.currentTimeMillis() - start;
+
+        System.out.println(
+            "Result: " + result
+        );
+
+        System.out.println(
+            "Elapsed time: "
+            + elapsed
+            + " ms"
+        );
+
+        System.out.println(
+            "\n=== Virtual Threads ==="
+        );
+
+        long vtStart =
+            System.currentTimeMillis();
+
+        try (var executor =
+                 Executors.newVirtualThreadPerTaskExecutor()) {
+
+            for (int i = 0; i < 10000; i++) {
+
+                final int taskId = i;
+
+                executor.submit(() -> {
+                    simulateDelay(10);
+                    return taskId;
+                });
+            }
+        }
+
+        long vtElapsed =
+            System.currentTimeMillis() - vtStart;
+
+        System.out.println(
+            "10,000 virtual-thread tasks completed."
+        );
+
+        System.out.println(
+            "Elapsed time: "
+            + vtElapsed
+            + " ms"
+        );
+    }
+}
+```
+
+12. CODE WALKTHROUGHS
+
+12.1 Generic Wildcard
+
+In:
+
+```java
+List<? extends T>
+```
+
+the exact subtype is unknown.
+
+Therefore:
+
+```java
+T value = list.get(0);
+```
+
+is safe.
+
+But:
+
+```java
+list.add(value);
+```
+
+is generally unsafe because the actual list could contain a different subtype of T.
+
+For a consumer:
+
+```java
+List<? super T>
+```
+
+a T value can safely be added.
+
+12.2 CompletableFuture
+
+```java
+CompletableFuture.supplyAsync(...)
+```
+
+starts asynchronous computation using the default executor when no executor is supplied.
+
+```java
+thenCombine()
+```
+
+combines two independent completion stages after both complete normally.
+
+If two independent tasks take approximately 200 ms and 300 ms, their idealized parallel execution time is closer to the slower task than their sum, but actual elapsed time depends on scheduling, CPU load, executor behavior, and other system factors.
+
+12.3 Virtual Threads
+
+```java
+Executors.newVirtualThreadPerTaskExecutor()
+```
+
+creates an executor that starts a new virtual thread for each submitted task.
+
+The executor is automatically closed by try-with-resources.
+
+Closing the executor waits for submitted tasks to finish before returning.
+
+13. EXPECTED OUTPUT
+
+Basic example:
+
+```text
+Holder 1: JAVA ARCHITECTURE
+Holder 2: 4052
+Filtered Languages: [JAVA, JAVASCRIPT, PYTHON, RUST]
+```
+
+Intermediate example:
+
+```text
+Sum of Integers: 60.0
+Sum of Doubles: 7.5
+
+=== Average Salary by Department ===
+  Engineering  : $115000.00
+  Marketing    : $87500.00
+  HR           : $75000.00
+```
+
+Advanced example:
+
+```text
+=== CompletableFuture Pipeline ===
+Result: Consolidated Report: User_Data[42] with CreditScore[780]
+Elapsed time: <runtime-dependent> ms
+
+=== Virtual Threads ===
+10,000 virtual-thread tasks completed.
+Elapsed time: <runtime-dependent> ms
+```
+
+Execution time must not be treated as a fixed value because it depends on the machine, JDK, operating-system scheduler, workload, and runtime conditions.
+
+14. EXECUTION FLOW
+
+15. Java source code is compiled by the Java compiler.
+
+16. Generic type checking occurs during compilation.
+
+17. Generic type information is subject to type erasure in generated bytecode.
+
+18. Lambda expressions are represented using JVM-supported mechanisms for functional programming.
+
+19. Stream intermediate operations build a pipeline.
+
+20. A terminal stream operation triggers processing.
+
+21. CompletableFuture creates and composes asynchronous stages.
+
+22. ExecutorService manages task execution.
+
+23. Virtual threads are scheduled by the Java runtime onto carrier threads.
+
+24. Objects are allocated in JVM-managed memory.
+
+25. Garbage collectors determine object reachability using GC roots.
+
+26. Eligible objects are reclaimed according to the selected garbage collector.
+
+27. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Implement a generic bounded object pool:
+
+```text
+GenericPool<T>
+```
+
+Support:
+
+* acquire()
+* release()
+* capacity
+* timeout
+* thread-safe access
+
+Problem 2:
+Build an asynchronous URL-processing application that:
+
+* accepts multiple URLs
+* processes requests concurrently
+* uses CompletableFuture
+* combines results
+* counts words using Streams
+
+Problem 3:
+Implement a custom Collector that calculates the geometric mean of a stream of positive Double values.
+
+Problem 4:
+Create a thread-safe counter using AtomicInteger.
+
+Problem 5:
+Implement a bounded buffer using ReentrantLock and Condition.
+
+Problem 6:
+Create a Java 21+ application that processes thousands of simulated I/O tasks using Virtual Threads.
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 Web and Microservices
+
+Virtual Threads can be useful for high-throughput server applications where many requests spend time waiting for blocking I/O.
+
+16.2 Data Processing
+
+Streams provide a convenient API for filtering, mapping, grouping, and aggregating in-memory data.
+
+16.3 Asynchronous Services
+
+CompletableFuture can compose independent service calls and process their results asynchronously.
+
+16.4 Concurrent Counters
+
+Atomic variables can be used for counters, statistics, and other atomic state updates.
+
+16.5 Low-Latency Applications
+
+G1 and ZGC provide different approaches to balancing throughput, memory utilization, and pause-time requirements.
+
+17. COMMON MISTAKES
+
+Mistake 1:
+Adding values to:
+
+```java
+List<? extends Number>
+```
+
+Correction:
+Use an appropriate concrete generic type or a `? super` consumer when insertion is required.
+
+Mistake 2:
+Trying:
+
+```java
+new T()
+```
+
+Correction:
+Pass a factory, constructor reference, or Class<T> when runtime construction is required.
+
+Mistake 3:
+Using `volatile` for:
+
+```java
+count++;
+```
+
+Correction:
+Use AtomicInteger or appropriate synchronization.
+
+Mistake 4:
+Assuming `CompletableFuture` is always non-blocking.
+
+Correction:
+The pipeline can be asynchronous, but operations such as:
+
+```java
+get()
+join()
+```
+
+can block the calling thread.
+
+Mistake 5:
+Using parallel streams for every large collection.
+
+Correction:
+Parallel execution should be benchmarked and should only be used when the workload and data characteristics make it beneficial.
+
+Mistake 6:
+Assuming Virtual Threads make CPU-intensive code faster.
+
+Correction:
+Virtual Threads primarily improve scalability for tasks that spend substantial time waiting, especially on I/O.
+
+18. COMMON ERRORS
+
+18.1 Generic Array Error
+
+Incorrect:
+
+```java
+List<String>[] lists =
+    new List<String>[10];
+```
+
+Generic arrays of non-reifiable component types are restricted because of type erasure and type-safety concerns.
+
+18.2 ClassCastException
+
+Can occur when unsafe raw types or unchecked casts bypass generic type checking.
+
+Example:
+
+```java
+List raw = new ArrayList();
+raw.add(100);
+
+List<String> strings = raw;
+
+String value = strings.get(0);
+```
+
+This should be avoided.
+
+18.3 TimeoutException
+
+A call such as:
+
+```java
+future.get(2, TimeUnit.SECONDS);
+```
+
+can throw TimeoutException if the result is not available within the specified time.
+
+18.4 InterruptedException
+
+Blocking concurrency operations can be interrupted.
+
+Good practice is generally to preserve the interruption status:
+
+```java
+catch (InterruptedException e) {
+    Thread.currentThread().interrupt();
+}
+```
+
+19. DEBUGGING TECHNIQUES
+
+19.1 Incorrect Shared Mutation
+
+Incorrect:
+
+```java
+List<Integer> result =
+    new ArrayList<>();
+
+IntStream.range(0, 10000)
+         .parallel()
+         .forEach(result::add);
+```
+
+The problem is that ArrayList is not designed for unsynchronized concurrent mutation.
+
+19.2 Correct Stream Collection
+
+```java
+List<Integer> result =
+    IntStream.range(0, 10000)
+             .parallel()
+             .boxed()
+             .toList();
+
+System.out.println(
+    "Result size: " + result.size()
+);
+```
+
+The Stream API manages the reduction process according to the stream and collector semantics.
+
+Do not describe `toList()` itself as a "thread-safe collection." The important point is that the stream terminal operation safely constructs the result according to its specified reduction behavior.
+
+19.3 Useful JVM Debugging Tools
+
+Useful tools include:
+
+```text
+jcmd
+jstack
+jmap
+jfr
+jconsole
+```
+
+Java Flight Recorder (JFR) can provide information about:
+
+* thread activity
+* virtual threads
+* CPU usage
+* allocations
+* garbage collection
+* locks
+* application events
+
+20. EDGE CASES
+
+20.1 Infinite Streams
+
+This creates an infinite stream:
+
+```java
+Stream.iterate(
+    0,
+    i -> i + 1
+);
+```
+
+A terminal operation that attempts to consume the entire stream may never finish.
+
+Use:
+
+```java
+.limit(100)
+```
+
+when a finite result is required.
+
+20.2 Empty Stream
+
+A reduction without an identity may return Optional:
+
+```java
+Optional<Integer> result =
+    Stream.<Integer>empty()
+          .reduce(Integer::sum);
+```
+
+20.3 Concurrent Modification
+
+Modifying a collection while traversing it can result in:
+
+```text
+ConcurrentModificationException
+```
+
+depending on the collection and operation.
+
+Use appropriate concurrent collections or controlled mutation strategies when concurrent modification is required.
+
+20.4 Null Values
+
+Streams and collections have different policies regarding null values. Application code should define whether null is allowed and handle it consistently.
+
+20.5 Virtual Thread Pinning
+
+Some operations can prevent a virtual thread from releasing its carrier thread efficiently.
+
+Frequent or long-lived pinning can reduce scalability.
+
+JFR can help identify virtual-thread pinning events.
+
+21. BEST PRACTICES
+
+* Prefer parameterized types instead of raw types.
+* Apply PECS to wildcard parameters where appropriate.
+* Keep generic APIs type-safe.
+* Avoid unnecessary unchecked casts.
+* Prefer method references when they improve readability.
+* Keep Stream operations stateless and non-interfering.
+* Use reduce() for associative reductions.
+* Use collect() for mutable result accumulation.
+* Do not use streams simply because they are available.
+* Avoid unnecessary parallel streams.
+* Use CompletableFuture when asynchronous composition is appropriate.
+* Supply a custom Executor when application-specific execution control is required.
+* Use Atomic classes for suitable atomic state operations.
+* Always unlock ReentrantLock in a finally block.
+* Use Virtual Threads primarily for high-concurrency, I/O-oriented workloads.
+* Measure GC behavior before changing collector settings.
+* Treat `-XX:MaxGCPauseMillis` as a target rather than an absolute guarantee.
+* Use profiling and JFR rather than guessing about JVM performance.
+
+22. PERFORMANCE CONSIDERATIONS
+
+22.1 Streams
+
+Streams provide expressive data processing, but they introduce pipeline and functional abstraction overhead.
+
+For very small workloads, a traditional loop can be simpler and sometimes faster.
+
+For larger workloads, the choice should be based on:
+
+* workload size
+* operation complexity
+* allocation behavior
+* data source
+* readability
+* sequential versus parallel execution
+* measured performance
+
+22.2 Parallel Streams
+
+Parallel streams should not automatically be considered faster.
+
+Potential costs include:
+
+* task splitting
+* scheduling
+* synchronization
+* combining partial results
+* memory overhead
+* contention
+* ordering requirements
+
+Benchmark the real workload before adopting parallel execution.
+
+22.3 CompletableFuture
+
+Avoid blocking unnecessarily inside asynchronous stages.
+
+For I/O-heavy workloads, use an execution strategy appropriate for the application's resource limits.
+
+Do not assume that increasing the number of tasks automatically increases throughput.
+
+22.4 Virtual Threads
+
+Virtual threads provide scalability for large numbers of concurrent tasks.
+
+They do not increase CPU capacity.
+
+If the workload is CPU-bound, the limiting resource remains the available processor capacity.
+
+23. MEMORY CONSIDERATIONS
+
+23.1 Generic Types
+
+Type erasure means parameterized generic types do not require a separate runtime class for every type argument.
+
+23.2 Stream Pipelines
+
+Streams may create intermediate objects depending on the pipeline and implementation.
+
+Avoid unnecessary object creation in extremely performance-sensitive code.
+
+23.3 Virtual Threads
+
+Virtual threads are designed to be substantially cheaper than platform threads, enabling applications to support very large numbers of concurrent tasks.
+
+However, they are not zero-memory objects.
+
+The total application memory requirement still depends on:
+
+* live objects
+* task state
+* call stacks
+* ThreadLocal usage
+* network buffers
+* database connections
+* application data
+
+23.4 Garbage Collection
+
+GC performance depends on:
+
+* heap size
+* allocation rate
+* live-set size
+* object lifetime
+* CPU resources
+* selected collector
+* application behavior
+
+24. SECURITY CONSIDERATIONS
+
+24.1 Unsafe Deserialization
+
+Do not deserialize untrusted data using Java native object serialization without appropriate security controls.
+
+Prefer well-defined data formats such as:
+
+```text
+JSON
+Protocol Buffers
+other validated serialization formats
+```
+
+24.2 Resource Exhaustion
+
+Applications should limit:
+
+* request sizes
+* queue sizes
+* concurrent tasks
+* database connections
+* external API calls
+
+Virtual Threads make creating large numbers of tasks easier, but external resources can still become bottlenecks.
+
+24.3 Untrusted Input
+
+Validate:
+
+* collection sizes
+* numeric ranges
+* string lengths
+* file sizes
+* network payloads
+
+before processing large inputs.
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+| Feature                  | Java                                                            | C++                                        | Python                                         |
+| ------------------------ | --------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| Generic mechanism        | Generics with type erasure                                      | Templates                                  | Runtime typing with optional type hints        |
+| Main concurrency options | Platform Threads, Virtual Threads, Executors, CompletableFuture | OS threads, std::thread, async facilities  | Threads, multiprocessing, asyncio              |
+| Memory management        | JVM garbage collection                                          | Manual/RAII/resource management            | Reference counting plus cyclic GC in CPython   |
+| Functional pipelines     | Stream API                                                      | Algorithms and Ranges                      | Iterators, comprehensions, generators          |
+| Type checking            | Primarily compile-time for generics                             | Compile-time templates                     | Primarily runtime; static checking is optional |
+| Async composition        | CompletableFuture and related APIs                              | Standard/library-specific async facilities | asyncio and futures                            |
+| Low-latency GC           | G1, ZGC and collector options depending on JDK                  | No standard tracing GC                     | Runtime-specific GC                            |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1: What is Type Erasure?
+
+A:
+Type erasure is the compiler process in which generic type parameters are replaced by their bounds or Object where appropriate, with casts inserted when necessary. Bridge methods may also be generated to preserve polymorphism.
+
+Q2: What is PECS?
+
+A:
+PECS means:
+
+Producer Extends
+Consumer Super
+
+Use `? extends T` for producers and `? super T` for consumers.
+
+Q3: What is a Virtual Thread?
+
+A:
+A Virtual Thread is a lightweight implementation of `java.lang.Thread` managed by the Java runtime rather than being permanently tied to one operating-system thread.
+
+Q4: Are Virtual Threads faster than platform threads?
+
+A:
+Not inherently. Their main purpose is to support a much larger number of concurrent tasks efficiently, particularly tasks that spend substantial time waiting for I/O.
+
+Q5: What is the difference between volatile and AtomicInteger?
+
+A:
+`volatile` provides visibility and ordering guarantees for a variable, but it does not make compound operations such as `count++` atomic.
+
+`AtomicInteger` provides atomic operations such as `incrementAndGet()` and `compareAndSet()`.
+
+Q6: What is G1?
+
+A:
+G1 is the Garbage-First garbage collector. It is a mostly concurrent collector designed to balance throughput with predictable pause-time goals.
+
+Q7: What is ZGC?
+
+A:
+ZGC is a low-latency HotSpot garbage collector designed to keep garbage-collection pauses very short, including for large heaps.
+
+Q8: Does CompletableFuture always execute on the current thread?
+
+A:
+No. Asynchronous methods such as `supplyAsync()` use an executor. Without an explicitly supplied executor, `supplyAsync()` uses the common ForkJoinPool.
+
+27. INTERVIEW QUESTIONS
+
+Q1: Explain map() and flatMap().
+
+Answer:
+
+`map()` performs a one-to-one transformation:
+
+```text
+T -> R
+```
+
+`flatMap()` transforms an element into a stream and then flattens the resulting streams:
+
+```text
+T -> Stream<R> -> R
+```
+
+Example:
+
+```java
+List<List<Integer>> numbers =
+    List.of(
+        List.of(1, 2),
+        List.of(3, 4)
+    );
+
+List<Integer> result =
+    numbers.stream()
+           .flatMap(List::stream)
+           .toList();
+```
+
+Q2: Why can't Java create `new T()`?
+
+Answer:
+
+The actual type represented by T is not generally available at runtime because of type erasure.
+
+Use a factory, constructor reference, or Class<T> when runtime construction is required.
+
+Q3: What is the difference between thenApply() and thenCompose()?
+
+Answer:
+
+`thenApply()` transforms the result.
+
+`thenCompose()` chains another asynchronous computation and avoids nested futures.
+
+Q4: What is the purpose of thenCombine()?
+
+Answer:
+
+It combines two independently completing CompletionStage results.
+
+Example:
+
+```java
+futureA.thenCombine(
+    futureB,
+    (a, b) -> combine(a, b)
+);
+```
+
+Q5: Why is volatile insufficient for count++?
+
+Answer:
+
+Because `count++` consists of multiple logical steps:
+
+```text
+read
+modify
+write
+```
+
+Another thread can interfere between these steps.
+
+Use AtomicInteger or synchronization when an atomic update is required.
+
+Q6: Why are Virtual Threads useful?
+
+Answer:
+
+They allow applications to represent large numbers of concurrent tasks as threads while using a smaller set of carrier operating-system threads.
+
+They are particularly useful for blocking I/O workloads.
+
+Q7: What is a GC Root?
+
+Answer:
+
+A GC Root is a starting point used by the garbage collector when determining which objects remain reachable and therefore live.
+
+Q8: Is `-XX:MaxGCPauseMillis=10` a guarantee?
+
+Answer:
+
+No.
+
+It is a pause-time goal used by the collector's ergonomics. Actual pause times depend on workload, heap state, hardware, and collector behavior.
+
+28. EXAM QUESTIONS
+
+Q1:
+
+Is the following code legal?
+
+```java
+List<? extends Number> list =
+    new ArrayList<Integer>();
+
+list.add(10);
+```
+
+Answer:
+
+No.
+
+The compiler rejects adding `10` because the exact element type represented by `? extends Number` is unknown.
+
+Q2:
+
+What is the result of type erasure for an unbounded generic type parameter?
+
+Answer:
+
+An unbounded type parameter is erased to `Object`.
+
+Q3:
+
+Which Java feature provides atomic increment operations?
+
+Answer:
+
+`AtomicInteger`, for example:
+
+```java
+counter.incrementAndGet();
+```
+
+Q4:
+
+Which HotSpot collector is designed for low-latency garbage collection?
+
+Answer:
+
+ZGC is designed for low-latency collection with very short pause targets.
+
+Q5:
+
+Are Virtual Threads intended primarily for CPU-bound computation?
+
+Answer:
+
+No.
+
+They are particularly suitable for high-concurrency workloads containing many tasks that spend substantial time waiting, especially on I/O.
+
+29. PRACTICE QUESTIONS
+
+Q1:
+Implement a Stream pipeline that:
+
+* reads employee records
+* filters active employees
+* groups employees by job title
+* finds the highest-paid employee in each group
+
+Q2:
+Create an asynchronous service that:
+
+* calls three external services concurrently
+* combines their results
+* handles failures
+* applies a timeout
+
+Q3:
+Implement:
+
+```text
+CircularBuffer<T>
+```
+
+using:
+
+```text
+ReentrantLock
+Condition
+```
+
+Q4:
+Implement a thread-safe counter using:
+
+```text
+AtomicInteger
+```
+
+Q5:
+Create a Virtual Thread application that processes 50,000 simulated I/O tasks.
+
+Q6:
+Write a generic repository:
+
+```java
+Repository<T, ID>
+```
+
+with:
+
+```text
+save()
+findById()
+delete()
+findAll()
+```
+
+Q7:
+Create a custom Collector that calculates a statistical result from a stream of numeric values.
+
+30. SUMMARY
+
+Advanced Java combines compile-time generic type safety, functional programming, asynchronous execution, concurrency utilities, and JVM memory management.
+
+Generics provide reusable type-safe APIs. Type erasure explains many runtime restrictions of Java generics.
+
+Wildcards allow flexible APIs:
+
+```text
+? extends T
+? super T
+?
+```
+
+Streams provide declarative processing using operations such as:
+
+```text
+filter
+map
+flatMap
+reduce
+collect
+```
+
+CompletableFuture provides composable asynchronous computations.
+
+Atomic classes provide atomic state operations, while ReentrantLock provides explicit locking and condition-based coordination.
+
+Virtual Threads provide a lightweight concurrency model designed especially for high-throughput applications with many blocking I/O operations.
+
+The JVM automatically manages heap memory through garbage collection. G1 and ZGC provide different approaches to balancing throughput, latency, and memory-management requirements.
+
+31. KEY TAKEAWAYS
+
+* Generics provide compile-time type safety.
+* Java implements generics primarily through type erasure.
+* `? extends T` is commonly used for producers.
+* `? super T` is commonly used for consumers.
+* PECS means Producer Extends, Consumer Super.
+* Parameterized generic types are generally non-reifiable at runtime.
+* Lambda expressions implement functional interfaces.
+* Method references provide concise function expressions.
+* Stream intermediate operations are generally lazy.
+* Stream terminal operations trigger pipeline processing.
+* `map()` transforms elements.
+* `filter()` selects elements.
+* `flatMap()` flattens mapped streams.
+* `reduce()` performs associative reduction.
+* `collect()` performs mutable reduction using collectors.
+* `volatile` provides visibility and ordering guarantees but not compound-operation atomicity.
+* AtomicInteger supports atomic numeric updates.
+* ReentrantLock provides explicit synchronization control.
+* CompletableFuture supports asynchronous composition.
+* Virtual Threads are designed for scalable concurrency, especially I/O-bound tasks.
+* Virtual Threads are not inherently faster than platform threads.
+* G1 is a mostly concurrent garbage collector designed to balance throughput and pause-time goals.
+* ZGC targets very low pause times.
+* GC Roots are used to determine object reachability.
+* JVM performance should be measured with profiling, JFR, GC logs, and realistic benchmarks.
+* Collector and concurrency choices should be based on workload characteristics rather than assumptions.
+
+32. OFFICIAL REFERENCE BASIS
+
+The technical corrections in this knowledge base should be aligned with:
+
+* Oracle Java SE API Documentation
+* Oracle Java Language Documentation
+* Oracle Virtual Threads Documentation
+* Oracle HotSpot Garbage Collection Tuning Guide
+* OpenJDK documentation for JDK-specific features
+
+When a feature is version-dependent, always verify the exact behavior against the JDK version being used.

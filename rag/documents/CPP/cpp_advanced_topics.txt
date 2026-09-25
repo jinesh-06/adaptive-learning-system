@@ -1,0 +1,2062 @@
+COURSE: CPP
+TOPIC: ADVANCED TOPICS
+LEVEL: ADVANCED
+SOURCE: cpp_advanced_topics.txt
+
+TITLE: Advanced Modern C++: Templates, SFINAE, Concepts, Move Semantics, Perfect Forwarding, and Concurrency
+
+1. INTRODUCTION
+
+Advanced modern C++ combines generic programming, compile-time computation, resource management, and concurrent programming. Important features introduced across C++11, C++14, C++17, C++20, and later standards include templates, type traits, move semantics, forwarding references, constexpr programming, SFINAE, concepts, atomics, mutexes, condition variables, futures, and std::jthread.
+
+Templates allow programmers to write reusable code that works with many types. Template arguments may be types, constant values, or templates. C++20 introduced Concepts and Constraints, providing a more expressive mechanism for restricting template arguments.
+
+Move semantics allow resources to be transferred instead of unnecessarily copied. Perfect forwarding allows a wrapper function to preserve whether an argument was originally an lvalue or rvalue.
+
+C++ concurrency provides threads, mutual exclusion, condition variables, atomics, futures, and cancellation facilities. Correct concurrent programming requires understanding data races, synchronization, memory ordering, deadlocks, and object lifetime.
+
+The C++ standard specifies language and library behavior, while implementation-specific properties such as whether a particular atomic type is actually lock-free depend on the implementation and target platform.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Understand function, class, variable, alias, and template-template templates.
+* Understand template argument deduction and template instantiation.
+* Use non-type template parameters and parameter packs.
+* Understand SFINAE and std::enable_if.
+* Use if constexpr for compile-time branching.
+* Understand C++20 Concepts and requires expressions.
+* Understand lvalues, rvalues, xvalues, and value categories.
+* Understand rvalue references and forwarding references.
+* Apply move constructors and move assignment operators.
+* Use std::move and std::forward correctly.
+* Understand type traits from <type_traits>.
+* Use std::jthread for managed thread execution.
+* Use std::mutex, std::lock_guard, std::unique_lock, and std::scoped_lock.
+* Use std::condition_variable for thread coordination.
+* Understand std::atomic and atomic read-modify-write operations.
+* Understand memory_order and the acquire/release synchronization model.
+* Identify data races and deadlocks.
+* Understand the difference between lock-free and merely atomic operations.
+* Design safer generic and concurrent C++ programs.
+
+3. PREREQUISITES
+
+The learner should have knowledge of:
+
+* C++ syntax and control structures
+* Functions
+* Classes and objects
+* Inheritance and polymorphism
+* Exception handling
+* STL containers and algorithms
+* Smart pointers
+* Dynamic memory management
+* References and pointers
+* Basic multithreading concepts
+
+4. TEMPLATE FUNDAMENTALS
+
+4.1 Function Templates
+
+A function template defines a family of functions parameterized by one or more template parameters.
+
+Example:
+
+template <typename T>
+T find_max(T a, T b)
+{
+return (a > b) ? a : b;
+}
+
+Usage:
+
+int a = find_max(10, 20);
+double b = find_max(3.5, 2.1);
+
+The compiler can deduce template arguments from function arguments.
+
+4.2 Class Templates
+
+A class template defines a family of classes.
+
+Example:
+
+template <typename T>
+class Box
+{
+private:
+T data;
+
+public:
+Box(T value) : data(value) {}
+
+```
+T get() const
+{
+    return data;
+}
+```
+
+};
+
+Usage:
+
+Box<int> b1(100);
+Box[std::string](std::string) b2("C++");
+
+4.3 Variable Templates
+
+Variable templates were introduced in C++14.
+
+Example:
+
+template <typename T>
+constexpr T pi = T(3.14159265358979323846);
+
+Usage:
+
+double d = pi<double>;
+
+4.4 Alias Templates
+
+An alias template creates an alias for a family of types.
+
+Example:
+
+template <typename T>
+using Vector = std::vector<T>;
+
+Vector<int> numbers;
+
+4.5 Template Parameters
+
+Templates may have:
+
+* Type template parameters
+* Non-type or constant template parameters
+* Template template parameters
+* Parameter packs
+
+Example:
+
+template <typename T, int Size>
+class Array
+{
+T data[Size];
+};
+
+Array<int, 10> values;
+
+4.6 Template Instantiation
+
+When a required specialization of a template is used, the compiler generates the corresponding specialization.
+
+Example:
+
+template <typename T>
+T square(T x)
+{
+return x * x;
+}
+
+square<int>(5);
+square<double>(2.5);
+
+The two calls can result in different specializations.
+
+5. TEMPLATE ARGUMENT DEDUCTION
+
+Template argument deduction determines template arguments from function arguments when possible.
+
+Example:
+
+template <typename T>
+void display(T value)
+{
+std::cout << value << '\n';
+}
+
+display(10);
+display(3.14);
+display("Hello");
+
+T can be deduced differently for each call.
+
+Reference parameters affect deduction rules. For forwarding references, lvalue arguments and rvalue arguments produce different deductions.
+
+6. PARAMETER PACKS AND FOLD EXPRESSIONS
+
+Parameter packs allow a template to accept a variable number of arguments.
+
+Example:
+
+template <typename... Args>
+void print_all(Args&&... args)
+{
+(std::cout << ... << args) << '\n';
+}
+
+Usage:
+
+print_all(10, 20, 30);
+print_all("C++", 20, 3.14);
+
+The expression:
+
+(std::cout << ... << args)
+
+is a C++17 fold expression.
+
+7. SFINAE
+
+SFINAE means:
+
+SUBSTITUTION FAILURE IS NOT AN ERROR
+
+During certain template substitutions, if substitution produces an invalid type or expression in a context where SFINAE applies, that candidate can be removed from overload resolution instead of causing an immediate compilation error.
+
+Example:
+
+#include <type_traits>
+
+template <typename T>
+std::enable_if_t<std::is_integral_v<T>, T>
+double_value(T value)
+{
+return value * 2;
+}
+
+SFINAE was widely used before C++20 Concepts.
+
+Important point:
+
+SFINAE does not mean that all template errors are ignored. It applies only to specific substitution contexts defined by the language rules.
+
+8. std::enable_if
+
+std::enable_if conditionally provides a type when a compile-time condition is true.
+
+Example:
+
+template <typename T>
+std::enable_if_t<std::is_integral_v<T>, void>
+process(T value)
+{
+std::cout << "Integral: " << value << '\n';
+}
+
+For modern C++20 code, Concepts are usually clearer when expressing template requirements.
+
+9. if constexpr
+
+if constexpr was introduced in C++17.
+
+It performs compile-time conditional selection.
+
+Example:
+
+template <typename T>
+void inspect(T value)
+{
+if constexpr (std::is_integral_v<T>)
+{
+std::cout << "Integral type\n";
+}
+else if constexpr (std::is_floating_point_v<T>)
+{
+std::cout << "Floating-point type\n";
+}
+else
+{
+std::cout << "Other type\n";
+}
+}
+
+The discarded branch is not instantiated in the same way as an ordinary runtime branch. This makes if constexpr useful when different types require different valid operations.
+
+10. C++20 CONCEPTS
+
+Concepts provide named compile-time requirements for template arguments.
+
+Example:
+
+#include <concepts>
+
+template <typename T>
+concept Numeric =
+std::integral<T> || std::floating_point<T>;
+
+template <Numeric T>
+T add(T a, T b)
+{
+return a + b;
+}
+
+Concepts make template interfaces more expressive and can produce clearer diagnostics than many traditional SFINAE techniques.
+
+11. REQUIRES CLAUSES
+
+A requires clause constrains a template.
+
+Example:
+
+template <typename T>
+requires std::integral<T>
+T add(T a, T b)
+{
+return a + b;
+}
+
+Another form:
+
+template <typename T>
+requires requires(T a, T b)
+{
+a + b;
+}
+T add(T a, T b)
+{
+return a + b;
+}
+
+The inner requires expression checks whether the specified expressions are valid.
+
+12. REQUIRES EXPRESSIONS
+
+A requires expression can test whether operations, types, or expressions satisfy specified requirements.
+
+Example:
+
+template <typename T>
+concept Addable = requires(T a, T b)
+{
+a + b;
+};
+
+template <Addable T>
+T add(T a, T b)
+{
+return a + b;
+}
+
+13. MOVE SEMANTICS
+
+Move semantics were introduced in C++11.
+
+Copying an object may require allocating or duplicating resources. Moving can transfer ownership of resources from one object to another.
+
+Typical movable resources include:
+
+* Dynamically allocated memory
+* File handles
+* Socket handles
+* Operating-system resources
+* Large containers
+
+A move operation is normally designed to leave the source object valid but with an unspecified value unless the type specifies otherwise.
+
+Example:
+
+std::string a = "Large text";
+std::string b = std::move(a);
+
+std::move does not itself move an object. It converts an expression into an xvalue, allowing a move constructor or move assignment operator to be selected when available.
+
+14. RVALUE REFERENCES
+
+An rvalue reference is declared using &&.
+
+Example:
+
+std::string&& ref = std::string("temporary");
+
+An ordinary rvalue reference such as:
+
+Widget&&
+
+is different from a forwarding reference.
+
+A forwarding reference normally occurs when:
+
+* T is a cv-unqualified template parameter
+* T&& is used in the appropriate deduction context
+
+Example:
+
+template <typename T>
+void process(T&& value)
+{
+}
+
+15. FORWARDING REFERENCES
+
+A forwarding reference can bind to both lvalues and rvalues.
+
+Example:
+
+template <typename T>
+void process(T&& value)
+{
+}
+
+int x = 10;
+
+process(x);
+process(20);
+
+For an lvalue:
+
+T may deduce as int&.
+
+Reference collapsing results in:
+
+int& && -> int&
+
+For an rvalue:
+
+T may deduce as int.
+
+Therefore:
+
+int&& -> int&&
+
+16. REFERENCE COLLAPSING
+
+Reference collapsing follows these rules:
+
+T&  && -> T&
+T&  &  -> T&
+T&& &  -> T&
+T&& && -> T&&
+
+Therefore, an lvalue passed to a forwarding-reference parameter remains an lvalue after deduction.
+
+17. PERFECT FORWARDING
+
+Perfect forwarding means passing an argument through a wrapper while preserving its original value category.
+
+std::forward<T>(value) is used for this purpose.
+
+Example:
+
+template <typename T>
+void wrapper(T&& value)
+{
+target(std::forward<T>(value));
+}
+
+Without std::forward, the named parameter value is itself an lvalue expression even when the caller supplied an rvalue.
+
+Therefore, simply writing:
+
+target(value);
+
+does not preserve the caller's original value category.
+
+18. std::move VS std::forward
+
+std::move:
+
+* Converts an expression to an xvalue.
+* Commonly used when the programmer wants to enable moving from an object.
+* Does not perform the move itself.
+
+std::forward:
+
+* Used primarily in forwarding-reference templates.
+* Preserves the original value category encoded in the template argument.
+* Enables perfect forwarding.
+
+19. TYPE TRAITS
+
+The <type_traits> header provides compile-time type information and transformations.
+
+Common type traits include:
+
+std::is_integral_v<T>
+std::is_floating_point_v<T>
+std::is_pointer_v<T>
+std::is_reference_v<T>
+std::is_const_v<T>
+std::is_same_v<T, U>
+std::is_move_constructible_v<T>
+std::is_copy_constructible_v<T>
+std::remove_reference_t<T>
+std::remove_cv_t<T>
+std::decay_t<T>
+std::enable_if_t<condition, T>
+
+20. BASIC TYPE-TRAIT EXAMPLE
+
+#include <iostream>
+#include <type_traits>
+
+template <typename T>
+void classify(T value)
+{
+if constexpr (std::is_pointer_v<T>)
+{
+std::cout << "Pointer type\n";
+}
+else if constexpr (std::is_integral_v<T>)
+{
+std::cout << "Integral type: " << value << '\n';
+}
+else if constexpr (std::is_floating_point_v<T>)
+{
+std::cout << "Floating-point type: " << value << '\n';
+}
+else
+{
+std::cout << "Other type\n";
+}
+}
+
+21. GENERIC STACK EXAMPLE
+
+Problem:
+Implement a generic stack supporting different data types.
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <utility>
+
+template <typename T>
+class GenericStack
+{
+private:
+    std::vector<T> elements;
+
+public:
+    void push(const T& value)
+    {
+        elements.push_back(value);
+    }
+
+    void push(T&& value)
+    {
+        elements.push_back(std::move(value));
+    }
+
+    T pop()
+    {
+        if (elements.empty())
+            throw std::out_of_range("Stack is empty");
+
+        T value = std::move(elements.back());
+        elements.pop_back();
+        return value;
+    }
+
+    bool empty() const
+    {
+        return elements.empty();
+    }
+
+    std::size_t size() const
+    {
+        return elements.size();
+    }
+};
+
+int main()
+{
+    GenericStack<int> intStack;
+
+    intStack.push(10);
+    intStack.push(20);
+
+    std::cout << "Popped: " << intStack.pop() << '\n';
+
+    GenericStack<std::string> stringStack;
+
+    stringStack.push("Modern C++");
+    stringStack.push("Templates");
+
+    std::cout << "Popped: " << stringStack.pop() << '\n';
+
+    return 0;
+}
+```
+
+22. PERFECT-FORWARDING FACTORY
+
+A common use of perfect forwarding is constructing an object while forwarding constructor arguments.
+
+```cpp
+#include <iostream>
+#include <memory>
+#include <string>
+#include <utility>
+
+struct Widget
+{
+    std::string name;
+    int code;
+
+    Widget(std::string n, int c)
+        : name(std::move(n)), code(c)
+    {
+        std::cout << "Widget constructed\n";
+    }
+};
+
+template <typename T, typename... Args>
+std::unique_ptr<T> make_instance(Args&&... args)
+{
+    return std::make_unique<T>(
+        std::forward<Args>(args)...
+    );
+}
+
+int main()
+{
+    auto widget =
+        make_instance<Widget>("SensorNode", 404);
+
+    std::cout << widget->name << '\n';
+    std::cout << widget->code << '\n';
+
+    return 0;
+}
+```
+
+23. C++20 CONCEPT EXAMPLE
+
+```cpp
+#include <iostream>
+#include <concepts>
+
+template <typename T>
+concept Numeric =
+    std::integral<T> ||
+    std::floating_point<T>;
+
+template <Numeric T>
+T add(T a, T b)
+{
+    return a + b;
+}
+
+int main()
+{
+    std::cout << add(10, 20) << '\n';
+    std::cout << add(2.5, 3.5) << '\n';
+
+    return 0;
+}
+```
+
+The template accepts integral and floating-point types satisfying the Numeric concept.
+
+24. CONCEPT USING REQUIRES
+
+```cpp
+#include <iostream>
+#include <concepts>
+
+template <typename T>
+concept Printable = requires(T value)
+{
+    std::cout << value;
+};
+
+template <Printable T>
+void print_value(const T& value)
+{
+    std::cout << value << '\n';
+}
+
+int main()
+{
+    print_value(100);
+    print_value(3.14);
+    print_value("C++20");
+
+    return 0;
+}
+```
+
+25. CONCURRENCY FUNDAMENTALS
+
+C++ provides standard support for:
+
+* std::thread
+* std::jthread
+* std::mutex
+* std::recursive_mutex
+* std::shared_mutex
+* std::lock_guard
+* std::unique_lock
+* std::scoped_lock
+* std::condition_variable
+* std::atomic
+* std::future
+* std::promise
+* std::async
+* stop tokens
+
+Concurrency requires careful control of shared state and object lifetime.
+
+26. std::thread
+
+std::thread represents a thread of execution.
+
+Example:
+
+#include <thread>
+#include <iostream>
+
+void task()
+{
+std::cout << "Worker thread running\n";
+}
+
+int main()
+{
+std::thread t(task);
+t.join();
+
+```
+return 0;
+```
+
+}
+
+A joinable std::thread must be joined or detached before destruction. Destroying a joinable std::thread causes std::terminate.
+
+27. std::jthread
+
+std::jthread was introduced in C++20.
+
+It provides:
+
+* Automatic joining during destruction
+* Cooperative cancellation support through stop tokens
+* Similar thread execution facilities to std::thread
+
+Example:
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+void worker(std::stop_token token)
+{
+    while (!token.stop_requested())
+    {
+        std::cout << "Working...\n";
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(100)
+        );
+    }
+}
+
+int main()
+{
+    std::jthread t(worker);
+
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(300)
+    );
+
+    t.request_stop();
+
+    return 0;
+}
+```
+
+The stop mechanism is cooperative. Requesting stop does not forcibly terminate the thread.
+
+28. MUTEX
+
+std::mutex provides mutual exclusion.
+
+Example:
+
+```cpp
+#include <mutex>
+
+std::mutex m;
+
+void update()
+{
+    std::lock_guard<std::mutex> lock(m);
+
+    // Protected critical section
+}
+```
+
+Only one thread at a time can own the mutex.
+
+29. std::lock_guard
+
+std::lock_guard provides simple scope-based mutex ownership.
+
+Example:
+
+```cpp
+std::lock_guard<std::mutex> lock(mutex);
+```
+
+The mutex is acquired when the lock_guard is constructed and released automatically when the lock_guard is destroyed.
+
+30. std::unique_lock
+
+std::unique_lock provides more flexible ownership than lock_guard.
+
+It supports:
+
+* Deferred locking
+* Try-locking
+* Timed locking for suitable mutex types
+* Explicit lock and unlock
+* Moving the lock object
+* Use with condition variables
+
+Example:
+
+```cpp
+std::unique_lock<std::mutex> lock(mutex);
+```
+
+31. std::scoped_lock
+
+std::scoped_lock was introduced in C++17.
+
+It is useful for locking multiple mutexes while applying a deadlock-avoidance locking algorithm.
+
+Example:
+
+```cpp
+std::scoped_lock lock(mutex1, mutex2);
+```
+
+Important:
+
+std::scoped_lock does not make operations "atomic" in the CPU sense. Its purpose is safe RAII ownership of one or more mutexes and deadlock avoidance when multiple mutexes are supplied.
+
+32. CONDITION VARIABLES
+
+A condition variable allows one thread to wait until another thread signals that a condition may have changed.
+
+Important functions:
+
+* wait()
+* wait_for()
+* wait_until()
+* notify_one()
+* notify_all()
+
+Example:
+
+```cpp
+#include <condition_variable>
+#include <mutex>
+
+std::mutex mutex;
+std::condition_variable cv;
+bool ready = false;
+
+void consumer()
+{
+    std::unique_lock<std::mutex> lock(mutex);
+
+    cv.wait(lock, [] {
+        return ready;
+    });
+}
+```
+
+The predicate form is recommended because condition variables can experience spurious wakeups.
+
+33. ATOMIC OPERATIONS
+
+std::atomic provides atomic operations on supported types.
+
+Example:
+
+```cpp
+#include <atomic>
+
+std::atomic<int> counter{0};
+
+counter.fetch_add(1);
+```
+
+Atomic operations can be used to coordinate access to shared atomic objects without protecting that particular atomic object with a mutex.
+
+However, atomic does not automatically make an entire data structure thread-safe.
+
+34. ATOMIC IS NOT THE SAME AS LOCK-FREE
+
+An important distinction:
+
+ATOMIC:
+An operation is indivisible according to the C++ memory model.
+
+LOCK-FREE:
+The implementation provides the specified lock-free progress property for the operation.
+
+Not every std::atomic<T> is guaranteed to be lock-free on every implementation.
+
+Use:
+
+```cpp
+counter.is_lock_free()
+```
+
+or:
+
+```cpp
+std::atomic<T>::is_always_lock_free
+```
+
+to examine the implementation's lock-free property.
+
+35. ATOMIC READ-MODIFY-WRITE OPERATIONS
+
+Common atomic operations include:
+
+* load()
+* store()
+* exchange()
+* compare_exchange_weak()
+* compare_exchange_strong()
+* fetch_add()
+* fetch_sub()
+
+Example:
+
+```cpp
+std::atomic<int> value{0};
+
+value.fetch_add(1);
+value.fetch_sub(1);
+```
+
+36. COMPARE-EXCHANGE
+
+compare_exchange operations are important for implementing lock-free algorithms.
+
+Basic pattern:
+
+```cpp
+int expected = 10;
+
+value.compare_exchange_strong(
+    expected,
+    20
+);
+```
+
+If the atomic value equals expected, it is replaced with the desired value.
+
+If it does not match, expected is updated with the observed value.
+
+37. MEMORY ORDERING
+
+C++ atomics support memory ordering.
+
+Important memory orders include:
+
+* std::memory_order_relaxed
+* std::memory_order_acquire
+* std::memory_order_release
+* std::memory_order_acq_rel
+* std::memory_order_seq_cst
+
+memory_order_relaxed provides atomicity but does not provide the same inter-thread ordering guarantees as acquire/release.
+
+A release operation can synchronize with an acquire operation that reads an appropriate value from the same atomic object.
+
+memory_order_seq_cst provides the strongest standard ordering among these commonly used memory orders, but it can impose stronger ordering requirements than necessary.
+
+Memory ordering should be chosen based on a correct synchronization design, not simply for performance.
+
+38. ATOMIC COUNTER EXAMPLE
+
+```cpp
+#include <iostream>
+#include <atomic>
+#include <thread>
+#include <vector>
+
+std::atomic<int> counter{0};
+
+void increment()
+{
+    for (int i = 0; i < 1000; ++i)
+    {
+        counter.fetch_add(1, std::memory_order_relaxed);
+    }
+}
+
+int main()
+{
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        threads.emplace_back(increment);
+    }
+
+    for (auto& t : threads)
+    {
+        t.join();
+    }
+
+    std::cout << "Counter = "
+              << counter.load()
+              << '\n';
+
+    return 0;
+}
+```
+
+The counter itself is atomic, so concurrent increments do not form a data race on the counter.
+
+39. DATA RACES
+
+A data race occurs when conflicting accesses to the same memory location occur in different threads, at least one access is a modification, and the accesses are not properly synchronized.
+
+A data race results in undefined behavior.
+
+Example of unsafe code:
+
+```cpp
+int counter = 0;
+
+void increment()
+{
+    ++counter;
+}
+```
+
+Calling increment concurrently from multiple threads without synchronization is unsafe.
+
+40. MUTEX-PROTECTED SHARED DATA
+
+```cpp
+#include <mutex>
+
+int counter = 0;
+std::mutex mutex;
+
+void increment()
+{
+    std::lock_guard<std::mutex> lock(mutex);
+    ++counter;
+}
+```
+
+The mutex establishes synchronization around the critical section.
+
+41. DEADLOCK
+
+A deadlock can occur when threads wait indefinitely for resources held by each other.
+
+Example:
+
+Thread 1:
+
+lock A
+lock B
+
+Thread 2:
+
+lock B
+lock A
+
+Possible sequence:
+
+Thread 1 owns A and waits for B.
+
+Thread 2 owns B and waits for A.
+
+Neither can continue.
+
+42. DEADLOCK AVOIDANCE WITH std::scoped_lock
+
+```cpp
+#include <mutex>
+
+std::mutex m1;
+std::mutex m2;
+
+void function1()
+{
+    std::scoped_lock lock(m1, m2);
+
+    // Protected operation
+}
+
+void function2()
+{
+    std::scoped_lock lock(m1, m2);
+
+    // Protected operation
+}
+```
+
+Both functions use the same multi-mutex locking mechanism.
+
+When multiple mutexes are supplied, std::scoped_lock uses deadlock-avoidance behavior equivalent in purpose to std::lock.
+
+43. THREAD-SAFE QUEUE EXAMPLE
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <mutex>
+#include <utility>
+
+template <typename T>
+class SafeQueue
+{
+private:
+    std::queue<T> queue;
+    mutable std::mutex mutex;
+
+public:
+    void push(T value)
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        queue.push(std::move(value));
+    }
+
+    bool pop(T& result)
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+
+        if (queue.empty())
+            return false;
+
+        result = std::move(queue.front());
+        queue.pop();
+
+        return true;
+    }
+
+    bool empty() const
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        return queue.empty();
+    }
+};
+```
+
+44. PRODUCER-CONSUMER DESIGN
+
+A producer-consumer system commonly contains:
+
+Producer:
+
+* Creates or receives work.
+* Places work into a shared queue.
+* Notifies waiting consumers.
+
+Consumer:
+
+* Waits for available work.
+* Removes work from the queue.
+* Processes the work.
+
+A condition variable can prevent consumers from repeatedly polling an empty queue.
+
+45. C++20 PRODUCER-CONSUMER EXAMPLE
+
+```cpp
+#include <iostream>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <chrono>
+
+class BlockingQueue
+{
+private:
+    std::queue<int> queue;
+    std::mutex mutex;
+    std::condition_variable cv;
+    bool finished = false;
+
+public:
+    void push(int value)
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            queue.push(value);
+        }
+
+        cv.notify_one();
+    }
+
+    bool pop(int& value)
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+
+        cv.wait(lock, [this]
+        {
+            return !queue.empty() || finished;
+        });
+
+        if (queue.empty())
+            return false;
+
+        value = queue.front();
+        queue.pop();
+
+        return true;
+    }
+
+    void close()
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            finished = true;
+        }
+
+        cv.notify_all();
+    }
+};
+
+int main()
+{
+    BlockingQueue queue;
+
+    std::jthread producer([&queue]
+    {
+        for (int i = 1; i <= 5; ++i)
+        {
+            queue.push(i * 10);
+        }
+
+        queue.close();
+    });
+
+    std::jthread consumer([&queue]
+    {
+        int value;
+
+        while (queue.pop(value))
+        {
+            std::cout
+                << "Processed: "
+                << value
+                << '\n';
+        }
+    });
+
+    return 0;
+}
+```
+
+46. std::jthread AND EXCEPTION SAFETY
+
+std::jthread automatically joins when its destructor runs if it is still joinable.
+
+This helps avoid the std::thread rule where destroying a joinable thread causes std::terminate.
+
+However, automatic joining does not mean thread execution is automatically cancelled.
+
+A jthread destructor may wait for the thread to finish. Cooperative cancellation should be designed when early termination is required.
+
+47. FALSE SHARING
+
+False sharing occurs when independent frequently modified objects occupy the same cache line and are accessed by different threads.
+
+It can reduce performance even though the variables are logically independent.
+
+C++ provides:
+
+```cpp
+std::hardware_destructive_interference_size
+```
+
+where supported, to help express a layout intended to avoid destructive interference.
+
+Do not blindly assume that every processor uses a 64-byte cache line.
+
+48. TEMPLATE CODE BLOAT
+
+Templates can generate many specializations.
+
+For example:
+
+template <typename T>
+void process(T value);
+
+Using:
+
+process(1);
+process(2.5);
+process(std::string("C++"));
+
+may result in different generated specializations.
+
+Large numbers of template instantiations can increase compilation time and binary size.
+
+Possible techniques include:
+
+* Reducing unnecessary instantiations
+* Separating common non-template implementation
+* Using explicit instantiation where appropriate
+* Avoiding unnecessary type variations
+
+49. TEMPLATE DEPENDENT CODE
+
+Template code often contains dependent names.
+
+Example:
+
+template <typename T>
+void function()
+{
+typename T::value_type value;
+}
+
+The typename keyword tells the compiler that T::value_type is a type.
+
+Understanding dependent names is important when writing advanced template libraries.
+
+50. TEMPLATE SPECIALIZATION
+
+Full specialization provides a custom implementation for a specific template argument.
+
+Example:
+
+template <typename T>
+struct Traits
+{
+static constexpr int value = 0;
+};
+
+template <>
+struct Traits<int>
+{
+static constexpr int value = 1;
+};
+
+51. PARTIAL SPECIALIZATION
+
+Partial specialization is available for class templates and variable templates.
+
+Example:
+
+template <typename T>
+struct IsPointer
+{
+static constexpr bool value = false;
+};
+
+template <typename T>
+struct IsPointer<T*>
+{
+static constexpr bool value = true;
+};
+
+This allows the implementation to behave differently for pointer types.
+
+52. NON-TYPE TEMPLATE PARAMETERS
+
+A non-type template parameter represents a compile-time value.
+
+Example:
+
+template <typename T, std::size_t Size>
+class StaticArray
+{
+private:
+T data[Size];
+
+public:
+constexpr std::size_t size() const
+{
+return Size;
+}
+};
+
+Usage:
+
+StaticArray<int, 10> values;
+
+53. TEMPLATE METAPROGRAMMING
+
+Template metaprogramming performs computations or type transformations during compilation.
+
+Example:
+
+template <int N>
+struct Factorial
+{
+static constexpr int value =
+N * Factorial<N - 1>::value;
+};
+
+template <>
+struct Factorial<0>
+{
+static constexpr int value = 1;
+};
+
+Modern C++ often uses constexpr functions, type traits, Concepts, and other compile-time facilities instead of relying exclusively on recursive template metaprogramming.
+
+54. CONSTEXPR AND COMPILE-TIME COMPUTATION
+
+constexpr allows expressions and functions to participate in constant evaluation when their arguments and context permit it.
+
+Example:
+
+constexpr int square(int x)
+{
+return x * x;
+}
+
+constexpr int result = square(5);
+
+Compile-time evaluation can improve correctness and enable compile-time configuration, but not every constexpr call is necessarily evaluated at compile time.
+
+55. GENERIC LAMBDA
+
+C++14 introduced generic lambdas.
+
+Example:
+
+auto add = [](auto a, auto b)
+{
+return a + b;
+};
+
+std::cout << add(10, 20) << '\n';
+std::cout << add(2.5, 3.5) << '\n';
+
+Generic lambdas are useful for concise generic operations.
+
+56. C++20 CONSTRAINED GENERIC LAMBDA
+
+C++20 allows concepts to constrain generic lambdas.
+
+Example:
+
+#include <concepts>
+
+auto add = []<std::integral T>(T a, T b)
+{
+return a + b;
+};
+
+57. std::future AND ASYNCHRONOUS RESULTS
+
+std::future represents a result that may become available later.
+
+Example:
+
+```cpp
+#include <future>
+#include <iostream>
+
+int calculate()
+{
+    return 100;
+}
+
+int main()
+{
+    std::future<int> result =
+        std::async(std::launch::async, calculate);
+
+    std::cout << result.get() << '\n';
+
+    return 0;
+}
+```
+
+Calling get() obtains the result and, when necessary, waits for completion.
+
+58. COMMON ADVANCED MISTAKES
+
+Mistake 1:
+Using std::move everywhere.
+
+Correction:
+Use std::move when intentionally treating an object as movable. Do not use it blindly on objects that must remain unchanged.
+
+Mistake 2:
+Using std::forward outside an appropriate forwarding context.
+
+Correction:
+std::forward is primarily used with forwarding references and the corresponding template type information.
+
+Mistake 3:
+Assuming std::atomic always means lock-free.
+
+Correction:
+Atomicity and lock-freedom are different properties.
+
+Mistake 4:
+Assuming mutexes are automatically recursive.
+
+Correction:
+std::mutex is non-recursive. A thread cannot lock the same std::mutex again without first unlocking it.
+
+Mistake 5:
+Using std::lock_guard with condition_variable::wait.
+
+Correction:
+std::condition_variable::wait requires a std::unique_lock[std::mutex](std::mutex).
+
+Mistake 6:
+Assuming std::scoped_lock makes an entire function atomic.
+
+Correction:
+It provides RAII ownership of mutexes and deadlock avoidance when multiple mutexes are supplied. The protected operations still occur normally inside the critical section.
+
+Mistake 7:
+Busy-waiting when a condition variable would be appropriate.
+
+Correction:
+Use condition variables for efficient waiting when a thread needs to wait for a state change.
+
+59. DEBUGGING TECHNIQUES
+
+59.1 Compiler Warnings
+
+Use strong compiler warnings.
+
+Example:
+
+g++ -std=c++20 -Wall -Wextra -Wpedantic program.cpp -o program
+
+59.2 AddressSanitizer
+
+AddressSanitizer can help detect memory errors.
+
+Example:
+
+g++ -std=c++20 -fsanitize=address -g program.cpp -o program
+
+59.3 ThreadSanitizer
+
+ThreadSanitizer can help detect many data races.
+
+Example:
+
+g++ -std=c++20 -fsanitize=thread -g program.cpp -o program
+
+Sanitizer availability and supported configurations depend on the compiler and platform.
+
+59.4 Debuggers
+
+A debugger such as GDB can be used to inspect:
+
+* Threads
+* Call stacks
+* Variables
+* Breakpoints
+* Program state
+
+60. SECURITY CONSIDERATIONS
+
+Incorrect concurrency can cause:
+
+* Data races
+* Deadlocks
+* Use-after-lifetime bugs
+* Incorrect synchronization
+* Corrupted shared state
+* Denial-of-service conditions
+
+Important practices:
+
+* Minimize shared mutable state.
+* Protect shared data with appropriate synchronization.
+* Keep critical sections small.
+* Maintain consistent lock ordering where applicable.
+* Avoid accessing objects after their lifetime ends.
+* Use RAII for resource and lock management.
+* Do not assume an atomic variable makes related non-atomic data safe.
+
+61. PERFORMANCE CONSIDERATIONS
+
+Template programming:
+
+* Can enable specialization and optimization.
+* Can increase compile time and binary size.
+
+Move semantics:
+
+* Can reduce unnecessary resource transfers.
+* Can avoid expensive copies when the type provides efficient move operations.
+
+Mutexes:
+
+* Provide straightforward synchronization.
+* Can introduce contention when heavily shared.
+
+Atomics:
+
+* Can provide efficient synchronization for suitable algorithms.
+* May still have significant hardware costs.
+* Are not automatically lock-free.
+
+Memory ordering:
+
+* Weaker memory orders can sometimes permit more efficient implementations.
+* Incorrectly choosing a weaker memory order can produce synchronization bugs.
+
+Performance optimization should be based on measurement rather than assumptions.
+
+62. MEMORY CONSIDERATIONS
+
+Advanced C++ programs should consider:
+
+* Object lifetime
+* Ownership
+* Alignment
+* Cache behavior
+* Allocation overhead
+* False sharing
+* Temporary objects
+* Move operations
+* Container reallocations
+* Thread-local storage
+
+Do not assume implementation details such as cache-line size, atomic implementation strategy, or object layout unless the target platform guarantees them.
+
+63. REAL-WORLD APPLICATIONS
+
+Advanced C++ techniques are used in:
+
+* Game engines
+* Operating-system components
+* Databases
+* Embedded systems
+* Robotics software
+* Financial systems
+* Network servers
+* Scientific computing
+* High-performance computing
+* Graphics engines
+* Machine-learning infrastructure
+* Real-time systems
+
+Examples:
+
+Templates:
+Reusable numerical and container libraries.
+
+Concepts:
+Safer generic interfaces.
+
+Move semantics:
+Efficient ownership transfer.
+
+Atomics:
+Counters, synchronization, and concurrent data structures.
+
+Mutexes:
+Thread-safe shared resources.
+
+jthread:
+Managed worker threads and cooperative cancellation.
+
+64. PRACTICAL PROGRAMMING PROBLEMS
+
+65. Implement a generic stack using class templates.
+
+66. Implement a generic queue using templates.
+
+67. Create a type-trait utility that determines whether a type is a pointer.
+
+68. Implement a C++20 concept named Numeric.
+
+69. Implement a Printable concept using a requires expression.
+
+70. Create a generic factory using perfect forwarding.
+
+71. Implement a thread-safe queue using mutex and condition_variable.
+
+72. Implement a producer-consumer system using std::jthread.
+
+73. Implement an atomic counter using multiple threads.
+
+74. Implement a thread pool using worker threads, a task queue, mutex, condition_variable, and futures.
+
+75. Implement a compile-time dimensional-analysis library using non-type template parameters.
+
+76. Implement a generic serializer constrained using a C++20 concept.
+
+77. INTERVIEW QUESTIONS
+
+BEGINNER
+
+Q1. What is a template in C++?
+
+A:
+A template defines a family of functions, classes, variables, aliases, or other template entities parameterized by template arguments.
+
+Q2. What is move semantics?
+
+A:
+Move semantics allow resources to be transferred from one object to another instead of necessarily copying those resources.
+
+INTERMEDIATE
+
+Q3. What is std::move?
+
+A:
+std::move is a cast that converts an expression to an xvalue, allowing move operations to be selected when the destination type supports them.
+
+Q4. What is perfect forwarding?
+
+A:
+Perfect forwarding preserves the original value category of a function argument when passing it through a wrapper.
+
+Q5. What is SFINAE?
+
+A:
+SFINAE means Substitution Failure Is Not An Error. In applicable template substitution contexts, an invalid substitution can remove a candidate from consideration rather than immediately producing a hard compilation error.
+
+ADVANCED
+
+Q6. What is a forwarding reference?
+
+A:
+A forwarding reference is a particular form of rvalue-reference syntax involving a deduced cv-unqualified template parameter, allowing the parameter to bind to both lvalues and rvalues.
+
+Q7. What are C++20 Concepts?
+
+A:
+Concepts are named compile-time requirements that constrain template arguments and improve the readability and diagnostics of generic interfaces.
+
+Q8. What is the difference between std::move and std::forward?
+
+A:
+std::move unconditionally casts an expression to an xvalue. std::forward conditionally preserves the value category represented by a forwarding-reference template parameter.
+
+Q9. Is std::atomic always lock-free?
+
+A:
+No. Atomicity is required by the C++ memory model for atomic operations, but whether a particular atomic type is lock-free is implementation-dependent.
+
+Q10. What is a data race?
+
+A:
+A data race occurs when conflicting unsynchronized accesses to the same memory location occur in different threads, with at least one access being a modification. A data race results in undefined behavior.
+
+Q11. What is std::jthread?
+
+A:
+std::jthread is a C++20 thread type that automatically joins when destroyed and supports cooperative cancellation through stop tokens.
+
+Q12. Why is std::unique_lock used with condition_variable?
+
+A:
+condition_variable waiting requires a lock type that can be unlocked while waiting and reacquired when the thread wakes, which is provided by std::unique_lock.
+
+66. EXAM QUESTIONS
+
+SHORT-ANSWER QUESTIONS
+
+1. Define function template.
+
+2. What is SFINAE?
+
+3. What is a forwarding reference?
+
+4. What is std::move?
+
+5. What is std::forward?
+
+6. What is a C++20 Concept?
+
+7. Define data race.
+
+8. What is std::atomic?
+
+9. What is std::jthread?
+
+10. What is std::scoped_lock?
+
+MEDIUM-ANSWER QUESTIONS
+
+1. Explain template argument deduction.
+
+2. Explain reference collapsing with examples.
+
+3. Explain perfect forwarding.
+
+4. Compare SFINAE and Concepts.
+
+5. Explain std::lock_guard and std::unique_lock.
+
+6. Explain condition variables.
+
+7. Explain atomic operations.
+
+8. Explain deadlock and deadlock avoidance.
+
+LONG-ANSWER QUESTIONS
+
+1. Explain templates, specialization, parameter packs, and fold expressions.
+
+2. Explain SFINAE, std::enable_if, and their limitations.
+
+3. Explain C++20 Concepts and requires expressions with examples.
+
+4. Explain move semantics, forwarding references, reference collapsing, std::move, and std::forward.
+
+5. Explain the C++ memory model, data races, atomic operations, and memory ordering.
+
+6. Design a thread-safe producer-consumer queue using mutex and condition_variable.
+
+7. Explain std::thread and std::jthread with cooperative cancellation.
+
+8. PRACTICE QUESTIONS
+
+9. Implement a generic Stack<T>.
+
+10. Implement a generic Queue<T>.
+
+11. Write a concept that accepts only integral types.
+
+12. Write a concept that checks whether a type supports operator+.
+
+13. Implement a perfect-forwarding factory.
+
+14. Demonstrate reference collapsing using a forwarding reference.
+
+15. Implement an atomic counter using four threads.
+
+16. Implement a producer-consumer queue using condition_variable.
+
+17. Demonstrate deadlock prevention using std::scoped_lock.
+
+18. Implement a worker system using std::jthread and stop_token.
+
+19. Implement a compile-time factorial using constexpr.
+
+20. Implement a type trait that identifies pointer types.
+
+21. Implement a generic serializer constrained with Concepts.
+
+22. Implement a basic thread pool using std::future.
+
+23. Study a lock-free algorithm using std::atomic<Node*> and explain the memory reclamation challenges involved.
+
+24. COMPARISON OF IMPORTANT FEATURES
+
+SFINAE:
+
+* Mainly used to control template overload participation through substitution.
+* Older generic-programming technique.
+* Can produce complicated diagnostics.
+
+Concepts:
+
+* C++20.
+* Express template requirements directly.
+* Improve readability and diagnostics.
+
+std::move:
+
+* Enables move semantics by casting to an xvalue.
+* Does not itself move resources.
+
+std::forward:
+
+* Preserves value category in forwarding code.
+* Mainly used with forwarding references.
+
+std::thread:
+
+* Basic thread management.
+* Join or detach is required before destruction if joinable.
+
+std::jthread:
+
+* C++20.
+* Automatically joins on destruction.
+* Supports cooperative cancellation.
+
+std::mutex:
+
+* Mutual exclusion.
+* Suitable for protecting shared mutable state.
+
+std::atomic:
+
+* Atomic operations on supported types.
+* Can provide synchronization.
+* Not necessarily lock-free.
+
+69. EXECUTION FLOW
+
+70. The compiler parses the template definition.
+
+71. Template arguments are deduced or explicitly provided.
+
+72. Constraints and template requirements are evaluated.
+
+73. The appropriate template specialization is instantiated.
+
+74. For generic code, Concepts or other compile-time mechanisms select valid operations.
+
+75. Move operations may transfer resources instead of copying them.
+
+76. At runtime, threads execute concurrently.
+
+77. Mutexes and condition variables coordinate shared-state access.
+
+78. Atomic operations provide atomic access to atomic objects.
+
+79. Memory ordering determines synchronization and visibility relationships between threads.
+
+80. EDGE CASES
+
+Important edge cases include:
+
+* Forwarding an lvalue through T&&.
+* Forwarding a const object.
+* Moving from an object that must still be used.
+* Multiple threads accessing shared state.
+* Spurious condition-variable wakeups.
+* Multiple mutex acquisition.
+* Atomic operations with incorrect memory ordering.
+* Object lifetime ending while another thread still accesses the object.
+* Large numbers of template instantiations.
+* Extremely long template error messages.
+* Platform-specific atomic lock-free behavior.
+* False sharing.
+* Contention between worker threads.
+
+71. BEST PRACTICES
+
+* Prefer clear templates over unnecessarily complicated metaprogramming.
+* Prefer C++20 Concepts when expressing template requirements.
+* Use if constexpr for compile-time branching.
+* Use std::move intentionally.
+* Use std::forward for appropriate forwarding-reference wrappers.
+* Prefer RAII for mutex management.
+* Use std::scoped_lock when acquiring multiple mutexes.
+* Use condition_variable instead of inefficient polling when waiting for state changes.
+* Use std::atomic for appropriate atomic shared-state problems.
+* Do not assume std::atomic means lock-free.
+* Use std::jthread when its automatic joining and cooperative cancellation model fits the design.
+* Keep critical sections small.
+* Minimize shared mutable state.
+* Establish a consistent locking strategy.
+* Test concurrent programs with sanitizers where supported.
+* Benchmark before making performance claims.
+* Avoid relying on implementation-specific behavior unless the application explicitly targets that implementation.
+
+72. ADVANCED DESIGN PRINCIPLES
+
+72.1 Zero-Cost Abstraction
+
+C++ aims to provide abstractions that can be implemented without unnecessary runtime overhead when properly used.
+
+However, "zero-cost" does not mean every abstraction is always free. Templates, Concepts, atomics, synchronization, and abstractions can have compile-time, runtime, memory, or code-size costs depending on their use.
+
+72.2 RAII
+
+Resource Acquisition Is Initialization binds resource ownership to object lifetime.
+
+Examples:
+
+* std::unique_ptr
+* std::lock_guard
+* std::unique_lock
+* std::scoped_lock
+* std::jthread
+
+RAII reduces resource leaks and makes exception-safe cleanup easier.
+
+72.3 Prefer Ownership Clarity
+
+Generic and concurrent software should clearly define:
+
+* Who owns an object?
+* Who may modify it?
+* How long does it live?
+* Which thread may access it?
+* What synchronization protects it?
+
+73. SUMMARY
+
+Advanced modern C++ combines compile-time generic programming with efficient runtime resource management and concurrency.
+
+Templates provide reusable code generation.
+
+SFINAE allows template candidates to be conditionally removed during substitution.
+
+if constexpr enables compile-time branching.
+
+C++20 Concepts provide expressive constraints for generic interfaces.
+
+Move semantics allow resource transfer instead of unnecessary copying.
+
+Forwarding references and std::forward enable perfect forwarding.
+
+Type traits provide compile-time type information and transformations.
+
+std::mutex and RAII locking provide mutual exclusion.
+
+std::condition_variable enables efficient thread coordination.
+
+std::jthread provides managed thread execution and cooperative cancellation.
+
+std::atomic provides atomic operations and synchronization facilities, but atomicity must not be confused with lock-freedom.
+
+Memory ordering determines important synchronization relationships between threads.
+
+Correct advanced C++ requires understanding object lifetime, ownership, value categories, template instantiation, synchronization, and the C++ memory model.
+
+74. KEY TAKEAWAYS
+
+* Templates provide compile-time generic programming.
+* Template arguments may represent types, values, or templates.
+* SFINAE controls template participation through substitution rules.
+* C++20 Concepts provide clearer template constraints.
+* if constexpr performs compile-time conditional selection.
+* std::move enables move operations by converting an expression to an xvalue.
+* std::forward preserves value category in forwarding code.
+* Forwarding references can bind to lvalues and rvalues.
+* Reference collapsing explains forwarding-reference deduction.
+* std::mutex protects shared mutable state.
+* std::lock_guard provides simple RAII locking.
+* std::unique_lock provides flexible locking and is used with condition variables.
+* std::scoped_lock provides RAII locking for multiple mutexes with deadlock avoidance.
+* std::jthread automatically joins and supports cooperative cancellation.
+* std::atomic provides atomic operations but does not guarantee lock-free implementation.
+* memory_order controls atomic synchronization and ordering.
+* Data races result in undefined behavior.
+* Correct object lifetime is essential in multithreaded programs.
+* Performance claims should be measured rather than assumed.
+
+75. REFERENCE BASIS
+
+Primary standard:
+
+ISO/IEC 14882:2024
+Programming Languages — C++
+
+The C++ standard defines the requirements for implementations of the C++ programming language and standard library.
+
+Additional technical reference:
+
+* C++ working draft material maintained by the C++ standardization community.
+* cppreference C++ language and standard-library reference.
+* Compiler documentation for implementation-specific behavior and sanitizer support.
+
+This document intentionally distinguishes standard C++ behavior from implementation-dependent properties such as lock-free atomic support, cache characteristics, compiler diagnostics, and sanitizer availability.
+
+END OF FILE

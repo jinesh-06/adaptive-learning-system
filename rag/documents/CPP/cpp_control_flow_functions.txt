@@ -1,0 +1,1957 @@
+COURSE: CPP
+TOPIC: CONTROL FLOW FUNCTIONS
+LEVEL: BEGINNER
+SOURCE: cpp_control_flow_functions.txt
+
+TITLE: Modern C++ Control Flow, Functions, Overloading, Default Arguments, Inline, Lambdas, and Constexpr
+
+1. INTRODUCTION
+
+Control flow determines the order in which statements in a C++ program are executed. C++ provides selection statements such as if, if-else, switch, and if constexpr, iteration statements such as for, while, do-while, and range-based for, and jump statements such as break, continue, return, and goto.
+
+Functions provide reusable units of computation. C++ supports function parameters, return values, references, const-qualified parameters, overloaded functions, default arguments, inline functions, constexpr functions, templates, and lambda expressions.
+
+Modern C++ also provides useful features such as:
+
+* if and switch init-statements introduced in C++17.
+* if constexpr for compile-time branching.
+* Range-based for loops.
+* Lambda expressions.
+* Generic lambdas.
+* Lambda init-captures.
+* constexpr and consteval functions.
+* Function overloading and overload resolution.
+* Default function arguments.
+* Inline functions and the One Definition Rule.
+* Standard algorithms that accept callable objects.
+
+The published C++ standard is ISO/IEC 14882:2024. Individual language features should be identified by the C++ version in which they were introduced.
+
+2. LEARNING OBJECTIVES
+
+After studying this topic, the learner should be able to:
+
+* Understand basic C++ selection and iteration statements.
+* Use if, else-if, switch, for, while, and do-while correctly.
+* Use break, continue, and return appropriately.
+* Understand if and switch init-statements.
+* Use range-based for loops with values, references, and const references.
+* Define and call functions.
+* Understand function parameters and return values.
+* Apply function overloading.
+* Understand basic overload resolution.
+* Use default arguments correctly.
+* Understand the purpose of the inline specifier.
+* Understand the One Definition Rule (ODR) at a basic level.
+* Write constexpr functions for compile-time-capable computation.
+* Understand lambda expressions and capture modes.
+* Use mutable lambdas when modification of copied captures is required.
+* Use generic lambdas.
+* Pass lambdas to standard algorithms.
+* Avoid lifetime problems caused by reference captures.
+
+3. PREREQUISITES
+
+The learner should know:
+
+* Basic C++ syntax.
+* Variables and data types.
+* Operators.
+* References.
+* Basic input and output using std::cin and std::cout.
+* Basic arrays or containers.
+* Basic header files and compilation.
+
+4. CONTROL FLOW FUNDAMENTALS
+
+4.1 IF STATEMENT
+
+The if statement executes a statement when its condition evaluates to true.
+
+Syntax:
+
+if (condition) {
+// statements
+}
+
+Example:
+
+int age = 20;
+
+if (age >= 18) {
+std::cout << "Adult\n";
+}
+
+4.2 IF-ELSE STATEMENT
+
+The else branch executes when the if condition is false.
+
+Example:
+
+int number = 7;
+
+if (number % 2 == 0) {
+std::cout << "Even\n";
+} else {
+std::cout << "Odd\n";
+}
+
+4.3 ELSE-IF CHAIN
+
+Multiple conditions can be tested using else-if.
+
+Example:
+
+int marks = 82;
+
+if (marks >= 90) {
+std::cout << "A\n";
+} else if (marks >= 75) {
+std::cout << "B\n";
+} else if (marks >= 50) {
+std::cout << "C\n";
+} else {
+std::cout << "Fail\n";
+}
+
+4.4 SWITCH STATEMENT
+
+switch is useful when one expression is compared against several constant case values.
+
+Example:
+
+int choice = 2;
+
+switch (choice) {
+case 1:
+std::cout << "Add\n";
+break;
+
+```
+case 2:
+    std::cout << "Update\n";
+    break;
+
+case 3:
+    std::cout << "Delete\n";
+    break;
+
+default:
+    std::cout << "Invalid choice\n";
+    break;
+```
+
+}
+
+The break statement prevents execution from continuing into the next case.
+
+4.5 FOR LOOP
+
+The traditional for loop is useful when initialization, a condition, and an iteration expression are needed.
+
+Example:
+
+for (int i = 1; i <= 5; ++i) {
+std::cout << i << " ";
+}
+
+4.6 WHILE LOOP
+
+A while loop checks its condition before each iteration.
+
+Example:
+
+int i = 1;
+
+while (i <= 5) {
+std::cout << i << " ";
+++i;
+}
+
+4.7 DO-WHILE LOOP
+
+A do-while loop executes its body at least once because the condition is checked after the body.
+
+Example:
+
+int choice;
+
+do {
+std::cout << "Enter 0 to exit: ";
+std::cin >> choice;
+} while (choice != 0);
+
+4.8 BREAK
+
+break immediately terminates the nearest enclosing loop or switch statement.
+
+Example:
+
+for (int i = 1; i <= 10; ++i) {
+if (i == 5) {
+break;
+}
+
+```
+std::cout << i << " ";
+```
+
+}
+
+Output:
+
+1 2 3 4
+
+4.9 CONTINUE
+
+continue skips the remaining statements in the current loop iteration and proceeds with the next iteration.
+
+Example:
+
+for (int i = 1; i <= 5; ++i) {
+if (i == 3) {
+continue;
+}
+
+```
+std::cout << i << " ";
+```
+
+}
+
+Output:
+
+1 2 4 5
+
+4.10 RETURN
+
+return terminates a function and optionally provides a value to the caller.
+
+Example:
+
+int square(int x) {
+return x * x;
+}
+
+5. IF AND SWITCH INIT-STATEMENTS
+
+C++17 introduced init-statements in if and switch statements.
+
+The general form is:
+
+if (init-statement; condition) {
+// body
+}
+
+Example:
+
+if (int value = 42; value > 0) {
+std::cout << "Positive\n";
+}
+
+The variable declared in the init-statement has scope associated with the if statement rather than the surrounding scope.
+
+This is useful when a temporary result is needed only for the decision.
+
+Example:
+
+if (auto result = calculate(); result > 0) {
+std::cout << "Result: " << result << '\n';
+}
+
+The same general idea is available for switch statements.
+
+Example:
+
+switch (int value = get_value(); value) {
+case 1:
+std::cout << "One\n";
+break;
+
+```
+case 2:
+    std::cout << "Two\n";
+    break;
+
+default:
+    std::cout << "Other\n";
+    break;
+```
+
+}
+
+The C++ standard specifies the scope relationship of the init-statement and condition; it should not be described simply as a normal block variable that "leaks" or does not leak.
+
+6. IF CONSTEXPR
+
+if constexpr was introduced in C++17.
+
+It allows compile-time selection between branches.
+
+Syntax:
+
+if constexpr (condition) {
+// selected when condition is true
+} else {
+// selected when condition is false
+}
+
+Example:
+
+#include <iostream>
+#include <type_traits>
+
+template <typename T>
+void print_type(T value) {
+if constexpr (std::is_integral_v<T>) {
+std::cout << "Integer: " << value << '\n';
+} else {
+std::cout << "Other type: " << value << '\n';
+}
+}
+
+if constexpr is especially useful in templates because the discarded branch does not need to be valid for the selected specialization in the same way as an ordinary runtime if statement.
+
+7. RANGE-BASED FOR LOOP
+
+The range-based for loop was introduced in C++11.
+
+Basic syntax:
+
+for (item : range) {
+// statements
+}
+
+Example:
+
+int numbers[] = {10, 20, 30, 40};
+
+for (int value : numbers) {
+std::cout << value << " ";
+}
+
+7.1 COPY OF EACH ELEMENT
+
+for (auto value : numbers) {
+std::cout << value << '\n';
+}
+
+The loop variable is a separate object initialized from each element.
+
+7.2 REFERENCE TO EACH ELEMENT
+
+for (auto& value : numbers) {
+value *= 2;
+}
+
+The loop variable refers to the actual element and can modify it.
+
+7.3 CONST REFERENCE
+
+for (const auto& value : numbers) {
+std::cout << value << '\n';
+}
+
+This avoids copying while preventing modification through the loop variable.
+
+7.4 RANGE-BASED LOOP WITH CONST
+
+A common pattern for read-only container traversal is:
+
+for (const auto& item : container) {
+process(item);
+}
+
+The appropriate form depends on element size, ownership requirements, and whether modification is required.
+
+8. FUNCTIONS
+
+A function is a named unit of code that can be called from another part of the program.
+
+Basic syntax:
+
+return_type function_name(parameter_list) {
+// function body
+}
+
+Example:
+
+int add(int a, int b) {
+return a + b;
+}
+
+int result = add(10, 20);
+
+8.1 FUNCTION DECLARATION
+
+A declaration tells the compiler about a function.
+
+Example:
+
+int add(int a, int b);
+
+8.2 FUNCTION DEFINITION
+
+A definition provides the function body.
+
+Example:
+
+int add(int a, int b) {
+return a + b;
+}
+
+8.3 PARAMETERS AND ARGUMENTS
+
+Parameters are variables listed in the function declaration.
+
+Arguments are the values supplied when the function is called.
+
+Example:
+
+int multiply(int a, int b) {
+return a * b;
+}
+
+int result = multiply(5, 4);
+
+Here, a and b are parameters, while 5 and 4 are arguments.
+
+8.4 PASS BY VALUE
+
+The function receives a value.
+
+void change(int x) {
+x = 100;
+}
+
+Changing x does not change the caller's original variable.
+
+8.5 PASS BY REFERENCE
+
+A reference parameter can modify the caller's object.
+
+void change(int& x) {
+x = 100;
+}
+
+8.6 PASS BY CONST REFERENCE
+
+A const reference allows read-only access without requiring a copy.
+
+void print(const std::string& text) {
+std::cout << text << '\n';
+}
+
+This is common when a function only needs to inspect an existing object.
+
+9. FUNCTION OVERLOADING
+
+Function overloading allows multiple functions with the same name when their parameter lists differ in a way that makes them distinct overloads.
+
+Example:
+
+void print(int value) {
+std::cout << "Integer: " << value << '\n';
+}
+
+void print(double value) {
+std::cout << "Double: " << value << '\n';
+}
+
+void print(const std::string& value) {
+std::cout << "String: " << value << '\n';
+}
+
+Calls:
+
+print(10);
+print(3.14);
+print("Hello");
+
+The compiler determines which overload is viable and selects the best viable function according to the overload-resolution rules.
+
+9.1 WHAT CAN DISTINGUISH OVERLOADS?
+
+Overloads can differ in parameter types, parameter count, or other aspects that make the function declarations distinct.
+
+Example:
+
+void display(int x);
+void display(double x);
+void display(int x, int y);
+
+9.2 RETURN TYPE ALONE CANNOT OVERLOAD A FUNCTION
+
+This is invalid:
+
+int calculate(int x);
+double calculate(int x);
+
+The parameter lists are the same, so the return type alone does not distinguish the functions.
+
+10. OVERLOAD RESOLUTION
+
+Overload resolution is more precise than a simple rule such as "exact match, then promotion, then conversion."
+
+Conceptually, the compiler:
+
+1. Performs name lookup and forms a set of candidate functions.
+2. Determines which candidates are viable for the supplied arguments.
+3. Compares the implicit conversion sequences.
+4. Selects the best viable function if one exists.
+5. Reports an ambiguity or error when no unique best candidate exists.
+
+Example:
+
+void test(long);
+void test(float);
+
+test(0L);   // selects test(long)
+
+For some calls, multiple overloads may be viable and the compiler may report an ambiguous call.
+
+Example:
+
+void f(long);
+void f(float);
+
+f(0);       // may be ambiguous
+
+Therefore, overload resolution should not be memorized as a simple universal ranking list. The actual standard rules are more detailed.
+
+11. NAME MANGLING
+
+Name mangling is a compiler and ABI implementation technique used by many C++ toolchains to encode information about functions and other entities into linker symbols.
+
+For example, overloaded functions may require distinct symbols at the object-file/linker level.
+
+Important:
+
+* Name mangling is not the C++ source-language mechanism that selects an overload.
+* Overload resolution happens according to C++ language rules.
+* The exact mangled symbol format is implementation-specific.
+* Different compilers and ABIs can use different mangling schemes.
+
+Therefore, name mangling should not be used as the explanation for how source-level overload resolution works.
+
+12. DEFAULT ARGUMENTS
+
+A default argument allows a caller to omit a trailing argument.
+
+Example:
+
+void log_message(const std::string& message, int level = 1);
+
+Calls:
+
+log_message("Started");
+log_message("Warning", 2);
+
+The default value is used when the corresponding argument is omitted.
+
+In a parameter list, once a parameter has a default argument, following parameters generally must also have defaults supplied in the same or a previous declaration in the applicable scope.
+
+12.1 DEFAULT ARGUMENTS AND DECLARATIONS
+
+Common header:
+
+void display(int value = 10);
+
+Definition:
+
+void display(int value) {
+std::cout << value << '\n';
+}
+
+The default argument is normally placed in the declaration visible to callers, especially in a header.
+
+Important standard rule:
+
+Default arguments are associated with declarations and scopes. They are not part of the function type.
+
+12.2 DEFAULT ARGUMENTS ARE NOT PART OF FUNCTION TYPE
+
+Example:
+
+int f(int value = 10);
+
+The function type is still equivalent to:
+
+int(int)
+
+Therefore:
+
+int (*ptr)(int) = &f;
+
+is valid.
+
+13. INLINE FUNCTIONS
+
+The inline specifier has two important aspects that should not be confused.
+
+First, inline can permit a function definition to appear in multiple translation units under the One Definition Rule, provided the required conditions are satisfied.
+
+Second, the compiler may choose to inline a function call as an optimization.
+
+The inline keyword itself does NOT guarantee that the compiler will replace a function call with the function body.
+
+Example:
+
+inline int square(int x) {
+return x * x;
+}
+
+A compiler may inline the call, but it is free to make its own optimization decision.
+
+Therefore:
+
+inline != guaranteed performance optimization
+
+13.1 INLINE AND THE ODR
+
+An inline function can have identical definitions in multiple translation units when the C++ language requirements are satisfied.
+
+This makes inline functions useful for small function definitions placed in header files.
+
+Example:
+
+// math_utils.h
+
+inline int square(int x) {
+return x * x;
+}
+
+The same inline definition may be included by multiple translation units without violating the One Definition Rule, provided the standard's requirements are satisfied.
+
+13.2 FUNCTIONS DEFINED INSIDE CLASSES
+
+A function defined entirely inside a class definition is implicitly inline, subject to the language rules.
+
+Example:
+
+class Calculator {
+public:
+int square(int x) {
+return x * x;
+}
+};
+
+14. CONSTEXPR FUNCTIONS
+
+constexpr allows a function or variable to participate in constant evaluation when the required conditions are satisfied.
+
+Example:
+
+constexpr int square(int x) {
+return x * x;
+}
+
+int main() {
+constexpr int result = square(5);
+}
+
+The expression can be evaluated at compile time because all required conditions are satisfied.
+
+A constexpr function can also be called with runtime values.
+
+Example:
+
+int x;
+std::cin >> x;
+
+int result = square(x);
+
+The same function can therefore support both constant evaluation and ordinary runtime evaluation when permitted.
+
+14.1 CONSTEXPR FUNCTION EXAMPLE
+
+constexpr int factorial(int n) {
+if (n <= 1) {
+return 1;
+}
+
+```
+return n * factorial(n - 1);
+```
+
+}
+
+constexpr int value = factorial(5);
+
+14.2 CONSTEXPR DOES NOT MEAN "ALWAYS RUNS AT COMPILE TIME"
+
+constexpr means that the function is eligible for constant evaluation when the language rules and the supplied arguments permit it.
+
+It does not force every call to execute at compile time.
+
+15. CONSTEVAL
+
+consteval was introduced in C++20.
+
+A consteval function is an immediate function. Calls that are required to invoke it must produce constant evaluation.
+
+Example:
+
+consteval int cube(int x) {
+return x * x * x;
+}
+
+constexpr int value = cube(3);
+
+consteval is stricter than constexpr because it is specifically intended for immediate compile-time evaluation.
+
+16. LAMBDA EXPRESSIONS
+
+A lambda expression creates a closure object with a unique unnamed closure type.
+
+Basic syntax:
+
+[capture](parameters) -> return_type {
+// body
+}
+
+Example:
+
+auto is_even = [](int n) {
+return n % 2 == 0;
+};
+
+std::cout << is_even(10);
+
+17. LAMBDA CAPTURE
+
+The capture clause specifies which surrounding variables are accessible to the lambda.
+
+17.1 EMPTY CAPTURE
+
+[] means that no automatic local variables are captured.
+
+Example:
+
+auto add = [](int a, int b) {
+return a + b;
+};
+
+17.2 CAPTURE BY VALUE
+
+[x] captures x by copy.
+
+Example:
+
+int value = 10;
+
+auto show = [value]() {
+std::cout << value << '\n';
+};
+
+17.3 CAPTURE BY REFERENCE
+
+[&x] captures x by reference.
+
+Example:
+
+int count = 0;
+
+auto increment = [&count]() {
+++count;
+};
+
+increment();
+
+The original count is modified.
+
+17.4 DEFAULT CAPTURE BY VALUE
+
+[=] permits implicit capture of odr-usable automatic variables by copy when required by the lambda body.
+
+Example:
+
+int a = 10;
+int b = 20;
+
+auto sum = [=]() {
+return a + b;
+};
+
+17.5 DEFAULT CAPTURE BY REFERENCE
+
+[&] permits implicit capture by reference when required.
+
+Example:
+
+int count = 0;
+
+auto increment = [&]() {
+++count;
+};
+
+17.6 MIXED CAPTURE
+
+Example:
+
+int x = 10;
+int y = 20;
+
+auto operation = [x, &y]() {
+std::cout << x << ' ' << y << '\n';
+};
+
+17.7 INIT-CAPTURE
+
+C++14 introduced generalized lambda capture.
+
+Example:
+
+auto value = std::make_unique<int>(42);
+
+auto lambda = [ptr = std::move(value)]() {
+std::cout << *ptr << '\n';
+};
+
+The init-capture creates a data member of the closure object initialized from the specified expression.
+
+18. MUTABLE LAMBDAS
+
+By default, the call operator of a lambda does not allow modification of its copy-captured data members.
+
+The mutable specifier allows modification of those local copies.
+
+Example:
+
+int count = 10;
+
+auto increment = [count]() mutable {
+++count;
+return count;
+};
+
+std::cout << increment() << '\n';
+std::cout << increment() << '\n';
+
+The original count outside the lambda remains unchanged.
+
+19. GENERIC LAMBDAS
+
+Generic lambdas were introduced in C++14.
+
+Example:
+
+auto print = [](auto value) {
+std::cout << value << '\n';
+};
+
+print(10);
+print(3.14);
+print("Hello");
+
+19.1 EXPLICIT TEMPLATE PARAMETERS IN LAMBDAS
+
+C++20 allows an explicit template parameter list.
+
+Example:
+
+auto add = []<typename T>(T a, T b) {
+return a + b;
+};
+
+std::cout << add(10, 20) << '\n';
+std::cout << add(2.5, 3.5) << '\n';
+
+This provides a more explicit template-style syntax for a generic lambda.
+
+20. LAMBDA RETURN TYPE
+
+Usually the return type is deduced automatically.
+
+Example:
+
+auto square = [](int x) {
+return x * x;
+};
+
+An explicit trailing return type can be used when required.
+
+Example:
+
+auto divide = [](double a, double b) -> double {
+return a / b;
+};
+
+21. LAMBDAS AND STANDARD ALGORITHMS
+
+Lambdas are frequently used with standard algorithms.
+
+Example:
+
+#include <algorithm>
+#include <vector>
+#include <iostream>
+
+std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
+
+int count = std::count_if(
+numbers.begin(),
+numbers.end(),
+[](int value) {
+return value % 2 == 0;
+}
+);
+
+std::cout << "Even count: " << count << '\n';
+
+22. LAMBDA AS A COMPARATOR
+
+A lambda can define a custom ordering for an algorithm.
+
+Example:
+
+std::sort(numbers.begin(), numbers.end(),
+[](int a, int b) {
+return a > b;
+});
+
+The comparator supplied to standard sorting algorithms must satisfy the requirements expected by the algorithm, including providing a valid strict weak ordering for std::sort.
+
+23. STD::FUNCTION
+
+std::function is a type-erased callable wrapper.
+
+Example:
+
+#include <functional>
+
+std::function<int(int, int)> operation;
+
+operation = [](int a, int b) {
+return a + b;
+};
+
+std::cout << operation(10, 20) << '\n';
+
+std::function can store different compatible callable types.
+
+However, it is not identical to a lambda. A lambda has its own unique closure type, while std::function provides a type-erased wrapper.
+
+24. LAMBDA VS STD::FUNCTION
+
+Lambda:
+
+* Has a unique closure type.
+* Can capture variables.
+* Usually allows direct compile-time knowledge of its callable type.
+* Works naturally with templates and algorithms.
+
+std::function:
+
+* Provides a common type-erased callable interface.
+* Can store different compatible callable objects.
+* May introduce additional runtime overhead depending on the callable and implementation.
+* Can be useful when a stable callable type is required.
+
+Avoid claiming that every std::function call necessarily performs heap allocation. Allocation behavior is implementation- and callable-dependent.
+
+25. LAMBDA CAPTURE AND LIFETIME
+
+Reference captures must be used carefully.
+
+Dangerous example:
+
+std::function<void()> create_task() {
+int value = 10;
+
+```
+return [&]() {
+    std::cout << value << '\n';
+};
+```
+
+}
+
+The returned lambda refers to a local variable whose lifetime ends when create_task returns.
+
+The reference therefore becomes invalid.
+
+Safer approach:
+
+std::function<void()> create_task() {
+int value = 10;
+
+```
+return [value]() {
+    std::cout << value << '\n';
+};
+```
+
+}
+
+The value is copied into the closure object.
+
+26. LAMBDA CAPTURE OF THIS
+
+Inside a non-static member function, a lambda may capture the enclosing object.
+
+Example:
+
+class Counter {
+private:
+int value = 0;
+
+public:
+auto make_incrementer() {
+return [this]() {
+++value;
+};
+}
+};
+
+The lifetime of the object must be considered when a lambda retaining this is stored or executed later.
+
+C++17 also introduced capturing *this by value:
+
+auto task = [*this]() {
+// operates on a copy of the enclosing object
+};
+
+In C++20, implicit capture of this under a capture-default of [=] is deprecated. Prefer explicit capture when the lifetime or ownership semantics matter.
+
+27. BASIC EXAMPLE
+
+Problem:
+Demonstrate function overloading, default arguments, and range-based for loops.
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+void print_info(int value) {
+    std::cout << "Integer value: " << value << '\n';
+}
+
+void print_info(double value) {
+    std::cout << "Double value: " << value << '\n';
+}
+
+void print_info(const std::string& value) {
+    std::cout << "String value: '" << value << "'\n";
+}
+
+void log_message(const std::string& message, int level = 1) {
+    std::cout << "Level " << level << ": " << message << '\n';
+}
+
+int main() {
+    print_info(42);
+    print_info(3.14159);
+    print_info(std::string("Modern C++"));
+
+    log_message("Program started");
+    log_message("Warning message", 2);
+
+    std::vector<int> numbers = {10, 20, 30, 40, 50};
+
+    for (auto& number : numbers) {
+        number *= 2;
+    }
+
+    std::cout << "Doubled elements: ";
+
+    for (const auto& number : numbers) {
+        std::cout << number << ' ';
+    }
+
+    std::cout << '\n';
+
+    return 0;
+}
+```
+
+28. BASIC EXAMPLE OUTPUT
+
+```text
+Integer value: 42
+Double value: 3.14159
+String value: 'Modern C++'
+Level 1: Program started
+Level 2: Warning message
+Doubled elements: 20 40 60 80 100
+```
+
+29. INTERMEDIATE EXAMPLE
+
+Problem:
+Use a C++17 if init-statement and lambda capture.
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> scores = {
+        78, 92, 85, 64, 99, 58, 88
+    };
+
+    if (auto count = std::count_if(
+            scores.begin(),
+            scores.end(),
+            [](int score) {
+                return score >= 80;
+            });
+        count > 0) {
+
+        std::cout
+            << "Students with scores >= 80: "
+            << count << '\n';
+    }
+
+    int threshold = 70;
+    int passing_count = 0;
+
+    std::for_each(
+        scores.begin(),
+        scores.end(),
+        [threshold, &passing_count](int score) {
+            if (score >= threshold) {
+                ++passing_count;
+            }
+        }
+    );
+
+    std::cout
+        << "Students passing threshold ("
+        << threshold << "): "
+        << passing_count << '\n';
+
+    return 0;
+}
+```
+
+30. INTERMEDIATE EXAMPLE OUTPUT
+
+```text
+Students with scores >= 80: 4
+Students passing threshold (70): 5
+```
+
+31. ADVANCED EXAMPLE
+
+Problem:
+Use a lambda comparator, generic lambda, mutable lambda, and constexpr function.
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
+
+struct Student {
+    std::string name;
+    int id;
+    double gpa;
+};
+
+constexpr int square(int x) {
+    return x * x;
+}
+
+int main() {
+    std::vector<Student> roster = {
+        {"Alice", 103, 3.92},
+        {"Bob", 101, 3.45},
+        {"Charlie", 105, 3.88},
+        {"David", 102, 3.92}
+    };
+
+    std::sort(
+        roster.begin(),
+        roster.end(),
+        [](const Student& a, const Student& b) {
+            if (a.gpa != b.gpa) {
+                return a.gpa > b.gpa;
+            }
+
+            return a.id < b.id;
+        }
+    );
+
+    std::cout << "=== STUDENT ROSTER ===\n";
+
+    for (const auto& student : roster) {
+        std::cout
+            << "GPA: " << student.gpa
+            << " | ID: " << student.id
+            << " | Name: " << student.name
+            << '\n';
+    }
+
+    auto print = [](auto value) {
+        std::cout << "Value: " << value << '\n';
+    };
+
+    print(100);
+    print(3.14);
+
+    auto id_generator = [current = 1000]() mutable {
+        return current++;
+    };
+
+    std::cout << "Generated IDs: ";
+
+    for (int i = 0; i < 4; ++i) {
+        std::cout << id_generator() << ' ';
+    }
+
+    std::cout << '\n';
+
+    constexpr int result = square(5);
+
+    std::cout << "Compile-time square: "
+              << result << '\n';
+
+    return 0;
+}
+```
+
+32. ADVANCED EXAMPLE OUTPUT
+
+```text
+=== STUDENT ROSTER ===
+GPA: 3.92 | ID: 102 | Name: David
+GPA: 3.92 | ID: 103 | Name: Alice
+GPA: 3.88 | ID: 105 | Name: Charlie
+GPA: 3.45 | ID: 101 | Name: Bob
+Value: 100
+Value: 3.14
+Generated IDs: 1000 1001 1002 1003
+Compile-time square: 25
+```
+
+33. CODE WALKTHROUGH
+
+33.1 OVERLOADS
+
+The calls:
+
+print_info(42);
+print_info(3.14159);
+
+select different overloads based on the argument types and the overload-resolution rules.
+
+33.2 IF INIT-STATEMENT
+
+The statement:
+
+if (auto count = std::count_if(...); count > 0)
+
+creates count for use by the condition and associated if statement.
+
+33.3 LAMBDA COMPARATOR
+
+The comparator:
+
+[](const Student& a, const Student& b) {
+if (a.gpa != b.gpa)
+return a.gpa > b.gpa;
+
+```
+return a.id < b.id;
+```
+
+}
+
+defines the ordering used by std::sort.
+
+33.4 INIT-CAPTURE
+
+The expression:
+
+[current = 1000]
+
+creates a data member of the closure object initialized with 1000.
+
+33.5 MUTABLE
+
+The mutable keyword allows the lambda to modify its own copy of current between calls.
+
+33.6 CONSTEXPR
+
+The declaration:
+
+constexpr int result = square(5);
+
+requires square(5) to be usable in constant evaluation.
+
+34. EXECUTION FLOW
+
+35. Program execution begins in main().
+
+36. Function calls are evaluated and the appropriate overload is selected where necessary.
+
+37. Control-flow statements evaluate their conditions.
+
+38. Loops repeatedly execute their bodies while their conditions/ranges permit.
+
+39. Range-based for obtains elements from the specified range.
+
+40. Lambdas create closure objects when the lambda expressions are evaluated.
+
+41. Captured values or references are used according to the capture specification.
+
+42. Standard algorithms invoke supplied callable objects.
+
+43. return ends the current function and optionally provides a value.
+
+44. PRACTICAL PROGRAMMING PROBLEMS
+
+45. Write a function that determines whether an integer is positive, negative, or zero.
+
+46. Write a function that calculates the factorial of a number.
+
+47. Create overloaded functions named area() for:
+
+    * Circle
+    * Rectangle
+    * Square
+
+48. Create a function with a default argument for calculating simple interest.
+
+49. Write a range-based for loop that finds the largest value in a vector.
+
+50. Use a lambda with std::count_if() to count odd numbers.
+
+51. Use a lambda with std::sort() to sort integers in descending order.
+
+52. Write a generic lambda that prints values of different data types.
+
+53. Write a mutable lambda that generates sequential numbers.
+
+54. Write a constexpr function that calculates the cube of an integer.
+
+55. REAL-WORLD APPLICATIONS
+
+Control flow and functions are used in:
+
+* Menu-driven applications.
+* Input validation.
+* Data processing.
+* File processing.
+* Search and filtering operations.
+* Sorting.
+* Event callbacks.
+* GUI programming.
+* Data transformation pipelines.
+* Mathematical and scientific software.
+* AI/ML preprocessing utilities.
+* Configuration handling.
+* Generic library development.
+* Compile-time calculations.
+
+37. COMMON MISTAKES
+
+37.1 MISSING BREAK IN SWITCH
+
+Incorrect:
+
+switch (choice) {
+case 1:
+std::cout << "One\n";
+
+```
+case 2:
+    std::cout << "Two\n";
+```
+
+}
+
+If fallthrough is not intended, use break or another appropriate control-flow technique.
+
+37.2 MODIFYING A COPY
+
+This does not modify the original elements:
+
+for (auto value : numbers) {
+value *= 2;
+}
+
+Use a reference when modification of the elements is required:
+
+for (auto& value : numbers) {
+value *= 2;
+}
+
+37.3 RETURN TYPE USED FOR OVERLOADING
+
+Incorrect:
+
+int calculate(int x);
+double calculate(int x);
+
+The return type alone cannot distinguish overloads.
+
+37.4 UNSAFE REFERENCE CAPTURE
+
+Avoid returning or storing a lambda that captures a local variable by reference when that local variable will no longer exist when the lambda runs.
+
+37.5 ASSUMING INLINE FORCES INLINING
+
+The inline specifier does not guarantee that the compiler will inline a call.
+
+37.6 ASSUMING NAME MANGLING IS PART OF THE C++ LANGUAGE
+
+Mangled symbol formats are implementation/ABI details. Do not write portable C++ code that depends on a particular mangled name.
+
+38. COMMON DEFAULT-ARGUMENT ERROR
+
+Incorrect:
+
+```cpp
+// Header
+void run(int value = 10);
+
+// Source
+void run(int value = 10) {
+    std::cout << value << '\n';
+}
+```
+
+A common practice is to specify the default argument in the declaration visible to callers:
+
+```cpp
+// Header
+void run(int value = 10);
+
+// Source
+void run(int value) {
+    std::cout << value << '\n';
+}
+```
+
+Important:
+Default-argument rules are more detailed than simply "a default may appear only once everywhere." Later declarations in the same scope can contribute defaults under the standard rules. For maintainable header/source designs, keep the default argument in the public declaration and omit it from the definition.
+
+39. DEBUGGING TECHNIQUES
+
+39.1 COMPILER WARNINGS
+
+Use compiler warnings during development.
+
+Example with GCC:
+
+g++ -std=c++20 -Wall -Wextra -Wpedantic program.cpp -o program
+
+For a C++23 build:
+
+g++ -std=c++23 -Wall -Wextra -Wpedantic program.cpp -o program
+
+39.2 DEBUGGING OVERLOADS
+
+When an overload call is ambiguous:
+
+* Check the argument types.
+* Check available overloads.
+* Check implicit conversions.
+* Consider an explicit cast only when it expresses the intended conversion clearly.
+
+39.3 DEBUGGING LAMBDA LIFETIMES
+
+When using asynchronous callbacks, inspect:
+
+* What objects are captured.
+* Whether they are captured by value or reference.
+* When the callback executes.
+* Whether captured objects are still alive.
+
+39.4 C++FILT
+
+Many GCC/Clang environments provide c++filt for decoding implementation-specific mangled symbols.
+
+Example:
+
+c++filt < mangled_symbol
+
+This is useful for linker and binary-level debugging, but the exact symbol format is compiler/ABI dependent.
+
+40. EDGE CASES
+
+40.1 LAMBDA CAPTURING THIS
+
+A lambda stored for later execution can outlive the object whose this pointer it captured.
+
+Always ensure that the enclosing object remains alive when [this] is used.
+
+40.2 EMPTY CAPTURE LAMBDA
+
+A capture-less non-generic lambda can convert to a compatible function pointer.
+
+Example:
+
+auto square = [](int x) {
+return x * x;
+};
+
+int (*function_pointer)(int) = square;
+
+40.3 CONSTEXPR DOES NOT FORCE COMPILE-TIME EXECUTION
+
+A constexpr function can also be called at runtime when the arguments are not constant expressions.
+
+40.4 DEFAULT ARGUMENTS AND FUNCTION POINTERS
+
+Default arguments are not part of the function type.
+
+Example:
+
+int f(int value = 10);
+
+int (*ptr)(int) = &f;
+
+The pointer still points to a function taking one int parameter.
+
+40.5 OVERLOAD AMBIGUITY
+
+Two or more viable overloads can result in an ambiguous call.
+
+Example:
+
+void process(long);
+void process(float);
+
+process(0);  // may be ambiguous
+
+The correct analysis depends on the complete overload-resolution rules.
+
+41. BEST PRACTICES
+
+* Use braces for if, else, loops, and switch cases where appropriate.
+* Keep functions small and focused.
+* Use const when a function does not need to modify an object.
+* Use const auto& for read-only iteration when copying is undesirable.
+* Use auto& when elements must be modified.
+* Prefer explicit lambda captures when lifetime or ownership is important.
+* Avoid broad [&] captures in long-lived or asynchronous callbacks when explicit captures are clearer.
+* Place public default arguments in appropriate declarations, commonly headers.
+* Do not use inline merely as a performance command.
+* Use constexpr when compile-time evaluation is useful.
+* Use consteval when immediate compile-time evaluation is specifically required.
+* Prefer standard algorithms with clear predicates and comparators.
+* Ensure sorting comparators provide the ordering requirements expected by std::sort.
+* Do not depend on compiler-specific name-mangling formats in portable source code.
+
+42. PERFORMANCE CONSIDERATIONS
+
+42.1 FUNCTION CALLS
+
+Function-call overhead depends on the compiler, optimization level, ABI, function body, and program structure.
+
+Do not assume that every small function call has a fixed runtime cost.
+
+42.2 INLINE
+
+inline can affect linkage and ODR behavior and may also permit optimization, but it does not require the compiler to inline the call.
+
+42.3 LAMBDAS
+
+Lambdas have closure types. Their actual performance depends on how they are used and how the compiler optimizes the resulting code.
+
+A lambda should not automatically be described as "zero overhead" in every situation.
+
+42.4 STD::FUNCTION
+
+std::function introduces type erasure and may have additional runtime costs compared with directly passing a concrete lambda type.
+
+42.5 RANGE-BASED LOOPS
+
+Choose the loop variable form based on semantics:
+
+auto value
+
+* Makes a copy.
+
+auto& value
+
+* Refers to the original element and allows modification.
+
+const auto& value
+
+* Refers to the original element without modification through the reference.
+
+43. MEMORY AND OBJECT-LIFETIME CONSIDERATIONS
+
+A lambda expression produces a closure object.
+
+The closure may contain captured data.
+
+For example:
+
+int x = 10;
+
+auto lambda = [x]() {
+return x;
+};
+
+The closure contains state corresponding to the captured x.
+
+For reference capture:
+
+int x = 10;
+
+auto lambda = [&x]() {
+return x;
+};
+
+The lambda refers to the original x.
+
+The exact object representation is implementation-dependent and should not be described as a guaranteed collection of specific pointer or reference fields.
+
+44. SECURITY AND RELIABILITY CONSIDERATIONS
+
+Important issues include:
+
+* Dangling references.
+* Dangling this pointers.
+* Invalid assumptions about object lifetime.
+* Unexpected switch fallthrough.
+* Unchecked input used in control-flow decisions.
+* Ambiguous overloads.
+* Incorrect comparator logic.
+* Callbacks executing after captured objects have been destroyed.
+
+For asynchronous systems, prefer clear ownership and lifetime management over convenient but unsafe reference captures.
+
+45. COMPARISON WITH RELATED CONCEPTS
+
+45.1 IF VS SWITCH
+
+if:
+
+* Useful for ranges and complex boolean conditions.
+
+switch:
+
+* Useful when selecting among discrete case values.
+
+45.2 FOR VS RANGE-BASED FOR
+
+Traditional for:
+
+* Gives explicit control over initialization, condition, and increment.
+
+Range-based for:
+
+* Convenient for traversing elements of a range.
+
+45.3 FUNCTION VS LAMBDA
+
+Named function:
+
+* Has a reusable name.
+* Useful for independently reusable operations.
+
+Lambda:
+
+* Creates a closure object.
+* Can capture surrounding state.
+* Useful for local operations and algorithm predicates.
+
+45.4 CONSTEXPR VS CONSTEVAL
+
+constexpr:
+
+* Permits constant evaluation when conditions are satisfied.
+* Can also be called at runtime.
+
+consteval:
+
+* Defines an immediate function that requires appropriate calls to be evaluated at compile time.
+
+45.5 LAMBDA VS STD::FUNCTION
+
+Lambda:
+
+* Concrete closure type.
+* Can capture state.
+
+std::function:
+
+* Type-erased callable wrapper.
+* Useful when different callable types need a common interface.
+
+46. FAQ
+
+Q1. Can a lambda modify a value captured by value?
+
+A:
+Not through the normal non-mutable call operator. Use mutable when modification of the lambda's captured copy is required.
+
+Example:
+
+int count = 0;
+
+auto increment = [count]() mutable {
+++count;
+};
+
+Q2. Does modifying a mutable lambda's captured value modify the original variable?
+
+A:
+No. A by-value capture is a copy. Modifying the captured copy does not modify the original variable.
+
+Q3. What is the difference between auto and auto& in a range-based for loop?
+
+A:
+
+for (auto x : values)
+
+creates a copy of each element.
+
+for (auto& x : values)
+
+refers to the original element and can modify it.
+
+Q4. Is inline a command forcing the compiler to inline a function?
+
+A:
+No. The compiler controls optimization decisions. inline also has important ODR/linkage-related language semantics.
+
+Q5. Can functions be overloaded only by return type?
+
+A:
+No. Return type alone cannot distinguish overloaded functions.
+
+Q6. Are default arguments part of a function's type?
+
+A:
+No.
+
+Q7. Are lambdas really anonymous functions?
+
+A:
+A lambda expression creates a closure object of a unique unnamed closure type. Its call operator provides the callable behavior.
+
+Q8. Can a capture-less lambda be converted to a function pointer?
+
+A:
+A capture-less non-generic lambda can convert to a compatible function pointer.
+
+Q9. Does constexpr guarantee compile-time execution?
+
+A:
+No. It makes a function eligible for constant evaluation when the required conditions are satisfied.
+
+Q10. Why can reference captures be dangerous?
+
+A:
+A reference capture does not extend the lifetime of the referenced object. If the object is destroyed before the lambda uses the reference, the program can have undefined behavior.
+
+47. INTERVIEW QUESTIONS
+
+BEGINNER
+
+Q1. What is control flow in C++?
+
+A:
+Control flow determines the order in which statements and blocks of a program execute.
+
+Q2. What is the purpose of break?
+
+A:
+break terminates the nearest enclosing loop or switch statement.
+
+Q3. What is a range-based for loop?
+
+A:
+It is a language construct for iterating over elements of a range such as an array or container.
+
+Q4. What is function overloading?
+
+A:
+Function overloading allows multiple functions with the same name when their declarations are distinct according to the C++ language rules.
+
+INTERMEDIATE
+
+Q5. What is an init-statement in an if statement?
+
+A:
+It allows a declaration or expression to be placed before the condition, giving a useful local scope for the initialization.
+
+Q6. What is a default argument?
+
+A:
+A default argument provides a value that is used when the caller omits the corresponding trailing argument.
+
+Q7. What does mutable mean in a lambda?
+
+A:
+It allows the lambda's call operator to modify objects captured by copy.
+
+ADVANCED
+
+Q8. What is overload resolution?
+
+A:
+It is the process by which the compiler selects the best viable function from the candidate functions for a call.
+
+Q9. What is a closure type?
+
+A:
+It is the unique unnamed class type associated with a lambda expression.
+
+Q10. Why is name mangling implementation-specific?
+
+A:
+The C++ language does not prescribe a universal linker-symbol encoding scheme. Compilers and ABIs define their own schemes.
+
+48. EXAM QUESTIONS
+
+SHORT ANSWER
+
+1. Define control flow.
+2. What is function overloading?
+3. What is a default argument?
+4. What does break do?
+5. What is a lambda expression?
+6. What is the purpose of mutable in a lambda?
+7. What is constexpr?
+
+MEDIUM ANSWER
+
+1. Explain range-based for loops with an example.
+2. Explain C++17 if init-statements.
+3. Explain function overloading and overload resolution.
+4. Explain default arguments.
+5. Explain lambda capture by value and reference.
+6. Explain the difference between constexpr and consteval.
+
+LONG ANSWER
+
+1. Explain C++ function overloading and the stages of overload resolution.
+
+2. Explain lambda expressions, closure objects, capture modes, generic lambdas, and mutable lambdas.
+
+3. Explain inline functions and their relationship with the One Definition Rule.
+
+4. Explain constexpr functions and their role in compile-time evaluation.
+
+5. Explain lifetime risks associated with lambda reference captures.
+
+6. PRACTICE QUESTIONS
+
+7. Implement a function that checks whether a number is prime.
+
+8. Implement overloaded functions named maximum() for:
+
+   * int
+   * double
+   * three integer values
+
+9. Write a function with a default argument for calculating discount.
+
+10. Write a range-based for loop that modifies every vector element.
+
+11. Write a lambda that checks whether a number is even.
+
+12. Use std::count_if with a lambda to count numbers greater than 50.
+
+13. Use std::sort and a lambda to sort strings by length.
+
+14. Write a generic lambda that returns the larger of two values.
+
+15. Write a mutable lambda that generates numbers from 100 to 105.
+
+16. Write a constexpr function that calculates the fourth power of an integer.
+
+17. Demonstrate a safe value capture in a returned lambda.
+
+18. Demonstrate an if init-statement using std::find.
+
+19. SUMMARY
+
+Modern C++ provides structured control flow and powerful function mechanisms.
+
+Control-flow statements include:
+
+* if
+* if-else
+* switch
+* for
+* while
+* do-while
+* range-based for
+* break
+* continue
+* return
+
+Function features include:
+
+* Function declarations and definitions.
+* Parameters and return values.
+* References and const references.
+* Function overloading.
+* Overload resolution.
+* Default arguments.
+* Inline functions.
+* constexpr functions.
+* consteval functions.
+* Lambda expressions.
+* Generic lambdas.
+* Lambda captures.
+* Mutable lambdas.
+* Standard algorithm integration.
+
+51. KEY TAKEAWAYS
+
+* Use if and switch for selection.
+* Use for, while, do-while, and range-based for for iteration.
+* Use break and continue intentionally.
+* Use references when a function must operate on the caller's object.
+* Use const references for efficient read-only access when appropriate.
+* Function overloading is resolved by C++ overload-resolution rules.
+* Return type alone cannot distinguish overloads.
+* Default arguments are associated with declarations and are not part of the function type.
+* inline does not guarantee compiler inlining.
+* constexpr enables functions to participate in constant evaluation.
+* consteval requires immediate compile-time evaluation for appropriate calls.
+* A lambda creates a closure object with a unique closure type.
+* mutable allows modification of by-copy captures inside the lambda.
+* Reference captures require careful lifetime management.
+* Name mangling is implementation/ABI specific.
+* Use standard algorithms together with lambdas for expressive C++ code.
+
+52. REFERENCE BASIS
+
+Primary standard:
+
+ISO/IEC 14882:2024
+Programming Languages — C++
+International Standard, Edition 7, published October 2024.
+
+Relevant standard topics include:
+
+* Statements and control flow.
+* Functions.
+* Default arguments.
+* Overloading and overload resolution.
+* Lambda expressions.
+* Constant evaluation.
+* Inline functions.
+* One Definition Rule.
+
+Practical secondary reference:
+
+cppreference C++ Language documentation:
+
+* Functions
+* Default arguments
+* Overload resolution
+* Inline specifier
+* Lambda expressions
+* Range-based for loop
+
+Working draft reference:
+
+The current C++ working draft hosted by eel.is can be used to inspect detailed wording and section structure.
+
+NOTE:
+
+This document is written as a learning and RAG reference. Standard guarantees are separated from implementation-specific behavior. Compiler optimizations, ABI details, name mangling, object representation, and runtime performance should not be treated as universally fixed properties of C++.

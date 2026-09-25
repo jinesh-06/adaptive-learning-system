@@ -1,0 +1,2979 @@
+COURSE: Python Programming
+TOPIC: Python Fundamentals, Data Types, and Object Reference Model
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation + Textbook Knowledge Base
+
+================================================================================
+PYTHON FUNDAMENTALS, DATA TYPES, AND OBJECT REFERENCE MODEL
+===========================================================
+
+1. INTRODUCTION
+
+---
+
+Python is a high-level, dynamically typed programming language designed with an
+emphasis on readability, simplicity, and rapid development.
+
+Python uses indentation to define blocks and provides a large standard library
+for tasks such as file handling, networking, mathematics, text processing,
+data structures, testing, and system administration.
+
+A central concept in Python is its object model:
+
+```
+Everything represented as data in a Python program is an object.
+```
+
+Objects have three fundamental characteristics:
+
+```
+1. Identity
+2. Type
+3. Value
+```
+
+For example:
+
+```
+x = 10
+```
+
+The name `x` is bound to an integer object whose value is 10.
+
+Python variables are therefore better understood as names bound to objects
+rather than as fixed typed memory locations.
+
+Important concepts covered in this document include:
+
+* Python execution model
+* Names and object references
+* Built-in data types
+* Mutable and immutable objects
+* Identity and equality
+* Type conversion
+* Truth-value testing
+* Operators and precedence
+* Copying and aliasing
+* Garbage collection
+* CPython implementation details
+* Memory and performance considerations
+* Common programming mistakes
+
+2. LEARNING OBJECTIVES
+
+---
+
+After completing this topic, the learner should be able to:
+
+* Explain Python's object model.
+* Explain the difference between an object, a name, and a reference.
+* Identify the identity, type, and value of an object.
+* Use `type()`, `isinstance()`, and `id()` correctly.
+* Distinguish mutable and immutable objects.
+* Explain aliasing and shared mutable state.
+* Distinguish `is` from `==`.
+* Understand shallow and deep copying.
+* Use Python's built-in numeric, text, sequence, set, and mapping types.
+* Explain Python's dynamic typing.
+* Perform explicit type conversion.
+* Understand truth-value testing.
+* Use arithmetic, comparison, logical, membership, identity, and bitwise
+  operators correctly.
+* Understand Python name binding and scope.
+* Explain the difference between language rules and CPython implementation
+  details.
+* Understand reference counting and cyclic garbage collection at a conceptual
+  level.
+* Identify common memory, type, and identity-related programming errors.
+
+3. PREREQUISITES
+
+---
+
+Recommended prerequisites:
+
+* Basic computer programming knowledge
+* Basic understanding of variables and expressions
+* Basic understanding of CPU and memory
+* Familiarity with simple programming statements
+* Basic understanding of functions and control flow
+
+4. BEGINNER CONCEPTS
+
+---
+
+4.1 Names and Objects
+
+Python assignment creates a binding between a name and an object.
+
+Example:
+
+```
+x = 10
+y = x
+```
+
+Conceptually:
+
+```
+x ──┐
+    ├──> integer object 10
+y ──┘
+```
+
+The assignment `y = x` does not copy the integer object. It makes `y` refer
+to the same object.
+
+The Python language specification describes names as referring to objects.
+
+Example:
+
+```
+value = 100
+```
+
+Here:
+
+```
+value  -> name
+100    -> object
+=      -> binding operation
+```
+
+4.2 Object Identity, Type, and Value
+
+Every Python object has:
+
+```
+Identity
+Type
+Value
+```
+
+Identity:
+
+```
+Identifies a particular object during its lifetime.
+```
+
+The `is` operator compares object identity.
+
+```
+a is b
+```
+
+Type:
+
+```
+Determines the operations and behavior supported by the object.
+```
+
+Use:
+
+```
+type(a)
+```
+
+Value:
+
+```
+Represents the data associated with the object.
+```
+
+Use:
+
+```
+a == b
+```
+
+to compare values according to the types' equality rules.
+
+Important:
+
+```
+`id()` returns an integer identifying an object.
+The exact meaning of that integer is implementation-dependent.
+```
+
+In CPython, `id(x)` is commonly the memory address of the object, but programs
+should not depend on this behavior.
+
+4.3 Built-in Data Types
+
+Python provides several fundamental built-in types.
+
+Numeric types:
+
+```
+int
+float
+complex
+```
+
+Boolean:
+
+```
+bool
+```
+
+Text:
+
+```
+str
+```
+
+Binary:
+
+```
+bytes
+bytearray
+memoryview
+```
+
+Sequences:
+
+```
+list
+tuple
+range
+```
+
+Sets:
+
+```
+set
+frozenset
+```
+
+Mapping:
+
+```
+dict
+```
+
+Special value:
+
+```
+None
+```
+
+4.4 Integer Type
+
+Python's `int` represents integers with arbitrary precision, limited by
+available memory and implementation constraints.
+
+Examples:
+
+```
+x = 10
+y = -500
+large = 10 ** 100
+```
+
+Python integers do not have the fixed 32-bit or 64-bit overflow behavior
+normally associated with C integer types.
+
+Useful methods:
+
+```
+n.bit_length()
+n.to_bytes(...)
+```
+
+Example:
+
+```
+number = 1024
+print(number.bit_length())
+```
+
+Output:
+
+```
+11
+```
+
+4.5 Floating-Point Type
+
+`float` represents floating-point numbers.
+
+Example:
+
+```
+price = 99.95
+temperature = -2.5
+```
+
+Most Python implementations use the platform floating-point representation,
+commonly IEEE 754 binary floating point.
+
+Therefore:
+
+```
+0.1 + 0.2
+```
+
+does not necessarily produce an exact mathematical decimal value of:
+
+```
+0.3
+```
+
+For numerical comparison, consider:
+
+```
+math.isclose(a, b)
+```
+
+For decimal financial calculations, consider:
+
+```
+decimal.Decimal
+```
+
+4.6 Complex Numbers
+
+Python supports complex numbers.
+
+Example:
+
+```
+z = 3 + 4j
+```
+
+Access:
+
+```
+z.real
+z.imag
+```
+
+Example:
+
+```
+z = 3 + 4j
+
+print(z.real)
+print(z.imag)
+```
+
+Output:
+
+```
+3.0
+4.0
+```
+
+4.7 Boolean Type
+
+Python has two Boolean objects:
+
+```
+True
+False
+```
+
+`bool` is a subclass of `int`.
+
+Therefore:
+
+```
+True == 1
+False == 0
+```
+
+However, Boolean values should normally be treated as Boolean values rather
+than relying on their integer behavior.
+
+4.8 String Type
+
+`str` represents Unicode text.
+
+Example:
+
+```
+name = "Python"
+message = "Hello World"
+```
+
+Strings are immutable.
+
+For example:
+
+```
+text = "hello"
+text += " world"
+```
+
+The original string object is not modified. A new string value is produced
+and the name is rebound.
+
+4.9 None and NoneType
+
+`None` is a singleton object used to represent the absence of a value.
+
+Example:
+
+```
+result = None
+```
+
+Correct identity check:
+
+```
+if result is None:
+    print("No result")
+```
+
+Prefer:
+
+```
+is None
+```
+
+instead of:
+
+```
+== None
+```
+
+4.10 Standard Input and Output
+
+Output:
+
+```
+print("Hello")
+```
+
+Multiple values:
+
+```
+print("Name:", "Alice", "Age:", 20)
+```
+
+Useful parameters:
+
+```
+sep
+end
+```
+
+Example:
+
+```
+print("A", "B", "C", sep="-")
+```
+
+Output:
+
+```
+A-B-C
+```
+
+Input:
+
+```
+name = input("Enter your name: ")
+```
+
+`input()` returns a string.
+
+Example:
+
+```
+age = int(input("Enter age: "))
+```
+
+## 5. INTERMEDIATE CONCEPTS
+
+5.1 Dynamic Typing
+
+Python is dynamically typed.
+
+The type belongs to the object, not permanently to the variable name.
+
+Example:
+
+```
+value = 10
+value = "Python"
+value = [1, 2, 3]
+```
+
+The same name can be rebound to objects of different types.
+
+However, Python is strongly typed: incompatible operations generally raise
+exceptions rather than silently performing arbitrary conversions.
+
+Example:
+
+```
+print(10 + "20")
+```
+
+raises:
+
+```
+TypeError
+```
+
+5.2 Mutability
+
+An object is mutable when its state can be changed after creation.
+
+Common mutable built-in types:
+
+```
+list
+dict
+set
+bytearray
+```
+
+Common immutable built-in types:
+
+```
+int
+float
+complex
+bool
+str
+tuple
+bytes
+frozenset
+range
+```
+
+Mutability belongs to the object type.
+
+Example:
+
+```
+numbers = [1, 2, 3]
+numbers.append(4)
+```
+
+The list object itself is modified.
+
+5.3 Aliasing
+
+Aliasing occurs when multiple names refer to the same object.
+
+Example:
+
+```
+a = [1, 2]
+b = a
+```
+
+Conceptually:
+
+```
+a ──┐
+    ├──> [1, 2]
+b ──┘
+```
+
+Therefore:
+
+```
+b.append(3)
+```
+
+changes the object seen through both names.
+
+Output:
+
+```
+print(a)
+
+[1, 2, 3]
+```
+
+5.4 Rebinding vs Mutation
+
+These are different operations.
+
+Rebinding:
+
+```
+x = [1, 2]
+x = [3, 4]
+```
+
+The name `x` is changed to refer to another object.
+
+Mutation:
+
+```
+x = [1, 2]
+x.append(3)
+```
+
+The existing list object is modified.
+
+This distinction is essential for understanding Python programs.
+
+5.5 Identity vs Equality
+
+Equality:
+
+```
+==
+```
+
+asks whether two objects compare equal according to their equality rules.
+
+Identity:
+
+```
+is
+```
+
+asks whether two references identify the same object.
+
+Example:
+
+```
+a = [1, 2]
+b = [1, 2]
+
+print(a == b)
+print(a is b)
+```
+
+Output:
+
+```
+True
+False
+```
+
+Use `==` for value comparison.
+
+Use `is` primarily for identity-sensitive singleton checks such as:
+
+```
+x is None
+```
+
+5.6 Shallow Copy
+
+A shallow copy creates a new outer compound object but retains references
+to the objects contained inside it.
+
+Example:
+
+```
+import copy
+
+original = [[1, 2], [3, 4]]
+copied = copy.copy(original)
+
+copied[0].append(99)
+```
+
+The nested list is shared.
+
+Therefore the mutation is visible through `original` as well.
+
+5.7 Deep Copy
+
+A deep copy recursively copies nested objects when appropriate.
+
+Example:
+
+```
+import copy
+
+original = [[1, 2], [3, 4]]
+copied = copy.deepcopy(original)
+
+copied[0].append(99)
+```
+
+Now the nested list in `copied` is independent from the nested list in
+`original`.
+
+The `copy` module also uses a memoization dictionary internally to handle
+recursive object structures during deep copying.
+
+5.8 Truth-Value Testing
+
+Any object can be tested for truth.
+
+Common false values include:
+
+```
+None
+False
+0
+0.0
+0j
+""
+()
+[]
+{}
+set()
+range(0)
+```
+
+Example:
+
+```
+if []:
+    print("True")
+else:
+    print("False")
+```
+
+Output:
+
+```
+False
+```
+
+For custom classes, truth testing can be controlled using:
+
+```
+__bool__()
+```
+
+or, when `__bool__` is not defined:
+
+```
+__len__()
+```
+
+5.9 Logical Operators
+
+Python provides:
+
+```
+and
+or
+not
+```
+
+Important:
+
+`and` and `or` return operands, not necessarily Boolean values.
+
+Example:
+
+```
+print("A" and "B")
+print("" or "Python")
+```
+
+Output:
+
+```
+B
+Python
+```
+
+`and` and `or` use short-circuit evaluation.
+
+5.10 Comparison Operators
+
+Common comparison operators:
+
+```
+<
+<=
+>
+>=
+==
+!=
+```
+
+Membership operators:
+
+```
+in
+not in
+```
+
+Identity operators:
+
+```
+is
+is not
+```
+
+Example:
+
+```
+x = 5
+
+print(1 < x < 10)
+```
+
+Output:
+
+```
+True
+```
+
+Chained comparisons avoid repeatedly evaluating the middle expression and
+are approximately equivalent to:
+
+```
+1 < x and x < 10
+```
+
+5.11 Arithmetic Operators
+
+Python supports:
+
+```
++       addition
+-       subtraction
+*       multiplication
+/       true division
+//      floor division
+%       remainder
+**      exponentiation
+```
+
+Example:
+
+```
+print(7 / 2)
+print(7 // 2)
+print(7 % 2)
+print(2 ** 3)
+```
+
+Output:
+
+```
+3.5
+3
+1
+8
+```
+
+5.12 Bitwise Operators
+
+For integer operands:
+
+```
+&       AND
+|       OR
+^       XOR
+~       inversion
+<<      left shift
+>>      right shift
+```
+
+Example:
+
+```
+a = 6       # 110
+b = 3       # 011
+
+print(a & b)
+print(a | b)
+print(a ^ b)
+```
+
+Output:
+
+```
+2
+7
+5
+```
+
+5.13 Operator Precedence
+
+Python evaluates operators according to defined precedence rules.
+
+For example:
+
+```
+result = 2 + 3 * 4
+```
+
+Output:
+
+```
+14
+```
+
+because multiplication has higher precedence than addition.
+
+Use parentheses when they improve clarity:
+
+```
+result = (2 + 3) * 4
+```
+
+## 6. ADVANCED CONCEPTS
+
+6.1 Python's Object Model
+
+Python's language-level object model defines objects in terms of:
+
+```
+identity
+type
+value
+```
+
+All Python data is represented using objects or relationships between objects.
+
+This includes:
+
+```
+integers
+strings
+lists
+functions
+classes
+modules
+exceptions
+```
+
+6.2 CPython Object Representation
+
+The following section describes CPython implementation details rather than
+portable Python language guarantees.
+
+CPython objects are represented internally using C structures built around
+the Python object protocol.
+
+Historically, the basic object representation includes information such as:
+
+```
+reference-count information
+type information
+```
+
+Variable-sized objects have additional size-related information.
+
+Important:
+
+These structures are implementation details.
+
+Code should normally use Python-level operations instead of depending on
+internal C structures such as `PyObject` or `PyLongObject`.
+
+6.3 Reference Counting in CPython
+
+CPython uses reference counting as an important part of its memory-management
+implementation.
+
+Conceptually:
+
+```
+name -> object
+```
+
+creates a reference to an object.
+
+When references are removed, the object's reference count can decrease.
+
+When the object becomes unreachable, CPython can often release it immediately.
+
+However, reference counting alone cannot solve all cycles.
+
+Example:
+
+```
+a = []
+b = []
+
+a.append(b)
+b.append(a)
+```
+
+The two lists refer to one another.
+
+Cyclic garbage collection supplements reference counting to handle such
+unreachable cycles.
+
+6.4 Garbage Collection
+
+The `gc` module provides an interface to Python's cyclic garbage collector.
+
+Example:
+
+```
+import gc
+
+print(gc.isenabled())
+
+gc.collect()
+```
+
+Important:
+
+Garbage collection behavior is an implementation detail of Python
+implementations.
+
+CPython 3.14.5 and later uses the generational cyclic garbage collector
+behavior described in its documentation.
+
+6.5 Integer Reuse and Interning
+
+A common misconception is:
+
+```
+"Python always caches integers from -5 to 256."
+```
+
+This should NOT be treated as a language guarantee.
+
+CPython may reuse objects for some immutable values, including certain
+integers, but programs should never depend on object reuse.
+
+Incorrect:
+
+```
+a = 1000
+b = 1000
+
+if a is b:
+    ...
+```
+
+Correct:
+
+```
+if a == b:
+    ...
+```
+
+Use identity only when identity is actually required.
+
+6.6 String Interning
+
+Python implementations may intern certain strings.
+
+CPython provides:
+
+```
+sys.intern()
+```
+
+Example:
+
+```
+import sys
+
+a = "".join(["hello", "_world"])
+b = sys.intern(a)
+```
+
+String interning is an optimization and should not be confused with string
+equality.
+
+Never use:
+
+```
+is
+```
+
+instead of:
+
+```
+==
+```
+
+to compare normal strings.
+
+6.7 Arbitrary-Precision Integers
+
+Python integers can represent very large values.
+
+Example:
+
+```
+value = 2 ** 1000
+
+print(value.bit_length())
+```
+
+No fixed 32-bit or 64-bit integer overflow is required by the Python language
+for ordinary `int` arithmetic.
+
+The exact internal representation is implementation-specific.
+
+7. DETAILED THEORY
+
+---
+
+7.1 Python Execution Model
+
+A Python source program is parsed and compiled before execution.
+
+A simplified conceptual pipeline is:
+
+```
+Source code
+     |
+     v
+Tokenization / Parsing
+     |
+     v
+Compilation
+     |
+     v
+Code objects / bytecode
+     |
+     v
+Python implementation executes the code
+```
+
+In CPython, compiled bytecode may be stored in `.pyc` files under
+`__pycache__`.
+
+Important correction:
+
+`.pyc` files are cached bytecode files; they are not the complete definition
+of Python's execution model, and "Python always executes through a PVM loop"
+is an implementation-level simplification.
+
+Different Python implementations may execute Python code differently.
+
+7.2 Names and Binding
+
+Names are introduced by binding operations.
+
+Examples include:
+
+```
+x = 10
+
+def calculate():
+    pass
+
+class Student:
+    pass
+
+import math
+
+for item in items:
+    ...
+```
+
+A name can be rebound:
+
+```
+x = 10
+x = 20
+```
+
+The name now refers to another object.
+
+7.3 LEGB Name Resolution
+
+The common teaching model is:
+
+```
+L = Local
+E = Enclosing function scopes
+G = Global/module
+B = Builtins
+```
+
+Example:
+
+```
+x = "global"
+
+def outer():
+    x = "enclosing"
+
+    def inner():
+        x = "local"
+        print(x)
+
+    inner()
+```
+
+Output:
+
+```
+local
+```
+
+Important:
+
+Class scope is special. A method's name resolution does not simply treat
+the class namespace as an enclosing function scope.
+
+7.4 Global and Nonlocal
+
+`global` tells Python that assignments to a name in the current function
+refer to the module-level binding.
+
+Example:
+
+```
+count = 0
+
+def increment():
+    global count
+    count += 1
+```
+
+`nonlocal` refers to an existing binding in an enclosing function scope.
+
+Example:
+
+```
+def counter():
+    count = 0
+
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+
+    return increment
+```
+
+7.5 Mutable and Immutable Containers
+
+A tuple is immutable, but it can contain mutable objects.
+
+Example:
+
+```
+data = (1, [2, 3])
+
+data[1].append(4)
+```
+
+This is valid.
+
+The tuple's references cannot be replaced, but the referenced list can
+change.
+
+Therefore:
+
+```
+immutability of a container
+!=
+immutability of every object reachable from the container
+```
+
+## 8. SYNTAX
+
+8.1 Variable Binding
+
+```
+variable = value
+```
+
+Example:
+
+```
+age = 20
+```
+
+8.2 Type Annotation
+
+```
+variable: type_hint = value
+```
+
+Example:
+
+```
+age: int = 20
+name: str = "Alice"
+```
+
+Type annotations describe intended types and support tools such as static
+type checkers. They do not automatically enforce runtime type checking.
+
+Example:
+
+```
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+8.3 Multiple Assignment
+
+```
+x, y, z = 10, 20, 30
+```
+
+Also:
+
+```
+a = b = c = 0
+```
+
+8.4 Unpacking
+
+```
+numbers = [10, 20, 30]
+
+x, y, z = numbers
+```
+
+Extended unpacking:
+
+```
+first, *middle, last = [1, 2, 3, 4, 5]
+```
+
+Result:
+
+```
+first = 1
+middle = [2, 3, 4]
+last = 5
+```
+
+8.5 String Formatting
+
+F-string:
+
+```
+name = "Alice"
+age = 20
+
+print(f"{name} is {age} years old")
+```
+
+Expression debugging:
+
+```
+value = 25
+print(f"{value=}")
+```
+
+Output:
+
+```
+value=25
+```
+
+8.6 Type Inspection
+
+```
+type(obj)
+
+isinstance(obj, int)
+
+isinstance(obj, (int, float))
+```
+
+8.7 Identity Inspection
+
+```
+id(obj)
+```
+
+Use `id()` mainly for debugging and understanding object identity.
+
+Do not assume that the returned integer is a portable memory address.
+
+9. BASIC EXAMPLE
+
+---
+
+```python
+def demonstrate_fundamentals():
+    age: int = 25
+    height: float = 5.9
+    name: str = "Alice"
+    is_student: bool = True
+
+    # Explicit type conversion
+    str_age = str(age)
+    int_height = int(height)
+    float_age = float(age)
+
+    profile = (
+        f"Student {name}: Age={age} "
+        f"(as str: '{str_age}'), "
+        f"Height={height} (int: {int_height})"
+    )
+
+    print(profile)
+
+    print(f"bool(0) -> {bool(0)}")
+    print(f"bool('hello') -> {bool('hello')}")
+    print(f"bool([]) -> {bool([])}")
+
+
+if __name__ == "__main__":
+    demonstrate_fundamentals()
+```
+
+10. INTERMEDIATE EXAMPLE
+
+---
+
+```python
+import copy
+
+
+def demonstrate_mutability_and_copying():
+    # Immutable integer
+    x = 500
+    y = x
+
+    print(f"Initial: x is y -> {x is y}")
+
+    y += 1
+
+    print(
+        f"After y += 1: x={x}, y={y}, "
+        f"x is y -> {x is y}"
+    )
+
+    # Aliasing
+    list1 = [1, [2, 3], 4]
+    list2 = list1
+
+    list2.append(5)
+
+    print(
+        "Aliased list1 after list2.append(5):",
+        list1
+    )
+
+    # Shallow copy
+    shallow_lst = list1.copy()
+
+    shallow_lst[0] = 999
+    shallow_lst[1].append(100)
+
+    print(
+        "Original list1 after shallow copy modification:",
+        list1
+    )
+
+    print("Shallow copy:", shallow_lst)
+
+    # Deep copy
+    deep_lst = copy.deepcopy(list1)
+
+    deep_lst[1].append(200)
+
+    print(
+        "Original list1 after deep copy modification:",
+        list1
+    )
+
+    print("Deep copy:", deep_lst)
+
+
+if __name__ == "__main__":
+    demonstrate_mutability_and_copying()
+```
+
+11. ADVANCED EXAMPLE
+
+---
+
+The following example demonstrates object identity, explicit interning, and
+reference-count inspection.
+
+IMPORTANT:
+
+This section contains CPython-specific behavior. Results may differ across
+Python implementations and even between different CPython builds.
+
+```python
+import sys
+
+
+def demonstrate_identity_and_interning():
+    # Integer identity must not be relied upon.
+    a = 256
+    b = 256
+
+    print("256 values equal:", a == b)
+    print("256 objects identical:", a is b)
+
+    # String interning
+    s1 = "hello_world"
+    s2 = "".join(["hello", "_world"])
+
+    print("Before explicit interning:", s1 is s2)
+
+    s2 = sys.intern(s2)
+
+    print("After explicit interning:", s1 is s2)
+
+    # Reference-count inspection
+    sample = []
+
+    print(
+        "Reference count:",
+        sys.getrefcount(sample)
+    )
+
+    alias1 = sample
+    alias2 = sample
+
+    print(
+        "After two aliases:",
+        sys.getrefcount(sample)
+    )
+
+    del alias1
+    del alias2
+
+    print(
+        "After deleting aliases:",
+        sys.getrefcount(sample)
+    )
+
+
+if __name__ == "__main__":
+    demonstrate_identity_and_interning()
+```
+
+12. CODE WALKTHROUGHS
+
+---
+
+12.1 Variable Binding
+
+Code:
+
+```
+x = 500
+y = x
+```
+
+Meaning:
+
+* An integer object representing 500 exists.
+* `x` refers to that object.
+* `y = x` binds `y` to the same object.
+* No general "pointer copy" rule should be assumed at the Python language
+  level.
+
+12.2 Immutable Object Rebinding
+
+Code:
+
+```
+x = 500
+y = x
+y += 1
+```
+
+Because integers are immutable, the operation cannot modify the existing
+integer 500.
+
+Conceptually:
+
+```
+Before:
+
+x ──┐
+    └──> 500
+y ──┘
+
+After y += 1:
+
+x ───> 500
+
+y ───> 501
+```
+
+12.3 List Aliasing
+
+Code:
+
+```
+list1 = [1, [2, 3], 4]
+list2 = list1
+```
+
+Both names refer to the same outer list.
+
+Therefore:
+
+```
+list2.append(5)
+```
+
+changes the object referenced by `list1`.
+
+12.4 Shallow Copy
+
+Code:
+
+```
+shallow_lst = list1.copy()
+```
+
+A new outer list is created.
+
+However, nested objects are still referenced by both containers.
+
+Conceptually:
+
+```
+list1      ──> outer list
+                 |
+                 └──> nested list
+
+shallow   ──> new outer list
+                 |
+                 └──> same nested list
+```
+
+12.5 Deep Copy
+
+Code:
+
+```
+deep_lst = copy.deepcopy(list1)
+```
+
+The copy operation recursively copies appropriate nested objects.
+
+This produces an independent object graph where possible.
+
+13. EXPECTED OUTPUT
+
+---
+
+For the beginner example:
+
+```text
+Student Alice: Age=25 (as str: '25'), Height=5.9 (int: 5)
+bool(0) -> False
+bool('hello') -> True
+bool([]) -> False
+```
+
+For the mutability example:
+
+```text
+Initial: x is y -> True
+After y += 1: x=500, y=501, x is y -> False
+Aliased list1 after list2.append(5): [1, [2, 3], 4, 5]
+Original list1 after shallow copy modification: [1, [2, 3, 100], 4, 5]
+Shallow copy: [999, [2, 3, 100], 4, 5]
+Original list1 after deep copy modification: [1, [2, 3, 100], 4, 5]
+Deep copy: [1, [2, 3, 100, 200], 4, 5]
+```
+
+For the advanced CPython example:
+
+* Integer identity may vary.
+* String interning results depend on how strings are created.
+* Reference-count values can vary because temporary references and interpreter
+  implementation details affect the result.
+
+Therefore, do not use hard-coded `id()` or reference-count output as a
+portable expected result.
+
+14. EXECUTION FLOW
+
+---
+
+A simplified execution flow is:
+
+```
+1. Python reads source code.
+2. The source is tokenized and parsed.
+3. The program is compiled into executable code objects.
+4. CPython may cache compiled bytecode in `__pycache__`.
+5. The Python implementation executes the resulting code.
+6. Names are bound to objects.
+7. Expressions evaluate according to Python's language rules.
+8. Objects may be mutated or names may be rebound.
+9. Unreachable objects can eventually be reclaimed.
+```
+
+For CPython:
+
+```
+Reference counting
+       +
+Cyclic garbage collection
+       =
+Memory-management mechanism
+```
+
+This is an implementation description, not a requirement that every Python
+implementation use exactly the same mechanism.
+
+15. PRACTICAL PROGRAMMING PROBLEMS
+
+---
+
+Problem 1:
+Implement an arbitrary-precision factorial calculator using Python's `int`.
+
+Requirements:
+
+* Accept an integer `n`.
+* Calculate `n!`.
+* Display the number of digits.
+* Display `result.bit_length()`.
+
+Problem 2:
+Demonstrate aliasing, shallow copying, and deep copying using a nested
+dictionary/list structure.
+
+Requirements:
+
+* Create a nested structure.
+* Create an alias.
+* Create a shallow copy.
+* Create a deep copy.
+* Mutate nested data.
+* Explain the resulting differences.
+
+Problem 3:
+Create a custom immutable-style class representing a case-insensitive
+identifier.
+
+Requirements:
+
+* Store normalized text.
+* Implement `__eq__`.
+* Implement `__hash__`.
+* Demonstrate use as a dictionary key.
+
+Problem 4:
+Create a program that accepts different values and displays:
+
+```
+Value
+type
+truth value
+identity using id()
+```
+
+Problem 5:
+Create a program that demonstrates the difference between:
+
+```
+x = x + [value]
+```
+
+and:
+
+```
+x += [value]
+```
+
+## 16. REAL-WORLD APPLICATIONS
+
+16.1 Data Science
+
+Python's built-in data model provides the foundation for libraries such as:
+
+```
+NumPy
+pandas
+PyTorch
+```
+
+These libraries add specialized objects for arrays, tables, tensors, and
+numerical operations.
+
+16.2 Web Applications
+
+Python web frameworks use Python objects to represent:
+
+```
+requests
+responses
+configuration
+database records
+validation models
+```
+
+16.3 Automation
+
+Python's strings, lists, dictionaries, functions, modules, and standard
+library make it suitable for:
+
+```
+file automation
+system administration
+DevOps scripts
+data processing
+testing
+```
+
+16.4 Artificial Intelligence and Machine Learning
+
+Python objects form the foundation of:
+
+```
+datasets
+tensors
+models
+configuration objects
+preprocessing pipelines
+prediction results
+```
+
+## 17. COMMON MISTAKES
+
+17.1 Using `is` for Value Comparison
+
+Incorrect:
+
+```
+if name is "Python":
+    ...
+```
+
+Correct:
+
+```
+if name == "Python":
+    ...
+```
+
+17.2 Assuming Integer Caching
+
+Incorrect assumption:
+
+```
+"1000 is always a different object."
+```
+
+or:
+
+```
+"All integers from -5 to 256 are guaranteed by Python."
+```
+
+Object reuse is implementation-dependent.
+
+Use:
+
+```
+==
+```
+
+for numeric value comparison.
+
+17.3 Mutable Default Arguments
+
+Problem:
+
+```python
+def add_item(item, items=[]):
+    items.append(item)
+    return items
+```
+
+The default list is created when the function definition executes and can be
+shared between calls that use the default.
+
+Use a sentinel/default initialization pattern instead.
+
+17.4 Confusing Rebinding with Mutation
+
+Example:
+
+```
+numbers = [1, 2]
+
+numbers = [3, 4]
+```
+
+is rebinding.
+
+But:
+
+```
+numbers.append(3)
+```
+
+is mutation.
+
+17.5 Modifying a Collection While Iterating
+
+Potentially problematic:
+
+```python
+numbers = [1, 2, 3, 4, 5]
+
+for number in numbers:
+    if number % 2 == 0:
+        numbers.remove(number)
+```
+
+Prefer constructing a new collection:
+
+```python
+numbers = [1, 2, 3, 4, 5]
+
+numbers = [
+    number for number in numbers
+    if number % 2 != 0
+]
+```
+
+18. COMMON ERRORS
+
+---
+
+18.1 TypeError
+
+Example:
+
+```python
+result = 10 + "20"
+```
+
+Error:
+
+```text
+TypeError
+```
+
+Reason:
+
+An integer and string cannot be added using normal `+` semantics.
+
+Correct:
+
+```python
+result = 10 + int("20")
+```
+
+18.2 AttributeError
+
+Example:
+
+```python
+value = None
+value.append(10)
+```
+
+Possible error:
+
+```text
+AttributeError: 'NoneType' object has no attribute 'append'
+```
+
+Reason:
+
+`None` does not provide the requested attribute.
+
+18.3 NameError
+
+Example:
+
+```python
+print(total)
+```
+
+when `total` has not been defined in the accessible scope.
+
+Possible error:
+
+```text
+NameError
+```
+
+18.4 UnboundLocalError
+
+Example:
+
+```python
+count = 10
+
+def update():
+    print(count)
+    count = 20
+```
+
+Python treats `count` as local to `update()` because of the assignment.
+
+Therefore the earlier reference attempts to use the local variable before it
+has been assigned.
+
+Possible error:
+
+```text
+UnboundLocalError
+```
+
+19. DEBUGGING TECHNIQUES
+
+---
+
+19.1 Mutable Default Argument
+
+INCORRECT:
+
+```python
+def append_item(item, target_list=[]):
+    target_list.append(item)
+    return target_list
+
+print(append_item(1))
+print(append_item(2))
+```
+
+Possible output:
+
+```text
+[1]
+[1, 2]
+```
+
+WHY:
+
+The default list is created when the function definition executes and is
+reused when the function is called without an explicit `target_list`.
+
+CORRECT:
+
+```python
+def append_item(item, target_list=None):
+    if target_list is None:
+        target_list = []
+
+    target_list.append(item)
+    return target_list
+
+
+print(append_item(1))
+print(append_item(2))
+```
+
+Output:
+
+```text
+[1]
+[2]
+```
+
+If `None` is a valid input that must be distinguished from "argument not
+provided", use a unique sentinel:
+
+```python
+_MISSING = object()
+
+def process(value=_MISSING):
+    if value is _MISSING:
+        value = []
+```
+
+This is the most general sentinel pattern.
+
+19.2 Useful Debugging Tools
+
+Useful built-ins and modules include:
+
+```
+type()
+isinstance()
+id()
+repr()
+vars()
+dir()
+help()
+inspect
+gc
+sys
+tracemalloc
+pdb
+```
+
+19.3 Inspecting Object Information
+
+Example:
+
+```python
+value = [1, 2, 3]
+
+print(type(value))
+print(id(value))
+print(repr(value))
+print(isinstance(value, list))
+```
+
+20. EDGE CASES
+
+---
+
+20.1 Floating-Point Precision
+
+Example:
+
+```python
+print(0.1 + 0.2 == 0.3)
+```
+
+Typical result:
+
+```text
+False
+```
+
+Use:
+
+```python
+import math
+
+print(math.isclose(0.1 + 0.2, 0.3))
+```
+
+Output:
+
+```text
+True
+```
+
+20.2 Division by Zero
+
+These raise `ZeroDivisionError`:
+
+```python
+10 / 0
+10 // 0
+10 % 0
+```
+
+However, floating-point special values such as:
+
+```python
+float("inf")
+float("nan")
+```
+
+are also supported.
+
+20.3 Hashability
+
+Dictionary keys and set elements must satisfy the requirements of hashable
+objects.
+
+Examples of commonly hashable objects:
+
+```
+int
+str
+bytes
+tuple containing hashable elements
+frozenset
+```
+
+Common unhashable objects:
+
+```
+list
+dict
+set
+```
+
+Example:
+
+```python
+data = {}
+
+data[[1, 2]] = "value"
+```
+
+raises:
+
+```text
+TypeError: unhashable type: 'list'
+```
+
+20.4 Tuple Containing a List
+
+This is valid:
+
+```python
+data = (1, [2, 3])
+
+data[1].append(4)
+
+print(data)
+```
+
+Output:
+
+```text
+(1, [2, 3, 4])
+```
+
+The tuple itself remains structurally immutable, but the referenced list is
+mutable.
+
+20.5 `x += y` Is Not Always the Same as `x = x + y`
+
+For immutable objects, the result generally requires a new object.
+
+For mutable objects, an in-place operation may be available.
+
+Example:
+
+```python
+a = [1, 2]
+b = a
+
+a += [3]
+
+print(a)
+print(b)
+```
+
+Output:
+
+```text
+[1, 2, 3]
+[1, 2, 3]
+```
+
+Compare:
+
+```python
+a = [1, 2]
+b = a
+
+a = a + [3]
+
+print(a)
+print(b)
+```
+
+Output:
+
+```text
+[1, 2, 3]
+[1, 2]
+```
+
+21. BEST PRACTICES
+
+---
+
+* Use `==` for value equality.
+* Use `is` for identity checks.
+* In particular, use `x is None` for checking `None`.
+* Do not rely on integer or string interning.
+* Prefer explicit type conversion when converting input.
+* Use type annotations for public APIs and code where they improve clarity.
+* Use static type checkers such as mypy or pyright when appropriate.
+* Prefer f-strings for clear modern string formatting.
+* Use immutable structures when shared data should not be modified.
+* Avoid mutable default arguments unless shared state is intentionally required.
+* Keep functions and classes focused on clear responsibilities.
+* Avoid unnecessary copying of large object graphs.
+* Use shallow copying when nested objects are intentionally shared.
+* Use deep copying only when independent nested state is actually required.
+* Treat CPython implementation details as implementation details.
+* Do not write portable code that depends on `id()` being a memory address.
+* Use `isinstance()` when checking whether an object belongs to a type hierarchy.
+* Prefer clear code over micro-optimizations.
+
+22. PERFORMANCE CONSIDERATIONS
+
+---
+
+22.1 String Construction
+
+Repeated string concatenation in a large loop can create unnecessary work.
+
+Instead of:
+
+```python
+result = ""
+
+for part in parts:
+    result += part
+```
+
+Prefer:
+
+```python
+result = "".join(parts)
+```
+
+when constructing a string from many parts.
+
+Performance depends on the exact code, Python implementation, and workload,
+so benchmark important hot paths rather than relying only on rules of thumb.
+
+22.2 Local and Global Lookup
+
+CPython's internal bytecode and optimization strategies can change between
+versions.
+
+Therefore, old advice such as:
+
+```
+"Always copy globals into locals because LOAD_FAST is faster"
+```
+
+should not be treated as a general programming rule.
+
+Write readable code first.
+
+Use profiling tools such as:
+
+```
+cProfile
+timeit
+pyperf
+```
+
+when performance actually matters.
+
+22.3 List Construction
+
+List comprehensions are often concise and efficient:
+
+```python
+squares = [x * x for x in range(1000)]
+```
+
+However, the best approach depends on the problem.
+
+Do not assume every comprehension is automatically faster than every loop.
+
+22.4 Algorithmic Complexity
+
+Choosing the right algorithm and data structure usually matters more than
+micro-optimizing individual Python operations.
+
+For example:
+
+```
+dictionary/set membership
+sorting
+list scanning
+nested loops
+```
+
+can have very different performance characteristics.
+
+23. MEMORY CONSIDERATIONS
+
+---
+
+23.1 `sys.getsizeof()`
+
+Example:
+
+```python
+import sys
+
+numbers = [1, 2, 3]
+
+print(sys.getsizeof(numbers))
+```
+
+`sys.getsizeof()` reports the size directly attributed to the object.
+
+It does not recursively calculate the complete memory usage of every object
+referenced by the container.
+
+23.2 `tracemalloc`
+
+For tracking Python memory allocations:
+
+```python
+import tracemalloc
+
+tracemalloc.start()
+
+data = [i for i in range(10000)]
+
+current, peak = tracemalloc.get_traced_memory()
+
+print("Current:", current)
+print("Peak:", peak)
+
+tracemalloc.stop()
+```
+
+`tracemalloc` is useful for investigating memory allocation patterns.
+
+23.3 `__slots__`
+
+For selected classes, `__slots__` can reduce per-instance memory usage by
+changing how instance attributes are stored.
+
+Example:
+
+```python
+class Point:
+    __slots__ = ("x", "y")
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+```
+
+Memory savings depend on the Python version, class design, inheritance, and
+instance usage.
+
+Therefore, claims such as "always saves 70%" should not be treated as a
+universal guarantee.
+
+24. SECURITY CONSIDERATIONS
+
+---
+
+24.1 Dynamic Code Execution
+
+Do not pass untrusted input to:
+
+```python
+eval()
+exec()
+compile()
+```
+
+Such operations can execute arbitrary Python code when used unsafely.
+
+24.2 Insecure Deserialization
+
+Never unpickle untrusted data.
+
+The `pickle` module is designed for Python object serialization and is not a
+safe format for untrusted input.
+
+For untrusted structured data, use safer formats such as:
+
+```
+JSON
+```
+
+or an appropriately designed serialization protocol.
+
+24.3 Input Validation
+
+Do not assume user input has the expected type or format.
+
+Validate external data before using it.
+
+Examples:
+
+```
+HTTP requests
+uploaded files
+configuration files
+command-line arguments
+database content
+user-submitted forms
+```
+
+24.4 Secrets
+
+Do not hard-code passwords, API keys, or access tokens into source code.
+
+Use appropriate secret-management mechanisms or environment/configuration
+systems.
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+---
+
+| Feature               | Python                                                                   | C / C++                                                         | Java                                          |
+| --------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- | --------------------------------------------- |
+| Typing                | Dynamic, strong                                                          | Mainly static                                                   | Static, strong                                |
+| Variable model        | Names bound to objects                                                   | Variables represent storage/objects according to language rules | Variables hold primitive values or references |
+| Integer model         | Arbitrary-precision `int`                                                | Fixed-width integer types                                       | Fixed-width primitive integer types           |
+| Memory management     | Implementation-dependent; CPython uses reference counting plus cyclic GC | Manual/RAII and implementation mechanisms                       | Garbage collection                            |
+| Primitive distinction | Built-in numeric values are objects                                      | Primitive types exist                                           | Primitive and reference types                 |
+| Mutability            | Type-dependent                                                           | Type-dependent                                                  | Type/class-dependent                          |
+| Equality              | `==` can be customized by types                                          | Operator semantics/type-dependent                               | `==` and `.equals()` have different roles     |
+| Identity              | `is`                                                                     | Pointer/reference concepts depend on type                       | `==` on references tests reference identity   |
+| Functions             | First-class objects                                                      | Functions and function pointers                                 | Functional interfaces/lambda expressions      |
+
+Important:
+
+These are conceptual comparisons, not exact one-to-one equivalents.
+
+26. FREQUENTLY ASKED QUESTIONS
+
+---
+
+Q1: Is Python pass-by-value or pass-by-reference?
+
+Answer:
+
+Python's argument passing is commonly described as "call by sharing" or
+"object-reference semantics."
+
+The function receives a reference to the object.
+
+Example:
+
+```python
+def change(numbers):
+    numbers.append(10)
+
+data = [1, 2]
+change(data)
+
+print(data)
+```
+
+Output:
+
+```text
+[1, 2, 10]
+```
+
+The function mutated the shared list.
+
+However:
+
+```python
+def rebind(numbers):
+    numbers = [100, 200]
+
+data = [1, 2]
+rebind(data)
+
+print(data)
+```
+
+Output:
+
+```text
+[1, 2]
+```
+
+Rebinding the parameter does not rebind the caller's name.
+
+Q2: Why does `a == b` differ from `a is b`?
+
+Answer:
+
+`==` performs equality comparison.
+
+`is` checks object identity.
+
+Example:
+
+```python
+a = [1, 2]
+b = [1, 2]
+
+print(a == b)
+print(a is b)
+```
+
+Output:
+
+```text
+True
+False
+```
+
+Q3: Why should `is` be used with `None`?
+
+Answer:
+
+`None` is a singleton.
+
+Use:
+
+```python
+if value is None:
+```
+
+This directly expresses an identity test.
+
+Q4: Are tuples completely immutable?
+
+Answer:
+
+The tuple's element references cannot be replaced, but referenced mutable
+objects can still change.
+
+Example:
+
+```python
+x = (1, [2, 3])
+x[1].append(4)
+```
+
+The list changes even though the tuple remains immutable.
+
+Q5: Does Python always use reference counting?
+
+Answer:
+
+No.
+
+The Python language does not require one particular memory-management
+implementation.
+
+CPython uses reference counting and cyclic garbage collection, but other
+Python implementations may use different mechanisms.
+
+Q6: Is `id()` always a memory address?
+
+Answer:
+
+No.
+
+The Python language defines `id()` as an identity value that is unique and
+constant for the object's lifetime.
+
+CPython commonly uses the object's memory address, but this is an
+implementation detail.
+
+Q7: Why can two identical integers have the same identity?
+
+Answer:
+
+Immutable objects may be reused by an implementation.
+
+This is an optimization.
+
+Never depend on it for value comparison.
+
+Q8: What is the difference between shallow and deep copy?
+
+Answer:
+
+Shallow copy creates a new outer compound object while retaining references
+to nested objects.
+
+Deep copy recursively copies nested objects where supported.
+
+27. INTERVIEW QUESTIONS
+
+---
+
+Q1. What are the three characteristics of a Python object?
+
+Answer:
+
+```
+Identity
+Type
+Value
+```
+
+Q2. What is the difference between mutable and immutable objects?
+
+Answer:
+
+Mutable objects can change their state after creation.
+
+Immutable objects cannot have their state changed after creation.
+
+Q3. What is aliasing?
+
+Answer:
+
+Aliasing occurs when multiple names refer to the same object.
+
+Q4. Why is `is` different from `==`?
+
+Answer:
+
+`is` checks identity.
+
+`==` checks equality.
+
+Q5. Why is `None` usually checked using `is`?
+
+Answer:
+
+Because `None` is a singleton and identity is the appropriate test.
+
+Q6. Does Python use fixed-size integers?
+
+Answer:
+
+Python's built-in `int` supports arbitrary-precision integer values, subject
+to available resources.
+
+Q7. What happens when a mutable object is passed to a function?
+
+Answer:
+
+The function receives a reference to the same object. Mutating that object
+can therefore be visible to the caller.
+
+Q8. What is garbage collection?
+
+Answer:
+
+Garbage collection is the process of reclaiming objects that are no longer
+reachable.
+
+In CPython, cyclic garbage collection supplements reference counting.
+
+Q9. What is interning?
+
+Answer:
+
+Interning is the reuse of selected immutable objects, especially strings,
+so equivalent objects can share identity.
+
+It is an optimization and should not be relied upon for normal equality
+comparisons.
+
+Q10. What is `__slots__`?
+
+Answer:
+
+`__slots__` allows a class to declare a fixed set of instance attributes and
+can reduce memory usage in suitable designs.
+
+28. EXAM QUESTIONS
+
+---
+
+Q1. What is the output?
+
+```python
+x = [1, 2, 3]
+y = x
+
+x = x + [4]
+
+print(x)
+print(y)
+```
+
+Answer:
+
+```text
+[1, 2, 3, 4]
+[1, 2, 3]
+```
+
+Reason:
+
+`x + [4]` creates a new list and then rebinds `x`.
+
+Q2. What happens here?
+
+```python
+x = [1, 2, 3]
+y = x
+
+x += [4]
+
+print(x)
+print(y)
+```
+
+Answer:
+
+```text
+[1, 2, 3, 4]
+[1, 2, 3, 4]
+```
+
+For a list, `+=` can perform an in-place extension, so both names continue
+to refer to the modified list.
+
+Q3. True or False:
+
+"Tuples can never contain mutable data."
+
+Answer:
+
+False.
+
+A tuple can contain mutable objects.
+
+Q4. What is the difference between:
+
+```python
+a = b
+```
+
+and:
+
+```python
+b = a.copy()
+```
+
+Answer:
+
+`a = b` creates another binding to the same object.
+
+`b = a.copy()` creates a new outer object when the type supports the
+operation.
+
+Q5. Why does this raise an error?
+
+```python
+print(10 + "20")
+```
+
+Answer:
+
+Because Python does not automatically convert the string `"20"` into an
+integer for this operation.
+
+29. PRACTICE QUESTIONS
+
+---
+
+Practice 1:
+
+Write a program that displays the following for a user-provided value:
+
+```
+value
+type
+id
+truth value
+```
+
+Practice 2:
+
+Create a nested list and demonstrate:
+
+```
+alias
+shallow copy
+deep copy
+```
+
+Practice 3:
+
+Write a program that demonstrates the difference between:
+
+```
+==
+is
+```
+
+Practice 4:
+
+Implement a custom class with:
+
+```
+__eq__()
+__hash__()
+```
+
+and use its instances as dictionary keys.
+
+Practice 5:
+
+Use `tracemalloc` to compare the memory behavior of two different data
+structures.
+
+Practice 6:
+
+Write a program that creates two lists:
+
+```
+mutable objects
+immutable objects
+```
+
+Then discuss why determining mutability generically is more complicated
+than simply checking a fixed list of built-in types.
+
+Practice 7:
+
+Create a nested dictionary containing lists, tuples, sets, and strings.
+Demonstrate which operations mutate the original object and which create new
+objects.
+
+Practice 8:
+
+Write a program using `gc` to create a reference cycle and investigate
+garbage collection behavior.
+
+30. SUMMARY
+
+---
+
+Python is an object-based programming language in which data is represented
+through objects and relationships between objects.
+
+Every object has:
+
+```
+Identity
+Type
+Value
+```
+
+Names are bound to objects rather than being permanently associated with
+fixed data types.
+
+The most important concepts are:
+
+```
+name binding
+object identity
+equality
+mutability
+immutability
+aliasing
+copying
+type conversion
+truth-value testing
+operators
+scope
+garbage collection
+```
+
+Python's language semantics should be distinguished from CPython-specific
+implementation details.
+
+CPython uses reference counting and cyclic garbage collection, but programs
+should generally rely on Python's language-level behavior rather than internal
+structures such as `PyObject`, memory addresses, reference-count values, or
+specific object-reuse optimizations.
+
+31. KEY TAKEAWAYS
+
+---
+
+* Python names are bound to objects.
+* Every Python object has identity, type, and value.
+* `type()` returns an object's type.
+* `id()` provides an identity value; its exact representation is
+  implementation-dependent.
+* `==` performs equality comparison.
+* `is` performs identity comparison.
+* Use `is None` when checking for `None`.
+* `int` supports arbitrary-precision integer values.
+* Strings, numbers, tuples, bytes, and frozensets are commonly immutable.
+* Lists, dictionaries, sets, and bytearrays are mutable.
+* Multiple names can refer to the same mutable object.
+* Mutation and rebinding are different operations.
+* Shallow copy duplicates the outer compound object while retaining nested
+  references.
+* Deep copy recursively copies nested objects when appropriate.
+* Type annotations document intended types and support development tools;
+  they do not automatically enforce runtime types.
+* Truth-value testing can be customized with `__bool__()` or `__len__()`.
+* `and` and `or` return operands and use short-circuit evaluation.
+* Python's language specification does not guarantee a particular integer
+  cache or string-interning behavior.
+* CPython-specific memory behavior should not be treated as portable Python.
+* CPython uses reference counting plus cyclic garbage collection.
+* `sys.getsizeof()` does not recursively measure the memory of referenced
+  objects.
+* `tracemalloc` is useful for investigating Python memory allocations.
+* Avoid mutable default arguments unless shared state is intentional.
+* Do not use `eval()`, `exec()`, or unsafe deserialization with untrusted
+  input.
+* Prefer clear, maintainable code over implementation-specific
+  micro-optimizations.
+
+================================================================================
+END OF KNOWLEDGE BASE
+=====================

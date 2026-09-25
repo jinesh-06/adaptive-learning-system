@@ -1,0 +1,2080 @@
+COURSE: CPP
+TOPIC: ARRAYS STRINGS
+LEVEL: INTERMEDIATE
+SOURCE: cpp_arrays_strings.txt
+
+TITLE: Modern C++ Sequences: std::array, std::vector, std::string, std::string_view, std::span, and Safe Contiguous Data
+
+1. INTRODUCTION
+
+Modern C++ provides several standard-library facilities for representing fixed-size sequences, dynamically sized sequences, text, and non-owning views.
+
+Important sequence and text types include:
+
+* Built-in C-style arrays: T[N]
+* std::array<T, N>
+* std::vector<T>
+* std::string
+* std::string_view
+* std::span<T>
+* std::mdspan<T, ...> (C++23)
+
+A C-style array is a built-in array type. When used in many expressions, an array can undergo an implicit conversion to a pointer to its first element. std::array is a standard-library container that encapsulates a fixed-size array and does not automatically decay to a pointer.
+
+std::vector provides dynamically sized contiguous storage.
+
+std::string manages a sequence of character objects and provides text-oriented operations.
+
+std::string_view provides a non-owning view of a contiguous character sequence. It does not own the characters it refers to.
+
+std::span, introduced in C++20, provides a non-owning view over a contiguous sequence of objects.
+
+These facilities support generic programming, range-based loops, iterators, algorithms, safe access through at(), efficient contiguous storage, and interoperability with APIs requiring pointers and sizes.
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Understand C-style arrays and array-to-pointer conversion.
+* Use std::array for fixed-size sequences.
+* Understand std::vector dynamic storage.
+* Distinguish size from capacity.
+* Use reserve(), resize(), clear(), and shrink_to_fit() correctly.
+* Understand vector reallocation and iterator invalidation.
+* Use push_back() and emplace_back().
+* Understand std::string ownership and character storage.
+* Use string search and modification functions.
+* Understand std::string_view as a non-owning view.
+* Identify string_view lifetime and dangling-reference hazards.
+* Understand why string_view::data() is not necessarily null-terminated.
+* Use std::span for generic contiguous ranges.
+* Understand multidimensional data using nested containers and flattened storage.
+* Use std::mdspan when a non-owning multidimensional view is appropriate.
+* Choose between owning containers and non-owning views.
+* Apply bounds checking where appropriate.
+* Interoperate safely with C-style APIs.
+* Write efficient and portable sequence-processing code.
+
+3. PREREQUISITES
+
+The learner should understand:
+
+* C++ variables and data types
+* Functions
+* References and pointers
+* Classes and objects
+* Templates
+* Dynamic memory concepts
+* STL basics
+* Iterators
+* Exception handling
+
+4. C-STYLE ARRAYS
+
+A C-style array contains a fixed number of elements of the same type.
+
+Example:
+
+int numbers[5] = {10, 20, 30, 40, 50};
+
+The number of elements is part of the array type.
+
+For an array:
+
+int numbers[5];
+
+the type is:
+
+int[5]
+
+In many expressions, an array can be converted to a pointer to its first element.
+
+Example:
+
+int numbers[5];
+
+int* p = numbers;
+
+The array itself is not a pointer, although it can decay to a pointer in many expressions.
+
+5. ARRAY-TO-POINTER CONVERSION
+
+Consider:
+
+void process(int* ptr)
+{
+// ...
+}
+
+int data[5] = {1, 2, 3, 4, 5};
+
+process(data);
+
+The array data is converted to a pointer to its first element for the function call.
+
+The pointer alone does not contain the array length.
+
+Therefore, a function receiving only int* generally cannot determine the number of elements from the pointer itself.
+
+6. std::array
+
+std::array is a fixed-size standard-library container.
+
+Header:
+
+#include <array>
+
+Example:
+
+std::array<int, 5> data =
+{
+10, 20, 30, 40, 50
+};
+
+std::array:
+
+* Has a fixed number of elements.
+* Knows its size.
+* Supports iterators.
+* Supports range-based for loops.
+* Provides data().
+* Provides at() and operator[].
+* Supports standard container operations.
+* Does not automatically decay to a pointer.
+
+std::array is a contiguous container.
+
+7. std::array MEMORY MODEL
+
+std::array does not specify that its elements must be stored on the "stack".
+
+The storage location depends on where the std::array object itself is stored.
+
+For example:
+
+std::array<int, 5> local;
+
+may have automatic storage duration when declared as a local variable.
+
+A dynamically allocated object can contain:
+
+std::array<int, 5>
+
+and then the array elements are part of that dynamically allocated object.
+
+A global std::array can have static storage duration.
+
+Therefore, the correct statement is:
+
+std::array stores its elements as part of the array object itself; the actual storage duration depends on the object.
+
+8. std::array SIZE
+
+Example:
+
+std::array<int, 5> data;
+
+data.size();
+
+returns:
+
+5
+
+The size is fixed by the template argument N.
+
+Example:
+
+std::array<int, 10>
+
+contains exactly 10 elements.
+
+9. std::array ACCESS
+
+Unchecked access:
+
+data[index]
+
+Checked access:
+
+data.at(index)
+
+Example:
+
+std::array<int, 3> data = {10, 20, 30};
+
+std::cout << data[1] << '\n';
+
+std::cout << data.at(1) << '\n';
+
+For an invalid index, at() throws std::out_of_range.
+
+Using operator[] with an invalid index results in undefined behavior.
+
+10. std::vector
+
+std::vector is a dynamically sized contiguous container.
+
+Header:
+
+#include <vector>
+
+Example:
+
+std::vector<int> numbers;
+
+numbers.push_back(10);
+numbers.push_back(20);
+numbers.push_back(30);
+
+The vector manages its storage automatically.
+
+std::vector provides:
+
+* Dynamic size
+* Contiguous storage
+* Random access
+* Iterators
+* Automatic memory management
+* reserve()
+* capacity()
+* resize()
+* clear()
+* shrink_to_fit()
+* push_back()
+* emplace_back()
+
+11. VECTOR SIZE VS CAPACITY
+
+size():
+
+Number of elements currently stored.
+
+capacity():
+
+Number of elements that can currently be stored without requiring reallocation.
+
+Example:
+
+std::vector<int> values;
+
+values.reserve(100);
+
+After reserve(100):
+
+size() == 0
+
+capacity() >= 100
+
+reserve() does not create 100 elements.
+
+It only reserves storage capacity.
+
+Therefore:
+
+reserve() changes capacity, not size.
+
+12. reserve()
+
+Example:
+
+std::vector<int> numbers;
+
+numbers.reserve(1000);
+
+This requests capacity for at least 1000 elements.
+
+If the vector subsequently grows only up to that capacity, those insertions do not require reallocation.
+
+reserve() can reduce the number of reallocations when the approximate number of elements is known in advance.
+
+Important:
+
+reserve() does not guarantee that the capacity will remain exactly equal to the requested value.
+
+The standard requires capacity to be at least the requested amount.
+
+13. VECTOR GROWTH
+
+When an insertion requires more capacity than the current vector has, the vector may reallocate.
+
+A typical sequence is:
+
+1. Allocate new storage.
+2. Move or copy existing elements.
+3. Construct the new element.
+4. Destroy old elements as required.
+5. Release the old storage.
+
+The exact capacity-growth factor is not specified by the C++ standard.
+
+Do NOT assume:
+
+1.5x
+
+2x
+
+or any other specific growth factor as a portable C++ guarantee.
+
+14. VECTOR CONTIGUOUS STORAGE
+
+std::vector<T>, except for its specialized vector<bool> representation, stores its elements contiguously.
+
+Therefore:
+
+&numbers[0] + i
+
+corresponds to:
+
+&numbers[i]
+
+for valid indices when the vector is non-empty.
+
+The data() member provides a pointer to the underlying contiguous element storage.
+
+Example:
+
+std::vector<int> numbers = {10, 20, 30};
+
+int* ptr = numbers.data();
+
+This is useful when interfacing with APIs that require a pointer to contiguous elements.
+
+15. vector<bool>
+
+std::vector<bool> is a special standard-library specialization.
+
+It may use a space-efficient representation in which individual elements are not represented as ordinary bool objects.
+
+Therefore, generic code that requires an actual bool* or normal bool references should not assume vector<bool> behaves exactly like vector<T> for ordinary T.
+
+If true byte-like boolean storage or a normal contiguous bool representation is required, another representation may be more appropriate.
+
+16. VECTOR ITERATOR INVALIDATION
+
+Vector operations can invalidate iterators, references, and pointers.
+
+Important cases:
+
+push_back() / emplace_back():
+
+* If reallocation occurs, all iterators, references, and pointers to elements are invalidated.
+* If no reallocation occurs, iterators and references to existing elements remain valid, but the end iterator is invalidated.
+
+insert() / emplace():
+
+* If reallocation occurs, all iterators and references are invalidated.
+* Without reallocation, iterators and references at or after the insertion point are invalidated.
+
+erase():
+
+* Iterators and references to the erased element and elements after it are invalidated.
+
+clear():
+
+* Element iterators and references are invalidated.
+
+reserve():
+
+* If capacity changes, all iterators and references are invalidated.
+
+shrink_to_fit():
+
+* If reallocation occurs, iterators and references are invalidated.
+
+17. push_back() VS emplace_back()
+
+push_back() inserts an existing object or a value that can be used to construct an element.
+
+Example:
+
+std::string name = "Alice";
+
+names.push_back(name);
+
+names.push_back(std::move(name));
+
+emplace_back() constructs an element using constructor arguments.
+
+Example:
+
+std::vector<std::pair<int, std::string>> data;
+
+data.emplace_back(1, "Alice");
+
+emplace_back() can avoid creating a separate temporary object when constructor arguments are supplied directly.
+
+However, it is incorrect to claim that emplace_back() always eliminates temporary objects or is always faster than push_back().
+
+18. resize()
+
+resize() changes the number of elements.
+
+Example:
+
+std::vector<int> values;
+
+values.resize(5);
+
+Now:
+
+values.size() == 5
+
+For int, newly created elements are value-initialized.
+
+resize() can also reduce the number of elements:
+
+values.resize(2);
+
+Elements beyond the new size are destroyed.
+
+Reducing size does not reduce vector capacity.
+
+19. clear()
+
+clear() removes all elements.
+
+Example:
+
+std::vector<int> values =
+{
+10, 20, 30
+};
+
+values.clear();
+
+After clear():
+
+values.size() == 0
+
+The vector's capacity is not reduced by clear().
+
+20. shrink_to_fit()
+
+shrink_to_fit() requests that unused capacity be removed.
+
+Example:
+
+std::vector<int> values;
+
+values.reserve(100);
+values.resize(10);
+
+values.shrink_to_fit();
+
+Important:
+
+shrink_to_fit() is a non-binding request.
+
+The implementation may reduce the capacity, but the program must not assume that capacity() becomes exactly size().
+
+If reallocation occurs, references, pointers, and iterators may be invalidated.
+
+21. std::string
+
+std::string is an alias for:
+
+std::basic_string<char>
+
+It stores and manipulates sequences of characters.
+
+Example:
+
+std::string message = "Modern C++";
+
+message += " Programming";
+
+std::cout << message << '\n';
+
+22. std::string OWNERSHIP
+
+std::string owns and manages its character storage.
+
+Unlike std::string_view, a std::string represents an owning string object.
+
+Example:
+
+std::string name = "Dhanushith";
+
+The string manages the lifetime of its character sequence.
+
+A string can be copied:
+
+std::string a = "Hello";
+std::string b = a;
+
+or moved:
+
+std::string a = "Hello";
+std::string b = std::move(a);
+
+23. std::string NULL TERMINATION
+
+std::string provides access to a null-terminated character sequence through c_str().
+
+Example:
+
+std::string text = "Hello";
+
+const char* ptr = text.c_str();
+
+The returned sequence includes a terminating null character suitable for C APIs that expect a null-terminated string, provided the string object's lifetime and relevant invalidation rules are respected.
+
+std::string::data() also provides access to the character sequence; modern C++ guarantees the appropriate null-terminated representation for std::basic_string.
+
+24. SMALL STRING OPTIMIZATION
+
+Small String Optimization, commonly called SSO, is a technique used by many standard-library implementations.
+
+An implementation may store short strings directly inside the std::string object rather than allocating separate dynamic storage.
+
+Important:
+
+SSO is an implementation technique, not a portable C++ guarantee.
+
+The standard does NOT specify:
+
+* A fixed SSO buffer size.
+* A fixed std::string object size.
+* A particular internal layout.
+* That strings shorter than a specific number of characters avoid allocation.
+
+Therefore, do not write portable code assuming:
+
+"15 characters always fit without allocation"
+
+or:
+
+"std::string is always 24 bytes."
+
+25. std::string OBJECT SIZE
+
+The size of std::string is implementation-dependent.
+
+It may differ between:
+
+* Standard-library implementations
+* Platforms
+* Architectures
+* Library versions
+* ABI configurations
+
+Therefore, claims such as:
+
+std::string = 24 bytes
+
+or:
+
+std::string = 32 bytes
+
+are not portable C++ guarantees.
+
+26. std::string SEARCH OPERATIONS
+
+Important search operations include:
+
+find()
+rfind()
+find_first_of()
+find_first_not_of()
+find_last_of()
+find_last_not_of()
+
+Example:
+
+std::string text = "C++ Programming";
+
+auto position = text.find("Programming");
+
+if (position != std::string::npos)
+{
+std::cout << "Found at: "
+<< position << '\n';
+}
+
+27. std::string SUBSTRING
+
+Example:
+
+std::string text = "Modern C++";
+
+std::string part = text.substr(7, 3);
+
+std::cout << part << '\n';
+
+Output:
+
+C++
+
+std::string::substr() creates a new string.
+
+This is different from std::string_view::substr(), which creates a view without copying the characters.
+
+28. std::string_view
+
+std::string_view was introduced in C++17.
+
+It is a non-owning view over a contiguous sequence of characters.
+
+Header:
+
+#include <string_view>
+
+Example:
+
+std::string text = "Modern C++";
+
+std::string_view view = text;
+
+The view refers to the characters owned by text.
+
+It does not own those characters.
+
+29. std::string_view MEMORY MODEL
+
+A string_view contains enough information to represent:
+
+* A pointer to character data
+* A length
+
+The exact object representation and size are implementation details and should not be hard-coded into portable programs.
+
+Conceptually:
+
+data pointer + size
+
+30. std::string_view DOES NOT COPY CHARACTERS
+
+Example:
+
+std::string text = "Hello World";
+
+std::string_view view = text;
+
+No copy of the characters is required to construct the view.
+
+Similarly:
+
+std::string_view part =
+view.substr(0, 5);
+
+The substring view refers to the original character sequence.
+
+31. string_view::substr()
+
+Example:
+
+std::string_view text = "Hello Modern C++";
+
+auto part = text.substr(6, 6);
+
+The resulting object is another string_view.
+
+It does not create an owning std::string.
+
+The operation is constant time according to the standard.
+
+32. string_view LIFETIME
+
+The most important rule:
+
+A std::string_view does not extend the lifetime of the character sequence it references.
+
+Incorrect:
+
+std::string_view get_text()
+{
+std::string text = "Hello";
+return text;
+}
+
+When the function returns, text is destroyed.
+
+The returned string_view becomes dangling.
+
+Correct:
+
+std::string get_text()
+{
+return "Hello";
+}
+
+Or, if the source has a sufficient lifetime:
+
+std::string text = "Hello";
+
+std::string_view view = text;
+
+33. TEMPORARY STRING HAZARD
+
+Dangerous example:
+
+std::string_view view =
+std::string("Temporary");
+
+The temporary std::string is destroyed at the end of the full expression.
+
+The view can therefore become dangling immediately after that statement.
+
+A string_view should only be retained while the referenced character sequence remains alive and sufficiently stable.
+
+34. string_view AND MUTATION
+
+Consider:
+
+std::string text = "Hello";
+
+std::string_view view = text;
+
+If an operation on text changes its storage and invalidates the pointers/references into its character sequence, view may become invalid.
+
+For example, operations that cause string reallocation can invalidate the view.
+
+Therefore, do not assume a string_view remains valid after arbitrary modifications to the underlying std::string.
+
+35. string_view::data()
+
+data() returns a pointer to the underlying character sequence.
+
+Important:
+
+std::string_view::data() is NOT guaranteed to point to a null-terminated C string.
+
+Therefore, this can be unsafe:
+
+printf("%s", view.data());
+
+If the view is not null-terminated, the C function may read beyond the view.
+
+Safer alternatives include:
+
+std::cout << view;
+
+or:
+
+std::cout.write(view.data(),
+static_cast[std::streamsize](std::streamsize)(view.size()));
+
+36. ZERO-COPY DOES NOT MEAN ZERO ALLOCATION EVERYWHERE
+
+Consider:
+
+std::vector[std::string_view](std::string_view) tokens;
+
+The string_view objects themselves do not allocate character storage.
+
+However, the vector storing those views may allocate memory as it grows.
+
+Therefore, a tokenizer returning:
+
+std::vector[std::string_view](std::string_view)
+
+is not necessarily allocation-free.
+
+It is more accurate to say:
+
+"The tokenizer does not allocate new memory for the individual token characters."
+
+The result container may still allocate.
+
+37. STRING TOKENIZER USING string_view
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+std::vector<std::string_view>
+split_string_view(std::string_view text, char delimiter)
+{
+    std::vector<std::string_view> tokens;
+
+    std::size_t start = 0;
+
+    while (true)
+    {
+        std::size_t end =
+            text.find(delimiter, start);
+
+        if (end == std::string_view::npos)
+        {
+            tokens.push_back(
+                text.substr(start)
+            );
+            break;
+        }
+
+        tokens.push_back(
+            text.substr(start, end - start)
+        );
+
+        start = end + 1;
+    }
+
+    return tokens;
+}
+
+int main()
+{
+    std::string csv =
+        "RECORD_001,USER_ALICE,98.5,AUTHENTICATED";
+
+    auto tokens =
+        split_string_view(csv, ',');
+
+    for (std::size_t i = 0;
+         i < tokens.size();
+         ++i)
+    {
+        std::cout
+            << "Token [" << i << "]: "
+            << tokens[i] << '\n';
+    }
+
+    return 0;
+}
+```
+
+38. STRING STREAM CONVERSION
+
+String streams can be used for formatted conversions.
+
+Header:
+
+#include <sstream>
+
+Example:
+
+#include <iostream>
+#include <sstream>
+#include <string>
+
+int main()
+{
+std::string text = "100 200";
+
+```
+std::istringstream input(text);
+
+int a;
+int b;
+
+input >> a >> b;
+
+std::cout << a + b << '\n';
+
+return 0;
+```
+
+}
+
+Modern C++ also provides alternatives such as std::from_chars and std::to_chars for certain numeric conversions where performance and locale-independent parsing are important.
+
+39. MODERN STRING OPERATIONS
+
+C++20 provides:
+
+starts_with()
+ends_with()
+
+Example:
+
+std::string url =
+"https://example.com";
+
+if (url.starts_with("https://"))
+{
+std::cout << "Secure URL\n";
+}
+
+if (url.ends_with(".com"))
+{
+std::cout << "COM domain\n";
+}
+
+40. std::string::contains()
+
+C++23 introduced contains() for std::basic_string.
+
+Example:
+
+std::string text =
+"C++ programming";
+
+if (text.contains("programming"))
+{
+std::cout << "Found\n";
+}
+
+For C++17/C++20 code, find() can be used instead.
+
+41. std::span
+
+std::span was introduced in C++20.
+
+It is a non-owning view over a contiguous sequence of objects.
+
+Header:
+
+#include <span>
+
+Example:
+
+void process(std::span<const int> values)
+{
+for (int value : values)
+{
+std::cout << value << ' ';
+}
+}
+
+The function can accept contiguous data such as:
+
+std::array
+std::vector
+C-style arrays
+
+when the element and extent requirements are satisfied.
+
+42. std::span VS std::string_view
+
+std::string_view:
+
+* Designed for character sequences.
+* Non-owning.
+* Provides string-oriented operations.
+
+std::span:
+
+* General-purpose contiguous range view.
+* Can represent arrays of objects such as int, float, structs, etc.
+* Non-owning.
+
+Both require the programmer to ensure that the referenced storage remains alive.
+
+43. MULTIDIMENSIONAL DATA USING NESTED std::array
+
+Example:
+
+std::array<std::array<int, 3>, 2> matrix =
+{{
+{1, 2, 3},
+{4, 5, 6}
+}};
+
+Access:
+
+matrix[1][2]
+
+returns:
+
+6
+
+44. MULTIDIMENSIONAL DATA USING std::vector
+
+Example:
+
+std::vector<std::vector<int>> matrix =
+{
+{1, 2, 3},
+{4, 5, 6}
+};
+
+This is convenient but does not represent the same single contiguous allocation as a flat vector.
+
+Each inner vector manages its own storage.
+
+45. FLATTENED 2D STORAGE
+
+A matrix can be represented using a single vector.
+
+For a matrix with:
+
+rows
+
+and:
+
+columns
+
+the element at:
+
+(row, column)
+
+can be mapped to:
+
+row * columns + column
+
+Example:
+
+std::vector<double> matrix(
+rows * columns
+);
+
+Access:
+
+matrix[row * columns + column]
+
+46. FLATTENED MATRIX EXAMPLE
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main()
+{
+    const std::size_t rows = 3;
+    const std::size_t cols = 4;
+
+    std::vector<int> matrix(rows * cols);
+
+    for (std::size_t row = 0;
+         row < rows;
+         ++row)
+    {
+        for (std::size_t col = 0;
+             col < cols;
+             ++col)
+        {
+            matrix[row * cols + col] =
+                static_cast<int>(row * cols + col);
+        }
+    }
+
+    for (std::size_t row = 0;
+         row < rows;
+         ++row)
+    {
+        for (std::size_t col = 0;
+             col < cols;
+             ++col)
+        {
+            std::cout
+                << matrix[row * cols + col]
+                << ' ';
+        }
+
+        std::cout << '\n';
+    }
+
+    return 0;
+}
+```
+
+47. std::mdspan
+
+std::mdspan was introduced in C++23.
+
+It provides a non-owning multidimensional view over data.
+
+Unlike std::vector, mdspan does not own the underlying elements.
+
+It can describe multidimensional indexing over an existing memory region.
+
+Conceptually:
+
+data storage
++
+multidimensional indexing view
+
+This is useful for numerical computing and matrix-like data structures.
+
+48. BOUNDS SAFETY
+
+For standard containers such as std::array and std::vector:
+
+operator[]:
+
+* Provides unchecked access.
+* Does not perform bounds checking.
+
+at():
+
+* Performs bounds checking.
+* Throws std::out_of_range when the requested index is outside the valid range.
+
+Example:
+
+std::vector<int> values = {10, 20, 30};
+
+try
+{
+std::cout << values.at(10);
+}
+catch (const std::out_of_range&)
+{
+std::cout << "Invalid index\n";
+}
+
+49. at() IS NOT A REPLACEMENT FOR CORRECT LOGIC
+
+Bounds checking can detect invalid indexing at runtime.
+
+However, it does not automatically make an entire program secure.
+
+Correct software should still:
+
+* Validate external input.
+* Design valid index ranges.
+* Avoid signed/unsigned conversion errors.
+* Handle exceptions appropriately.
+* Maintain correct object lifetimes.
+* Avoid dangling references and views.
+
+50. BASIC ARRAY AND STRING EXAMPLE
+
+```cpp
+#include <array>
+#include <iostream>
+#include <string>
+#include <stdexcept>
+
+int main()
+{
+    std::array<int, 4> data =
+    {
+        10, 20, 30, 40
+    };
+
+    std::cout
+        << "Array size: "
+        << data.size()
+        << '\n';
+
+    std::cout << "Elements: ";
+
+    for (const int value : data)
+    {
+        std::cout << value << ' ';
+    }
+
+    std::cout << '\n';
+
+    try
+    {
+        std::cout
+            << "Index 2: "
+            << data.at(2)
+            << '\n';
+
+        std::cout
+            << "Index 10: "
+            << data.at(10)
+            << '\n';
+    }
+    catch (const std::out_of_range& e)
+    {
+        std::cout
+            << "Caught exception: "
+            << e.what()
+            << '\n';
+    }
+
+    std::string greeting = "Hello";
+
+    greeting += ", Modern C++!";
+
+    std::cout
+        << "String: "
+        << greeting
+        << '\n';
+
+    std::cout
+        << "Length: "
+        << greeting.size()
+        << '\n';
+
+    return 0;
+}
+```
+
+51. VECTOR AND STRING_VIEW EXAMPLE
+
+```cpp
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <vector>
+
+void parse_url(std::string_view url)
+{
+    const auto position =
+        url.find("://");
+
+    if (position != std::string_view::npos)
+    {
+        const auto scheme =
+            url.substr(0, position);
+
+        const auto rest =
+            url.substr(position + 3);
+
+        std::cout
+            << "Scheme: "
+            << scheme
+            << '\n';
+
+        std::cout
+            << "Rest: "
+            << rest
+            << '\n';
+    }
+}
+
+int main()
+{
+    std::vector<int> numbers;
+
+    numbers.reserve(10);
+
+    std::cout
+        << "Initial size: "
+        << numbers.size()
+        << '\n';
+
+    std::cout
+        << "Initial capacity: "
+        << numbers.capacity()
+        << '\n';
+
+    for (int i = 1; i <= 5; ++i)
+    {
+        numbers.push_back(i * 100);
+    }
+
+    std::cout
+        << "Size after insertion: "
+        << numbers.size()
+        << '\n';
+
+    std::cout
+        << "Capacity after insertion: "
+        << numbers.capacity()
+        << '\n';
+
+    numbers.shrink_to_fit();
+
+    std::cout
+        << "Capacity after shrink request: "
+        << numbers.capacity()
+        << '\n';
+
+    parse_url(
+        "https://adaptive-learning.org/cpp"
+    );
+
+    return 0;
+}
+```
+
+52. CODE WALKTHROUGH
+
+numbers.reserve(10);
+
+requests capacity for at least ten elements.
+
+numbers.push_back(...);
+
+adds elements and increases size.
+
+numbers.capacity();
+
+reports the currently allocated capacity.
+
+numbers.shrink_to_fit();
+
+requests that unused capacity be reduced, but the implementation is not required to fulfill the request.
+
+parse_url():
+
+accepts std::string_view by value and does not require ownership of the URL characters.
+
+url.substr():
+
+creates another string_view rather than an owning std::string.
+
+53. EXPECTED OUTPUT
+
+The exact capacity after insertion and shrink_to_fit() is implementation-dependent.
+
+A portable output description is:
+
+Initial size: 0
+Initial capacity: at least 10
+Size after insertion: 5
+Capacity after insertion: at least 10
+Capacity after shrink request: implementation-dependent
+
+Scheme: https
+Rest: adaptive-learning.org/cpp
+
+54. EXECUTION FLOW
+
+55. A fixed-size std::array is created.
+
+56. The program accesses elements using [] or at().
+
+57. at() checks the requested index.
+
+58. A std::vector reserves storage.
+
+59. Elements are appended.
+
+60. The vector tracks size and capacity separately.
+
+61. A string_view is created from an existing character sequence.
+
+62. find() locates a delimiter.
+
+63. substr() creates non-owning views.
+
+64. The views are printed without creating new owning strings.
+
+65. ITERATOR AND POINTER STABILITY
+
+References, pointers, and iterators into a vector remain usable only while the operations performed on the vector preserve their validity.
+
+Example:
+
+std::vector<int> values =
+{
+10, 20, 30
+};
+
+int* ptr = values.data();
+
+If a later push_back() causes reallocation, ptr may become dangling.
+
+Therefore, pointers and references into a vector should not be retained across operations that may reallocate unless the program has ensured sufficient capacity and understands the relevant invalidation rules.
+
+56. STRING ITERATOR AND POINTER INVALIDATION
+
+Operations that modify std::string can invalidate pointers, references, iterators, and string_views depending on the operation and implementation requirements.
+
+Therefore, when a string_view refers to a std::string:
+
+* Keep the string alive.
+* Avoid modifications that may invalidate the referenced characters.
+* Do not assume a view remains valid after arbitrary string operations.
+
+57. COMMON MISTAKES
+
+Mistake 1:
+
+Assuming std::array is always stored on the stack.
+
+Correction:
+
+Its storage depends on the storage duration and location of the std::array object.
+
+Mistake 2:
+
+Assuming vector growth is always 2x.
+
+Correction:
+
+The C++ standard does not specify a particular growth factor.
+
+Mistake 3:
+
+Assuming shrink_to_fit() always reduces capacity to size.
+
+Correction:
+
+shrink_to_fit() is a non-binding request.
+
+Mistake 4:
+
+Assuming SSO is guaranteed.
+
+Correction:
+
+SSO is an implementation technique.
+
+Mistake 5:
+
+Assuming string_view owns its data.
+
+Correction:
+
+string_view is non-owning.
+
+Mistake 6:
+
+Returning string_view to a local std::string.
+
+Correction:
+
+Return an owning std::string or ensure the referenced storage outlives the view.
+
+Mistake 7:
+
+Passing string_view::data() directly to a C API requiring a null-terminated string.
+
+Correction:
+
+A string_view is not necessarily null-terminated.
+
+58. COMMON ERRORS
+
+Incorrect:
+
+```cpp
+std::string_view get_name()
+{
+    std::string name = "Alice";
+    return name;
+}
+```
+
+Why it fails:
+
+name is destroyed when the function returns.
+
+The returned view refers to destroyed storage.
+
+Correct:
+
+```cpp
+std::string get_name()
+{
+    return "Alice";
+}
+```
+
+The function returns an owning string.
+
+59. SAFE STRING_VIEW FUNCTION
+
+A safe use of string_view is:
+
+```cpp
+void print_name(std::string_view name)
+{
+    std::cout << name << '\n';
+}
+
+int main()
+{
+    std::string name = "Alice";
+
+    print_name(name);
+    print_name("Bob");
+
+    return 0;
+}
+```
+
+The function only uses the view during the call and does not store it beyond the lifetime of the source.
+
+60. C-STYLE API INTEROPERABILITY
+
+std::vector:
+
+std::vector<int> values =
+{
+10, 20, 30
+};
+
+legacy_function(
+values.data(),
+values.size()
+);
+
+std::string:
+
+std::string text = "Hello";
+
+legacy_string_function(
+text.c_str()
+);
+
+std::string_view:
+
+std::string_view view = "Hello";
+
+A C API requiring a null-terminated string should not automatically receive view.data().
+
+If a null-terminated string is required, an owning std::string can be constructed:
+
+std::string temporary(view);
+
+legacy_string_function(
+temporary.c_str()
+);
+
+61. PERFORMANCE CONSIDERATIONS
+
+std::array:
+
+* Fixed-size.
+* No dynamic allocation required for the array object itself.
+* Contiguous storage.
+* Useful for compile-time fixed sizes.
+
+std::vector:
+
+* Dynamic size.
+* Contiguous storage.
+* Random access in constant time.
+* Appending at the end is amortized constant time.
+* reserve() can reduce reallocations.
+
+std::string:
+
+* Owning text container.
+* Dynamic size.
+* Provides text-specific operations.
+* Implementation may use SSO.
+
+std::string_view:
+
+* Non-owning.
+* Lightweight.
+* Avoids character copying when only a view is needed.
+* Lifetime must be managed correctly.
+
+std::span:
+
+* Non-owning contiguous range view.
+* Useful for generic APIs accepting arrays or vectors.
+
+62. RESERVE VS RESIZE
+
+reserve():
+
+Changes capacity.
+
+Does not create elements.
+
+Example:
+
+std::vector<int> values;
+
+values.reserve(100);
+
+size() == 0
+
+resize():
+
+Changes the number of elements.
+
+Example:
+
+values.resize(100);
+
+size() == 100
+
+63. MEMORY CONSIDERATIONS
+
+Do not assume:
+
+* A particular vector object size.
+* A particular string object size.
+* A particular string SSO buffer size.
+* A particular vector growth factor.
+* A particular cache-line size.
+* That local containers are always on the stack.
+
+The C++ standard defines observable behavior and container requirements, while implementation details may vary.
+
+64. SECURITY CONSIDERATIONS
+
+Important risks include:
+
+* Out-of-bounds access
+* Dangling string_views
+* Dangling iterators
+* Use-after-reallocation
+* Integer overflow during size calculations
+* Invalid pointer use
+* Incorrect C-string assumptions
+* Excessive memory allocation from untrusted input
+
+Best practices:
+
+* Validate externally supplied sizes and indices.
+* Use at() when runtime bounds checking is appropriate.
+* Keep non-owning views within the lifetime of their source.
+* Avoid retaining vector pointers across possible reallocations.
+* Check size calculations for overflow in security-sensitive code.
+* Use sanitizers during testing.
+
+65. DEBUGGING TECHNIQUES
+
+AddressSanitizer:
+
+Example:
+
+g++ -std=c++20 -fsanitize=address -g program.cpp -o program
+
+It can detect many forms of memory misuse, including some:
+
+* Out-of-bounds accesses
+* Use-after-free
+* Stack-use-after-scope
+* Other lifetime-related errors
+
+ThreadSanitizer is useful for concurrency problems but is not a general-purpose container bounds checker.
+
+Compiler warnings should also be enabled.
+
+66. VECTOR VS LIST
+
+std::vector:
+
+* Contiguous storage
+* Random access
+* Excellent locality for many workloads
+* Amortized constant-time append
+* Insertion in the middle is generally linear
+
+std::list:
+
+* Node-based linked structure
+* No contiguous storage guarantee
+* Random access is not supported
+* Insertion and erasure at a known position can be constant time when the appropriate iterator is available
+* Higher per-element node overhead is typical
+
+Container choice should depend on the actual access and modification pattern rather than assuming one container is always faster.
+
+67. std::array VS C-STYLE ARRAY
+
+C-style array:
+
+* Built into the language.
+* Fixed-size.
+* Can decay to a pointer in many expressions.
+* Does not provide container member functions.
+
+std::array:
+
+* Standard-library container.
+* Fixed-size.
+* Does not automatically decay to a pointer.
+* Provides size(), data(), at(), begin(), end(), and other container functionality.
+* Works naturally with STL algorithms.
+
+68. std::vector VS std::array
+
+std::array:
+
+Use when:
+
+* Size is fixed.
+* Size is known as part of the type.
+* Contiguous fixed-size storage is required.
+
+std::vector:
+
+Use when:
+
+* Number of elements changes.
+* Dynamic storage is required.
+* Contiguous dynamic storage is useful.
+
+69. std::string VS std::string_view
+
+std::string:
+
+* Owning.
+* Mutable.
+* Manages character storage.
+* Suitable when the program needs ownership or modification.
+
+std::string_view:
+
+* Non-owning.
+* Represents a view into existing character data.
+* Useful for read-only function parameters and parsing.
+* Requires careful lifetime management.
+
+70. PRACTICAL PROGRAMMING PROBLEMS
+
+71. Implement a fixed-size student marks array using std::array.
+
+72. Implement a dynamic student list using std::vector.
+
+73. Write a program that demonstrates vector capacity and size.
+
+74. Demonstrate iterator invalidation after vector reallocation.
+
+75. Implement a string search utility using find() and rfind().
+
+76. Build a URL parser using std::string_view.
+
+77. Implement a CSV tokenizer using std::string_view.
+
+78. Implement a matrix using std::vector<double> and flattened indexing.
+
+79. Write a generic function accepting std::span<const int>.
+
+80. Compare std::string and std::string_view for parsing operations.
+
+81. Implement a safe C-string interoperability function.
+
+82. Implement a C++20 multidimensional data-processing example using std::span.
+
+83. Study std::mdspan in C++23 and implement matrix indexing using an existing vector.
+
+84. REAL-WORLD APPLICATIONS
+
+Web servers:
+
+std::string_view can be useful when parsing request data without creating unnecessary owning strings.
+
+Game engines:
+
+std::vector can store contiguous collections of entities, particles, vertices, or other objects.
+
+Audio processing:
+
+std::array or std::span can represent fixed or externally supplied sample buffers.
+
+Machine learning:
+
+std::vector and span can represent dynamically sized feature arrays and contiguous numerical data.
+
+Networking:
+
+Non-owning views can reduce unnecessary copying during protocol parsing when the source buffer remains alive.
+
+Scientific computing:
+
+Contiguous vectors and multidimensional views can represent numerical matrices and tensors.
+
+72. EXAM QUESTIONS
+
+SHORT-ANSWER
+
+1. What is std::array?
+
+2. What is the difference between size() and capacity()?
+
+3. What does reserve() do?
+
+4. What does resize() do?
+
+5. What is std::string_view?
+
+6. Is std::string_view an owning type?
+
+7. What is iterator invalidation?
+
+8. What is SSO?
+
+9. Is SSO guaranteed by the C++ standard?
+
+10. What is std::span?
+
+MEDIUM-ANSWER
+
+1. Explain std::array and compare it with a C-style array.
+
+2. Explain vector size, capacity, and reallocation.
+
+3. Explain reserve() and resize().
+
+4. Explain vector iterator invalidation.
+
+5. Explain std::string and its memory management.
+
+6. Explain std::string_view and lifetime hazards.
+
+7. Explain std::span with an example.
+
+8. Explain vector versus list.
+
+LONG-ANSWER
+
+1. Explain the memory and lifetime differences among std::array, std::vector, std::string, and std::string_view.
+
+2. Explain vector reallocation, capacity growth, reserve(), and iterator invalidation.
+
+3. Explain std::string_view, zero-copy parsing, lifetime hazards, and C-string interoperability.
+
+4. Design an efficient CSV parser using std::string_view.
+
+5. Explain how a two-dimensional matrix can be represented using a flattened vector.
+
+6. Compare owning containers and non-owning views in modern C++.
+
+7. INTERVIEW QUESTIONS
+
+BEGINNER
+
+Q1. What is std::array?
+
+A:
+std::array is a fixed-size standard-library container that stores exactly N elements of the specified type.
+
+Q2. What is std::vector?
+
+A:
+std::vector is a dynamically sized contiguous standard-library container.
+
+INTERMEDIATE
+
+Q3. What is the difference between size() and capacity()?
+
+A:
+size() is the number of elements currently stored. capacity() is the number of elements that can be stored without requiring reallocation.
+
+Q4. What does reserve() do?
+
+A:
+reserve() requests enough capacity for at least the specified number of elements without changing the vector's size.
+
+Q5. What is std::string_view?
+
+A:
+std::string_view is a non-owning view over a contiguous sequence of characters.
+
+Q6. Why can string_view become dangerous?
+
+A:
+Because it does not own its data. If the underlying character sequence is destroyed or invalidated, the string_view becomes dangling.
+
+ADVANCED
+
+Q7. Is Small String Optimization guaranteed?
+
+A:
+No. SSO is an implementation technique and its presence, size, and layout are not specified as portable C++ guarantees.
+
+Q8. Is vector growth always 2x?
+
+A:
+No. The C++ standard does not specify a fixed growth factor.
+
+Q9. Does shrink_to_fit() always reduce capacity?
+
+A:
+No. It is a non-binding request.
+
+Q10. Does string_view::data() always return a null-terminated string?
+
+A:
+No. A string_view represents a range of characters and its data() pointer is not necessarily null-terminated.
+
+Q11. Why does vector reallocation invalidate pointers?
+
+A:
+Reallocation can move the elements to a different storage region, making pointers, references, and iterators referring to the old storage invalid.
+
+74. FAQ
+
+Q1. Does std::vector::clear() reduce capacity?
+
+A:
+No. clear() removes the elements but does not reduce capacity.
+
+Q2. Can reserve() change vector size?
+
+A:
+No. reserve() changes capacity, not size.
+
+Q3. Does resize() reserve capacity?
+
+A:
+resize() changes the number of elements. It may cause reallocation if the new size exceeds current capacity.
+
+Q4. Does std::array use the heap?
+
+A:
+Not inherently. Its elements are part of the std::array object, and the object's storage depends on where that object is created.
+
+Q5. Does std::string always allocate heap memory?
+
+A:
+Not necessarily. An implementation may use SSO for some strings. The standard does not require a particular SSO strategy.
+
+Q6. Does std::string_view allocate memory?
+
+A:
+Creating a string_view does not allocate storage for the characters it views. However, containers storing string_views may allocate their own storage.
+
+Q7. Can string_view be returned from a function?
+
+A:
+Yes, but only if the referenced character sequence remains alive and valid after the function returns.
+
+Q8. Is std::string_view faster than std::string?
+
+A:
+It can avoid copying and allocation when only a non-owning view is required, but performance depends on the workload and lifetime requirements.
+
+75. BEST PRACTICES
+
+* Prefer std::array over raw arrays when a fixed-size standard container is appropriate.
+* Prefer std::vector for dynamically sized contiguous sequences.
+* Use reserve() when a reliable capacity estimate is available.
+* Do not assume a vector growth factor.
+* Treat shrink_to_fit() as a request, not a guarantee.
+* Do not retain vector pointers or iterators across operations that may invalidate them.
+* Use std::string when ownership is required.
+* Use std::string_view for non-owning read-only string access when lifetime is controlled.
+* Never return a view to destroyed local storage.
+* Do not assume string_view::data() is null-terminated.
+* Use std::span for generic non-owning contiguous ranges.
+* Use std::mdspan for suitable multidimensional non-owning views in C++23.
+* Avoid implementation-specific assumptions about SSO.
+* Avoid hard-coding object sizes of standard-library types.
+* Use sanitizers to detect memory and lifetime errors during testing.
+* Measure performance instead of relying on assumptions.
+
+76. ADVANCED DESIGN GUIDELINES
+
+76.1 Owning vs Non-Owning
+
+Owning types:
+
+std::vector
+std::string
+std::array as part of its object storage
+
+Non-owning view types:
+
+std::string_view
+std::span
+std::mdspan
+
+The programmer must ensure that non-owning views never outlive their source data.
+
+76.2 Contiguous Data APIs
+
+A function that only needs to inspect contiguous integers can use:
+
+void process(std::span<const int> data);
+
+This can be more general than accepting only std::vector<int>.
+
+The same function can work with appropriate contiguous sources such as arrays and vectors.
+
+76.3 Avoid Unnecessary Copies
+
+For read-only text:
+
+void parse(std::string_view text);
+
+For read-only contiguous objects:
+
+void process(std::span<const int> values);
+
+For ownership:
+
+std::string
+
+or:
+
+std::vector<T>
+
+77. PORTABILITY RULES
+
+Portable C++ code should not assume:
+
+* std::string object size.
+* std::string SSO capacity.
+* std::vector growth factor.
+* Exact capacity after shrink_to_fit().
+* Stack allocation for local standard containers.
+* Heap allocation for every std::string.
+* Specific cache-line sizes.
+* Implementation-specific iterator debugging behavior.
+
+These properties may vary between implementations.
+
+78. SUMMARY
+
+Modern C++ provides multiple sequence abstractions for different ownership and storage requirements.
+
+std::array provides fixed-size contiguous storage.
+
+std::vector provides dynamically sized contiguous storage.
+
+std::string provides an owning text container.
+
+std::string_view provides a non-owning character view.
+
+std::span provides a non-owning view over contiguous objects.
+
+std::mdspan provides multidimensional non-owning views in C++23.
+
+Correct use of these types requires understanding:
+
+* Ownership
+* Lifetime
+* Contiguous storage
+* Size
+* Capacity
+* Reallocation
+* Iterator invalidation
+* Bounds checking
+* String termination
+* Non-owning views
+* Implementation-dependent optimizations
+
+79. KEY TAKEAWAYS
+
+* std::array is fixed-size and does not automatically decay to a pointer.
+* std::vector is dynamically sized and contiguous.
+* vector size and capacity are different concepts.
+* reserve() changes capacity without changing size.
+* resize() changes the number of elements.
+* clear() removes elements without reducing capacity.
+* shrink_to_fit() is a non-binding request.
+* Vector growth factors are implementation-dependent.
+* Vector reallocation can invalidate pointers, references, and iterators.
+* std::string owns its character data.
+* SSO is an implementation technique, not a standard guarantee.
+* std::string_view does not own its characters.
+* string_view lifetime must not exceed the lifetime of its source.
+* string_view::data() is not necessarily null-terminated.
+* std::span provides a general contiguous non-owning view.
+* std::mdspan provides multidimensional non-owning views in C++23.
+* Use std::string for ownership and std::string_view when a safe non-owning view is sufficient.
+* Prefer portable guarantees over implementation-specific assumptions.
+
+80. REFERENCE BASIS
+
+PRIMARY STANDARD
+
+ISO/IEC 14882:2024
+Programming Languages — C++
+
+The C++ International Standard specifies requirements for implementations of the C++ programming language and its standard library.
+
+STANDARD DRAFT REFERENCE
+
+The C++ working draft provides the detailed normative wording for language and library facilities.
+
+REFERENCE MATERIAL
+
+cppreference C++ documentation was used as a practical reference for:
+
+* std::array
+* std::vector
+* std::string
+* std::string_view
+* std::span
+* std::mdspan
+* Iterator invalidation
+* Container capacity
+* String operations
+* String-view lifetime and data access
+
+IMPLEMENTATION-SPECIFIC NOTES
+
+The following are intentionally treated as implementation-dependent:
+
+* std::string object size
+* Small String Optimization
+* SSO buffer size
+* std::vector growth factor
+* Exact memory layout of standard-library objects
+* Exact cache-line characteristics
+* Whether a particular optimization is performed
+
+This document uses standard guarantees where possible and labels implementation-specific behavior separately.
+
+END OF FILE

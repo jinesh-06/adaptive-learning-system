@@ -1,0 +1,1737 @@
+COURSE: Python Programming
+TOPIC: Advanced Python: Generators, Asyncio, GIL, Garbage Collection, Metaclasses, and Typing
+LEVEL: Advanced
+SOURCE: Official Python Documentation – Python 3.14
+
+================================================================================
+ADVANCED PYTHON: GENERATORS, ASYNCIO, GIL, GC, METACLASSES, AND TYPING
+======================================================================
+
+1. INTRODUCTION
+
+Advanced Python programming requires an understanding of lazy execution, asynchronous concurrency, interpreter behavior, memory management, metaprogramming, and static typing.
+
+This chapter covers:
+
+* Generators and generator expressions for lazy evaluation.
+* `yield`, `yield from`, `send()`, `throw()`, and `close()`.
+* Asynchronous programming with `asyncio`, `async`, `await`, Tasks, `gather()`, and `TaskGroup`.
+* CPython's Global Interpreter Lock (GIL), threading, multiprocessing, and free-threaded Python.
+* CPython memory management, reference counting, cyclic garbage collection, and memory allocators.
+* Descriptor protocol using `__get__()`, `__set__()`, and `__delete__()`.
+* Metaclasses and the class creation process.
+* Modern static typing using `TypeVar`, `Generic`, `Protocol`, `ParamSpec`, and type parameter syntax.
+
+The examples are written for modern Python and avoid treating CPython implementation details as universal Python-language guarantees.
+
+2. LEARNING OBJECTIVES
+
+After completing this chapter, the learner should be able to:
+
+* Build lazy data-processing pipelines using generators.
+* Use `yield from` to delegate generator operations.
+* Communicate with generators using `send()`, `throw()`, and `close()`.
+* Create asynchronous programs using `asyncio`.
+* Use `asyncio.create_task()`, `asyncio.gather()`, and `asyncio.TaskGroup`.
+* Distinguish concurrency from parallelism.
+* Understand the GIL in normal CPython builds.
+* Understand the optional free-threaded CPython configuration.
+* Select threading, multiprocessing, or asyncio according to workload characteristics.
+* Understand reference counting and cyclic garbage collection.
+* Use descriptors to implement managed attributes.
+* Understand how metaclasses participate in class creation.
+* Use `Protocol` for structural static typing.
+* Build reusable generic classes and functions.
+* Use `ParamSpec` for type-safe decorators and higher-order functions.
+
+3. PREREQUISITES
+
+The learner should already understand:
+
+* Python syntax and functions.
+* Object-oriented programming.
+* Classes and inheritance.
+* Iterators and exceptions.
+* Lists, dictionaries, sets, and tuples.
+* Modules and packages.
+* Basic type hints.
+* Basic concurrency concepts.
+
+4. BEGINNER CONCEPTS
+
+4.1 Generator Functions
+
+A generator function is a function containing `yield`.
+
+Calling a generator function does not execute its body immediately. Instead, it returns a generator iterator.
+
+Example:
+
+```python
+def count_numbers():
+    yield 1
+    yield 2
+    yield 3
+
+gen = count_numbers()
+
+print(next(gen))
+print(next(gen))
+print(next(gen))
+```
+
+Output:
+
+```text
+1
+2
+3
+```
+
+The generator suspends execution at each `yield` and resumes from that point when the next value is requested.
+
+Generators are useful when:
+
+* Data is large.
+* Data should be processed incrementally.
+* All values do not need to be stored simultaneously.
+* Data is naturally produced as a stream.
+
+4.2 Generator Expressions
+
+A generator expression provides a compact way to create a generator.
+
+```python
+squares = (x * x for x in range(10))
+
+for value in squares:
+    print(value)
+```
+
+Unlike a list comprehension:
+
+```python
+squares = [x * x for x in range(10)]
+```
+
+the generator expression produces values lazily.
+
+4.3 Basic Async Syntax
+
+An asynchronous function is declared using `async def`.
+
+```python
+import asyncio
+
+async def fetch_data(delay: int) -> str:
+    await asyncio.sleep(delay)
+    return "Data retrieved"
+
+async def main():
+    result = await fetch_data(1)
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+`await` suspends the current coroutine while an awaitable operation is being completed, allowing the event loop to execute other ready tasks.
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 Generator Communication
+
+Generators support communication with their caller.
+
+Important methods:
+
+* `next(generator)` resumes execution and obtains the next yielded value.
+* `generator.send(value)` sends a value into the paused generator.
+* `generator.throw(...)` raises an exception at the suspended `yield`.
+* `generator.close()` requests generator termination.
+
+Example:
+
+```python
+def receiver():
+    value = yield "Ready"
+    while True:
+        value = yield f"Received: {value}"
+
+gen = receiver()
+
+print(next(gen))
+print(gen.send(100))
+print(gen.send(200))
+```
+
+Output:
+
+```text
+Ready
+Received: 100
+Received: 200
+```
+
+When `send()` starts a generator that has not reached its first `yield`, the argument must be `None`.
+
+5.2 `yield from`
+
+`yield from` delegates iteration to another iterable or iterator.
+
+```python
+def numbers():
+    yield 1
+    yield 2
+
+def combined():
+    yield from numbers()
+    yield 3
+
+for value in combined():
+    print(value)
+```
+
+Output:
+
+```text
+1
+2
+3
+```
+
+`yield from` can also forward `send()` and `throw()` operations to the underlying iterator and can receive a return value from a subgenerator.
+
+5.3 Asyncio Coroutines
+
+A coroutine is normally defined using:
+
+```python
+async def function_name():
+    ...
+```
+
+A coroutine object is created when the function is called, but simply creating the coroutine does not schedule it for execution.
+
+Execution can be started using:
+
+```python
+asyncio.run(main())
+```
+
+or scheduled as a Task using:
+
+```python
+asyncio.create_task(coroutine())
+```
+
+5.4 Asyncio Tasks
+
+A Task schedules a coroutine to execute within an event loop.
+
+```python
+task = asyncio.create_task(fetch_data())
+result = await task
+```
+
+Tasks are useful when multiple asynchronous operations should make progress concurrently.
+
+5.5 `asyncio.gather()`
+
+`asyncio.gather()` waits for multiple awaitables and returns their results.
+
+```python
+results = await asyncio.gather(
+    fetch_data(1),
+    fetch_data(2),
+    fetch_data(3)
+)
+```
+
+The operations can make progress concurrently when they contain non-blocking `await` points.
+
+5.6 `asyncio.TaskGroup`
+
+Python 3.11 introduced `asyncio.TaskGroup`, which provides structured concurrency.
+
+Example:
+
+```python
+async def main():
+    async with asyncio.TaskGroup() as tg:
+        task1 = tg.create_task(fetch_data(1))
+        task2 = tg.create_task(fetch_data(2))
+
+    print(task1.result())
+    print(task2.result())
+```
+
+A TaskGroup waits for its tasks when the context manager exits and provides structured exception and cancellation handling.
+
+6. CONCURRENCY MODELS
+
+6.1 Threading
+
+Python's `threading` module provides concurrency using operating-system threads.
+
+Suitable for:
+
+* I/O-bound work.
+* Network operations.
+* File operations.
+* Waiting for external services.
+* Libraries that perform blocking I/O.
+
+In a normal GIL-enabled CPython build, only one thread executes Python code at a time.
+
+However, the GIL can be released around blocking I/O and by some native extensions.
+
+6.2 Multiprocessing
+
+`multiprocessing` uses separate operating-system processes.
+
+Each process has its own Python interpreter and memory space.
+
+Advantages:
+
+* Suitable for CPU-bound workloads.
+* Can use multiple CPU cores.
+* Avoids sharing one interpreter's GIL.
+
+Disadvantages:
+
+* Higher memory overhead.
+* Inter-process communication is required for sharing data.
+* Process creation and communication can be more expensive than threads.
+
+6.3 Asyncio
+
+`asyncio` provides cooperative concurrency, normally using an event loop.
+
+It is especially useful for:
+
+* Network servers.
+* HTTP clients.
+* WebSockets.
+* Database/network I/O.
+* Large numbers of waiting operations.
+
+Asyncio does not automatically make CPU-bound Python code parallel.
+
+A CPU-heavy coroutine that never reaches an `await` can block other tasks running on the same event loop.
+
+7. THE GLOBAL INTERPRETER LOCK (GIL)
+
+7.1 What is the GIL?
+
+In the traditional GIL-enabled CPython build, the Global Interpreter Lock is a synchronization mechanism that ensures only one thread at a time executes Python code that requires the interpreter's protected state.
+
+The GIL simplifies important interpreter operations, including management of Python objects.
+
+The GIL is a CPython implementation detail. It is not a requirement of the Python language itself.
+
+7.2 Important Modern Python Update
+
+Modern CPython also supports a free-threaded build in which the GIL can be disabled.
+
+Free-threaded Python was introduced experimentally in Python 3.13 and became officially supported in Python 3.14.
+
+Therefore, the statement:
+
+"Python can never execute Python code in parallel using threads"
+
+is no longer universally correct.
+
+More precise:
+
+* Standard GIL-enabled CPython: one thread executes Python code at a time.
+* Free-threaded CPython: multiple threads can execute Python code in parallel.
+* Free-threaded builds may have additional runtime overhead.
+* Some third-party extension modules may not yet support free-threaded execution and can cause the GIL to be enabled.
+
+7.3 GIL and I/O
+
+The GIL may be released around blocking operations such as file I/O.
+
+Some native libraries also release the interpreter lock while performing long-running native computations.
+
+However, this behavior is library- and implementation-dependent and should not be assumed for every C extension.
+
+8. MEMORY MANAGEMENT IN CPYTHON
+
+Python's memory management involves a private heap managed by the Python memory manager.
+
+Important concepts include:
+
+* Object allocation.
+* Reference counting.
+* Cyclic garbage collection.
+* Specialized memory allocators.
+
+8.1 Reference Counting
+
+In CPython, objects maintain reference-counting information.
+
+Conceptually:
+
+```text
+Object
+  |
+  +-- Reference A
+  +-- Reference B
+  +-- Reference C
+```
+
+When references are removed and an object's reference count reaches zero, CPython can immediately deallocate that object.
+
+Reference counting alone cannot handle every circular reference.
+
+8.2 Circular References
+
+Example:
+
+```python
+a = []
+b = []
+
+a.append(b)
+b.append(a)
+
+del a
+del b
+```
+
+The two lists reference each other.
+
+Even after the external references are removed, a cycle can remain.
+
+Cyclic garbage collection helps identify unreachable reference cycles.
+
+8.3 Generational Garbage Collection
+
+Modern CPython uses generational garbage collection for cyclic garbage.
+
+Newly tracked objects begin in the youngest generation.
+
+Objects that survive collections are promoted to older generations.
+
+The `gc` module provides tools such as:
+
+```python
+import gc
+
+print(gc.get_count())
+print(gc.get_threshold())
+print(gc.get_stats())
+```
+
+Important version note:
+
+Python 3.14.0 temporarily introduced changes to the generation model, but Python 3.14.5 and later restored the traditional three-generation behavior.
+
+Therefore, generation details should always be tied to the Python version being used.
+
+8.4 Memory Allocators
+
+The CPython memory manager uses multiple allocation layers.
+
+In a normal GIL-enabled CPython build, `pymalloc` is used for many small object allocations.
+
+Official CPython documentation describes `pymalloc` as being optimized for allocations of 512 bytes or less.
+
+In free-threaded builds, `mimalloc` is used as the default object allocator.
+
+These are CPython implementation details and should not be treated as guarantees of every Python implementation.
+
+9. DESCRIPTOR PROTOCOL
+
+A descriptor is an object that defines one or more of:
+
+```python
+__get__()
+__set__()
+__delete__()
+```
+
+Descriptors control attribute access.
+
+They are widely used by Python itself, including mechanisms behind methods and properties.
+
+9.1 Data Descriptors
+
+A data descriptor normally defines `__set__()` or `__delete__()` and may also define `__get__()`.
+
+Data descriptors have priority over an instance's dictionary during attribute lookup.
+
+9.2 Non-Data Descriptors
+
+A non-data descriptor normally defines only `__get__()`.
+
+An instance dictionary entry can take precedence over a non-data descriptor.
+
+9.3 Example Descriptor
+
+```python
+class PositiveInteger:
+    def __set_name__(self, owner, name):
+        self.public_name = name
+        self.private_name = "_" + name
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return getattr(instance, self.private_name, 0)
+
+    def __set__(self, instance, value):
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError(
+                f"{self.public_name} must be a positive integer"
+            )
+        setattr(instance, self.private_name, value)
+
+
+class Server:
+    workers = PositiveInteger()
+
+    def __init__(self, workers):
+        self.workers = workers
+
+
+server = Server(4)
+print(server.workers)
+```
+
+Output:
+
+```text
+4
+```
+
+The descriptor intercepts assignment to `workers` and validates the value before storing it.
+
+10. METACLASSES
+
+A metaclass is the class of a class.
+
+For ordinary Python classes:
+
+```python
+class Student:
+    pass
+
+print(type(Student))
+```
+
+Output:
+
+```text
+<class 'type'>
+```
+
+Therefore, `type` is the default metaclass for ordinary classes.
+
+10.1 Class Creation
+
+When Python executes a class definition, the process involves:
+
+1. Resolving bases.
+2. Determining the appropriate metaclass.
+3. Preparing the class namespace.
+4. Executing the class body.
+5. Creating the class object.
+6. Performing relevant class initialization steps.
+
+A custom metaclass can customize this process.
+
+10.2 Custom Metaclass
+
+```python
+class RequireRunMethod(type):
+    def __new__(mcls, name, bases, namespace):
+        if bases and "run" not in namespace:
+            raise TypeError(
+                f"{name} must define a run() method"
+            )
+
+        return super().__new__(
+            mcls, name, bases, namespace
+        )
+
+
+class Job(metaclass=RequireRunMethod):
+    pass
+
+
+class DataJob(Job):
+    def run(self):
+        return "Job executed"
+```
+
+The metaclass checks the class definition before the class object is created.
+
+11. STATIC TYPING
+
+Python is dynamically typed at runtime, but type annotations allow static type checkers to detect many errors before execution.
+
+Tools such as type checkers can analyze:
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+```
+
+Type annotations do not automatically enforce these types at runtime.
+
+12. NOMINAL AND STRUCTURAL TYPING
+
+12.1 Nominal Typing
+
+Nominal relationships are based on explicit type relationships such as inheritance.
+
+```python
+class Animal:
+    pass
+
+class Dog(Animal):
+    pass
+```
+
+12.2 Structural Typing
+
+Structural typing focuses on whether an object provides the required interface.
+
+Python provides `typing.Protocol` for this purpose.
+
+Example:
+
+```python
+from typing import Protocol
+
+
+class Renderable(Protocol):
+    def render(self) -> str:
+        ...
+
+
+class Button:
+    def render(self) -> str:
+        return "Button"
+
+
+def display(item: Renderable) -> None:
+    print(item.render())
+
+
+display(Button())
+```
+
+`Button` does not need to explicitly inherit from `Renderable` for a static type checker to recognize that it satisfies the protocol.
+
+13. GENERICS
+
+Generics allow reusable code to preserve relationships between input and output types.
+
+Example using modern syntax:
+
+```python
+class Stack[T]:
+    def __init__(self):
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+```
+
+Usage:
+
+```python
+numbers = Stack[int]()
+numbers.push(10)
+numbers.push(20)
+
+value = numbers.pop()
+print(value)
+```
+
+Output:
+
+```text
+20
+```
+
+For older Python versions, the traditional syntax is:
+
+```python
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+class Stack(Generic[T]):
+    ...
+```
+
+14. PARAMSPEC
+
+`ParamSpec` is useful for typing decorators and higher-order functions while preserving the parameter types of the wrapped callable.
+
+Example:
+
+```python
+from collections.abc import Callable
+from typing import ParamSpec, TypeVar
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def logged(func: Callable[P, R]) -> Callable[P, R]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        print("Calling function")
+        return func(*args, **kwargs)
+
+    return wrapper
+```
+
+`ParamSpec` allows static type checkers to retain information about the original function's parameters.
+
+15. SYNTAX REFERENCE
+
+```python
+import asyncio
+from typing import Protocol, TypeVar, Generic
+
+# Structural typing
+class Renderable(Protocol):
+    def render(self) -> str:
+        ...
+
+
+# Generic class
+T = TypeVar("T")
+
+
+class Stack(Generic[T]):
+    def __init__(self):
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+
+
+# Coroutine
+async def work() -> str:
+    await asyncio.sleep(1)
+    return "Completed"
+```
+
+16. BASIC EXAMPLE: GENERATOR PIPELINE
+
+```python
+def number_stream(start: int, stop: int):
+    current = start
+
+    while current < stop:
+        yield current
+        current += 1
+
+
+def pipeline_filter(stream, predicate):
+    for value in stream:
+        if predicate(value):
+            yield value
+
+
+def squared_stream(stream):
+    for value in stream:
+        yield value ** 2
+
+
+if __name__ == "__main__":
+    raw_numbers = number_stream(1, 10)
+
+    even_numbers = pipeline_filter(
+        raw_numbers,
+        lambda x: x % 2 == 0
+    )
+
+    squares = squared_stream(even_numbers)
+
+    print("Evaluating lazy generator pipeline:")
+
+    for result in squares:
+        print(f"  Result: {result}")
+```
+
+Expected output:
+
+```text
+Evaluating lazy generator pipeline:
+  Result: 4
+  Result: 16
+  Result: 36
+  Result: 64
+```
+
+The pipeline processes values incrementally instead of first constructing all intermediate collections.
+
+17. INTERMEDIATE EXAMPLE: ASYNCIO TASKS
+
+```python
+import asyncio
+import time
+from typing import Any
+
+
+async def simulated_api_fetch(
+    service_name: str,
+    delay: float,
+    should_fail: bool = False
+) -> dict[str, Any]:
+
+    print(
+        f"[Fetch] Starting request to "
+        f"'{service_name}' ({delay}s)..."
+    )
+
+    await asyncio.sleep(delay)
+
+    if should_fail:
+        raise ConnectionError(
+            f"Service '{service_name}' failed."
+        )
+
+    print(
+        f"[Fetch] Successfully received "
+        f"response from '{service_name}'"
+    )
+
+    return {
+        "service": service_name,
+        "status": 200,
+        "latency": delay
+    }
+
+
+async def orchestrate_services():
+
+    start = time.perf_counter()
+
+    results = await asyncio.gather(
+        simulated_api_fetch("AuthService", 0.3),
+        simulated_api_fetch("PaymentService", 0.5),
+        simulated_api_fetch("InventoryService", 0.2)
+    )
+
+    elapsed = time.perf_counter() - start
+
+    print(
+        f"\nCompleted in approximately "
+        f"{elapsed:.2f} seconds:"
+    )
+
+    for result in results:
+        print(" ", result)
+
+
+if __name__ == "__main__":
+    asyncio.run(orchestrate_services())
+```
+
+Because the simulated operations spend their time awaiting, they can make progress concurrently.
+
+The elapsed time should be roughly around the longest individual delay rather than the sum of all delays, although exact timing depends on the system.
+
+18. ADVANCED EXAMPLE: DESCRIPTOR + METACLASS + PROTOCOL + GC
+
+```python
+from typing import Protocol, Any
+import gc
+
+
+class Serializable(Protocol):
+    def serialize(self) -> dict[str, Any]:
+        ...
+
+
+class PositiveInteger:
+    """Descriptor that accepts only positive integers."""
+
+    def __set_name__(self, owner, name):
+        self.public_name = name
+        self.private_name = "_" + name
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+
+        return getattr(instance, self.private_name, 0)
+
+    def __set__(self, instance, value):
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError(
+                f"Attribute '{self.public_name}' "
+                f"must be a positive integer"
+            )
+
+        setattr(instance, self.private_name, value)
+
+
+class EnforceAPICompliance(type):
+    """Metaclass validating subclass definitions."""
+
+    def __new__(mcls, name, bases, namespace):
+
+        if bases and "handle_request" not in namespace:
+            raise TypeError(
+                f"Class '{name}' must define "
+                f"'handle_request'"
+            )
+
+        return super().__new__(
+            mcls, name, bases, namespace
+        )
+
+
+class APIHandlerBase(metaclass=EnforceAPICompliance):
+    pass
+
+
+class UserEndpoint(APIHandlerBase):
+
+    retry_count = PositiveInteger()
+
+    def __init__(self, retry_count: int):
+        self.retry_count = retry_count
+
+    def handle_request(self) -> str:
+        return (
+            f"Processing request with "
+            f"{self.retry_count} retries."
+        )
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "endpoint": "UserEndpoint",
+            "retry_count": self.retry_count
+        }
+
+
+def send_payload(item: Serializable) -> None:
+    payload = item.serialize()
+    print(
+        f"[Protocol Validation Passed] "
+        f"Payload: {payload}"
+    )
+
+
+def inspect_gc():
+    print("\nGC thresholds:", gc.get_threshold())
+    print("GC counts:", gc.get_count())
+
+
+if __name__ == "__main__":
+
+    endpoint = UserEndpoint(3)
+
+    print(endpoint.handle_request())
+
+    try:
+        endpoint.retry_count = -1
+    except ValueError as error:
+        print("Descriptor caught error:", error)
+
+    send_payload(endpoint)
+
+    inspect_gc()
+```
+
+Possible output:
+
+```text
+Processing request with 3 retries.
+Descriptor caught error: Attribute 'retry_count' must be a positive integer
+[Protocol Validation Passed] Payload: {'endpoint': 'UserEndpoint', 'retry_count': 3}
+
+GC thresholds: (...)
+GC counts: (...)
+```
+
+The exact garbage-collector values are runtime- and version-dependent and should not be hard-coded.
+
+19. CODE WALKTHROUGHS
+
+19.1 Generator Pipeline
+
+The pipeline contains three lazy stages:
+
+```text
+number_stream()
+      |
+      v
+pipeline_filter()
+      |
+      v
+squared_stream()
+      |
+      v
+for loop
+```
+
+A value is produced only when the final loop requests the next value.
+
+This can greatly reduce intermediate storage when processing large streams.
+
+19.2 Asyncio Pipeline
+
+```text
+Coroutine
+    |
+    v
+Task
+    |
+    v
+Event Loop
+    |
+    +--> I/O wait
+    |
+    +--> Other ready task
+    |
+    +--> I/O completion
+```
+
+The event loop can switch between tasks when coroutines suspend at `await` points.
+
+19.3 Descriptor
+
+`__set_name__()` receives the attribute name during class creation.
+
+For:
+
+```python
+retry_count = PositiveInteger()
+```
+
+the descriptor can discover that its public name is:
+
+```text
+retry_count
+```
+
+Then:
+
+```python
+endpoint.retry_count = 3
+```
+
+invokes the descriptor's `__set__()` method.
+
+19.4 Metaclass
+
+The metaclass participates in creating the class object.
+
+If a class violates the required interface:
+
+```python
+class BrokenEndpoint(APIHandlerBase):
+    pass
+```
+
+the custom metaclass can raise `TypeError` during class definition.
+
+20. EXECUTION FLOW
+
+A simplified execution flow is:
+
+```text
+Python source
+     |
+     v
+Compilation
+     |
+     v
+Module execution
+     |
+     +--> Class definitions
+     |       |
+     |       +--> Metaclass processing
+     |
+     +--> Generator functions
+     |
+     +--> Async coroutine definitions
+     |
+     v
+Runtime
+     |
+     +--> Event loop
+     |       |
+     |       +--> Tasks
+     |       +--> Await points
+     |
+     +--> Object allocation
+     |
+     +--> Reference counting
+     |
+     +--> Cyclic garbage collection
+```
+
+21. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Build an asynchronous web crawler using `asyncio` and an HTTP client library. Limit the number of simultaneous requests with `asyncio.Semaphore`.
+
+Problem 2:
+Implement a generic Observer/Observable framework using generics and callable type annotations.
+
+Problem 3:
+Create a descriptor that validates model fields such as:
+
+* Positive integer.
+* Email address.
+* Required string.
+* Numeric range.
+
+Problem 4:
+Build a custom metaclass that validates required methods when a class is created.
+
+Problem 5:
+Create a type-safe decorator using `ParamSpec` that preserves the wrapped function's parameter and return types.
+
+22. REAL-WORLD APPLICATIONS
+
+22.1 Asynchronous Applications
+
+`asyncio` is useful for:
+
+* HTTP clients and servers.
+* WebSocket applications.
+* Network services.
+* Concurrent API requests.
+* Asynchronous database operations.
+
+22.2 Data Processing
+
+Generators are useful for:
+
+* Log processing.
+* File streaming.
+* ETL pipelines.
+* Large dataset processing.
+* Incremental parsing.
+
+22.3 Framework Design
+
+Descriptors and metaclasses are useful in frameworks that need:
+
+* Attribute validation.
+* Declarative model definitions.
+* ORM fields.
+* Registration systems.
+* Class-level configuration.
+
+22.4 Static Typing
+
+Protocols and generics are useful for:
+
+* Large codebases.
+* Library development.
+* API contracts.
+* Plugin architectures.
+* Type-safe reusable components.
+
+23. COMMON MISTAKES
+
+Mistake 1:
+Using blocking functions inside asynchronous code.
+
+Incorrect:
+
+```python
+async def work():
+    import time
+    time.sleep(2)
+```
+
+This blocks the event-loop thread.
+
+Better:
+
+```python
+async def work():
+    await asyncio.sleep(2)
+```
+
+For blocking synchronous work that cannot be rewritten asynchronously, consider:
+
+```python
+result = await asyncio.to_thread(blocking_function)
+```
+
+Mistake 2:
+Assuming every thread gives CPU parallelism.
+
+In normal GIL-enabled CPython, CPU-bound Python bytecode does not generally gain multi-core parallelism from ordinary threads.
+
+Free-threaded CPython changes this behavior, but library compatibility and workload characteristics still matter.
+
+Mistake 3:
+Assuming `asyncio` automatically parallelizes CPU work.
+
+It does not.
+
+A CPU-heavy function running directly inside the event loop can prevent other tasks from running.
+
+Mistake 4:
+Assuming records or type hints enforce runtime types.
+
+Type annotations are primarily used by static analysis tools. They do not automatically validate runtime values.
+
+24. COMMON ERRORS
+
+24.1 Event Loop Already Running
+
+```text
+RuntimeError: asyncio.run() cannot be called from a running event loop
+```
+
+This commonly occurs when `asyncio.run()` is called from an environment that already owns an event loop.
+
+Solution:
+
+Use the environment's supported async mechanism instead of starting another event loop.
+
+24.2 Async Generator Await Error
+
+An asynchronous generator is consumed using:
+
+```python
+async for item in async_generator:
+    ...
+```
+
+not:
+
+```python
+await async_generator
+```
+
+24.3 Blocking Event Loop
+
+Code such as:
+
+```python
+time.sleep(5)
+```
+
+inside an async handler blocks the event-loop thread.
+
+24.4 Unretrieved Task Exception
+
+If a background Task fails and its exception is never retrieved, asyncio can report:
+
+```text
+Task exception was never retrieved
+```
+
+Using `TaskGroup` is often preferable when the tasks belong to one structured unit of work.
+
+25. DEBUGGING TECHNIQUE
+
+Incorrect:
+
+```python
+import asyncio
+import time
+
+
+async def handle_request(request_id):
+    print(f"Handling {request_id}")
+
+    time.sleep(2)
+
+    return request_id
+
+
+async def main():
+    await asyncio.gather(
+        handle_request(1),
+        handle_request(2)
+    )
+
+
+asyncio.run(main())
+```
+
+The blocking `time.sleep()` prevents the event loop from running another coroutine on that thread.
+
+Correct:
+
+```python
+import asyncio
+
+
+async def handle_request(request_id):
+    print(f"Handling {request_id}")
+
+    await asyncio.sleep(2)
+
+    return request_id
+
+
+async def main():
+    results = await asyncio.gather(
+        handle_request(1),
+        handle_request(2)
+    )
+
+    print(results)
+
+
+asyncio.run(main())
+```
+
+Both coroutines can make progress during the asynchronous sleep.
+
+26. EDGE CASES
+
+26.1 Generator Return Values
+
+A generator can return a final value:
+
+```python
+def generator():
+    yield 10
+    return 99
+```
+
+The return value becomes the `value` associated with `StopIteration`.
+
+`yield from` can capture the returned value:
+
+```python
+def child():
+    yield 10
+    return 99
+
+
+def parent():
+    result = yield from child()
+    print("Returned:", result)
+```
+
+26.2 Background Tasks
+
+Tasks created using `asyncio.create_task()` should normally have their lifetime managed.
+
+For related groups of tasks, `asyncio.TaskGroup` provides structured concurrency and stronger task lifecycle management.
+
+26.3 Generator Exhaustion
+
+After a generator is exhausted:
+
+```python
+next(gen)
+```
+
+raises:
+
+```text
+StopIteration
+```
+
+unless the generator produces another value.
+
+27. BEST PRACTICES
+
+* Use generators for large or streaming datasets.
+* Use generator expressions when lazy transformation is sufficient.
+* Use `TaskGroup` for structured groups of asynchronous tasks.
+* Use `gather()` when collecting results from multiple awaitables is appropriate.
+* Never perform unnecessary blocking operations inside an event loop.
+* Use `asyncio.to_thread()` for suitable blocking I/O or synchronous functions.
+* Use multiprocessing or process pools for CPU-heavy workloads when appropriate.
+* Consider free-threaded CPython when true threaded parallelism is beneficial and dependencies support it.
+* Use descriptors when attribute behavior genuinely requires customization.
+* Prefer normal classes/functions over metaclasses when metaclasses are unnecessary.
+* Use `Protocol` for flexible structural interfaces.
+* Use generics to preserve relationships between types.
+* Use `ParamSpec` when writing type-safe decorators.
+* Avoid changing garbage-collection thresholds without measurement and profiling.
+* Treat CPython memory-management details as implementation-specific.
+
+28. PERFORMANCE CONSIDERATIONS
+
+28.1 Generators
+
+Generators can reduce memory consumption because values are produced on demand.
+
+For example:
+
+```python
+values = (x * x for x in range(1_000_000))
+```
+
+does not construct a million-element list.
+
+However, generator execution is not automatically faster than list processing. Performance depends on the workload.
+
+28.2 Asyncio
+
+Asyncio can efficiently handle many operations that spend significant time waiting for I/O.
+
+It is not a replacement for CPU-parallel computation.
+
+28.3 Threading
+
+Threads can be highly effective for I/O-bound programs.
+
+In GIL-enabled CPython, CPU-bound Python code usually does not scale across cores using ordinary threads.
+
+28.4 Free-Threaded Python
+
+Free-threaded builds can execute Python code in parallel across multiple threads.
+
+However:
+
+* There can be additional runtime overhead.
+* Some extension modules may not support free threading.
+* Thread safety still matters.
+* Parallel execution does not guarantee a speedup for every workload.
+
+29. MEMORY CONSIDERATIONS
+
+Important memory principles:
+
+* Generators avoid storing entire intermediate sequences.
+* Reference counting can release objects promptly in CPython when their reference count reaches zero.
+* Cyclic GC handles certain unreachable reference cycles.
+* `pymalloc` manages many small allocations in standard GIL-enabled CPython.
+* Free-threaded builds use different allocator defaults.
+* Memory retained by long-lived references can prevent objects from being released.
+* Global caches and large collections should be managed carefully.
+
+30. SECURITY AND RELIABILITY CONSIDERATIONS
+
+30.1 Event-Loop Starvation
+
+A malicious or accidental CPU-heavy operation can block an asyncio worker.
+
+Example:
+
+```python
+while True:
+    pass
+```
+
+inside an async request handler prevents the event loop from serving other tasks on that thread.
+
+CPU-intensive operations should be moved to an appropriate execution mechanism.
+
+30.2 Descriptor Validation
+
+Descriptors can enforce validation rules centrally.
+
+However, validation should not be treated as a complete security boundary. Input should still be validated at appropriate application boundaries.
+
+30.3 Metaclass Complexity
+
+Metaclasses can modify class creation behavior.
+
+Excessive metaclass usage can make code difficult to understand, debug, and maintain.
+
+Use them only when class-level customization is genuinely required.
+
+31. COMPARISON OF CONCURRENCY MODELS
+
+| Feature               | Asyncio                             | Threading                           | Multiprocessing                      |
+| --------------------- | ----------------------------------- | ----------------------------------- | ------------------------------------ |
+| Basic model           | Cooperative tasks                   | OS threads                          | OS processes                         |
+| Typical strength      | High-concurrency I/O                | I/O and blocking libraries          | CPU parallelism                      |
+| Memory model          | Usually shared process memory       | Shared process memory               | Separate process memory              |
+| GIL in normal CPython | Event-loop thread is subject to GIL | Shared GIL                          | Separate interpreter/GIL per process |
+| Free-threaded CPython | Still cooperative                   | Can execute Python code in parallel | Already process-based                |
+| CPU-bound Python      | Not ideal directly                  | Limited in GIL-enabled builds       | Suitable                             |
+| I/O-bound work        | Excellent                           | Good                                | Possible but heavier                 |
+| Main synchronization  | Async locks/events                  | Thread locks/events                 | IPC/queues/pipes                     |
+| Main complexity       | Async/await design                  | Race conditions                     | IPC/process management               |
+
+32. FREQUENTLY ASKED QUESTIONS
+
+Q1. What is the difference between `yield` and `yield from`?
+
+A:
+
+`yield` produces a value from the current generator.
+
+`yield from` delegates iteration and generator communication to another iterable or iterator.
+
+Q2. Does Python still have the GIL?
+
+A:
+
+CPython still provides GIL-enabled builds, but modern CPython also supports free-threaded builds in which the GIL can be disabled.
+
+Therefore, "Python always has a GIL" is no longer accurate.
+
+Q3. Does asyncio use multiple CPU cores?
+
+A:
+
+A normal asyncio event loop generally runs tasks cooperatively on one thread.
+
+Asyncio provides concurrency rather than automatically providing CPU parallelism.
+
+Q4. What is a descriptor?
+
+A:
+
+A descriptor is an object implementing one or more of:
+
+```text
+__get__()
+__set__()
+__delete__()
+```
+
+It controls attribute access behavior.
+
+Q5. What is a metaclass?
+
+A:
+
+A metaclass is the type used to create classes.
+
+The default metaclass for ordinary classes is `type`.
+
+Q6. Are type hints enforced at runtime?
+
+A:
+
+No. Python type annotations primarily provide information for static type checkers and development tools.
+
+Q7. What is structural typing?
+
+A:
+
+Structural typing determines compatibility according to the required interface rather than explicit inheritance.
+
+`typing.Protocol` provides a way to express this to static type checkers.
+
+Q8. Are generators always memory O(1)?
+
+A:
+
+A generator itself maintains a relatively small execution state, but the complete memory complexity of an application depends on what the generator retains, what it references, and what downstream stages store.
+
+33. INTERVIEW QUESTIONS
+
+Q1. What is a generator?
+
+Answer:
+
+A generator is an iterator produced by a function containing `yield`. It suspends execution at `yield` and resumes when the next value is requested.
+
+Q2. What is the difference between `yield` and `yield from`?
+
+Answer:
+
+`yield` produces values from the current generator. `yield from` delegates iteration and generator protocol operations to another iterable or iterator.
+
+Q3. What is the GIL?
+
+Answer:
+
+The GIL is a CPython synchronization mechanism used by GIL-enabled builds to protect interpreter operations involving Python objects. It limits simultaneous execution of Python code by multiple threads in such builds.
+
+Q4. Does the GIL exist in every Python implementation?
+
+Answer:
+
+No. The GIL is primarily a CPython implementation detail. CPython also provides free-threaded builds where the GIL can be disabled.
+
+Q5. How does asyncio achieve concurrency?
+
+Answer:
+
+An event loop schedules coroutines and resumes them when asynchronous operations become ready. At `await` points, a coroutine can suspend and allow another ready task to run.
+
+Q6. What is a descriptor?
+
+Answer:
+
+A descriptor is an object defining `__get__`, `__set__`, or `__delete__` and is used to customize attribute access.
+
+Q7. What is the difference between data and non-data descriptors?
+
+Answer:
+
+A data descriptor defines `__set__` or `__delete__` and takes priority over an instance dictionary entry.
+
+A non-data descriptor normally defines only `__get__`, so an instance dictionary entry can override it.
+
+Q8. What is a metaclass?
+
+Answer:
+
+A metaclass is the class of a class. It can customize class creation and validation.
+
+Q9. What is `Protocol`?
+
+Answer:
+
+`Protocol` supports structural static typing. A class can satisfy a protocol by providing the required members without explicitly inheriting from the protocol.
+
+Q10. What is `ParamSpec`?
+
+Answer:
+
+`ParamSpec` represents the parameter specification of a callable and is especially useful for type-safe decorators.
+
+34. EXAM QUESTIONS
+
+Q1. What is the default metaclass of a normal Python class?
+
+Answer:
+
+```text
+type
+```
+
+Q2. What keyword creates a generator function?
+
+Answer:
+
+```text
+yield
+```
+
+Q3. Which function starts a top-level asyncio program?
+
+Answer:
+
+```python
+asyncio.run()
+```
+
+Q4. Which API provides structured concurrency for groups of asyncio tasks?
+
+Answer:
+
+```python
+asyncio.TaskGroup
+```
+
+Q5. True or False: `asyncio` automatically makes CPU-bound Python code execute in parallel.
+
+Answer:
+
+False.
+
+Q6. True or False: `typing.Protocol` can represent structural typing.
+
+Answer:
+
+True.
+
+Q7. True or False: Type annotations automatically enforce types at runtime.
+
+Answer:
+
+False.
+
+Q8. Name three descriptor methods.
+
+Answer:
+
+```text
+__get__()
+__set__()
+__delete__()
+```
+
+35. PRACTICE QUESTIONS
+
+Q1.
+Implement a generator that reads a large text file line by line and yields only lines containing a specified keyword.
+
+Q2.
+Create a generator pipeline that:
+
+```text
+Read numbers
+    ↓
+Filter even numbers
+    ↓
+Square numbers
+    ↓
+Calculate final values
+```
+
+Q3.
+Build an asynchronous rate limiter using:
+
+```python
+asyncio.Semaphore
+asyncio.Lock
+```
+
+Q4.
+Create a generic `Repository[T]` class for storing and retrieving objects.
+
+Q5.
+Create a `Protocol` named `Serializable` and implement it using two unrelated classes.
+
+Q6.
+Create a descriptor that validates an email address.
+
+Q7.
+Create a metaclass that requires every subclass to implement a `process()` method.
+
+Q8.
+Create a type-safe decorator using `ParamSpec` that logs function calls while preserving the function's type signature.
+
+36. SUMMARY
+
+Advanced Python combines several powerful programming mechanisms:
+
+* Generators provide lazy and incremental computation.
+* `yield from` delegates generator operations.
+* `asyncio` provides cooperative asynchronous concurrency.
+* Tasks represent scheduled coroutine execution.
+* `TaskGroup` provides structured concurrency.
+* Threading is useful for many I/O-bound workloads.
+* Multiprocessing can provide process-level parallelism for CPU-bound workloads.
+* The GIL remains relevant to standard CPython builds, while free-threaded CPython provides an optional GIL-disabled configuration.
+* CPython uses reference counting together with cyclic garbage collection.
+* Descriptors customize attribute access.
+* Metaclasses customize class creation.
+* `Protocol` provides structural static typing.
+* Generics improve type-safe reuse.
+* `ParamSpec` enables type-safe decorators.
+
+37. KEY TAKEAWAYS
+
+* Use `yield` to create lazy generators.
+* Use `yield from` for generator delegation.
+* Use `send()`, `throw()`, and `close()` for advanced generator control.
+* Use `asyncio` for high-concurrency I/O workloads.
+* Use `TaskGroup` when structured task management is appropriate.
+* Avoid blocking calls inside the event loop.
+* Use multiprocessing or suitable parallel execution mechanisms for CPU-heavy work.
+* Remember that the GIL is a CPython implementation detail and that free-threaded CPython is now officially supported.
+* Understand reference counting and cyclic garbage collection when debugging memory behavior.
+* Use descriptors for controlled attribute access.
+* Use metaclasses only when class-creation customization is necessary.
+* Use `Protocol` for structural interfaces.
+* Use generics for reusable type-safe components.
+* Use `ParamSpec` for type-safe decorators.
+* Avoid presenting CPython implementation details or benchmark numbers as universal Python guarantees.
+
+================================================================================
+END OF ADVANCED PYTHON KNOWLEDGE BASE
+=====================================

@@ -1,0 +1,2942 @@
+COURSE: Python Programming
+TOPIC: Object-Oriented Programming, Dunder Methods, MRO, and Dataclasses
+LEVEL: Beginner to Advanced
+SOURCE: Python 3.14.7 Official Documentation + Textbook Knowledge Base
+
+================================================================================
+OBJECT-ORIENTED PROGRAMMING, DUNDER METHODS, MRO, AND DATACLASSES
+=================================================================
+
+1. INTRODUCTION
+
+---
+
+Python provides a complete object-oriented programming model based on classes,
+objects, inheritance, dynamic attribute lookup, descriptors, special methods,
+and polymorphism.
+
+A class is itself an object created when a class definition is executed.
+Instances of the class contain state through attributes and behavior through
+methods.
+
+Python supports:
+
+* Classes and objects
+* Instance, class, and static methods
+* Encapsulation through conventions and properties
+* Inheritance
+* Multiple inheritance
+* Method overriding
+* Polymorphism
+* Duck typing
+* Method Resolution Order (MRO)
+* Cooperative inheritance using `super()`
+* Descriptors
+* Special methods, commonly called dunder methods
+* Metaclasses
+* Dataclasses
+
+Python's object-oriented model is closely connected to the Python Data Model.
+Special methods such as:
+
+```
+__init__
+__repr__
+__str__
+__eq__
+__len__
+__getitem__
+__call__
+```
+
+allow user-defined objects to interact naturally with Python syntax and
+built-in functions.
+
+Python does not enforce Java/C++-style private access modifiers. Encapsulation
+is primarily implemented using conventions, properties, and carefully designed
+interfaces.
+
+2. LEARNING OBJECTIVES
+
+---
+
+After completing this topic, the learner should be able to:
+
+* Define classes and create objects.
+* Understand instance attributes and class attributes.
+* Understand the role of `self`.
+* Implement `__init__()` correctly.
+* Distinguish instance methods, class methods, and static methods.
+* Use `@property` for managed attributes.
+* Understand single-underscore conventions.
+* Understand double-underscore name mangling.
+* Implement useful Python special methods.
+* Understand how Python operators interact with special methods.
+* Implement custom containers.
+* Understand inheritance and method overriding.
+* Explain multiple inheritance.
+* Understand Method Resolution Order (MRO).
+* Use `super()` correctly in cooperative inheritance.
+* Explain the C3 MRO algorithm conceptually.
+* Understand descriptors.
+* Understand `__new__()` and `__init__()`.
+* Understand classes and metaclasses.
+* Use `@dataclass`.
+* Use `field(default_factory=...)`.
+* Understand `frozen=True`, `order=True`, `slots=True`, and `kw_only=True`.
+* Understand dataclass equality and hashing rules.
+* Design maintainable object-oriented Python programs.
+
+3. PREREQUISITES
+
+---
+
+Recommended prerequisites:
+
+* Python variables and data types
+* Functions
+* Function arguments
+* Scope and namespaces
+* Lists, dictionaries, tuples, and sets
+* Exceptions
+* Basic decorators
+* Basic understanding of references and mutability
+
+4. BEGINNER CONCEPTS
+
+---
+
+4.1 Classes and Objects
+
+A class defines a new object type.
+
+Example:
+
+```python id="3x9p6f"
+class Student:
+    pass
+```
+
+Create an instance:
+
+```python id="m5f2u8"
+student = Student()
+```
+
+Here:
+
+```
+Student -> class object
+student -> instance of Student
+```
+
+4.2 Defining a Class
+
+Example:
+
+```python id="7s2k4m"
+class BankAccount:
+    """Represent a simple bank account."""
+
+    def __init__(self, owner: str, balance: float = 0.0):
+        self.owner = owner
+        self.balance = balance
+
+    def deposit(self, amount: float) -> float:
+        if amount <= 0:
+            raise ValueError("Deposit amount must be positive.")
+
+        self.balance += amount
+        return self.balance
+```
+
+Create an object:
+
+```python id="0h3j9q"
+account = BankAccount("Alice", 1000.0)
+
+account.deposit(500.0)
+
+print(account.balance)
+```
+
+Output:
+
+```text id="k7m1q4"
+1500.0
+```
+
+4.3 The `self` Parameter
+
+`self` is the conventional name for the first parameter of an instance
+method.
+
+Example:
+
+```python id="8z3q5d"
+class Student:
+    def show(self):
+        print("Student object:", self)
+```
+
+Calling:
+
+```python id="0w8k3p"
+student.show()
+```
+
+is conceptually similar to:
+
+```python id="j2v5n1"
+Student.show(student)
+```
+
+`self` is not a special keyword. It is a naming convention for the instance
+passed to an instance method.
+
+4.4 Instance Attributes
+
+Instance attributes belong to individual objects.
+
+Example:
+
+```python id="5k1r8v"
+class Student:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+```
+
+Each instance can contain different values:
+
+```python id="7q2m4s"
+s1 = Student("Alice", 20)
+s2 = Student("Bob", 21)
+```
+
+Conceptually:
+
+```
+s1.name -> "Alice"
+s2.name -> "Bob"
+```
+
+4.5 Class Attributes
+
+Class attributes belong to the class namespace and can be shared by
+instances.
+
+Example:
+
+```python id="6v8p2x"
+class Student:
+    school = "ABC College"
+
+    def __init__(self, name):
+        self.name = name
+```
+
+Both objects can access:
+
+```python id="4b7m1k"
+s1 = Student("Alice")
+s2 = Student("Bob")
+
+print(s1.school)
+print(s2.school)
+```
+
+Output:
+
+```text id="2n6c8w"
+ABC College
+ABC College
+```
+
+If an instance receives an attribute with the same name, that instance
+attribute can shadow the class attribute.
+
+4.6 Inheritance
+
+A derived class inherits attributes and methods from a base class.
+
+Example:
+
+```python id="1q9d6h"
+class Animal:
+    def speak(self):
+        print("Animal sound")
+
+
+class Dog(Animal):
+    def bark(self):
+        print("Woof")
+```
+
+Usage:
+
+```python id="8r3m5v"
+dog = Dog()
+
+dog.speak()
+dog.bark()
+```
+
+Output:
+
+```text id="6j1x9p"
+Animal sound
+Woof
+```
+
+4.7 Method Overriding
+
+A subclass can provide a new implementation of an inherited method.
+
+```python id="4c7n2z"
+class Animal:
+    def speak(self):
+        print("Animal sound")
+
+
+class Dog(Animal):
+    def speak(self):
+        print("Woof")
+```
+
+Now:
+
+```python id="9h2m5k"
+Dog().speak()
+```
+
+Output:
+
+```text id="5v8q1r"
+Woof
+```
+
+4.8 Polymorphism
+
+Python supports polymorphism through dynamic method lookup and duck typing.
+
+Example:
+
+```python id="2p6x8m"
+class Dog:
+    def speak(self):
+        return "Woof"
+
+
+class Cat:
+    def speak(self):
+        return "Meow"
+
+
+def make_sound(animal):
+    print(animal.speak())
+
+
+make_sound(Dog())
+make_sound(Cat())
+```
+
+Output:
+
+```text id="7k3n5c"
+Woof
+Meow
+```
+
+The function does not require a specific class. It only requires an object
+that supports the expected operation.
+
+5. INTERMEDIATE CONCEPTS
+
+---
+
+5.1 Instance Methods
+
+Instance methods receive the instance as their first argument.
+
+Example:
+
+```python id="6x1q8p"
+class Student:
+    def __init__(self, name):
+        self.name = name
+
+    def introduce(self):
+        return f"My name is {self.name}"
+```
+
+5.2 Class Methods
+
+`@classmethod` creates a method whose first argument is the class object.
+
+Example:
+
+```python id="3m7v2k"
+class User:
+    def __init__(self, name):
+        self.name = name
+
+    @classmethod
+    def from_string(cls, text):
+        return cls(text.strip())
+```
+
+Usage:
+
+```python id="8q4n6x"
+user = User.from_string(" Alice ")
+print(user.name)
+```
+
+Output:
+
+```text id="1k9p3v"
+Alice
+```
+
+Class methods are commonly used as alternative constructors.
+
+5.3 Static Methods
+
+`@staticmethod` creates a method that receives no implicit `self` or `cls`.
+
+Example:
+
+```python id="5h2m8r"
+class MathTools:
+
+    @staticmethod
+    def square(x):
+        return x * x
+```
+
+Usage:
+
+```python id="7c1x4q"
+print(MathTools.square(5))
+```
+
+Output:
+
+```text id="9m3v6k"
+25
+```
+
+A static method behaves like a regular function stored in the class
+namespace.
+
+5.4 Properties
+
+Properties allow attribute-style access while executing methods.
+
+Example:
+
+```python id="2n8p5s"
+class Temperature:
+
+    def __init__(self, celsius):
+        self.celsius = celsius
+
+    @property
+    def celsius(self):
+        return self._celsius
+
+    @celsius.setter
+    def celsius(self, value):
+        if value < -273.15:
+            raise ValueError(
+                "Temperature cannot be below absolute zero."
+            )
+
+        self._celsius = float(value)
+```
+
+Usage:
+
+```python id="6r1m9x"
+temperature = Temperature(25)
+
+print(temperature.celsius)
+
+temperature.celsius = 30
+```
+
+The property provides controlled access to the underlying `_celsius`
+attribute.
+
+5.5 Property Deleter
+
+Properties can also define deletion behavior.
+
+```python id="4p7k2n"
+class Example:
+
+    def __init__(self):
+        self._value = 10
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.deleter
+    def value(self):
+        del self._value
+```
+
+5.6 Encapsulation
+
+Python does not enforce conventional `private` and `protected` access
+modifiers.
+
+Instead:
+
+```
+name
+    Public API
+
+_name
+    Internal-use convention
+
+__name
+    Name mangling
+```
+
+A single leading underscore is a convention.
+
+A double leading underscore triggers name mangling inside classes.
+
+5.7 Name Mangling
+
+Example:
+
+```python id="8m3q5v"
+class Parent:
+
+    def __init__(self):
+        self.__secret = 42
+```
+
+Internally, the name is transformed approximately to:
+
+```
+_Parent__secret
+```
+
+Therefore:
+
+```python id="5x1n7k"
+obj = Parent()
+
+print(obj._Parent__secret)
+```
+
+may access the value.
+
+Name mangling is not a security mechanism.
+
+Its main purpose is to reduce accidental name collisions in subclasses.
+
+5.8 Special / Dunder Methods
+
+Special methods have names surrounded by double underscores.
+
+Examples:
+
+```
+__init__
+__new__
+__repr__
+__str__
+__eq__
+__hash__
+__len__
+__getitem__
+__setitem__
+__iter__
+__contains__
+__call__
+__add__
+__mul__
+```
+
+They allow user-defined classes to integrate with Python syntax and built-in
+operations.
+
+5.9 `__repr__` and `__str__`
+
+`__repr__` is intended primarily for an unambiguous developer-oriented
+representation.
+
+`__str__` is intended for a readable string representation.
+
+Example:
+
+```python id="1q6v9m"
+class User:
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return f"User(name={self.name!r})"
+
+    def __str__(self):
+        return self.name
+```
+
+Usage:
+
+```python id="8k2p5r"
+user = User("Alice")
+
+print(repr(user))
+print(str(user))
+```
+
+Output:
+
+```text id="3m7x1c"
+User(name='Alice')
+Alice
+```
+
+5.10 Equality
+
+A class can implement:
+
+```
+__eq__()
+```
+
+Example:
+
+```python id="9v4n6q"
+class Point:
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, other):
+        if not isinstance(other, Point):
+            return NotImplemented
+
+        return self.x == other.x and self.y == other.y
+```
+
+5.11 Returning `NotImplemented`
+
+When a special method cannot meaningfully handle another operand, it can
+return:
+
+```
+NotImplemented
+```
+
+This tells Python that the operation should continue with its normal
+fallback/reflected-operation rules.
+
+This is different from:
+
+```
+return False
+```
+
+and different from:
+
+```
+raise TypeError(...)
+```
+
+For example:
+
+```python id="2c8m7p"
+def __eq__(self, other):
+    if not isinstance(other, Point):
+        return NotImplemented
+
+    return self.x == other.x
+```
+
+5.12 Hashing
+
+Objects used as dictionary keys or set elements must satisfy Python's
+hashability requirements.
+
+If a class defines equality semantics but is mutable, it generally should
+not provide a hash based on mutable state.
+
+Important rule:
+
+```
+If a == b
+then hash(a) == hash(b)
+```
+
+for objects that are hashable.
+
+Defining `__eq__` can cause Python to make the class unhashable unless an
+appropriate `__hash__` is supplied.
+
+5.13 Container Special Methods
+
+A custom container can implement:
+
+```
+__len__()
+__getitem__()
+__setitem__()
+__delitem__()
+__contains__()
+__iter__()
+```
+
+Example:
+
+```python id="7p3m9x"
+class NumberList:
+
+    def __init__(self, values):
+        self._values = list(values)
+
+    def __len__(self):
+        return len(self._values)
+
+    def __getitem__(self, index):
+        return self._values[index]
+
+    def __iter__(self):
+        return iter(self._values)
+```
+
+Usage:
+
+```python id="4n8q2v"
+numbers = NumberList([10, 20, 30])
+
+print(len(numbers))
+print(numbers[1])
+print(list(numbers))
+```
+
+Output:
+
+```text id="1x6k5r"
+3
+20
+[10, 20, 30]
+```
+
+5.14 Callable Objects
+
+Implementing `__call__()` allows an instance to be called like a function.
+
+```python id="9m2p7c"
+class Multiplier:
+
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, value):
+        return value * self.factor
+```
+
+Usage:
+
+```python id="3v8n1q"
+double = Multiplier(2)
+
+print(double(10))
+```
+
+Output:
+
+```text id="5k4x9m"
+20
+```
+
+6. ADVANCED CONCEPTS
+
+---
+
+6.1 Multiple Inheritance
+
+Python supports multiple inheritance.
+
+Example:
+
+```python id="7q2m8v"
+class A:
+    pass
+
+
+class B:
+    pass
+
+
+class C(A, B):
+    pass
+```
+
+`C` inherits from both `A` and `B`.
+
+6.2 Method Resolution Order
+
+MRO determines the order in which Python searches classes for attributes
+and methods.
+
+Example:
+
+```python id="4x9p1n"
+class A:
+    pass
+
+
+class B(A):
+    pass
+
+
+class C(B):
+    pass
+```
+
+The MRO can be viewed with:
+
+```python id="6m3v8q"
+print(C.mro())
+```
+
+or:
+
+```python id="2k7r5x"
+print(C.__mro__)
+```
+
+Typical result:
+
+```text
+C -> B -> A -> object
+```
+
+6.3 C3 Linearization
+
+Python uses C3-style method resolution for multiple inheritance.
+
+Important properties include:
+
+* Local precedence order is preserved.
+* The order of direct bases is respected.
+* Monotonicity is maintained.
+* A class appears only once in the final MRO.
+
+For:
+
+```python id="8n1q6m"
+class D(B, C):
+    pass
+```
+
+Python does not simply perform an independent depth-first search through
+each parent.
+
+Instead, it constructs a consistent linear ordering.
+
+6.4 `super()`
+
+A common misconception is:
+
+```
+super() == "call my parent"
+```
+
+More accurately, `super()` creates a proxy that performs attribute lookup
+starting after the specified class in the relevant MRO.
+
+Example:
+
+```python id="3p7x9v"
+class A:
+    def process(self):
+        print("A")
+
+
+class B(A):
+    def process(self):
+        print("B")
+        super().process()
+
+
+class C(B):
+    def process(self):
+        print("C")
+        super().process()
+```
+
+Calling:
+
+```python id="5m2k8q"
+C().process()
+```
+
+produces:
+
+```text id="9x4n1v"
+C
+B
+A
+```
+
+The key idea is:
+
+```
+super() follows the MRO.
+```
+
+It does not simply select the immediate textual parent.
+
+6.5 Cooperative Multiple Inheritance
+
+Mixin-based multiple inheritance works best when each participating class:
+
+* Accepts the arguments intended for the cooperative chain.
+* Calls `super()`.
+* Performs its own work exactly once.
+* Does not directly call a specific parent unless intentionally bypassing
+  cooperative dispatch.
+
+A typical pattern is:
+
+```python id="6q8m3r"
+class LoggingMixin:
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        print("Logging initialized")
+```
+
+This allows another class to appear before or after it in the MRO.
+
+6.6 `__new__()` vs `__init__()`
+
+`__new__()` is responsible for creating and returning an instance.
+
+`__init__()` initializes an already-created instance.
+
+Conceptually:
+
+```
+__new__()
+    |
+    v
+object created
+    |
+    v
+__init__()
+    |
+    v
+object initialized
+```
+
+Example:
+
+```python id="1v5n8p"
+class Example:
+
+    def __new__(cls):
+        print("__new__ called")
+        return super().__new__(cls)
+
+    def __init__(self):
+        print("__init__ called")
+```
+
+Usage:
+
+```python id="9k2m6x"
+Example()
+```
+
+Output:
+
+```text id="4q7n1v"
+__new__ called
+__init__ called
+```
+
+6.7 Dataclasses
+
+The `dataclasses` module provides the `@dataclass` decorator for classes
+primarily intended to store data.
+
+Example:
+
+```python id="8p3m5r"
+from dataclasses import dataclass
+
+
+@dataclass
+class Student:
+    name: str
+    age: int
+```
+
+The decorator can automatically generate methods such as:
+
+```
+__init__
+__repr__
+__eq__
+```
+
+depending on its configuration.
+
+Important:
+
+`@dataclass` does NOT automatically make every class immutable or
+automatically generate a hash in every configuration.
+
+6.8 Dataclass `field()`
+
+`field()` provides configuration for individual fields.
+
+Example:
+
+```python id="2x7q9m"
+from dataclasses import dataclass, field
+
+
+@dataclass
+class Student:
+    name: str
+    subjects: list[str] = field(default_factory=list)
+```
+
+`default_factory` should be used when each instance needs a fresh mutable
+default object.
+
+6.9 Dataclass `frozen=True`
+
+Example:
+
+```python id="5n1v8k"
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Point:
+    x: float
+    y: float
+```
+
+Assignment to a field after initialization raises an exception.
+
+Important:
+
+`frozen=True` emulates read-only/frozen behavior. It does not create a
+universally immutable object graph.
+
+For example, if a frozen dataclass contains a mutable list, that list can
+still be mutable.
+
+6.10 Dataclass `order=True`
+
+Example:
+
+```python id="7m4p2x"
+from dataclasses import dataclass
+
+
+@dataclass(order=True)
+class Student:
+    marks: int
+    name: str
+```
+
+The decorator can generate ordering methods.
+
+`order=True` requires appropriate equality configuration and should be used
+only when the field ordering has meaningful semantics.
+
+6.11 Dataclass `slots=True`
+
+Modern Python dataclasses can also use:
+
+```python id="9q3n6v"
+from dataclasses import dataclass
+
+
+@dataclass(slots=True)
+class Point:
+    x: float
+    y: float
+```
+
+This can provide memory and attribute-access benefits for appropriate class
+designs.
+
+Exact memory savings depend on the Python version, class structure,
+inheritance, and workload.
+
+7. DETAILED THEORY
+
+---
+
+7.1 Namespaces
+
+A namespace is a mapping from names to objects.
+
+Examples:
+
+```
+module namespace
+function local namespace
+class namespace
+instance attribute namespace
+```
+
+A class definition creates a new namespace while the class body executes.
+
+7.2 Class Creation
+
+A class statement is executable.
+
+Conceptually:
+
+```
+class Student:
+    ...
+```
+
+causes Python to:
+
+1. Create a namespace for the class body.
+2. Execute the class body.
+3. Determine the appropriate metaclass.
+4. Create the class object.
+5. Bind the class name in the surrounding namespace.
+
+The default metaclass is normally:
+
+```
+type
+```
+
+7.3 Classes Are Objects
+
+Example:
+
+```python id="4r8m2k"
+class Student:
+    pass
+
+print(type(Student))
+```
+
+Typical output:
+
+```text id="6n1x9p"
+<class 'type'>
+```
+
+Therefore:
+
+```
+Student
+```
+
+is itself an object, normally an instance of `type`.
+
+7.4 Metaclasses
+
+A metaclass controls aspects of class creation.
+
+The default metaclass is:
+
+```
+type
+```
+
+Example:
+
+```python id="8m5q3v"
+class Student:
+    pass
+
+print(isinstance(Student, type))
+```
+
+Output:
+
+```text id="2k7n1x"
+True
+```
+
+Custom metaclasses are advanced features and should be used only when class
+creation itself needs customization.
+
+7.5 Descriptors
+
+A descriptor is an object that defines one or more methods such as:
+
+```
+__get__()
+__set__()
+__delete__()
+```
+
+Descriptors control attribute access.
+
+Properties are a common example of descriptor-based behavior.
+
+Functions stored in classes also participate in descriptor behavior. When a
+function is accessed through an instance, it can produce a bound method.
+
+7.6 Method Binding
+
+Example:
+
+```python id="5x8q1m"
+class Student:
+
+    def greet(self):
+        return "Hello"
+
+
+student = Student()
+
+method = student.greet
+
+print(method.__self__ is student)
+```
+
+Output:
+
+```text id="9v3n6k"
+True
+```
+
+The method object contains a reference to the instance and the underlying
+function.
+
+7.7 Attribute Lookup
+
+A simplified attribute lookup model involves:
+
+1. `__getattribute__()`
+2. Data descriptors
+3. Instance attributes
+4. Non-data descriptors and class attributes
+5. Base classes according to MRO
+6. `__getattr__()` as a fallback when defined
+
+The exact process is defined by the Data Model and descriptor rules.
+
+Special methods such as `__len__` and `__add__` have special lookup behavior
+and are generally resolved on the type rather than simply through an
+instance attribute lookup.
+
+7.8 Data Descriptors vs Non-Data Descriptors
+
+A descriptor defining:
+
+```
+__get__()
+__set__()
+or
+__delete__()
+```
+
+can participate as a data descriptor.
+
+A descriptor providing only:
+
+```
+__get__()
+```
+
+is a non-data descriptor.
+
+This distinction affects whether instance attributes can override the
+descriptor.
+
+8. SYNTAX
+
+---
+
+8.1 Basic Class
+
+```python id="6p2m8r"
+class ClassName:
+
+    def __init__(self, value):
+        self.value = value
+
+    def method(self):
+        return self.value
+```
+
+8.2 Class Method
+
+```python id="1x7q4n"
+class Example:
+
+    @classmethod
+    def create(cls, value):
+        return cls(value)
+```
+
+8.3 Static Method
+
+```python id="8m3v6k"
+class Example:
+
+    @staticmethod
+    def calculate(x, y):
+        return x + y
+```
+
+8.4 Property
+
+```python id="4n9p1x"
+class Example:
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, new_value):
+        self._value = new_value
+```
+
+8.5 Dataclass
+
+```python id="7q5m2v"
+from dataclasses import dataclass, field
+
+
+@dataclass
+class UserRecord:
+    user_id: int
+    username: str
+    roles: list[str] = field(default_factory=list)
+```
+
+8.6 Frozen Dataclass
+
+```python id="3x8n6p"
+@dataclass(frozen=True)
+class Point:
+    x: float
+    y: float
+```
+
+8.7 Slotted Dataclass
+
+```python id="9m1q4k"
+@dataclass(slots=True)
+class Point:
+    x: float
+    y: float
+```
+
+9. BASIC EXAMPLE
+
+---
+
+Class definition, properties, class methods, and static methods:
+
+```python id="5v7p2m"
+class Circle:
+    """Represent a geometric circle."""
+
+    PI = 3.141592653589793
+
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    @property
+    def radius(self) -> float:
+        return self._radius
+
+    @radius.setter
+    def radius(self, value: float) -> None:
+        if value < 0:
+            raise ValueError("Radius cannot be negative.")
+
+        self._radius = float(value)
+
+    @property
+    def area(self) -> float:
+        return self.PI * self._radius ** 2
+
+    @classmethod
+    def from_diameter(cls, diameter: float):
+        return cls(diameter / 2)
+
+    @staticmethod
+    def is_valid_radius(value: float) -> bool:
+        return isinstance(value, (int, float)) and value >= 0
+
+
+if __name__ == "__main__":
+    c1 = Circle(5)
+
+    print(
+        f"Circle 1 radius: {c1.radius}, "
+        f"Area: {c1.area:.2f}"
+    )
+
+    c2 = Circle.from_diameter(10)
+
+    print(
+        f"Circle 2 radius: {c2.radius}, "
+        f"Area: {c2.area:.2f}"
+    )
+
+    print(
+        f"Is -5 valid radius? "
+        f"{Circle.is_valid_radius(-5)}"
+    )
+```
+
+10. INTERMEDIATE EXAMPLE
+
+---
+
+Custom object supporting several Python operations:
+
+```python id="2k9m5x"
+class Vector2D:
+    """A two-dimensional vector."""
+
+    def __init__(self, x: float, y: float):
+        self._x = float(x)
+        self._y = float(y)
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    def __repr__(self):
+        return f"Vector2D({self._x}, {self._y})"
+
+    def __str__(self):
+        return f"({self._x}, {self._y})"
+
+    def __eq__(self, other):
+        if not isinstance(other, Vector2D):
+            return NotImplemented
+
+        return (
+            self._x == other._x
+            and self._y == other._y
+        )
+
+    def __hash__(self):
+        return hash((self._x, self._y))
+
+    def __add__(self, other):
+        if not isinstance(other, Vector2D):
+            return NotImplemented
+
+        return Vector2D(
+            self._x + other._x,
+            self._y + other._y
+        )
+
+    def __mul__(self, scalar):
+        if not isinstance(scalar, (int, float)):
+            return NotImplemented
+
+        return Vector2D(
+            self._x * scalar,
+            self._y * scalar
+        )
+
+    def __abs__(self):
+        return (self._x ** 2 + self._y ** 2) ** 0.5
+
+    def __bool__(self):
+        return self._x != 0 or self._y != 0
+
+
+if __name__ == "__main__":
+    v1 = Vector2D(3, 4)
+    v2 = Vector2D(1, 2)
+
+    v3 = v1 + v2
+
+    print("v1:", v1)
+    print("repr:", repr(v1))
+    print("v1 + v2:", v3)
+    print("v1 * 3:", v1 * 3)
+    print("|v1|:", abs(v1))
+    print(
+        "v1 == Vector2D(3, 4):",
+        v1 == Vector2D(3, 4)
+    )
+
+    vector_set = {v1, v2, v3}
+
+    print("Vector set length:", len(vector_set))
+```
+
+11. ADVANCED EXAMPLE
+
+---
+
+11.1 Cooperative Multiple Inheritance
+
+```python id="8q4m1v"
+class BaseService:
+    def __init__(self, service_id: str, **kwargs):
+        super().__init__(**kwargs)
+
+        self.service_id = service_id
+
+        print(
+            f"[Init] BaseService id={self.service_id}"
+        )
+
+    def execute(self):
+        print(
+            f"[Exec] BaseService execute: "
+            f"{self.service_id}"
+        )
+
+
+class LoggingMixin(BaseService):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        print("[Init] LoggingMixin initialized")
+
+    def execute(self):
+        print("[Log] Starting execution...")
+        super().execute()
+        print("[Log] Execution finished.")
+
+
+class MetricsMixin(BaseService):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        print("[Init] MetricsMixin initialized")
+
+    def execute(self):
+        print("[Metric] Recording latency...")
+        super().execute()
+        print("[Metric] Latency recorded.")
+
+
+class PaymentService(LoggingMixin, MetricsMixin):
+
+    def __init__(self, service_id, merchant_id):
+        super().__init__(service_id=service_id)
+
+        self.merchant_id = merchant_id
+
+        print(
+            "[Init] PaymentService initialized "
+            f"for merchant={self.merchant_id}"
+        )
+
+
+print("=== MRO ===")
+
+for cls in PaymentService.mro():
+    print(" ->", cls.__name__)
+
+print("\n=== Initialization ===")
+
+payment = PaymentService(
+    service_id="pay_v1",
+    merchant_id="merch_99"
+)
+
+print("\n=== Execution ===")
+
+payment.execute()
+```
+
+11.2 Dataclass Example
+
+```python id="3m7x9q"
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class DatabaseConfig:
+    host: str
+    port: int = 5432
+    database: str = "production"
+    options: dict[str, str] = field(
+        default_factory=dict
+    )
+
+    def __post_init__(self):
+        if not 1 <= self.port <= 65535:
+            raise ValueError(
+                f"Invalid port number: {self.port}"
+            )
+
+
+config = DatabaseConfig(
+    host="db.internal.net"
+)
+
+print(config)
+```
+
+Output:
+
+```text id="6p1n8v"
+DatabaseConfig(host='db.internal.net', port=5432, database='production', options={})
+```
+
+12. CODE WALKTHROUGHS
+
+---
+
+12.1 PaymentService MRO
+
+For:
+
+```
+class PaymentService(LoggingMixin, MetricsMixin):
+```
+
+the MRO is:
+
+```
+PaymentService
+LoggingMixin
+MetricsMixin
+BaseService
+object
+```
+
+Therefore:
+
+```
+PaymentService
+    |
+    v
+LoggingMixin
+    |
+    v
+MetricsMixin
+    |
+    v
+BaseService
+    |
+    v
+object
+```
+
+12.2 `super()` During Initialization
+
+When:
+
+```python id="8x2m5q"
+super().__init__(service_id=service_id)
+```
+
+is executed in `PaymentService`, the next implementation is determined
+through the MRO.
+
+The call chain becomes:
+
+```
+PaymentService
+    ->
+LoggingMixin
+    ->
+MetricsMixin
+    ->
+BaseService
+```
+
+12.3 `super()` During `execute()`
+
+Calling:
+
+```python id="4v9n1k"
+payment.execute()
+```
+
+produces:
+
+```
+LoggingMixin.execute()
+    |
+    v
+MetricsMixin.execute()
+    |
+    v
+BaseService.execute()
+```
+
+The post-processing statements then execute while returning through the
+chain.
+
+12.4 Vector2D
+
+`Vector2D` demonstrates how special methods integrate with Python syntax.
+
+Examples:
+
+```
+v1 + v2
+    -> __add__()
+
+v1 * 3
+    -> __mul__()
+
+abs(v1)
+    -> __abs__()
+
+v1 == v2
+    -> __eq__()
+
+bool(v1)
+    -> __bool__()
+
+repr(v1)
+    -> __repr__()
+```
+
+## 13. EXPECTED OUTPUT
+
+Circle example:
+
+```text id="5k8m2v"
+Circle 1 radius: 5.0, Area: 78.54
+Circle 2 radius: 5.0, Area: 78.54
+Is -5 valid radius? False
+```
+
+Vector example:
+
+```text id="7p1x9m"
+v1: (3.0, 4.0)
+repr: Vector2D(3.0, 4.0)
+v1 + v2: (4.0, 6.0)
+v1 * 3: (9.0, 12.0)
+|v1|: 5.0
+v1 == Vector2D(3, 4): True
+Vector set length: 3
+```
+
+MRO:
+
+```text id="2n6q4v"
+=== MRO ===
+ -> PaymentService
+ -> LoggingMixin
+ -> MetricsMixin
+ -> BaseService
+ -> object
+```
+
+Initialization:
+
+```text id="9m3x7p"
+=== Initialization ===
+[Init] BaseService id=pay_v1
+[Init] MetricsMixin initialized
+[Init] LoggingMixin initialized
+[Init] PaymentService initialized for merchant=merch_99
+```
+
+Execution:
+
+```text id="4q8k1n"
+=== Execution ===
+[Log] Starting execution...
+[Metric] Recording latency...
+[Exec] BaseService execute: pay_v1
+[Metric] Latency recorded.
+[Log] Execution finished.
+```
+
+14. EXECUTION FLOW
+
+---
+
+A simplified class creation and object creation process is:
+
+```
+Class statement
+     |
+     v
+Create class namespace
+     |
+     v
+Execute class body
+     |
+     v
+Select metaclass
+     |
+     v
+Create class object
+     |
+     v
+Bind class name
+```
+
+Instance creation:
+
+```
+Class(...)
+     |
+     v
+__new__()
+     |
+     v
+Instance created
+     |
+     v
+__init__()
+     |
+     v
+Initialized instance
+```
+
+Method lookup:
+
+```
+object.attribute
+     |
+     v
+Attribute access mechanism
+     |
+     v
+Descriptor / instance / class lookup
+     |
+     v
+MRO search
+     |
+     v
+Result
+```
+
+## 15. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+
+Implement a custom container named `OrderedRecord`.
+
+Implement:
+
+```
+__getitem__()
+__setitem__()
+__len__()
+__iter__()
+__contains__()
+```
+
+Use an internal dictionary and maintain insertion order.
+
+Problem 2:
+
+Build a cooperative multiple-inheritance logging and metrics framework.
+
+Requirements:
+
+* Logging mixin
+* Metrics mixin
+* Base service
+* `super()`
+* MRO demonstration
+* Execution-time measurement
+
+Problem 3:
+
+Implement an immutable `Money` value object using:
+
+```
+@dataclass(frozen=True)
+```
+
+Support:
+
+```
+addition
+subtraction
+currency validation
+equality
+hashing
+```
+
+Problem 4:
+
+Create a custom collection supporting:
+
+```
+len(collection)
+collection[index]
+value in collection
+iteration
+```
+
+Problem 5:
+
+Create a class that behaves like a function using:
+
+```
+__call__()
+```
+
+## 16. REAL-WORLD APPLICATIONS
+
+16.1 Web Frameworks
+
+Object-oriented design is widely used in:
+
+```
+Django
+Flask extensions
+FastAPI components
+```
+
+Classes can represent:
+
+```
+requests
+responses
+services
+models
+configuration
+validation objects
+```
+
+16.2 ORMs
+
+Object-relational mapping systems use classes and descriptors to represent
+database entities and fields.
+
+Examples include:
+
+```
+Django ORM
+SQLAlchemy
+```
+
+16.3 Machine Learning
+
+Machine-learning frameworks make extensive use of classes and inheritance.
+
+For example, PyTorch models commonly inherit from:
+
+```
+torch.nn.Module
+```
+
+Frameworks can use special methods and dynamic dispatch to provide convenient
+model interfaces.
+
+16.4 GUI Applications
+
+GUI libraries use class hierarchies for:
+
+```
+windows
+buttons
+layouts
+events
+widgets
+```
+
+Inheritance and composition allow common behavior to be reused.
+
+16.5 Data Transfer Objects
+
+Dataclasses are useful for:
+
+```
+configuration
+API request/response models
+records
+application state
+simple domain objects
+```
+
+## 17. COMMON MISTAKES
+
+17.1 Treating `super()` as "Parent Class"
+
+Incorrect mental model:
+
+```
+super() always calls the direct parent.
+```
+
+Correct:
+
+```
+super() follows the appropriate next location in the MRO.
+```
+
+17.2 Calling a Specific Parent in Multiple Inheritance
+
+Example:
+
+```python id="7m2q9x"
+Parent.__init__(self)
+```
+
+This can bypass the cooperative MRO.
+
+In cooperative multiple inheritance, prefer:
+
+```python id="3v8n1k"
+super().__init__()
+```
+
+17.3 Shared Mutable Class Attributes
+
+Incorrect:
+
+```python id="5p1x6m"
+class Registry:
+    items = []
+
+    def add(self, item):
+        self.items.append(item)
+```
+
+The list is shared by instances unless intentionally shadowed.
+
+17.4 Incorrect `__eq__` and `__hash__`
+
+If objects compare based on mutable state, blindly implementing a hash can
+cause dictionary/set problems when the object's equality-relevant state
+changes.
+
+Design equality and hashing together.
+
+17.5 Treating `__slots__` as a Universal Optimization
+
+`__slots__` can reduce memory overhead in suitable classes, but it also changes
+class behavior and may affect:
+
+```
+__dict__
+weak references
+inheritance
+dynamic attributes
+```
+
+Use it when its trade-offs are understood.
+
+17.6 Treating `frozen=True` as Deep Immutability
+
+Example:
+
+```python id="9q4m7v"
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Config:
+    values: list[int]
+```
+
+The `values` reference cannot simply be replaced through normal assignment,
+but the list itself remains mutable.
+
+18. COMMON ERRORS
+
+---
+
+18.1 Inconsistent MRO
+
+An inheritance graph can produce:
+
+```text id="2k8n5x"
+TypeError: Cannot create a consistent method resolution order
+```
+
+This means Python cannot construct a valid MRO satisfying the required
+ordering constraints.
+
+18.2 AttributeError
+
+Example:
+
+```python id="6m1q9p"
+class Circle:
+
+    @property
+    def radius(self):
+        return self._radius
+```
+
+If `_radius` has not been initialized, accessing `radius` can raise:
+
+```text id="8v3n2k"
+AttributeError
+```
+
+18.3 Unsupported Operand Type
+
+Example:
+
+```python id="4x7p1m"
+Vector2D(1, 2) + 10
+```
+
+If `Vector2D.__add__()` does not support integers, it should return
+`NotImplemented`.
+
+Python may then raise an appropriate `TypeError` if no supported operation
+exists.
+
+18.4 Frozen Dataclass Error
+
+Example:
+
+```python id="3q9m6v"
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Point:
+    x: int
+
+
+point = Point(10)
+point.x = 20
+```
+
+This raises a dataclass frozen-instance error.
+
+19. DEBUGGING TECHNIQUES
+
+---
+
+19.1 Incorrect Shared Class Attribute
+
+INCORRECT:
+
+```python id="7x2m5q"
+class EmployeeRegistry:
+    employees = []
+
+    def add_employee(self, name):
+        self.employees.append(name)
+
+
+reg1 = EmployeeRegistry()
+reg2 = EmployeeRegistry()
+
+reg1.add_employee("Alice")
+
+print(reg2.employees)
+```
+
+Output:
+
+```text id="1v8n4k"
+['Alice']
+```
+
+WHY:
+
+`employees` belongs to the class and contains one shared list.
+
+CORRECT:
+
+```python id="9m3p6x"
+class EmployeeRegistry:
+
+    def __init__(self):
+        self.employees = []
+
+    def add_employee(self, name):
+        self.employees.append(name)
+
+
+reg1 = EmployeeRegistry()
+reg2 = EmployeeRegistry()
+
+reg1.add_employee("Alice")
+
+print(reg1.employees)
+print(reg2.employees)
+```
+
+Output:
+
+```text id="5q1k8v"
+['Alice']
+[]
+```
+
+Each instance now owns a separate list.
+
+19.2 Inspecting MRO
+
+```python id="2x7m9p"
+print(PaymentService.mro())
+```
+
+or:
+
+```python id="6n4q1v"
+print(PaymentService.__mro__)
+```
+
+19.3 Inspecting an Object
+
+Useful tools:
+
+```
+type()
+isinstance()
+issubclass()
+dir()
+vars()
+repr()
+help()
+```
+
+For advanced inspection:
+
+```
+inspect
+dis
+```
+
+## 20. EDGE CASES
+
+20.1 Circular Inheritance
+
+Invalid inheritance relationships cannot be constructed.
+
+Python raises an exception while defining a class if the inheritance graph
+cannot be made consistent.
+
+20.2 Name Mangling Is Not Security
+
+This:
+
+```
+__secret
+```
+
+is transformed through name mangling.
+
+It does not encrypt or securely hide the value.
+
+The transformed attribute may still be accessed intentionally.
+
+20.3 Special Methods Are Not Always Found Through the Instance
+
+This can surprise programmers:
+
+```python id="8p2m5x"
+obj.__len__ = lambda: 10
+```
+
+does not necessarily cause:
+
+```python id="3v7n1q"
+len(obj)
+```
+
+to use that instance attribute.
+
+Python's special-method lookup has special rules and generally searches the
+type.
+
+20.4 `__eq__` and Hashing
+
+If a class defines value-based equality but instances are mutable, using
+those objects as dictionary keys or set elements may be inappropriate.
+
+Hashability should correspond to stable equality semantics.
+
+20.5 Dataclass Field Ordering
+
+Dataclass-generated methods use the field order established by the dataclass
+processing rules.
+
+Inheritance can affect the resulting field ordering and generated
+constructor.
+
+21. BEST PRACTICES
+
+---
+
+* Keep classes focused on a clear responsibility.
+* Prefer composition when inheritance does not express a genuine
+  "is-a" relationship.
+* Use properties when attribute access requires validation or computed logic.
+* Use `@classmethod` for alternative constructors.
+* Use `@staticmethod` only when the function logically belongs to the class
+  namespace but does not need instance or class state.
+* Use `super()` in cooperative inheritance.
+* Design multiple-inheritance mixins to cooperate through `super()`.
+* Use `NotImplemented` when a special method cannot handle another operand.
+* Implement `__eq__` and `__hash__` consistently.
+* Use `@dataclass` for classes primarily representing structured data.
+* Use `field(default_factory=...)` for per-instance mutable defaults.
+* Use `frozen=True` when read-only/frozen semantics are appropriate.
+* Use `slots=True` after understanding its trade-offs.
+* Do not use name mangling as a security mechanism.
+* Prefer composition over complicated inheritance trees when appropriate.
+* Keep special methods simple and predictable.
+* Document non-obvious class behavior.
+
+22. PERFORMANCE CONSIDERATIONS
+
+---
+
+22.1 `__slots__`
+
+`__slots__` can reduce per-instance memory overhead when instances do not
+need arbitrary attributes stored in an instance `__dict__`.
+
+Example:
+
+```python id="5m8q2x"
+class Point:
+    __slots__ = ("x", "y")
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+```
+
+Do not rely on fixed byte-size claims such as:
+
+```
+"Every object saves exactly 100 bytes."
+```
+
+Actual memory use depends on the Python implementation and class structure.
+
+22.2 Properties
+
+Properties introduce method calls and validation logic.
+
+For ordinary application code, this overhead is usually preferable to
+exposing implementation details.
+
+In performance-critical numerical code, benchmark before changing a design
+for speed.
+
+22.3 Method Calls
+
+Object-oriented abstractions can introduce method-dispatch overhead.
+
+However, algorithm choice usually has a much larger impact than small
+method-call differences.
+
+Use profiling before optimizing.
+
+22.4 Benchmarking
+
+Useful tools include:
+
+```
+timeit
+cProfile
+profile
+pyperf
+```
+
+Measure the actual workload instead of relying on assumptions.
+
+23. MEMORY CONSIDERATIONS
+
+---
+
+23.1 Instance Dictionaries
+
+Normal Python objects may provide an instance `__dict__` for dynamically
+stored attributes.
+
+Example:
+
+```python id="8x4m1q"
+class Student:
+    pass
+
+student = Student()
+
+student.name = "Alice"
+
+print(student.__dict__)
+```
+
+Possible output:
+
+```text id="2n7p5v"
+{'name': 'Alice'}
+```
+
+23.2 `__slots__`
+
+Using:
+
+```python id="6q3m9x"
+class Point:
+    __slots__ = ("x", "y")
+```
+
+can avoid the normal per-instance dictionary for those attributes.
+
+This can be useful when creating very large numbers of small objects.
+
+23.3 Circular References
+
+Example:
+
+```python id="4v8k2m"
+class Node:
+    pass
+
+
+a = Node()
+b = Node()
+
+a.other = b
+b.other = a
+```
+
+The objects reference one another.
+
+CPython's cyclic garbage collector can detect unreachable cycles.
+
+Use `weakref` when a relationship should not keep the referenced object alive.
+
+24. SECURITY CONSIDERATIONS
+
+---
+
+24.1 No True Private Modifier
+
+Python does not provide Java-style or C++-style enforced private instance
+attributes at the normal language level.
+
+Do not store cryptographic secrets under the assumption that:
+
+```
+__secret
+```
+
+makes them inaccessible.
+
+24.2 Properties Are Not Security Boundaries
+
+A property can validate or control normal attribute access, but it should
+not be treated as a security boundary against malicious code running inside
+the same Python process.
+
+24.3 Descriptors and Metaclasses
+
+Descriptors and metaclasses can alter class behavior substantially.
+
+Use them carefully because unexpected attribute interception can make
+security-sensitive code difficult to audit.
+
+24.4 Serialization
+
+Be cautious when serializing objects containing:
+
+```
+credentials
+API keys
+tokens
+personal information
+```
+
+Do not assume that a dataclass or custom class automatically provides safe
+serialization.
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+---
+
+| Feature                       | Python                               | C++                                    | Java                                           |
+| ----------------------------- | ------------------------------------ | -------------------------------------- | ---------------------------------------------- |
+| Inheritance                   | Multiple inheritance                 | Multiple inheritance                   | Single class inheritance + multiple interfaces |
+| Method dispatch               | Dynamic attribute/MRO lookup         | Virtual dispatch and static mechanisms | Dynamic virtual dispatch                       |
+| Encapsulation                 | Conventions, properties, descriptors | Access modifiers                       | Access modifiers                               |
+| Operator customization        | Special methods                      | Operator overloading                   | Limited operator overloading                   |
+| Data classes                  | `@dataclass`                         | `struct` / user-defined classes        | `record`                                       |
+| Multiple inheritance ordering | C3 MRO                               | C++ inheritance rules                  | Interfaces and class hierarchy                 |
+| Reflection/introspection      | Extensive runtime introspection      | More limited/different model           | Reflection API                                 |
+| Metaclasses                   | Supported through `type`             | No direct equivalent                   | No direct equivalent                           |
+| Properties                    | `@property` / descriptors            | Getter/setter methods                  | Getter/setter methods                          |
+| Function objects              | First-class objects                  | Function pointers/functors/lambdas     | Lambdas/functional interfaces                  |
+
+26. FREQUENTLY ASKED QUESTIONS
+
+---
+
+Q1: What is the difference between `@classmethod` and `@staticmethod`?
+
+Answer:
+
+`@classmethod` receives the class as `cls`.
+
+`@staticmethod` receives no implicit instance or class argument.
+
+Q2: What does `super()` actually do?
+
+Answer:
+
+`super()` returns a proxy that performs attribute lookup according to the
+appropriate MRO position.
+
+It is not simply a synonym for "parent class."
+
+Q3: Why should a special method return `NotImplemented`?
+
+Answer:
+
+It indicates that the operation is not supported for that operand type and
+allows Python to continue with its defined fallback behavior.
+
+Q4: What is MRO?
+
+Answer:
+
+MRO is the Method Resolution Order. It determines the order in which Python
+searches classes for inherited attributes and methods.
+
+Q5: What is C3 linearization?
+
+Answer:
+
+It is the algorithmic approach used to construct a consistent MRO for
+multiple inheritance while preserving local precedence and monotonicity.
+
+Q6: What is the difference between `__new__` and `__init__`?
+
+Answer:
+
+`__new__` creates and returns an instance.
+
+`__init__` initializes that instance after creation.
+
+Q7: Does `@dataclass` make a class immutable?
+
+Answer:
+
+No.
+
+`@dataclass(frozen=True)` provides frozen/read-only assignment behavior, but
+it does not make every referenced object recursively immutable.
+
+Q8: Does every dataclass automatically get `__hash__`?
+
+Answer:
+
+No.
+
+Hash generation depends on the `eq`, `frozen`, and `unsafe_hash` settings.
+
+Q9: Why use `field(default_factory=list)`?
+
+Answer:
+
+It creates a new list for each instance instead of sharing one mutable
+default object.
+
+Q10: Is name mangling private security?
+
+Answer:
+
+No.
+
+It mainly prevents accidental name collisions between a class and subclasses.
+
+27. INTERVIEW QUESTIONS
+
+---
+
+Q1. What is a class in Python?
+
+Answer:
+
+A class is an object type created by executing a class statement. It provides
+a template and behavior from which instances can be created.
+
+Q2. What is `self`?
+
+Answer:
+
+`self` is the conventional name for the first parameter of an instance
+method. It refers to the instance on which the method is invoked.
+
+Q3. What is polymorphism?
+
+Answer:
+
+Polymorphism allows code to operate on different objects through a common
+interface or expected behavior.
+
+Q4. Explain duck typing.
+
+Answer:
+
+Duck typing focuses on whether an object supports the required operations
+rather than requiring it to belong to a particular class.
+
+Q5. What is MRO?
+
+Answer:
+
+MRO is the ordered sequence of classes Python searches when resolving
+inherited attributes and methods.
+
+Q6. Explain `super()`.
+
+Answer:
+
+`super()` creates a proxy that delegates attribute lookup according to the
+MRO.
+
+Q7. Explain C3 linearization.
+
+Answer:
+
+C3 constructs a consistent MRO for multiple inheritance while preserving
+local base-class ordering and monotonicity.
+
+Q8. What is a descriptor?
+
+Answer:
+
+A descriptor is an object defining methods such as `__get__`, `__set__`, or
+`__delete__` that participate in attribute access.
+
+Q9. How does `@property` work?
+
+Answer:
+
+`property` creates a descriptor that allows method-based behavior to be
+accessed using attribute syntax.
+
+Q10. What is the difference between `__new__` and `__init__`?
+
+Answer:
+
+`__new__` creates the instance.
+
+`__init__` initializes the created instance.
+
+Q11. What does `__call__` do?
+
+Answer:
+
+It allows an object to be invoked using function-call syntax:
+
+```
+object()
+```
+
+Q12. Why is `__hash__` important?
+
+Answer:
+
+It allows suitable immutable objects to participate in hash-based
+collections such as dictionaries and sets.
+
+28. EXAM QUESTIONS
+
+---
+
+Q1. Find the output:
+
+```python id="7x2m9q"
+class A:
+    def test(self):
+        print("A", end=" ")
+
+
+class B(A):
+    def test(self):
+        print("B", end=" ")
+        super().test()
+
+
+class C(A):
+    def test(self):
+        print("C", end=" ")
+        super().test()
+
+
+class D(B, C):
+    def test(self):
+        print("D", end=" ")
+        super().test()
+
+
+D().test()
+```
+
+Answer:
+
+```text id="2v8k1m"
+D B C A
+```
+
+MRO:
+
+```
+D -> B -> C -> A -> object
+```
+
+Therefore `super()` in `B` continues to `C`, rather than directly jumping
+to `A`.
+
+Q2. Which decorator is used to create a dataclass?
+
+Answer:
+
+```
+@dataclass
+```
+
+Q3. Which dataclass option provides frozen/read-only assignment behavior?
+
+Answer:
+
+```
+frozen=True
+```
+
+Q4. Why is this recommended?
+
+```python id="5n3q7x"
+field(default_factory=list)
+```
+
+Answer:
+
+It creates a separate list for each instance.
+
+Q5. What does `__len__()` allow?
+
+Answer:
+
+It allows an object to participate in operations such as:
+
+```
+len(obj)
+```
+
+Q6. What does `__getitem__()` allow?
+
+Answer:
+
+It allows indexing/subscript operations such as:
+
+```
+obj[key]
+```
+
+## 29. PRACTICE QUESTIONS
+
+Practice 1:
+
+Create a `Student` class with:
+
+```
+name
+roll_number
+marks
+```
+
+Implement:
+
+```
+__init__
+__repr__
+__str__
+```
+
+Practice 2:
+
+Create an `Employee` class with a property:
+
+```
+salary
+```
+
+Reject negative salaries.
+
+Practice 3:
+
+Create a class method:
+
+```
+from_string()
+```
+
+that constructs an object from a formatted string.
+
+Practice 4:
+
+Create a callable class implementing:
+
+```
+__call__()
+```
+
+for a simple mathematical operation.
+
+Practice 5:
+
+Implement a custom container supporting:
+
+```
+len()
+indexing
+iteration
+membership testing
+```
+
+Practice 6:
+
+Create a diamond inheritance hierarchy and print:
+
+```
+ClassName.mro()
+```
+
+Practice 7:
+
+Implement cooperative multiple inheritance using two mixins and one base
+class.
+
+Practice 8:
+
+Create a frozen dataclass representing a 2D point.
+
+Practice 9:
+
+Create a dataclass with:
+
+```
+list
+dict
+```
+
+fields and use `default_factory` correctly.
+
+Practice 10:
+
+Create a custom descriptor that validates an integer attribute against a
+minimum and maximum value.
+
+Practice 11:
+
+Create a custom metaclass that automatically adds metadata to every class
+created using that metaclass.
+
+30. SUMMARY
+
+---
+
+Python's object-oriented programming system is built around classes, objects,
+dynamic attribute lookup, inheritance, descriptors, and special methods.
+
+Classes provide reusable data and behavior.
+
+Instance methods operate on objects.
+
+Class methods operate with the class as their first argument.
+
+Static methods behave like ordinary functions stored in a class namespace.
+
+Properties provide controlled attribute access.
+
+Inheritance allows behavior to be reused and specialized.
+
+Multiple inheritance is resolved using an MRO constructed using C3-style
+linearization.
+
+`super()` follows the MRO rather than simply selecting the direct parent.
+
+Dunder methods connect user-defined classes with Python syntax and built-in
+operations.
+
+Descriptors provide a powerful mechanism for controlling attribute access.
+
+Dataclasses reduce boilerplate for data-oriented classes and provide
+configurable generation of methods such as `__init__`, `__repr__`, and
+`__eq__`.
+
+Advanced features such as metaclasses, descriptors, `__slots__`, and
+cooperative multiple inheritance should be used when they solve a real
+design problem rather than simply because they are available.
+
+31. KEY TAKEAWAYS
+
+---
+
+* A class is an object created by executing a class definition.
+* Objects are instances of classes.
+* `self` is the conventional first parameter of an instance method.
+* `cls` is the conventional first parameter of a class method.
+* `@staticmethod` provides no implicit `self` or `cls`.
+* Class attributes can be shared by instances.
+* Instance attributes belong to individual objects.
+* Python does not enforce conventional private access modifiers.
+* `_name` is an internal-use convention.
+* `__name` triggers name mangling.
+* Name mangling is not a security mechanism.
+* `@property` provides managed attribute access.
+* Dunder methods connect objects to Python's data model.
+* `__repr__` is primarily developer-oriented representation.
+* `__str__` is primarily user-readable representation.
+* `__eq__` defines equality behavior.
+* `__hash__` enables appropriate objects to participate in hash-based
+  collections.
+* Return `NotImplemented` when an operation cannot handle an operand type.
+* `__len__` supports `len()`.
+* `__getitem__` supports subscription/indexing.
+* `__iter__` supports iteration.
+* `__call__` makes an instance callable.
+* `__new__` creates an instance.
+* `__init__` initializes an instance.
+* Python supports multiple inheritance.
+* MRO determines inheritance lookup order.
+* Python's multiple-inheritance MRO uses C3-style linearization.
+* `super()` follows the MRO; it does not simply mean "parent class."
+* Cooperative inheritance requires participating classes to use `super()`
+  consistently.
+* Descriptors control attribute access.
+* Functions stored on classes participate in descriptor-based method binding.
+* Classes are normally instances of the metaclass `type`.
+* `@dataclass` reduces boilerplate for data-oriented classes.
+* `field(default_factory=...)` is the correct pattern for per-instance
+  mutable defaults.
+* `frozen=True` provides frozen assignment behavior but does not guarantee
+  deep immutability.
+* `order=True` generates ordering methods when configured appropriately.
+* `slots=True` can reduce memory overhead for suitable classes.
+* Dataclass hash generation depends on its configuration.
+* Prefer composition when complicated inheritance does not provide a clear
+  benefit.
+* Use profiling before making performance-driven design changes.
+* Keep object-oriented designs simple, explicit, and maintainable.
+
+================================================================================
+END OF KNOWLEDGE BASE
+=====================

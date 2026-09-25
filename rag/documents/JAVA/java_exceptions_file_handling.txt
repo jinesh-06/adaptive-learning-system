@@ -1,0 +1,1782 @@
+COURSE: Java Programming
+TOPIC: Exception Handling, Try-With-Resources, and Java NIO.2 File I/O
+LEVEL: Beginner to Advanced
+SOURCE: Oracle Java SE Documentation + Java Language Specification
+
+================================================================================
+EXCEPTION HANDLING, TRY-WITH-RESOURCES, AND JAVA NIO.2 FILE I/O
+===============================================================
+
+1. INTRODUCTION
+
+Reliable Java applications must handle exceptional conditions and manage external resources correctly. Java provides a structured exception mechanism based on the `java.lang.Throwable` hierarchy and modern file-system APIs through `java.nio.file`.
+
+Java exceptions are broadly classified into:
+
+* Checked exceptions: Exceptions subject to compile-time checking.
+* Runtime exceptions: Unchecked exceptions generally associated with invalid operations or programming errors.
+* Errors: Serious conditions represented by subclasses of `Error`.
+
+Java also provides `try-with-resources` for automatic resource management. Any object implementing `AutoCloseable` can be used as a resource, and resources are automatically closed when the statement completes.
+
+For filesystem operations, Java NIO.2 provides the `Path` and `Files` APIs for creating, reading, writing, copying, moving, deleting, and traversing files and directories.
+
+Important NIO.2 APIs include:
+
+* `Path`
+* `Files`
+* `StandardOpenOption`
+* `FileVisitor`
+* `FileChannel`
+* `MappedByteBuffer`
+* `Files.walk()`
+* `Files.walkFileTree()`
+
+Note: NIO.2 is primarily a filesystem and I/O API. It does not mean that every operation is non-blocking. For example, `Files.readString()` and many `Files` methods perform ordinary blocking I/O.
+
+---
+
+2. LEARNING OBJECTIVES
+
+* Understand the `Throwable` exception hierarchy.
+* Differentiate checked and unchecked exceptions.
+* Use `try`, `catch`, `finally`, `throw`, and `throws`.
+* Use multiple `catch` clauses and multi-catch.
+* Create custom exception classes.
+* Understand exception chaining and causes.
+* Use `try-with-resources` with `AutoCloseable`.
+* Understand suppressed exceptions.
+* Use `Path` and `Files` for modern filesystem operations.
+* Read and write text files using `Files.readString()` and `Files.writeString()`.
+* Process large text files using `Files.lines()`.
+* Traverse directory trees using `Files.walk()` and `Files.walkFileTree()`.
+* Use `FileChannel` for channel-based file operations.
+* Understand memory-mapped file access with `MappedByteBuffer`.
+* Apply secure and reliable file-handling practices.
+
+---
+
+3. PREREQUISITES
+
+* Java variables, data types, operators, and control flow.
+* Classes and objects.
+* Inheritance and polymorphism.
+* Basic Collections knowledge.
+* Basic understanding of Java streams and lambda expressions.
+
+---
+
+4. BEGINNER CONCEPTS
+
+4.1 EXCEPTION HIERARCHY
+
+All Java exceptions and errors derive from `java.lang.Throwable`.
+
+Basic hierarchy:
+
+Throwable
+|
++-- Error
+|
++-- Exception
+|
++-- RuntimeException
+
+`Error` and `Exception` are separate branches below `Throwable`.
+
+Examples of `Error`:
+
+* `OutOfMemoryError`
+* `StackOverflowError`
+* `LinkageError`
+
+Examples of `RuntimeException`:
+
+* `NullPointerException`
+* `ArithmeticException`
+* `ArrayIndexOutOfBoundsException`
+* `IllegalArgumentException`
+* `IllegalStateException`
+
+Examples of checked exceptions:
+
+* `IOException`
+* `SQLException`
+* `ClassNotFoundException`
+
+A checked exception is generally an exception that is neither a `RuntimeException` nor an `Error`. Java's compiler checks that checked exceptions that can escape a method are handled or declared.
+
+4.2 CHECKED EXCEPTIONS
+
+Checked exceptions are subject to compile-time checking.
+
+Example:
+
+```java
+public void readFile(Path path) throws IOException {
+    String content = Files.readString(path);
+    System.out.println(content);
+}
+```
+
+The method declares `IOException` because the file operation can produce a checked exception.
+
+4.3 UNCHECKED EXCEPTIONS
+
+Unchecked exceptions include `RuntimeException` and its subclasses.
+
+Example:
+
+```java
+int value = 10;
+int result = value / 0;
+```
+
+This causes:
+
+```text
+ArithmeticException
+```
+
+The compiler does not require `ArithmeticException` to be caught or declared.
+
+4.4 BASIC TRY-CATCH-FINALLY
+
+```java
+try {
+    int result = 10 / 0;
+    System.out.println(result);
+}
+catch (ArithmeticException e) {
+    System.out.println("Arithmetic error: " + e.getMessage());
+}
+finally {
+    System.out.println("Finally block executed.");
+}
+```
+
+The `catch` block handles the matching exception.
+
+The `finally` block is executed when control leaves the associated `try` statement, except in situations where normal JVM execution cannot continue, such as abrupt JVM termination.
+
+4.5 THROW AND THROWS
+
+`throw` explicitly throws an exception:
+
+```java
+throw new IllegalArgumentException("Invalid age");
+```
+
+`throws` declares exceptions that a method may propagate:
+
+```java
+public void loadData() throws IOException {
+    Files.readString(Path.of("data.txt"));
+}
+```
+
+---
+
+5. INTERMEDIATE CONCEPTS
+
+5.1 TRY-WITH-RESOURCES
+
+A resource that implements `AutoCloseable` can be declared inside the resource specification:
+
+```java
+try (BufferedReader reader =
+         Files.newBufferedReader(Path.of("data.txt"))) {
+
+    String line;
+
+    while ((line = reader.readLine()) != null) {
+        System.out.println(line);
+    }
+
+}
+```
+
+When the `try` statement finishes, the resource is automatically closed.
+
+Resources are closed in reverse order of initialization.
+
+For example:
+
+```java
+try (
+    ResourceA a = new ResourceA();
+    ResourceB b = new ResourceB()
+) {
+    // Work
+}
+```
+
+Closing order:
+
+```text
+b.close()
+a.close()
+```
+
+This behavior is defined by the Java Language Specification.
+
+5.2 AUTOCLOSEABLE
+
+A resource must implement `AutoCloseable` to be directly usable as a try-with-resources resource.
+
+Example:
+
+```java
+class MyResource implements AutoCloseable {
+
+    public void use() {
+        System.out.println("Using resource");
+    }
+
+    @Override
+    public void close() {
+        System.out.println("Resource closed");
+    }
+}
+```
+
+Usage:
+
+```java
+try (MyResource resource = new MyResource()) {
+    resource.use();
+}
+```
+
+`java.io.Closeable` extends `AutoCloseable`.
+
+5.3 MULTI-CATCH
+
+Multiple unrelated exception types can be handled using one `catch` block:
+
+```java
+try {
+    // operation
+}
+catch (IOException | NumberFormatException e) {
+    System.out.println("Operation failed: " + e.getMessage());
+}
+```
+
+The exception parameter in a multi-catch clause is implicitly final and cannot be reassigned.
+
+5.4 EXCEPTION CHAINING
+
+Exception chaining preserves the original cause:
+
+```java
+try {
+    Files.readString(Path.of("missing.txt"));
+}
+catch (IOException e) {
+    throw new RuntimeException("Unable to load configuration", e);
+}
+```
+
+The original exception can be retrieved with:
+
+```java
+e.getCause()
+```
+
+Exception chaining is useful because it preserves information about the original failure.
+
+5.5 JAVA NIO.2
+
+Java NIO.2 was introduced in Java 7 and provides the modern filesystem API.
+
+Main classes:
+
+```text
+Path
+Files
+FileSystem
+FileSystems
+FileVisitor
+FileChannel
+```
+
+Example:
+
+```java
+Path path = Path.of("data", "students.txt");
+
+System.out.println(Files.exists(path));
+```
+
+`Path.of()` is preferred over the older `Paths.get()` style in modern Java code. Oracle's API documentation recommends obtaining `Path` objects through `Path.of(...)`.
+
+5.6 BASIC FILE OPERATIONS
+
+```java
+Path path = Path.of("data.txt");
+
+Files.createFile(path);
+Files.writeString(path, "Hello Java");
+String text = Files.readString(path);
+
+System.out.println(text);
+```
+
+Common methods:
+
+```text
+Files.exists()
+Files.createFile()
+Files.createDirectories()
+Files.delete()
+Files.deleteIfExists()
+Files.copy()
+Files.move()
+Files.readString()
+Files.writeString()
+Files.readAllLines()
+Files.lines()
+Files.walk()
+Files.walkFileTree()
+```
+
+---
+
+6. ADVANCED CONCEPTS
+
+6.1 SUPPRESSED EXCEPTIONS
+
+A try-with-resources statement can encounter multiple exceptions.
+
+For example:
+
+1. The `try` block throws an exception.
+2. Resource `close()` also throws an exception.
+
+The exception from the `try` block becomes the primary exception.
+
+The exception from `close()` is added as a suppressed exception.
+
+Example:
+
+```java
+try (MyResource resource = new MyResource()) {
+    throw new RuntimeException("Primary failure");
+}
+catch (RuntimeException e) {
+
+    System.out.println("Primary: " + e.getMessage());
+
+    for (Throwable suppressed : e.getSuppressed()) {
+        System.out.println(
+            "Suppressed: " + suppressed.getMessage()
+        );
+    }
+}
+```
+
+Suppressed exceptions can be obtained using:
+
+```java
+e.getSuppressed()
+```
+
+This behavior is defined by the Java Language Specification.
+
+6.2 FILECHANNEL
+
+`FileChannel` provides channel-based access to files.
+
+Example:
+
+```java
+try (FileChannel channel =
+         FileChannel.open(
+             Path.of("data.bin"),
+             StandardOpenOption.READ)) {
+
+    // Channel operations
+
+}
+```
+
+Important operations include:
+
+```text
+read()
+write()
+position()
+size()
+truncate()
+transferTo()
+transferFrom()
+map()
+force()
+```
+
+6.3 TRANSFERTO()
+
+`FileChannel.transferTo()` transfers bytes from a file channel to a writable channel.
+
+```java
+long transferred =
+    sourceChannel.transferTo(
+        0,
+        sourceChannel.size(),
+        targetChannel
+    );
+```
+
+The method attempts to transfer the requested number of bytes, but a single call is not guaranteed to transfer all requested bytes. Code that requires complete transfer should account for the returned count.
+
+6.4 MEMORY-MAPPED FILES
+
+`FileChannel.map()` can map a region of a file into memory.
+
+Example:
+
+```java
+MappedByteBuffer buffer =
+    channel.map(
+        FileChannel.MapMode.READ_WRITE,
+        0,
+        fileSize
+    );
+```
+
+The mapped region can then be accessed through the buffer.
+
+Memory mapping can be useful for suitable workloads involving large files or random access, but it does not guarantee a particular physical-memory or performance behavior.
+
+---
+
+7. DETAILED THEORY
+
+7.1 EXCEPTION PROPAGATION
+
+When an exception is thrown:
+
+```text
+Exception occurs
+       |
+       v
+Current method
+       |
+       v
+Matching catch?
+   /        \
+ Yes        No
+ |           |
+Handle     Propagate
+             |
+             v
+        Calling method
+             |
+             v
+       Matching handler
+```
+
+If no matching handler is found, the exception continues propagating through the call stack until an appropriate handler is found or the thread reaches its uncaught-exception handling mechanism.
+
+7.2 CHECKED EXCEPTION ANALYSIS
+
+Java performs compile-time checking for checked exceptions.
+
+If a method can cause a checked exception to escape, the method must either:
+
+* Handle it with an appropriate `catch`, or
+* Declare it using `throws`.
+
+This is part of Java's compile-time exception checking rules.
+
+7.3 RESOURCE CLOSING ORDER
+
+For:
+
+```java
+try (
+    A a = new A();
+    B b = new B();
+    C c = new C()
+) {
+    // work
+}
+```
+
+Initialization:
+
+```text
+A -> B -> C
+```
+
+Closing:
+
+```text
+C -> B -> A
+```
+
+If one resource's `close()` throws an exception, Java still attempts to close other initialized resources.
+
+7.4 NIO.2 FILESYSTEM MODEL
+
+```text
+Path
+ |
+ +-- Represents file/directory location
+ |
+ v
+Files
+ |
+ +-- Create
+ +-- Read
+ +-- Write
+ +-- Copy
+ +-- Move
+ +-- Delete
+ +-- Traverse
+```
+
+`Path` represents the location, while `Files` provides operations on that path.
+
+7.5 FILE STREAMING
+
+`Files.lines(path)` returns a lazily populated `Stream<String>`.
+
+Example:
+
+```java
+try (Stream<String> lines = Files.lines(path)) {
+    lines.filter(line -> line.contains("ERROR"))
+         .forEach(System.out::println);
+}
+```
+
+The returned stream should be closed, normally through try-with-resources.
+
+`Files.walk()` similarly returns a stream that holds references to open directories and should be closed after use.
+
+7.6 READ ALL CONTENT VS STREAMING
+
+For a small file:
+
+```java
+String content = Files.readString(path);
+```
+
+For all lines as a collection:
+
+```java
+List<String> lines = Files.readAllLines(path);
+```
+
+For streaming:
+
+```java
+try (Stream<String> lines = Files.lines(path)) {
+    lines.forEach(System.out::println);
+}
+```
+
+`readAllLines()` loads the complete set of lines into memory, so it is not appropriate when the input can be arbitrarily large.
+
+---
+
+8. SYNTAX
+
+8.1 TEXT FILE WRITE AND READ
+
+```java
+import java.nio.file.*;
+
+Path path = Path.of("config", "app.json");
+
+Files.createDirectories(path.getParent());
+
+Files.writeString(
+    path,
+    "{\"status\":\"OK\"}",
+    StandardOpenOption.CREATE,
+    StandardOpenOption.TRUNCATE_EXISTING
+);
+
+String content = Files.readString(path);
+
+System.out.println(content);
+```
+
+8.2 TRY-WITH-RESOURCES
+
+```java
+try (Resource resource = new Resource()) {
+    resource.use();
+}
+catch (Exception e) {
+    e.printStackTrace();
+}
+```
+
+8.3 FILE CHANNEL
+
+```java
+try (FileChannel channel =
+         FileChannel.open(
+             Path.of("data.bin"),
+             StandardOpenOption.READ,
+             StandardOpenOption.WRITE
+         )) {
+
+    // FileChannel operations
+}
+```
+
+---
+
+9. BASIC EXAMPLE
+
+```java
+import java.nio.file.*;
+import java.io.IOException;
+
+public class BasicExceptionsFileIO {
+
+    static class InsufficientInventoryException extends Exception {
+
+        public InsufficientInventoryException(String message) {
+            super(message);
+        }
+    }
+
+    public static void checkStock(int available, int requested)
+            throws InsufficientInventoryException {
+
+        if (requested > available) {
+            throw new InsufficientInventoryException(
+                "Requested " + requested +
+                " items, but only " + available + " in stock."
+            );
+        }
+
+        System.out.println(
+            "Inventory verified for " + requested + " items."
+        );
+    }
+
+    public static void main(String[] args) {
+
+        try {
+            checkStock(5, 10);
+        }
+        catch (InsufficientInventoryException e) {
+            System.err.println(
+                "[HANDLED ERROR] " + e.getMessage()
+            );
+        }
+
+        Path logFile = Path.of("sandbox_log.txt");
+
+        try {
+            Files.writeString(
+                logFile,
+                "Transaction timestamp: "
+                + System.currentTimeMillis()
+                + System.lineSeparator()
+            );
+
+            String content = Files.readString(logFile);
+
+            System.out.print("Read from file: " + content);
+        }
+        catch (IOException e) {
+            System.err.println(
+                "File I/O failed: " + e.getMessage()
+            );
+        }
+        finally {
+            try {
+                Files.deleteIfExists(logFile);
+            }
+            catch (IOException ignored) {
+                System.err.println(
+                    "Temporary file cleanup failed."
+                );
+            }
+        }
+    }
+}
+```
+
+---
+
+10. INTERMEDIATE EXAMPLE
+
+```java
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.stream.Stream;
+
+public class IntermediateExceptionsFileIO {
+
+    static class DatabaseConnection
+            implements AutoCloseable {
+
+        private final String connectionUrl;
+
+        public DatabaseConnection(String url) {
+            this.connectionUrl = url;
+            System.out.println(
+                "[DB] Connection opened to " + url
+            );
+        }
+
+        public void executeQuery(String sql)
+                throws DatabaseException {
+
+            System.out.println(
+                "[DB] Executing SQL: " + sql
+            );
+        }
+
+        @Override
+        public void close() {
+            System.out.println(
+                "[DB] Connection closed cleanly to "
+                + connectionUrl
+            );
+        }
+    }
+
+    static class DatabaseException extends Exception {
+
+        public DatabaseException(String message) {
+            super(message);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        try (
+            DatabaseConnection db =
+                new DatabaseConnection(
+                    "jdbc:postgresql://localhost:5432/orders"
+                )
+        ) {
+            db.executeQuery(
+                "SELECT * FROM orders WHERE status = 'PENDING'"
+            );
+        }
+        catch (DatabaseException e) {
+            System.err.println(
+                "Database query failed: " + e.getMessage()
+            );
+        }
+
+        Path testData = Path.of("sample_stream.txt");
+
+        try {
+
+            Files.writeString(
+                testData,
+                "Alice,95\n"
+                + "Bob,70\n"
+                + "Charlie,88\n"
+                + "David,60\n"
+            );
+
+            System.out.println(
+                "\n=== High Scoring Students (>= 80) ==="
+            );
+
+            try (Stream<String> lines =
+                     Files.lines(testData)) {
+
+                lines.filter(line -> !line.isBlank())
+                     .map(line -> line.split(","))
+                     .filter(parts ->
+                         Integer.parseInt(parts[1]) >= 80)
+                     .forEach(parts ->
+                         System.out.println(
+                             "  Student: " +
+                             parts[0] +
+                             " | Score: " +
+                             parts[1]
+                         )
+                     );
+            }
+
+        }
+        catch (IOException | NumberFormatException e) {
+
+            System.err.println(
+                "Stream processing error: "
+                + e.getMessage()
+            );
+
+        }
+        finally {
+
+            try {
+                Files.deleteIfExists(testData);
+            }
+            catch (IOException ignored) {
+                System.err.println(
+                    "Temporary file cleanup failed."
+                );
+            }
+        }
+    }
+}
+```
+
+---
+
+11. ADVANCED EXAMPLE
+
+```java
+import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.*;
+
+public class AdvancedExceptionsFileIO {
+
+    static class FlakyResource
+            implements AutoCloseable {
+
+        public void doWork() {
+            throw new RuntimeException(
+                "Error during primary business logic processing!"
+            );
+        }
+
+        @Override
+        public void close() {
+            throw new RuntimeException(
+                "Error while attempting to close FlakyResource!"
+            );
+        }
+    }
+
+    public static void demonstrateSuppressedExceptions() {
+
+        try (FlakyResource resource =
+                 new FlakyResource()) {
+
+            resource.doWork();
+
+        }
+        catch (RuntimeException e) {
+
+            System.out.println(
+                "Caught Primary Exception: "
+                + e.getMessage()
+            );
+
+            for (Throwable suppressed :
+                    e.getSuppressed()) {
+
+                System.out.println(
+                    "  -> Suppressed Exception: "
+                    + suppressed.getMessage()
+                );
+            }
+        }
+    }
+
+    public static void demonstrateMemoryMappedIO()
+            throws IOException {
+
+        Path file = Path.of("mapped_data.bin");
+
+        int fileSize = 1024 * 1024;
+
+        try (FileChannel channel =
+                 FileChannel.open(
+                     file,
+                     StandardOpenOption.CREATE,
+                     StandardOpenOption.READ,
+                     StandardOpenOption.WRITE
+                 )) {
+
+            MappedByteBuffer buffer =
+                channel.map(
+                    FileChannel.MapMode.READ_WRITE,
+                    0,
+                    fileSize
+                );
+
+            for (int i = 0; i < 1000; i++) {
+                buffer.putInt(i * 10);
+            }
+
+            buffer.flip();
+
+            System.out.println(
+                "\n=== First Five Values ==="
+            );
+
+            for (int i = 0; i < 5; i++) {
+                System.out.println(
+                    "Index " + i +
+                    ": " + buffer.getInt()
+                );
+            }
+        }
+        finally {
+            Files.deleteIfExists(file);
+        }
+    }
+
+    public static void main(String[] args) {
+
+        System.out.println(
+            "=== Suppressed Exceptions Demo ==="
+        );
+
+        demonstrateSuppressedExceptions();
+
+        System.out.println(
+            "\n=== Memory-Mapped File Demo ==="
+        );
+
+        try {
+            demonstrateMemoryMappedIO();
+        }
+        catch (IOException e) {
+            System.err.println(
+                "Memory-mapped I/O error: "
+                + e.getMessage()
+            );
+        }
+    }
+}
+```
+
+---
+
+12. CODE WALKTHROUGHS
+
+12.1 SUPPRESSED EXCEPTION
+
+Execution:
+
+```text
+try-with-resources starts
+        |
+        v
+resource created
+        |
+        v
+doWork() throws primary exception
+        |
+        v
+close() is automatically called
+        |
+        v
+close() throws another exception
+        |
+        v
+close exception becomes suppressed
+        |
+        v
+primary exception reaches catch
+```
+
+The primary exception is available through the caught exception.
+
+The additional close exception is available through:
+
+```java
+e.getSuppressed()
+```
+
+12.2 MEMORY-MAPPED FILE
+
+Execution:
+
+```text
+FileChannel
+     |
+     v
+channel.map(...)
+     |
+     v
+MappedByteBuffer
+     |
+     +---- putInt()
+     |
+     +---- getInt()
+```
+
+A mapped region provides buffer access to the mapped file region. The exact interaction with the operating system's virtual-memory system is platform dependent.
+
+---
+
+13. EXPECTED OUTPUT
+
+```text
+[HANDLED ERROR] Requested 10 items, but only 5 in stock.
+Read from file: Transaction timestamp: ...
+
+[DB] Connection opened to jdbc:postgresql://localhost:5432/orders
+[DB] Executing SQL: SELECT * FROM orders WHERE status = 'PENDING'
+[DB] Connection closed cleanly to jdbc:postgresql://localhost:5432/orders
+
+=== High Scoring Students (>= 80) ===
+  Student: Alice | Score: 95
+  Student: Charlie | Score: 88
+
+=== Suppressed Exceptions Demo ===
+Caught Primary Exception: Error during primary business logic processing!
+  -> Suppressed Exception: Error while attempting to close FlakyResource!
+
+=== Memory-Mapped File Demo ===
+=== First Five Values ===
+Index 0: 0
+Index 1: 10
+Index 2: 20
+Index 3: 30
+Index 4: 40
+```
+
+---
+
+14. EXECUTION FLOW
+
+15. The JVM begins executing statements.
+
+16. A statement inside `try` may complete normally or throw an exception.
+
+17. A matching `catch` handler is selected if available.
+
+18. `finally` executes when applicable during completion of the `try` statement.
+
+19. In try-with-resources, resources are initialized from left to right.
+
+20. Resources are closed in reverse order.
+
+21. Close failures can become suppressed exceptions.
+
+22. If no handler catches an exception, it propagates to the caller.
+
+23. NIO.2 methods perform filesystem operations through the active filesystem provider.
+
+24. `FileChannel` provides channel-based file access.
+
+---
+
+15. PRACTICAL PROGRAMMING PROBLEMS
+
+Problem 1:
+Implement an `AtomicFileWriter` that:
+
+* Writes data to a temporary file.
+* Uses try-with-resources.
+* Replaces the target with `Files.move()`.
+* Uses `StandardCopyOption.ATOMIC_MOVE`.
+* Handles `AtomicMoveNotSupportedException`.
+
+Note: `ATOMIC_MOVE` is requested behavior, but support is filesystem/provider dependent. Oracle specifies that `AtomicMoveNotSupportedException` may be thrown when an atomic move cannot be performed.
+
+Problem 2:
+
+Create a log analyzer using:
+
+```java
+Files.walk()
+```
+
+Requirements:
+
+* Recursively find `.log` files.
+* Count lines containing `ERROR`.
+* Close the returned stream.
+* Handle `IOException`.
+
+Problem 3:
+
+Create a binary serializer using:
+
+```text
+DataOutputStream
+DataInputStream
+```
+
+Store and retrieve:
+
+```text
+Player ID
+Player Name
+Score
+Level
+```
+
+---
+
+16. REAL-WORLD APPLICATIONS
+
+16.1 WEB AND NETWORK APPLICATIONS
+
+File channels can be used for efficient data transfer between channels.
+
+16.2 DATABASE AND STORAGE SYSTEMS
+
+Applications can use file channels and memory mapping for suitable storage and indexing workloads.
+
+16.3 LOG PROCESSING
+
+`Files.lines()` and `Files.walk()` can be used for processing large collections of log files.
+
+16.4 CONFIGURATION MANAGEMENT
+
+Small configuration files can be conveniently handled using:
+
+```java
+Files.readString()
+Files.writeString()
+```
+
+16.5 TRANSACTIONAL FILE UPDATES
+
+Temporary files combined with carefully designed `Files.move()` operations can help implement safer update patterns.
+
+---
+
+17. COMMON MISTAKES
+
+Mistake 1:
+
+```java
+catch (Exception e) {
+}
+```
+
+This silently discards useful failure information.
+
+Mistake 2:
+
+Not closing:
+
+```java
+Files.lines(path)
+```
+
+The returned stream should normally be closed after processing.
+
+Mistake 3:
+
+Catching `Throwable` without a strong reason.
+
+This also catches `Error` subclasses.
+
+Mistake 4:
+
+Using exceptions as normal control flow.
+
+Mistake 5:
+
+Assuming every filesystem supports `ATOMIC_MOVE`.
+
+Mistake 6:
+
+Assuming `Files.readString()` is suitable for arbitrarily large files.
+
+---
+
+18. COMMON ERRORS
+
+18.1 NoSuchFileException
+
+Occurs when an operation expects a file that does not exist.
+
+```text
+java.nio.file.NoSuchFileException
+```
+
+18.2 AccessDeniedException
+
+Indicates that access to the requested filesystem object was denied.
+
+18.3 FileAlreadyExistsException
+
+Can occur when creating or moving a file where the target already exists and replacement was not requested or supported.
+
+18.4 AtomicMoveNotSupportedException
+
+Occurs when an atomic move was requested but cannot be performed by the filesystem/provider.
+
+18.5 InvalidPathException
+
+Occurs when a string cannot be converted into a valid path.
+
+---
+
+19. DEBUGGING TECHNIQUES
+
+INCORRECT:
+
+```java
+public void processLog(Path path) throws IOException {
+
+    Files.lines(path)
+         .filter(line -> line.contains("ERROR"))
+         .forEach(System.out::println);
+}
+```
+
+The returned stream is not explicitly closed.
+
+CORRECT:
+
+```java
+public void processLog(Path path) throws IOException {
+
+    try (var lines = Files.lines(path)) {
+
+        lines.filter(line -> line.contains("ERROR"))
+             .forEach(System.out::println);
+    }
+}
+```
+
+WHY?
+
+`Files.lines()` returns a stream associated with the file. Closing the stream releases its associated resources. Oracle specifically recommends closing such filesystem streams after use.
+
+---
+
+20. EDGE CASES
+
+20.1 EXCEPTION IN FINALLY
+
+Example:
+
+```java
+try {
+    throw new RuntimeException("A");
+}
+finally {
+    throw new RuntimeException("B");
+}
+```
+
+The exception from `finally` replaces the earlier reason for abrupt completion.
+
+This is why return or throw statements in `finally` should generally be avoided.
+
+20.2 RETURN IN FINALLY
+
+```java
+try {
+    throw new RuntimeException("A");
+}
+finally {
+    return;
+}
+```
+
+The `return` causes the method to complete normally, so the exception from the `try` block does not propagate.
+
+20.3 NULL RESOURCE
+
+A resource expression may evaluate to `null`. A null resource is not closed by the try-with-resources mechanism.
+
+20.4 MULTIPLE RESOURCES
+
+```java
+try (
+    ResourceA a = new ResourceA();
+    ResourceB b = new ResourceB();
+) {
+    // Work
+}
+```
+
+Closing occurs:
+
+```text
+b.close()
+a.close()
+```
+
+20.5 LARGE FILE
+
+Avoid loading an arbitrarily large file completely into memory.
+
+Prefer streaming when appropriate:
+
+```java
+try (var lines = Files.lines(path)) {
+    lines.forEach(System.out::println);
+}
+```
+
+---
+
+21. BEST PRACTICES
+
+* Prefer try-with-resources for `AutoCloseable` resources.
+* Preserve original causes when wrapping exceptions.
+* Catch the most specific exception that can be meaningfully handled.
+* Do not silently swallow exceptions.
+* Use `Path` and `Files` for modern filesystem operations.
+* Prefer `Path.of()` in new code.
+* Close streams returned by `Files.lines()` and `Files.walk()`.
+* Use `readString()` for appropriately sized text files.
+* Use streaming APIs for large or potentially large data.
+* Do not assume `ATOMIC_MOVE` is supported on every filesystem.
+* Do not assume NIO operations are automatically non-blocking.
+* Avoid using exceptions for ordinary expected control flow.
+* Validate paths and permissions when processing untrusted input.
+
+---
+
+22. PERFORMANCE CONSIDERATIONS
+
+22.1 FILE STREAMING
+
+For large files, streaming can avoid loading the entire file into memory.
+
+22.2 BUFFERED I/O
+
+`Files.newBufferedReader()` and `Files.newBufferedWriter()` provide convenient buffered text access.
+
+22.3 FILECHANNEL
+
+`FileChannel.transferTo()` can provide an efficient channel-to-channel transfer. However, the exact operating-system mechanism and performance characteristics are implementation dependent. A Java program should not assume that every transfer uses a particular native system call or performs zero memory copies.
+
+22.4 EXCEPTION COST
+
+Creating exceptions can have overhead, including stack-trace processing.
+
+Therefore, exceptions should generally represent exceptional conditions rather than normal high-frequency branching.
+
+---
+
+23. MEMORY CONSIDERATIONS
+
+23.1 readAllLines()
+
+```java
+List<String> lines =
+    Files.readAllLines(path);
+```
+
+This collects all lines in memory.
+
+23.2 lines()
+
+```java
+try (Stream<String> lines =
+         Files.lines(path)) {
+
+    lines.forEach(System.out::println);
+}
+```
+
+This provides lazy line processing.
+
+23.3 readString()
+
+```java
+String content =
+    Files.readString(path);
+```
+
+This loads the complete file content into a `String`.
+
+Therefore:
+
+```text
+Small file
+   -> readString()
+
+Large file
+   -> lines() / BufferedReader
+```
+
+The choice should depend on file size and application requirements. Oracle documents `readAllLines()` as unsuitable for input where an arbitrarily large amount of memory might be required.
+
+23.4 MEMORY-MAPPED FILES
+
+A mapped file region uses virtual-memory mapping and is represented through a buffer API.
+
+It can be useful for:
+
+* Random access.
+* Large-file processing.
+* Specialized storage workloads.
+
+It should not automatically be assumed to be faster than ordinary I/O for every workload.
+
+---
+
+24. SECURITY CONSIDERATIONS
+
+24.1 PATH TRAVERSAL
+
+Never blindly trust user-supplied filenames.
+
+For example:
+
+```text
+../../secret.txt
+```
+
+may attempt to escape an intended directory.
+
+A safer design establishes a trusted base directory and verifies that the resolved target remains within that directory.
+
+Example:
+
+```java
+Path base =
+    Path.of("/application/uploads")
+        .toAbsolutePath()
+        .normalize();
+
+Path target =
+    base.resolve(userInput)
+        .normalize()
+        .toAbsolutePath();
+
+if (!target.startsWith(base)) {
+    throw new SecurityException("Invalid path");
+}
+```
+
+Normalization alone is not a complete security policy; the application must define and enforce an appropriate allowed directory and file policy.
+
+24.2 RESOURCE EXHAUSTION
+
+Applications should avoid allowing untrusted input to trigger:
+
+* Extremely large file reads.
+* Unbounded directory traversal.
+* Excessive temporary files.
+* Excessive resource creation.
+
+24.3 ERROR INFORMATION
+
+Do not expose sensitive filesystem paths, credentials, or internal configuration details directly to untrusted users through exception messages.
+
+---
+
+25. COMPARISON WITH RELATED CONCEPTS
+
+| Feature             | Java NIO.2                        | Java Legacy I/O                   | C++                                  | Python                |
+| ------------------- | --------------------------------- | --------------------------------- | ------------------------------------ | --------------------- |
+| Path abstraction    | `Path`                            | `File`                            | `std::filesystem::path`              | `pathlib.Path`        |
+| Resource management | try-with-resources                | try-with-resources/manual closing | RAII                                 | `with`                |
+| Memory mapping      | `MappedByteBuffer`                | Not directly through `File`       | OS/library APIs                      | `mmap`                |
+| Checked exceptions  | Yes                               | Yes                               | No language-level checked exceptions | No checked exceptions |
+| Directory traversal | `Files.walk()` / `walkFileTree()` | `File` APIs                       | `std::filesystem`                    | `pathlib` / `os`      |
+| File channels       | `FileChannel`                     | Streams                           | Streams/OS APIs                      | File objects/modules  |
+
+---
+
+26. FREQUENTLY ASKED QUESTIONS
+
+Q1. What is the difference between checked and unchecked exceptions?
+
+A:
+
+Checked exceptions are subject to Java's compile-time exception checking.
+
+Unchecked exceptions are `RuntimeException` subclasses and are not subject to that checked-exception requirement.
+
+`Error` subclasses are also unchecked and are separate from `Exception`.
+
+Q2. What interface is required for try-with-resources?
+
+A:
+
+The resource must implement:
+
+```java
+AutoCloseable
+```
+
+`Closeable` is a subinterface of `AutoCloseable`.
+
+Q3. How are multiple resources closed?
+
+A:
+
+They are closed in reverse order of initialization.
+
+Q4. What is a suppressed exception?
+
+A:
+
+It is an exception that occurs while closing a resource when another exception has already become the primary exception.
+
+Q5. Why use Path instead of File?
+
+A:
+
+`Path` is part of the modern NIO.2 filesystem API and works with the extensive `Files` API.
+
+Q6. Is NIO.2 always non-blocking?
+
+A:
+
+No.
+
+NIO.2 provides modern filesystem abstractions and several channel/stream APIs, but many `Files` operations are ordinary blocking operations.
+
+Q7. Does `Files.lines()` load the complete file?
+
+A:
+
+It returns a lazily populated stream of lines rather than first collecting all lines into a list.
+
+Q8. Does `FileChannel.transferTo()` always perform zero-copy?
+
+A:
+
+No guaranteed Java-language behavior should be assumed. The actual transfer strategy depends on the implementation and operating system.
+
+---
+
+27. INTERVIEW QUESTIONS
+
+Q1. Explain try-with-resources.
+
+Answer:
+
+Try-with-resources automatically closes resources implementing `AutoCloseable`. Resources are initialized in declaration order and closed in reverse order.
+
+Q2. What happens if both the try block and close() throw exceptions?
+
+Answer:
+
+The exception from the try block becomes the primary exception, while the close exception is normally recorded as a suppressed exception.
+
+Q3. What is exception chaining?
+
+Answer:
+
+Exception chaining stores an original exception as the cause of another exception.
+
+```java
+throw new RuntimeException(
+    "High-level failure",
+    originalException
+);
+```
+
+Q4. What is the difference between `throw` and `throws`?
+
+Answer:
+
+`throw` actually throws an exception.
+
+`throws` declares exceptions that a method or constructor may propagate.
+
+Q5. What is `Path`?
+
+Answer:
+
+`Path` is an object representing a filesystem path.
+
+Q6. What is `Files.walk()`?
+
+Answer:
+
+It returns a lazily populated `Stream<Path>` for traversing a file tree.
+
+Q7. What is `Files.walkFileTree()`?
+
+Answer:
+
+It performs depth-first file-tree traversal using a `FileVisitor`.
+
+Q8. What is `MappedByteBuffer`?
+
+Answer:
+
+It represents a byte buffer associated with a mapped region of a file.
+
+Q9. What is `FileChannel.transferTo()`?
+
+Answer:
+
+It transfers bytes from a file channel to a writable channel.
+
+---
+
+28. EXAM QUESTIONS
+
+Q1. Which interface allows a resource to be used in try-with-resources?
+
+Answer:
+
+```java
+AutoCloseable
+```
+
+Q2. What is the closing order?
+
+```java
+try (
+    A a = new A();
+    B b = new B();
+) {
+}
+```
+
+Answer:
+
+```text
+B.close()
+A.close()
+```
+
+Q3. What happens here?
+
+```java
+try {
+    throw new RuntimeException("A");
+}
+finally {
+    return;
+}
+```
+
+Answer:
+
+The `return` causes normal completion of the method, so the exception from the `try` block does not propagate.
+
+Q4. Which class represents a filesystem path?
+
+Answer:
+
+```java
+java.nio.file.Path
+```
+
+Q5. Which class provides most high-level filesystem operations?
+
+Answer:
+
+```java
+java.nio.file.Files
+```
+
+---
+
+29. PRACTICE QUESTIONS
+
+Q1.
+
+Write a Java program using `Files.walkFileTree()` to calculate the total size of all `.txt` files in a directory.
+
+Q2.
+
+Create a custom `AutoCloseable` performance timer that measures the duration of a code block.
+
+Q3.
+
+Write a file-copy program using `FileChannel.transferTo()`.
+
+Q4.
+
+Write a program that reads a large log file using `Files.lines()` and counts:
+
+```text
+INFO
+WARNING
+ERROR
+```
+
+Q5.
+
+Create a custom checked exception called:
+
+```java
+InvalidTransactionException
+```
+
+and use exception chaining to preserve the original cause.
+
+Q6.
+
+Implement an atomic configuration-file update using:
+
+```text
+temporary file
+       +
+Files.move()
+       +
+ATOMIC_MOVE
+```
+
+Handle `AtomicMoveNotSupportedException`.
+
+---
+
+30. SUMMARY
+
+Java provides a structured exception model based on `Throwable`, with checked exceptions, runtime exceptions, and errors.
+
+`try`, `catch`, `finally`, `throw`, and `throws` provide structured exception handling.
+
+`try-with-resources` provides automatic cleanup for `AutoCloseable` resources and preserves close failures as suppressed exceptions when appropriate.
+
+Java NIO.2 provides modern filesystem operations through `Path` and `Files`.
+
+For file processing:
+
+```text
+Small text file
+    -> Files.readString()
+
+All lines as collection
+    -> Files.readAllLines()
+
+Large/streaming text processing
+    -> Files.lines()
+
+Directory traversal
+    -> Files.walk()
+       or
+       Files.walkFileTree()
+
+Channel-based I/O
+    -> FileChannel
+
+Memory-mapped access
+    -> FileChannel.map()
+```
+
+The APIs should be selected according to file size, access pattern, resource requirements, portability, and security considerations.
+
+---
+
+31. KEY TAKEAWAYS
+
+* `Throwable` is the root of Java's exception/error hierarchy.
+* Checked exceptions are subject to compile-time checking.
+* `RuntimeException` and `Error` are unchecked.
+* Use `throw` to explicitly throw an exception.
+* Use `throws` to declare exceptions that may propagate.
+* Prefer try-with-resources for `AutoCloseable` resources.
+* Resources close in reverse initialization order.
+* Close failures can become suppressed exceptions.
+* Preserve original causes using exception chaining.
+* Use `Path` and `Files` for modern filesystem operations.
+* Prefer `Path.of()` in modern Java code.
+* Close streams returned by `Files.lines()` and `Files.walk()`.
+* Use streaming for large or potentially large files.
+* `FileChannel` supports advanced file operations.
+* `transferTo()` can provide efficient channel-to-channel transfer, but its exact implementation is platform dependent.
+* `MappedByteBuffer` provides access to mapped file regions.
+* Do not assume every NIO.2 operation is non-blocking.
+* Do not assume `ATOMIC_MOVE` is supported on every filesystem.
+* Validate untrusted filesystem paths.
+* Avoid swallowing exceptions.
+* Do not use exceptions as ordinary control flow.
+  ================================================================================
+  END OF DOCUMENT
+  ================================================================================

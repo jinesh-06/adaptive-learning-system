@@ -1,0 +1,2542 @@
+COURSE: C
+TOPIC: STRUCTURES, UNIONS, BIT-FIELDS, AND ENUMERATIONS
+LEVEL: INTERMEDIATE
+SOURCE: c_structures_unions.txt
+
+TITLE: C Structures, Unions, Bit-Fields, and Enumerations: Data Modeling, Object Representation, and Memory Layout
+
+1. INTRODUCTION
+
+C provides several mechanisms for creating user-defined data types that combine or represent multiple related values.
+
+The most important mechanisms are:
+
+* Structures (`struct`)
+* Unions (`union`)
+* Enumerations (`enum`)
+* Bit-fields
+
+Structures allow multiple members of different types to exist simultaneously in one object.
+
+Unions allow different members to share the same storage.
+
+Enumerations provide named integer constants that make program states and choices easier to understand.
+
+Bit-fields allow selected structure or union members to occupy a specified number of bits.
+
+These features are widely used in:
+
+* Operating systems
+* Embedded systems
+* Networking
+* File formats
+* Databases
+* Compilers
+* Device drivers
+* Graphics
+* Communication protocols
+* Data structures
+* Hardware interfaces
+
+Understanding these features requires knowledge of:
+
+* Object representation
+* Alignment
+* Padding
+* Member ordering
+* Object lifetime
+* Pointers
+* Memory layout
+* Implementation-defined behavior
+* Portability
+
+2. LEARNING OBJECTIVES
+
+After completing this topic, the learner should be able to:
+
+* Define and initialize structures.
+* Use structure tags and typedef aliases.
+* Access structure members using `.`.
+* Access structure members through pointers using `->`.
+* Create nested structures.
+* Create arrays of structures.
+* Dynamically allocate structures.
+* Create self-referential structures.
+* Explain structure alignment and padding.
+* Use `sizeof` and `offsetof` to investigate layout.
+* Understand unions and shared storage.
+* Design tagged unions.
+* Define and use enumerations.
+* Understand enumeration constants and their values.
+* Define and use bit-fields.
+* Understand implementation-defined aspects of bit-fields.
+* Explain why bit-fields are not automatically portable wire-format definitions.
+* Understand flexible array members.
+* Use standard alignment facilities.
+* Avoid unsafe assumptions about structure representation.
+* Understand the limitations of compiler-specific packing directives.
+
+3. PREREQUISITES
+
+The learner should understand:
+
+* C primitive data types.
+* Variables.
+* Arrays.
+* Functions.
+* Pointers.
+* Dynamic memory allocation.
+* `sizeof`.
+* Basic memory concepts.
+* Structures and pointers.
+
+4. STRUCTURE FUNDAMENTALS
+
+A structure is a user-defined type that groups multiple members into a single object.
+
+Example:
+
+struct Student {
+int id;
+char name[32];
+double mark;
+};
+
+A structure can contain members of different types.
+
+The members exist as part of the same structure object.
+
+Example:
+
+struct Student student1;
+
+5. STRUCTURE TAG
+
+The identifier after the keyword `struct` is called a structure tag.
+
+Example:
+
+struct Student {
+int id;
+char name[32];
+};
+
+The type is:
+
+struct Student
+
+An object can then be declared as:
+
+struct Student s1;
+
+6. TYPEDEF WITH STRUCTURES
+
+A typedef can create a shorter alias.
+
+Example:
+
+typedef struct {
+int id;
+char name[32];
+double mark;
+} Student;
+
+Now:
+
+Student s1;
+
+can be used instead of:
+
+struct Student s1;
+
+7. TAGGED TYPEDEF
+
+A structure can have both a tag and a typedef alias.
+
+Example:
+
+typedef struct Student {
+int id;
+char name[32];
+double mark;
+} Student;
+
+Both forms are then available:
+
+struct Student s1;
+
+Student s2;
+
+8. STRUCTURE INITIALIZATION
+
+A structure can be initialized during declaration.
+
+Example:
+
+struct Student s = {
+101,
+"Alice",
+89.5
+};
+
+Designated initializers can make initialization clearer.
+
+Example:
+
+struct Student s = {
+.id = 101,
+.name = "Alice",
+.mark = 89.5
+};
+
+Designated initializers are especially useful when a structure contains many members.
+
+9. MEMBER ACCESS USING DOT
+
+The dot operator (`.`) accesses a member of a structure object.
+
+Example:
+
+struct Student s;
+
+s.id = 101;
+s.mark = 90.5;
+
+printf("%d\n", s.id);
+
+10. STRUCTURE POINTERS
+
+A pointer can point to a structure.
+
+Example:
+
+struct Student s;
+
+struct Student *ptr = &s;
+
+The pointer contains the address of the structure object.
+
+11. MEMBER ACCESS USING ARROW
+
+The arrow operator (`->`) accesses a structure member through a pointer.
+
+Example:
+
+ptr->id = 101;
+
+This is equivalent to:
+
+(*ptr).id = 101;
+
+The parentheses are required in the equivalent expression because the `.` operator has higher precedence than unary `*`.
+
+12. BASIC STRUCTURE EXAMPLE
+
+#include <stdio.h>
+
+typedef struct {
+int id;
+char name[32];
+double mark;
+} Student;
+
+int main(void)
+{
+Student student = {
+.id = 101,
+.name = "Alice",
+.mark = 89.5
+};
+
+```
+printf("ID: %d\n", student.id);
+printf("Name: %s\n", student.name);
+printf("Mark: %.2f\n", student.mark);
+
+return 0;
+```
+
+}
+
+Expected output:
+
+ID: 101
+Name: Alice
+Mark: 89.50
+
+13. STRUCTURE ASSIGNMENT
+
+Structure objects of compatible structure type can be assigned directly.
+
+Example:
+
+Student s1 = {
+.id = 101,
+.name = "Alice",
+.mark = 90.0
+};
+
+Student s2;
+
+s2 = s1;
+
+The value of the structure is copied.
+
+For structures containing arrays, the array members are part of the structure object and their contents are copied as part of the structure assignment.
+
+14. PASSING STRUCTURES TO FUNCTIONS
+
+A structure can be passed by value.
+
+Example:
+
+void print_student(Student s)
+{
+printf("%d %s %.2f\n",
+s.id,
+s.name,
+s.mark);
+}
+
+This creates a parameter object initialized from the argument.
+
+For large structures, passing a pointer is often preferable when the function does not need a separate copy.
+
+Example:
+
+void print_student(const Student *s)
+{
+if (s != NULL) {
+printf("%d %s %.2f\n",
+s->id,
+s->name,
+s->mark);
+}
+}
+
+15. CONST STRUCTURE POINTERS
+
+A function that only needs to read a structure can use:
+
+const Student *student
+
+Example:
+
+void print_student(const Student *student)
+{
+printf("%d\n", student->id);
+}
+
+The `const` qualifier prevents modification of the structure through that pointer.
+
+16. NESTED STRUCTURES
+
+A structure can contain another structure as a member.
+
+Example:
+
+typedef struct {
+int day;
+int month;
+int year;
+} Date;
+
+typedef struct {
+int id;
+char name[32];
+Date birth_date;
+} Student;
+
+Access:
+
+student.birth_date.day
+
+or through a pointer:
+
+student_ptr->birth_date.day
+
+17. ARRAYS OF STRUCTURES
+
+An array can contain multiple structure objects.
+
+Example:
+
+Student students[3];
+
+students[0].id = 101;
+students[1].id = 102;
+students[2].id = 103;
+
+Traversal:
+
+for (size_t i = 0; i < 3; i++) {
+printf("%d\n", students[i].id);
+}
+
+18. DYNAMICALLY ALLOCATED STRUCTURES
+
+Structures can be dynamically allocated.
+
+Example:
+
+Student *student = malloc(sizeof *student);
+
+if (student == NULL) {
+return EXIT_FAILURE;
+}
+
+student->id = 101;
+student->mark = 95.0;
+
+free(student);
+
+19. SELF-REFERENTIAL STRUCTURES
+
+A structure cannot contain an object of its own type directly because that would require infinite size.
+
+Invalid:
+
+struct Node {
+int data;
+struct Node next;
+};
+
+Instead, it can contain a pointer to its own type.
+
+Valid:
+
+struct Node {
+int data;
+struct Node *next;
+};
+
+This is called a self-referential structure.
+
+20. LINKED LIST NODE
+
+Example:
+
+typedef struct Node {
+int data;
+struct Node *next;
+} Node;
+
+A linked list can then be represented as:
+
+Node *head = NULL;
+
+A node can point to another node.
+
+Conceptually:
+
+head
+|
+v
++------+------+
+| data | next |----+
++------+------+\   |
+|   v
+| +------+------+
++>| data | next |
++------+------+
+|
+v
+NULL
+
+21. LINKED LIST EXAMPLE
+
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+int data;
+struct Node *next;
+} Node;
+
+Node *create_node(int value)
+{
+Node *node = malloc(sizeof *node);
+
+```
+if (node == NULL)
+    return NULL;
+
+node->data = value;
+node->next = NULL;
+
+return node;
+```
+
+}
+
+void free_list(Node **head)
+{
+while (head != NULL && *head != NULL) {
+
+```
+    Node *next = (*head)->next;
+
+    free(*head);
+
+    *head = next;
+}
+```
+
+}
+
+int main(void)
+{
+Node *head = create_node(10);
+
+```
+if (head == NULL)
+    return EXIT_FAILURE;
+
+head->next = create_node(20);
+
+if (head->next == NULL) {
+    free_list(&head);
+    return EXIT_FAILURE;
+}
+
+head->next->next = create_node(30);
+
+if (head->next->next == NULL) {
+    free_list(&head);
+    return EXIT_FAILURE;
+}
+
+for (Node *p = head; p != NULL; p = p->next)
+    printf("%d ", p->data);
+
+printf("\n");
+
+free_list(&head);
+
+return EXIT_SUCCESS;
+```
+
+}
+
+Expected output:
+
+10 20 30
+
+22. STRUCTURE MEMORY LAYOUT
+
+A structure object contains its members in declaration order.
+
+For example:
+
+struct Example {
+char c;
+int i;
+};
+
+The address of a later member is greater than the address of an earlier member, subject to the language rules.
+
+However, there may be unnamed padding between members and after the final member.
+
+There is no padding before the first member.
+
+Therefore, the following is not generally valid:
+
+sizeof(struct Example) == sizeof(char) + sizeof(int)
+
+23. ALIGNMENT
+
+Every complete object type has an alignment requirement.
+
+An implementation may require objects of a particular type to begin at suitable addresses.
+
+For example, an implementation may commonly require:
+
+char -> alignment 1
+int -> alignment 4
+double -> alignment 8
+
+However, these values are implementation-dependent.
+
+Portable C code must not assume these exact alignment values.
+
+The alignment requirement can be queried using:
+
+_Alignof(type)
+
+in C11 through C17.
+
+In C23, the standard spelling is:
+
+alignof(type)
+
+through the relevant C23 facilities.
+
+24. STRUCTURE PADDING
+
+Padding may be inserted between structure members to satisfy alignment requirements.
+
+Example:
+
+struct Example {
+char c;
+int i;
+};
+
+A possible layout is:
+
++---------+
+| char c  | 1 byte
++---------+
+| padding | 3 bytes
++---------+
+| int i   | 4 bytes
++---------+
+
+Possible size:
+
+8 bytes
+
+However, the exact result depends on the implementation.
+
+The C standard does not require every implementation to use this exact layout.
+
+25. TRAILING PADDING
+
+Padding can also appear after the final member.
+
+Example:
+
+struct Example {
+int x;
+char c;
+};
+
+A possible layout is:
+
+int x      -> 4 bytes
+char c     -> 1 byte
+padding    -> 3 bytes
+
+Possible total size:
+
+8 bytes
+
+Trailing padding can allow consecutive structure objects in an array to satisfy alignment requirements.
+
+26. STRUCTURE SIZE
+
+The size of a structure is determined by the implementation's layout rules.
+
+It is at least large enough to contain its members and any required padding.
+
+Example:
+
+struct Data {
+char a;
+int b;
+};
+
+Use:
+
+sizeof(struct Data)
+
+to determine the actual size.
+
+Never assume a structure has exactly the sum of its member sizes.
+
+27. STRUCTURE ALIGNMENT
+
+A structure's alignment requirement is sufficient to satisfy the alignment requirements of its members, subject to the implementation's rules.
+
+Example:
+
+struct Data {
+char c;
+double value;
+};
+
+The structure may have an alignment requirement influenced by `double`.
+
+Use implementation facilities such as `alignof` where appropriate to inspect alignment.
+
+28. OFFSETOF
+
+The standard `<stddef.h>` header provides the `offsetof` macro.
+
+Example:
+
+#include <stddef.h>
+
+struct Data {
+char c;
+int value;
+};
+
+printf("%zu\n", offsetof(struct Data, value));
+
+This gives the offset of the specified member from the beginning of the structure object.
+
+It is useful for investigating layout and for certain systems-level interfaces.
+
+29. STRUCTURE LAYOUT INSPECTION
+
+Example:
+
+#include <stdio.h>
+#include <stddef.h>
+
+struct Example {
+char c;
+int i;
+double d;
+};
+
+int main(void)
+{
+printf("sizeof = %zu\n", sizeof(struct Example));
+printf("offset c = %zu\n",
+offsetof(struct Example, c));
+printf("offset i = %zu\n",
+offsetof(struct Example, i));
+printf("offset d = %zu\n",
+offsetof(struct Example, d));
+
+```
+return 0;
+```
+
+}
+
+The output is implementation-dependent.
+
+30. STRUCTURE MEMBER ORDER
+
+Changing member order can change the amount of padding.
+
+Example:
+
+struct A {
+char c;
+double d;
+int i;
+};
+
+versus:
+
+struct B {
+double d;
+int i;
+char c;
+};
+
+The two structures may have different sizes.
+
+Reordering members can sometimes reduce padding.
+
+However, member order should not be changed blindly when:
+
+* An external binary format depends on layout.
+* ABI compatibility matters.
+* Source-level initialization depends on order.
+* Hardware interfaces require a documented representation.
+
+31. IMPORTANT PORTABILITY RULE
+
+Do not assume:
+
+char = 1 byte
+int = 4 bytes
+double = 8 bytes
+alignment of int = 4
+alignment of double = 8
+
+These are common on many systems but are not universal requirements of C.
+
+Use:
+
+sizeof(type)
+
+and alignment facilities when implementation information is required.
+
+32. STRUCTURE MEMORY OPTIMIZATION
+
+Example:
+
+struct PoorLayout {
+char a;
+double b;
+char c;
+int d;
+};
+
+A different ordering may reduce padding:
+
+struct BetterLayout {
+double b;
+int d;
+char a;
+char c;
+};
+
+The actual size must be measured using:
+
+sizeof(struct BetterLayout)
+
+Do not describe a specific byte saving as guaranteed across all platforms.
+
+33. CACHE LOCALITY
+
+Structure layout can influence memory access behavior.
+
+Arrays of structures provide contiguous structure objects:
+
+struct Point points[1000];
+
+Each structure object is adjacent to the next in the array.
+
+However, optimizing structure layout for cache behavior is platform- and workload-dependent.
+
+Memory footprint, access pattern, alignment, and compiler optimization should be measured rather than assumed.
+
+34. UNIONS
+
+A union is a user-defined type whose members share storage.
+
+Example:
+
+union Data {
+int i;
+float f;
+char c;
+};
+
+A union object has storage suitable for its members according to the implementation's alignment and representation rules.
+
+Unlike a structure, union members do not occupy separate storage simultaneously.
+
+35. UNION MEMORY CONCEPT
+
+For:
+
+union Data {
+int i;
+float f;
+char c;
+};
+
+The members overlap conceptually:
+
++----------------------+
+| shared storage       |
+|                      |
+| i / f / c            |
++----------------------+
+
+The address of a union object and the addresses of its members are suitably related according to the C rules.
+
+36. UNION SIZE
+
+The size of a union must be sufficient to represent its members and satisfy its alignment requirements.
+
+It is common for:
+
+sizeof(union)
+
+to be at least the size of its largest member.
+
+However, exact representation and padding are implementation-dependent.
+
+Example:
+
+union Data {
+int i;
+double d;
+char text[32];
+};
+
+The union must have enough storage for `text[32]`, and its alignment must satisfy its members.
+
+37. UNION EXAMPLE
+
+#include <stdio.h>
+
+union Data {
+int i;
+float f;
+char c;
+};
+
+int main(void)
+{
+union Data data;
+
+```
+data.i = 100;
+
+printf("Integer: %d\n", data.i);
+
+data.f = 3.14f;
+
+printf("Float: %.2f\n", data.f);
+
+data.c = 'A';
+
+printf("Character: %c\n", data.c);
+
+return 0;
+```
+
+}
+
+Each assignment changes the stored union member.
+
+38. ACTIVE UNION MEMBER
+
+A union provides shared storage for its members.
+
+After storing a value in one member, accessing a different member requires careful consideration of the C language rules and the implementation's representation.
+
+Do not assume that reading any inactive member is a portable conversion mechanism.
+
+For portable software, use an explicitly defined representation or a documented union usage supported by the target implementation.
+
+39. UNION TYPE PUNNING
+
+A common low-level technique is to store a value through one union member and inspect its representation through another.
+
+Example:
+
+union {
+float f;
+unsigned char bytes[sizeof(float)];
+} u;
+
+u.f = 1.0f;
+
+The contents of `u.bytes` represent the object representation of the stored value.
+
+However, the byte order and representation are implementation-dependent.
+
+For portable byte serialization, explicitly convert values to a defined external representation instead of assuming a particular machine representation.
+
+40. UNION USE CASES
+
+Unions are useful for:
+
+* Variant data.
+* Memory-efficient representations.
+* Hardware interfaces.
+* Tagged unions.
+* Protocol implementation.
+* Interpreting object representations.
+* Low-level systems programming.
+
+41. TAGGED UNIONS
+
+A tagged union combines:
+
+1. An enumeration identifying the active alternative.
+2. A union containing the possible values.
+3. A structure containing both.
+
+Example:
+
+typedef enum {
+VALUE_INT,
+VALUE_DOUBLE,
+VALUE_STRING
+} ValueType;
+
+typedef struct {
+ValueType type;
+
+```
+union {
+    int i;
+    double d;
+    char *s;
+} data;
+```
+
+} Value;
+
+The tag identifies which union member the program intends to use.
+
+42. TAGGED UNION EXAMPLE
+
+#include <stdio.h>
+
+typedef enum {
+VALUE_INT,
+VALUE_DOUBLE,
+VALUE_STRING
+} ValueType;
+
+typedef struct {
+ValueType type;
+
+```
+union {
+    int i;
+    double d;
+    const char *s;
+} data;
+```
+
+} Value;
+
+void print_value(const Value *value)
+{
+if (value == NULL)
+return;
+
+```
+switch (value->type) {
+
+    case VALUE_INT:
+        printf("Integer: %d\n", value->data.i);
+        break;
+
+    case VALUE_DOUBLE:
+        printf("Double: %.2f\n", value->data.d);
+        break;
+
+    case VALUE_STRING:
+        printf("String: %s\n", value->data.s);
+        break;
+}
+```
+
+}
+
+int main(void)
+{
+Value value = {
+.type = VALUE_INT,
+.data.i = 100
+};
+
+```
+print_value(&value);
+
+value.type = VALUE_DOUBLE;
+value.data.d = 3.14;
+
+print_value(&value);
+
+value.type = VALUE_STRING;
+value.data.s = "Hello";
+
+print_value(&value);
+
+return 0;
+```
+
+}
+
+Expected output:
+
+Integer: 100
+Double: 3.14
+String: Hello
+
+43. ENUMERATIONS
+
+An enumeration defines a set of named integer constants.
+
+Example:
+
+enum State {
+IDLE,
+RUNNING,
+STOPPED
+};
+
+The constants are:
+
+IDLE
+RUNNING
+STOPPED
+
+By default, enumerators begin at 0 and increase by 1 unless explicit values are provided.
+
+44. EXPLICIT ENUMERATION VALUES
+
+Example:
+
+enum ErrorCode {
+SUCCESS = 0,
+NOT_FOUND = 404,
+SERVER_ERROR = 500
+};
+
+The enumerators have the specified values, subject to the requirements of the C implementation and standard version being used.
+
+45. ENUMERATION VARIABLES
+
+Example:
+
+enum State state;
+
+state = RUNNING;
+
+A switch statement can then be used:
+
+switch (state) {
+
+```
+case IDLE:
+    printf("Idle\n");
+    break;
+
+case RUNNING:
+    printf("Running\n");
+    break;
+
+case STOPPED:
+    printf("Stopped\n");
+    break;
+```
+
+}
+
+46. ENUMERATION CONSTANTS AND IDENTIFIERS
+
+In C, enumeration constants are identifiers in the ordinary identifier namespace.
+
+Example:
+
+enum Color {
+RED,
+GREEN,
+BLUE
+};
+
+The names:
+
+RED
+GREEN
+BLUE
+
+must therefore follow the normal identifier-scope rules.
+
+They are not accessed using:
+
+Color.RED
+
+That is not C syntax.
+
+47. ENUMERATION SIZE AND REPRESENTATION
+
+The size and compatible integer type of an enumeration are implementation-dependent within the constraints of the C standard.
+
+Do not assume:
+
+sizeof(enum State) == sizeof(int)
+
+for portable code.
+
+Use `sizeof` if the implementation-specific size is required.
+
+48. ENUMERATION FOR STATE MACHINES
+
+Enumerations are especially useful for state machines.
+
+Example:
+
+typedef enum {
+STATE_IDLE,
+STATE_READING,
+STATE_PROCESSING,
+STATE_COMPLETED,
+STATE_ERROR
+} State;
+
+A state variable can then be declared:
+
+State current_state = STATE_IDLE;
+
+49. ENUMERATION FOR STATUS CODES
+
+Example:
+
+typedef enum {
+STATUS_OK,
+STATUS_INVALID_INPUT,
+STATUS_OUT_OF_MEMORY,
+STATUS_IO_ERROR
+} Status;
+
+Functions can return the enumeration:
+
+Status process_data(void);
+
+50. BIT-FIELDS
+
+A bit-field is a structure or union member with a specified number of bits.
+
+Example:
+
+struct Flags {
+unsigned int ready : 1;
+unsigned int mode  : 3;
+unsigned int error : 1;
+};
+
+Here:
+
+ready -> 1 bit
+mode  -> 3 bits
+error -> 1 bit
+
+51. BIT-FIELD SYNTAX
+
+General form:
+
+type member_name : width;
+
+Example:
+
+unsigned int enabled : 1;
+
+The width specifies the number of bits allocated to the bit-field, subject to the rules of the selected C standard and implementation.
+
+52. BIT-FIELD TYPES
+
+Portable bit-field types include implementation-defined details.
+
+Common forms include:
+
+_Bool
+signed int
+unsigned int
+int
+
+C23 also provides additional possibilities involving `_BitInt(N)`.
+
+Do not assume every compiler accepts every possible bit-field type in the same way.
+
+53. BIT-FIELD VALUE RANGE
+
+For an unsigned bit-field of width N, the representable range is generally:
+
+0 to 2^N - 1
+
+Example:
+
+unsigned int mode : 3;
+
+can represent:
+
+0 through 7
+
+For signed bit-fields, representation and range details depend on the type and implementation rules.
+
+Using unsigned bit-fields is often clearer when the field represents flags or non-negative bit patterns.
+
+54. ANONYMOUS BIT-FIELDS
+
+An unnamed bit-field can be used for padding.
+
+Example:
+
+struct Flags {
+unsigned int a : 1;
+unsigned int   : 2;
+unsigned int b : 1;
+};
+
+The unnamed two-bit field does not have a member name.
+
+A zero-width unnamed bit-field can be used to force the next bit-field to begin at the next allocation unit boundary according to the implementation's bit-field rules.
+
+Example:
+
+struct Flags {
+unsigned int a : 3;
+unsigned int   : 0;
+unsigned int b : 3;
+};
+
+55. BIT-FIELD LAYOUT IS IMPLEMENTATION-DEFINED
+
+One of the most important portability rules is:
+
+Do not assume a particular bit-field ordering.
+
+The implementation may determine:
+
+* Allocation unit.
+* Whether fields grow from low-order bits or high-order bits.
+* Whether a field can straddle an allocation-unit boundary.
+* Alignment of allocation units.
+* Other representation details.
+
+Therefore, bit-fields should not automatically be treated as portable binary protocol definitions.
+
+56. BIT-FIELDS AND HARDWARE REGISTERS
+
+Bit-fields are sometimes used for hardware registers.
+
+Example:
+
+struct ControlRegister {
+unsigned enable : 1;
+unsigned mode   : 2;
+unsigned error  : 1;
+};
+
+However, this representation is compiler- and target-dependent.
+
+For hardware programming, the compiler ABI and hardware documentation must be consulted.
+
+For portable hardware interfaces, explicit masks and shifts are often easier to control.
+
+Example:
+
+#define ENABLE_MASK 0x01u
+#define MODE_MASK   0x06u
+
+57. BIT-FIELDS AND NETWORK PROTOCOLS
+
+Using C bit-fields to represent a network packet header can be non-portable because bit ordering, allocation units, alignment, and object representation can vary.
+
+For portable serialization, explicitly construct and decode bytes.
+
+Example:
+
+unsigned char byte;
+
+byte = (version << 4) | ihl;
+
+This makes the intended bit positions explicit.
+
+58. STRUCTURE PACKING
+
+Some compilers provide non-standard directives such as:
+
+#pragma pack
+
+Example:
+
+#pragma pack(push, 1)
+
+struct PackedData {
+char c;
+int value;
+};
+
+#pragma pack(pop)
+
+This is compiler-specific.
+
+It should not be treated as a feature guaranteed by ISO C.
+
+59. RISKS OF PACKED STRUCTURES
+
+Packed structures can cause:
+
+* Misaligned members.
+* Slower access.
+* Hardware exceptions on architectures that require alignment.
+* ABI incompatibilities.
+* Reduced portability.
+
+A packed structure may be appropriate for a specific compiler and binary format, but it should be isolated behind implementation-specific code.
+
+60. PORTABLE BINARY SERIALIZATION
+
+For portable file or network formats, do not simply write arbitrary structure bytes and assume another system can interpret them.
+
+Potential differences include:
+
+* Padding.
+* Alignment.
+* Endianness.
+* Integer representation.
+* Floating-point representation.
+* Bit-field layout.
+* Structure size.
+
+Instead, define the external format explicitly and serialize each field according to that format.
+
+61. MEMCPY AND STRUCTURE OBJECTS
+
+The object representation of a non-bit-field object can be copied using character types.
+
+Example:
+
+#include <string.h>
+
+struct Data a;
+struct Data b;
+
+memcpy(&b, &a, sizeof a);
+
+This copies the object representation.
+
+However, copying bytes does not automatically make a structure suitable for external serialization because padding and representation may not be portable.
+
+Also, structures containing pointers still contain pointer values after copying; they do not become portable serialized data.
+
+62. STRUCTURE PADDING AND MEMCMP
+
+Do not generally compare structures using:
+
+memcmp(&a, &b, sizeof a)
+
+to determine whether their logical member values are equal.
+
+Padding bytes may contain values that do not participate in the structure's member values.
+
+Instead, compare the meaningful members explicitly.
+
+Example:
+
+if (a.id == b.id &&
+strcmp(a.name, b.name) == 0) {
+/* logically equal */
+}
+
+63. FLEXIBLE ARRAY MEMBERS
+
+A structure can end with a flexible array member.
+
+Example:
+
+struct Packet {
+size_t length;
+unsigned char data[];
+};
+
+The flexible array member must be the last named member.
+
+It does not contribute a fixed array size to the structure definition.
+
+Dynamic allocation can reserve additional storage after the fixed structure portion.
+
+64. FLEXIBLE ARRAY EXAMPLE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Packet {
+size_t length;
+unsigned char data[];
+};
+
+int main(void)
+{
+const char message[] = "Hello";
+
+```
+size_t length = sizeof message;
+
+struct Packet *packet =
+    malloc(sizeof *packet + length);
+
+if (packet == NULL)
+    return EXIT_FAILURE;
+
+packet->length = length;
+
+memcpy(packet->data, message, length);
+
+printf("Length: %zu\n", packet->length);
+printf("Data: %s\n", packet->data);
+
+free(packet);
+
+return 0;
+```
+
+}
+
+Expected output:
+
+Length: 6
+Data: Hello
+
+65. ANONYMOUS STRUCTURES AND UNIONS
+
+C implementations supporting anonymous structures and unions can allow nested members to be accessed without naming an intermediate member.
+
+Example:
+
+struct Data {
+int type;
+
+```
+union {
+    int integer;
+    double real;
+};
+```
+
+};
+
+Then:
+
+struct Data d;
+
+d.type = 1;
+d.integer = 100;
+
+The exact language and compatibility details should be considered when targeting different C standards and compilers.
+
+66. STRUCTURE POINTER CONVERSION
+
+A pointer to a structure object can be converted to a pointer to its first member, subject to the language rules.
+
+Example:
+
+struct Data {
+int id;
+double value;
+};
+
+struct Data data;
+
+int *p = (int *)&data;
+
+The first member begins at the same address as the structure object.
+
+However, this technique should be used carefully and should not be extended to assumptions about later members or padding.
+
+67. CONTAINER-STYLE PROGRAMMING
+
+Systems code sometimes needs to obtain a containing structure from a pointer to one of its members.
+
+This technique depends on the known member offset and is commonly implemented using `offsetof`.
+
+Example concept:
+
+struct Node {
+int value;
+/* other members */
+};
+
+The technique is implementation-pattern-dependent and should be used only when the surrounding object's lifetime and type are known.
+
+68. STRUCTURE DESIGN BEST PRACTICES
+
+Use structures when:
+
+* Multiple values belong to one logical object.
+* The values have different types.
+* Data should be passed as one unit.
+* A data structure requires named fields.
+
+Examples:
+
+Student
+Employee
+Point
+Date
+Packet
+Configuration
+SensorData
+
+69. UNION DESIGN BEST PRACTICES
+
+Use unions when:
+
+* Multiple representations share storage.
+* Only one alternative is needed at a time.
+* A tagged union can identify the intended alternative.
+* A hardware or implementation-specific representation requires overlapping storage.
+
+Avoid unions when separate independent values are required simultaneously.
+
+70. ENUM DESIGN BEST PRACTICES
+
+Use enums for:
+
+* Program states.
+* Status values.
+* Modes.
+* Categories.
+* Error codes.
+* Configuration choices.
+
+Prefer descriptive names.
+
+Example:
+
+enum ConnectionState {
+CONNECTION_DISCONNECTED,
+CONNECTION_CONNECTING,
+CONNECTION_CONNECTED,
+CONNECTION_FAILED
+};
+
+71. BIT-FIELD BEST PRACTICES
+
+Use bit-fields when:
+
+* A compact representation is genuinely useful.
+* The implementation is controlled.
+* The layout is documented.
+* The target ABI defines the required behavior.
+
+Avoid relying on bit-field layout for portable network or file formats.
+
+For external binary formats, use explicit byte-level encoding and decoding.
+
+72. STRUCTURE AND UNION ALIGNMENT
+
+Structure and union types can have alignment requirements determined by their members and implementation rules.
+
+Alignment can affect:
+
+* Object size.
+* Member offsets.
+* Arrays of structures.
+* Performance.
+* Hardware compatibility.
+
+Use standard language facilities instead of assuming a particular machine alignment.
+
+73. OBJECT REPRESENTATION
+
+An object's memory can contain:
+
+* Value representation.
+* Padding bits or bytes.
+* Representation-specific information.
+
+Structure padding is one reason why:
+
+sizeof(struct)
+
+can be greater than the sum of member sizes.
+
+The C standard defines object representation, but the exact representation of many types is implementation-dependent.
+
+74. ENDianness
+
+Endianness describes the ordering of bytes within multi-byte values.
+
+Common formats include:
+
+* Little-endian.
+* Big-endian.
+
+C does not require one universal byte order for all implementations.
+
+Therefore, binary data exchanged between systems should use a defined byte order.
+
+75. STRUCTURE SERIALIZATION WARNING
+
+This is unsafe as a general portable file/network serialization technique:
+
+fwrite(&object, sizeof object, 1, file);
+
+The resulting bytes may contain:
+
+* Padding.
+* Implementation-specific representation.
+* Different endianness.
+* Pointer values.
+* Compiler-specific layout.
+
+Portable serialization should encode fields explicitly.
+
+76. PRACTICAL EMPLOYEE PROGRAM
+
+#include <stdio.h>
+#include <string.h>
+
+typedef struct {
+int id;
+char name[32];
+double salary;
+} Employee;
+
+void print_employee(const Employee *emp)
+{
+if (emp == NULL)
+return;
+
+```
+printf(
+    "ID: %-5d | Name: %-15s | Salary: %.2f\n",
+    emp->id,
+    emp->name,
+    emp->salary
+);
+```
+
+}
+
+int main(void)
+{
+Employee emp1 = {
+.id = 101,
+.name = "Alice Smith",
+.salary = 50000.00
+};
+
+```
+print_employee(&emp1);
+
+return 0;
+```
+
+}
+
+Expected output:
+
+ID: 101   | Name: Alice Smith     | Salary: 50000.00
+
+77. ARRAY OF EMPLOYEES
+
+#include <stdio.h>
+
+typedef struct {
+int id;
+char name[32];
+double salary;
+} Employee;
+
+int main(void)
+{
+Employee employees[] = {
+{101, "Alice", 50000.0},
+{102, "Bob",   55000.0},
+{103, "Carol", 60000.0}
+};
+
+```
+size_t count =
+    sizeof employees / sizeof employees[0];
+
+for (size_t i = 0; i < count; i++) {
+    printf(
+        "%d %s %.2f\n",
+        employees[i].id,
+        employees[i].name,
+        employees[i].salary
+    );
+}
+
+return 0;
+```
+
+}
+
+Expected output:
+
+101 Alice 50000.00
+102 Bob 55000.00
+103 Carol 60000.00
+
+78. STRUCTURE WITH DYNAMIC MEMORY
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+int id;
+char *name;
+} Employee;
+
+int main(void)
+{
+Employee *emp = malloc(sizeof *emp);
+
+```
+if (emp == NULL)
+    return EXIT_FAILURE;
+
+emp->id = 101;
+
+emp->name = malloc(32);
+
+if (emp->name == NULL) {
+    free(emp);
+    return EXIT_FAILURE;
+}
+
+strcpy(emp->name, "Alice");
+
+printf("%d %s\n", emp->id, emp->name);
+
+free(emp->name);
+free(emp);
+
+return EXIT_SUCCESS;
+```
+
+}
+
+Expected output:
+
+101 Alice
+
+79. STRUCTURE WITH POINTER MEMBER
+
+A structure may contain pointers.
+
+Example:
+
+typedef struct {
+int id;
+char *name;
+} Employee;
+
+Important:
+
+The structure owns the pointer only if the program's design explicitly defines that ownership.
+
+A structure containing a pointer does not automatically mean that the structure owns the pointed-to memory.
+
+80. SHALLOW COPY
+
+Consider:
+
+typedef struct {
+char *name;
+} Person;
+
+Person a;
+Person b;
+
+If:
+
+b = a;
+
+then both structures contain the same pointer value.
+
+This is a shallow copy.
+
+The character data itself is not duplicated.
+
+81. DEEP COPY
+
+A deep copy creates a separate allocation for pointed-to data.
+
+Example concept:
+
+Person b;
+
+b.name = malloc(strlen(a.name) + 1);
+
+if (b.name != NULL)
+strcpy(b.name, a.name);
+
+Now `a.name` and `b.name` can point to separate storage.
+
+Deep-copy requirements depend on the structure's ownership design.
+
+82. COMMON STRUCTURE MISTAKES
+
+Mistake 1:
+
+struct Student {
+int id;
+};
+
+printf("%d\n", student.id);
+
+Problem:
+`student` has not been declared.
+
+Correct:
+
+struct Student student;
+
+Mistake 2:
+
+struct Student *p;
+
+p->id = 10;
+
+Problem:
+p does not point to a valid Student object.
+
+Correct:
+
+struct Student student;
+struct Student *p = &student;
+
+p->id = 10;
+
+Mistake 3:
+
+free(&student);
+
+Problem:
+student was not dynamically allocated.
+
+Correct:
+
+free(p);
+
+only when `p` points to dynamically allocated storage.
+
+Mistake 4:
+
+struct A {
+char c;
+int i;
+};
+
+Assuming:
+
+sizeof(struct A) == 5
+
+Problem:
+Padding may exist.
+
+83. COMMON UNION MISTAKES
+
+Mistake 1:
+
+union Data {
+int i;
+float f;
+};
+
+data.i = 10;
+
+printf("%f\n", data.f);
+
+Problem:
+The program cannot generally assume that reading another member produces a meaningful numeric conversion.
+
+Use an explicit conversion:
+
+float f = (float)data.i;
+
+Mistake 2:
+
+Assuming union size equals exactly the largest member size.
+
+Problem:
+Alignment and padding can affect size.
+
+84. COMMON ENUM MISTAKES
+
+Mistake:
+
+enum State {
+READY,
+RUNNING,
+ERROR
+};
+
+printf("%d\n", sizeof(enum State));
+
+Assumption:
+The result must equal sizeof(int).
+
+This is not portable.
+
+Use `sizeof` when the actual implementation size matters.
+
+85. COMMON BIT-FIELD MISTAKES
+
+Mistake:
+
+struct Header {
+unsigned version : 4;
+unsigned type : 4;
+};
+
+Assuming:
+
+* version occupies the first four bits in a universal byte order.
+* type occupies the next four bits universally.
+
+This is not portable.
+
+Bit-field allocation order is implementation-defined.
+
+86. COMMON PACKING MISTAKE
+
+Mistake:
+
+#pragma pack(1)
+
+and assuming the resulting structure is portable across all compilers and CPUs.
+
+Problem:
+
+`#pragma pack` is not part of ISO C and behavior is compiler-specific.
+
+Additionally, packed members may have insufficient alignment for their types.
+
+87. DEBUGGING STRUCTURE LAYOUT
+
+Useful tools include:
+
+sizeof
+offsetof
+alignof
+GDB
+compiler diagnostics
+
+Example:
+
+printf("Size: %zu\n", sizeof(struct Data));
+printf("Offset: %zu\n",
+offsetof(struct Data, member));
+
+88. GDB STRUCTURE INSPECTION
+
+Compile with debugging information:
+
+gcc -Wall -Wextra -g program.c -o program
+
+Start:
+
+gdb ./program
+
+Useful commands:
+
+break main
+run
+print object
+print object.member
+ptype object
+next
+continue
+quit
+
+89. COMPILER WARNINGS
+
+Use compiler warnings during development.
+
+Example:
+
+gcc -Wall -Wextra -Wpedantic -std=c17 program.c -o program
+
+For C23:
+
+gcc -Wall -Wextra -Wpedantic -std=c23 program.c -o program
+
+Compiler support for C23 varies by compiler version.
+
+Warnings help identify:
+
+* Type mismatches.
+* Unused variables.
+* Suspicious conversions.
+* Missing cases.
+* Other programming mistakes.
+
+90. PRACTICAL APPLICATIONS
+
+Structures are commonly used for:
+
+* Student records.
+* Employee records.
+* Database records.
+* Configuration objects.
+* Network packet models.
+* Graphics vertices.
+* File metadata.
+* Sensor data.
+* Trees.
+* Linked lists.
+* Graph nodes.
+
+Unions are commonly used for:
+
+* Variant data.
+* Tagged values.
+* Hardware interfaces.
+* Compact representations.
+* Implementation-specific low-level code.
+
+Enums are commonly used for:
+
+* States.
+* Modes.
+* Status codes.
+* Categories.
+* Error conditions.
+
+Bit-fields are commonly used for:
+
+* Compact flags.
+* Implementation-specific hardware interfaces.
+* ABI-specific representations.
+
+91. DATA MODELING EXAMPLE
+
+A real-world application can combine all four mechanisms.
+
+Example:
+
+typedef enum {
+SENSOR_TEMPERATURE,
+SENSOR_PRESSURE,
+SENSOR_STATUS
+} SensorType;
+
+typedef struct {
+SensorType type;
+
+```
+union {
+    double temperature;
+    double pressure;
+
+    struct {
+        unsigned active : 1;
+        unsigned error  : 1;
+    } status;
+
+} value;
+```
+
+} SensorData;
+
+The enum identifies the data type.
+
+The union stores the corresponding value.
+
+The nested structure stores status flags.
+
+92. ADVANCED DATA MODELING
+
+A tagged union can model data such as:
+
+JSON values:
+
+null
+boolean
+integer
+floating point
+string
+array
+object
+
+Compiler AST nodes:
+
+integer literal
+binary expression
+function call
+identifier
+return statement
+
+Network messages:
+
+login
+data
+acknowledgement
+error
+
+The tag tells the program which union member is intended.
+
+93. MEMORY EFFICIENCY
+
+Structures can consume more memory than expected because of padding.
+
+Example:
+
+struct Data {
+char a;
+int b;
+double c;
+};
+
+The total size can exceed:
+
+sizeof(char) +
+sizeof(int) +
+sizeof(double)
+
+because of padding.
+
+When large arrays contain millions of structure objects, padding can significantly affect total memory usage.
+
+Member reordering may reduce this overhead when the external layout does not impose a required order.
+
+94. PORTABILITY PRINCIPLES
+
+Portable structure-based code should:
+
+* Avoid assuming member offsets.
+* Avoid assuming structure size.
+* Avoid assuming integer sizes.
+* Avoid assuming alignment values.
+* Avoid assuming bit-field order.
+* Avoid assuming endianness.
+* Avoid using compiler-specific packing without isolation.
+* Avoid treating raw structures as universal serialized formats.
+* Use standard library facilities for layout information.
+* Document implementation-specific assumptions.
+
+95. INTERVIEW QUESTIONS
+
+Q: What is a structure?
+
+A:
+A structure is a user-defined type that groups multiple members into one object.
+
+Q: What is the difference between `.` and `->`?
+
+A:
+`.` accesses a member through a structure object. `->` accesses a member through a pointer to a structure.
+
+Q: What is structure padding?
+
+A:
+Padding consists of unnamed bytes that an implementation may insert to satisfy alignment requirements.
+
+Q: What is a union?
+
+A:
+A union is a type whose members share storage.
+
+Q: What is a tagged union?
+
+A:
+A tagged union combines a discriminating tag with a union so that the program can identify which alternative is intended.
+
+Q: What is an enum?
+
+A:
+An enumeration defines named integer constants.
+
+Q: What is a bit-field?
+
+A:
+A bit-field is a structure or union member declared with a specified number of bits.
+
+Q: Is bit-field layout portable?
+
+A:
+No. Important layout properties of bit-fields are implementation-defined.
+
+Q: Is `#pragma pack` standard C?
+
+A:
+No. It is a compiler-specific extension.
+
+Q: Can structures contain pointers?
+
+A:
+Yes.
+
+Q: Can structures contain another structure?
+
+A:
+Yes.
+
+Q: Can a structure contain itself directly?
+
+A:
+No. A structure cannot contain an object of its own type directly because its size would be recursive. It can contain a pointer to its own type.
+
+Q: Can structures be dynamically allocated?
+
+A:
+Yes. `malloc()` can allocate storage for a structure object.
+
+Q: Can structures be assigned?
+
+A:
+Yes. Structure objects of compatible type can be assigned.
+
+Q: Can structures contain arrays?
+
+A:
+Yes.
+
+Q: Can unions contain structures?
+
+A:
+Yes.
+
+Q: Can structures contain unions?
+
+A:
+Yes.
+
+96. EXAM QUESTIONS
+
+SHORT ANSWER:
+
+1. Define a structure.
+2. What is a structure tag?
+3. What is typedef?
+4. Differentiate `.` and `->`.
+5. What is structure padding?
+6. What is alignment?
+7. What is a union?
+8. What is an enumeration?
+9. What is a bit-field?
+10. What is a self-referential structure?
+11. What is a tagged union?
+12. What is `offsetof()`?
+13. What is a flexible array member?
+14. Is `#pragma pack` standard C?
+15. Is bit-field ordering portable?
+
+MEDIUM ANSWER:
+
+1. Explain structure declaration and initialization.
+2. Explain structure pointers.
+3. Explain structure padding and alignment.
+4. Explain self-referential structures.
+5. Explain arrays of structures.
+6. Explain dynamically allocated structures.
+7. Explain unions with an example.
+8. Explain tagged unions.
+9. Explain enumerations.
+10. Explain bit-fields and their portability limitations.
+11. Explain structure serialization.
+12. Explain shallow copy and deep copy.
+
+LONG ANSWER:
+
+1. Explain structure memory layout, alignment, and padding.
+
+2. Explain unions and tagged unions with examples.
+
+3. Explain bit-fields and implementation-defined layout.
+
+4. Explain structures in linked-list and tree implementations.
+
+5. Explain how structures can be dynamically allocated.
+
+6. Explain why raw structure memory is not generally a portable serialization format.
+
+7. Explain enumeration-based state machines.
+
+8. Explain flexible array members.
+
+9. Explain structure member reordering and memory efficiency.
+
+10. Explain portability issues associated with structures, unions, bit-fields, and packing.
+
+11. PRACTICE QUESTIONS
+
+12. Create a Student structure containing ID, name, and marks.
+
+13. Create an Employee structure and write functions to display employee information.
+
+14. Create an array of structures and search for an employee by ID.
+
+15. Create a dynamically allocated structure and safely release it.
+
+16. Implement a linked list using a self-referential structure.
+
+17. Implement a binary tree node using a self-referential structure.
+
+18. Create a tagged union representing integer, floating-point, and string values.
+
+19. Create an enum-based state machine.
+
+20. Create a structure containing bit-fields for flags.
+
+21. Use `sizeof()` and `offsetof()` to investigate structure padding.
+
+22. Compare two structures by comparing their meaningful members rather than using `memcmp()`.
+
+23. Implement a portable byte-level encoder for a simple binary format.
+
+24. Create a flexible-array-member structure.
+
+25. Demonstrate shallow copy and deep copy for a structure containing a pointer.
+
+26. Investigate the effect of member ordering on structure size on your target compiler.
+
+27. BEST PRACTICES CHECKLIST
+
+[ ] Use descriptive structure names.
+
+[ ] Use typedef when it improves readability.
+
+[ ] Initialize structures clearly.
+
+[ ] Use `.` for structure objects.
+
+[ ] Use `->` for pointers to structures.
+
+[ ] Check dynamically allocated structure pointers.
+
+[ ] Define ownership of pointer members.
+
+[ ] Free dynamically allocated members before freeing their owner when appropriate.
+
+[ ] Do not assume structure size.
+
+[ ] Do not assume alignment values.
+
+[ ] Use `sizeof` for implementation-specific size information.
+
+[ ] Use `offsetof` when member offsets are required.
+
+[ ] Do not assume bit-field ordering.
+
+[ ] Do not use bit-fields as universal network packet layouts.
+
+[ ] Treat `#pragma pack` as compiler-specific.
+
+[ ] Do not assume a structure's raw bytes are portable serialization.
+
+[ ] Consider endianness for binary formats.
+
+[ ] Avoid `memcmp()` for general logical structure equality.
+
+[ ] Use tagged unions when multiple representations share storage.
+
+[ ] Document implementation-specific assumptions.
+
+99. KEY DIFFERENCES
+
+STRUCTURE:
+
+* Members have separate storage.
+* Multiple members can contain meaningful values simultaneously.
+* Size includes members and possible padding.
+* Useful for records and objects.
+
+UNION:
+
+* Members share storage.
+* Different members represent alternative uses of the same storage.
+* Size must accommodate the union's members and alignment requirements.
+* Useful for variant representations.
+
+ENUM:
+
+* Provides named integer constants.
+* Useful for states, modes, and categories.
+* Enumeration representation is implementation-dependent.
+
+BIT-FIELD:
+
+* Specifies a member width in bits.
+* Useful for compact fields.
+* Layout details are implementation-dependent.
+
+100. FINAL SUMMARY
+
+Structures, unions, enumerations, and bit-fields are essential C features for modeling complex data.
+
+Structures group multiple members into one object.
+
+Example:
+
+struct Student {
+int id;
+char name[32];
+double mark;
+};
+
+Unions provide shared storage:
+
+union Data {
+int i;
+double d;
+};
+
+Enumerations provide named integer constants:
+
+enum State {
+IDLE,
+RUNNING,
+STOPPED
+};
+
+Bit-fields specify the width of selected structure or union members:
+
+struct Flags {
+unsigned ready : 1;
+unsigned mode  : 3;
+};
+
+The most important memory-layout concepts are:
+
+* Alignment.
+* Padding.
+* Member order.
+* Trailing padding.
+* Object representation.
+* Endianness.
+* Implementation-defined behavior.
+
+The most important portability principle is:
+
+DO NOT ASSUME THAT A STRUCTURE, UNION, OR BIT-FIELD HAS THE SAME MEMORY REPRESENTATION ON EVERY PLATFORM.
+
+For portable software:
+
+* Use standard language rules.
+* Use `sizeof` when size matters.
+* Use `offsetof` when member offsets matter.
+* Use alignment facilities when alignment matters.
+* Define binary formats explicitly.
+* Handle endianness explicitly.
+* Avoid relying on implementation-specific bit-field layout.
+* Treat compiler packing directives as platform-specific.
+* Clearly document ABI and compiler assumptions.
+
+Structures are ideal for modeling complete objects.
+
+Unions are useful for alternative representations sharing storage.
+
+Enums improve readability and make program states easier to understand.
+
+Bit-fields are useful for compact, implementation-specific representations but require careful attention to portability.
+
+Together, these features form an important foundation for:
+
+* Data structures.
+* Embedded programming.
+* Operating systems.
+* Networking.
+* Compilers.
+* Databases.
+* File formats.
+* Hardware interfaces.
+* Systems programming.
+
+101. OFFICIAL / PRIMARY REFERENCE BASIS
+
+This document is based on C-standard-oriented material covering:
+
+* Structure and union specifiers.
+* Object representation.
+* Alignment.
+* Enumerations.
+* Bit-fields.
+* Declarations.
+* Flexible array members.
+
+Relevant C standard areas include:
+
+* ISO/IEC 9899 C language standard.
+* C23: ISO/IEC 9899:2024.
+* C11/C17 structure and union rules.
+* C object representation and alignment rules.
+* Enumeration rules.
+* Bit-field rules.
+
+Reference topics:
+
+C Objects and Alignment:
+https://en.cppreference.com/c/language/object
+
+C Structure Declaration:
+https://en.cppreference.com/c/language/struct
+
+C Union Declaration:
+https://en.cppreference.com/c/language/union
+
+C Bit-Fields:
+https://en.cppreference.com/c/language/bit_field
+
+C Enumerations:
+https://en.cppreference.com/c/language/enum
+
+C Alignment:
+https://en.cppreference.com/c/language/alignas
