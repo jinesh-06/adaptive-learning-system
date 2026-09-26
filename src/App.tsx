@@ -21,6 +21,9 @@ import { DiagnosticAssessmentPage } from './pages/DiagnosticAssessmentPage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { NotesPage } from './pages/NotesPage';
 import { LearningHistoryPage } from './pages/LearningHistoryPage';
+import { PythonFundamentalsDashboard } from './pages/PythonFundamentalsDashboard';
+import { AdaptedLessonPage } from './pages/AdaptedLessonPage';
+import { PYTHON_FUNDAMENTALS_TOPICS } from './data/pythonFundamentalsData';
 import { WifiOff, Menu, Brain, Search } from 'lucide-react';
 
 const PYTHON_STAGE_TOPICS = [
@@ -52,6 +55,35 @@ const AppContent: React.FC = () => {
 
   const { isOnline } = useOfflineSync();
 
+  // Desktop Sidebar State (persisted in localStorage)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    const saved = localStorage.getItem('cognitive_sidebar_open');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      localStorage.setItem('cognitive_sidebar_open', String(next));
+      return next;
+    });
+  };
+
+  // Global Ctrl+B shortcut to toggle sidebar & Escape to close mobile
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        handleToggleSidebar();
+      }
+      if (e.key === 'Escape' && mobileSidebarOpen) {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileSidebarOpen]);
+
   // Global Cmd+K keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -70,13 +102,38 @@ const AppContent: React.FC = () => {
   };
 
   const handleNextTopic = () => {
+    const pyIndex = PYTHON_FUNDAMENTALS_TOPICS.findIndex(t => t.id === selectedTopicId);
+    if (pyIndex >= 0 && pyIndex < PYTHON_FUNDAMENTALS_TOPICS.length - 1) {
+      const nextTopicId = PYTHON_FUNDAMENTALS_TOPICS[pyIndex + 1].id;
+      setSelectedTopicId(nextTopicId);
+      setCurrentView('lesson');
+      return;
+    }
+
     const currentIndex = PYTHON_STAGE_TOPICS.indexOf(selectedTopicId);
     if (currentIndex >= 0 && currentIndex < PYTHON_STAGE_TOPICS.length - 1) {
       const nextTopicId = PYTHON_STAGE_TOPICS[currentIndex + 1];
       setSelectedTopicId(nextTopicId);
       setCurrentView('lesson');
     } else {
-      setCurrentView('catalog');
+      setCurrentView('python-dashboard');
+    }
+  };
+
+  const handlePrevTopic = () => {
+    const pyIndex = PYTHON_FUNDAMENTALS_TOPICS.findIndex(t => t.id === selectedTopicId);
+    if (pyIndex > 0) {
+      const prevTopicId = PYTHON_FUNDAMENTALS_TOPICS[pyIndex - 1].id;
+      setSelectedTopicId(prevTopicId);
+      setCurrentView('lesson');
+      return;
+    }
+
+    const currentIndex = PYTHON_STAGE_TOPICS.indexOf(selectedTopicId);
+    if (currentIndex > 0) {
+      const prevTopicId = PYTHON_STAGE_TOPICS[currentIndex - 1];
+      setSelectedTopicId(prevTopicId);
+      setCurrentView('lesson');
     }
   };
 
@@ -100,10 +157,12 @@ const AppContent: React.FC = () => {
         openDemoModal={() => setDemoModalOpen(true)}
         isMobileOpen={mobileSidebarOpen}
         setIsMobileOpen={setMobileSidebarOpen}
+        isDesktopOpen={isSidebarOpen}
+        setIsDesktopOpen={setIsSidebarOpen}
       />
 
-      {/* Main Content Area with desktop left-padding for sidebar */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+      {/* Main Content Area with dynamic desktop padding for sliding sidebar */}
+      <div className={`flex-1 flex flex-col min-w-0 transition-[padding] duration-300 ease-in-out ${isSidebarOpen ? 'lg:pl-[260px]' : 'lg:pl-0'}`}>
         {/* Offline Status Banner */}
         {!isOnline && (
           <div className="bg-amber-500/20 border-b border-amber-500/40 px-4 py-2 text-center text-xs text-amber-300 flex items-center justify-center gap-2 font-medium">
@@ -157,15 +216,55 @@ const AppContent: React.FC = () => {
           )}
 
           {currentView === 'catalog' && (
-            <CourseCatalogPage onSelectTopic={handleSelectTopic} />
+            <CourseCatalogPage
+              onSelectTopic={handleSelectTopic}
+              onOpenPythonDashboard={() => setCurrentView('python-dashboard')}
+            />
+          )}
+
+          {currentView === 'python-dashboard' && (
+            <PythonFundamentalsDashboard
+              onSelectTopic={(topicId) => {
+                setSelectedTopicId(topicId);
+                setCurrentView('lesson');
+              }}
+              onSelectAdaptedLesson={(topicId) => {
+                setSelectedTopicId(topicId);
+                setCurrentView('adapted-lesson');
+              }}
+              onBackToCatalog={() => setCurrentView('catalog')}
+            />
           )}
 
           {currentView === 'lesson' && (
             <TopicLessonPage
               topicId={selectedTopicId}
+              onSelectTopic={handleSelectTopic}
+              onNextTopic={handleNextTopic}
+              onPrevTopic={handlePrevTopic}
               onStartQuiz={() => setCurrentView('quiz')}
               onOpenCoding={() => setCurrentView('coding')}
               onBackToCatalog={() => setCurrentView('catalog')}
+              onBackToPythonDashboard={() => setCurrentView('python-dashboard')}
+              onOpenAdaptedLesson={(topicId) => {
+                if (topicId) setSelectedTopicId(topicId);
+                setCurrentView('adapted-lesson');
+              }}
+              onOpenAiDrawer={() => setAiDrawerOpen(true)}
+              onOpenSearch={() => setSearchModalOpen(true)}
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={handleToggleSidebar}
+              onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+            />
+          )}
+
+          {currentView === 'adapted-lesson' && (
+            <AdaptedLessonPage
+              topicId={selectedTopicId}
+              onBackToOriginal={() => setCurrentView('lesson')}
+              onNextTopic={handleNextTopic}
+              onBackToDashboard={() => setCurrentView('python-dashboard')}
+              onStartQuiz={() => setCurrentView('quiz')}
             />
           )}
 

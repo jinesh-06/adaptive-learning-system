@@ -128,6 +128,35 @@ class StateStore:
                 )
             """)
 
+            # User Progress table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS user_progress (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT,
+                    course_id TEXT,
+                    topic_id TEXT,
+                    status TEXT DEFAULT 'NOT_STARTED',
+                    completion_pct REAL DEFAULT 0.0,
+                    quiz_score REAL DEFAULT 0.0,
+                    attempts INTEGER DEFAULT 0,
+                    time_spent_seconds REAL DEFAULT 0.0,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # AI-Generated Adapted Lessons Cache
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS adapted_lessons (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT,
+                    topic_id TEXT,
+                    adaptation_strategy TEXT,
+                    lesson_data_json TEXT,
+                    signals_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             conn.commit()
 
             # Seed default guest user if missing
@@ -351,6 +380,128 @@ class StateStore:
             )
             conn.commit()
             conn.close()
+
+    # --- Topic & Course Progress Persistence ---
+    def get_user_course_progress(self, user_id: str, course_id: str = "py-beg") -> List[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? ORDER BY topic_id ASC",
+            (user_id, course_id)
+        )
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def save_topic_progress(
+        self,
+        user_id: str,
+        course_id: str,
+        topic_id: str,
+        status: Optional[str] = None,
+        completion_pct: Optional[float] = None,
+        quiz_score: Optional[float] = None,
+        attempts_delta: int = 0,
+        time_spent_delta: float = 0.0
+    ) -> Dict[str, Any]:
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            rec_id = f"{user_id}_{course_id}_{topic_id}"
+            cur.execute("SELECT * FROM user_progress WHERE id = ?", (rec_id,))
+            existing = cur.fetchone()
+
+            if existing:
+                cur_status = status or existing["status"]
+                cur_comp = completion_pct if completion_pct is not None else existing["completion_pct"]
+                cur_quiz = quiz_score if quiz_score is not None else existing["quiz_score"]
+                cur_attempts = (existing["attempts"] or 0) + attempts_delta
+                cur_time = (existing["time_spent_seconds"] or 0.0) + time_spent_delta
+
+                cur.execute(
+                    """UPDATE user_progress
+                       SET status = ?, completion_pct = ?, quiz_score = ?, attempts = ?, time_spent_seconds = ?, updated_at = CURRENT_TIMESTAMP
+                       WHERE id = ?""",
+                    (cur_status, cur_comp, cur_quiz, cur_attempts, cur_time, rec_id)
+                )
+            else:
+                cur_status = status or "IN_PROGRESS"
+                cur_comp = completion_pct if completion_pct is not None else 0.0
+                cur_quiz = quiz_score if quiz_score is not None else 0.0
+                cur_attempts = attempts_delta
+                cur_time = time_spent_delta
+
+                cur.execute(
+                    """INSERT INTO user_progress (id, user_id, course_id, topic_id, status, completion_pct, quiz_score, attempts, time_spent_seconds)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (rec_id, user_id, course_id, topic_id, cur_status, cur_comp, cur_quiz, cur_attempts, cur_time)
+                )
+
+            conn.commit()
+            conn.close()
+            return {
+                "id": rec_id,
+                "user_id": user_id,
+                "course_id": course_id,
+                "topic_id": topic_id,
+                "status": cur_status,
+                "completion_pct": cur_comp,
+                "quiz_score": cur_quiz,
+                "attempts": cur_attempts,
+                "time_spent_seconds": cur_time
+            }
+
+    # --- Adapted Lessons Cache & Retrieval ---
+    def save_adapted_lesson(
+        self,
+        user_id: str,
+        topic_id: str,
+        adaptation_strategy: str,
+        lesson_data: Dict[str, Any],
+        signals: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            rec_id = f"{user_id}_{topic_id}"
+            cur.execute(
+                """INSERT OR REPLACE INTO adapted_lessons
+                   (id, user_id, topic_id, adaptation_strategy, lesson_data_json, signals_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                (
+                    rec_id,
+                    user_id,
+                    topic_id,
+                    adaptation_strategy,
+                    json.dumps(lesson_data),
+                    json.dumps(signals or {})
+                )
+            )
+            conn.commit()
+            conn.close()
+            return {"success": True, "id": rec_id, "topic_id": topic_id, "strategy": adaptation_strategy}
+
+    def get_adapted_lesson(self, user_id: str, topic_id: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.cursor()
+        rec_id = f"{user_id}_{topic_id}"
+        cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        res = dict(row)
+        if res.get("lesson_data_json"):
+            try:
+                res["lesson_data"] = json.loads(res["lesson_data_json"])
+            except Exception:
+                res["lesson_data"] = {}
+        if res.get("signals_json"):
+            try:
+                res["signals"] = json.loads(res["signals_json"])
+            except Exception:
+                res["signals"] = {}
+        return res
 
 
 state_store = StateStore()

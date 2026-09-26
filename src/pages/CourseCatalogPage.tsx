@@ -20,9 +20,10 @@ import {
 
 interface CourseCatalogProps {
   onSelectTopic: (topicId: string) => void;
+  onOpenPythonDashboard?: () => void;
 }
 
-export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic }) => {
+export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic, onOpenPythonDashboard }) => {
   const { preferences, updateLanguage } = useAuth();
   const { currentLoad } = useCognitive();
   const [courses, setCourses] = useState<any[]>([]);
@@ -256,7 +257,19 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic 
 
                   {/* Card CTA */}
                   <button
-                    onClick={() => onSelectTopic(course.first_topic_id || 'top-py-loops')}
+                    onClick={() => {
+                      const isPyFund =
+                        course.id === 'py-beg' ||
+                        course.id === 'course-py-fund' ||
+                        course.title.toLowerCase().includes('fundamentals') ||
+                        (course.language === 'python' && course.level === 'beginner');
+
+                      if (isPyFund && onOpenPythonDashboard) {
+                        onOpenPythonDashboard();
+                      } else {
+                        onSelectTopic(course.first_topic_id || 'top-py-loops');
+                      }
+                    }}
                     className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 group/btn"
                   >
                     <span>Start Lesson</span>

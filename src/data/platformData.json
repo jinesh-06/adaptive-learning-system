@@ -306,22 +306,19 @@
     {
       "id": "mod-c-1",
       "course_id": "c-beg",
-      "title": "Core Syntax & Control Flow",
-      "description": "Variables, loops, and conditions",
+      "title": "Stage 1: Core Syntax, Data Types & Control Flow",
       "order_index": 1
     },
     {
       "id": "mod-c-2",
       "course_id": "c-int",
-      "title": "Pointers & Dynamic Memory",
-      "description": "Memory addressing, malloc, and pointer math",
+      "title": "Stage 2: Pointers, Functions & Dynamic Memory",
       "order_index": 2
     },
     {
       "id": "mod-c-3",
       "course_id": "c-adv",
-      "title": "Structures & Systems Programming",
-      "description": "Structs, files, and low-level memory handling",
+      "title": "Stage 3: Structures, Unions & Systems Programming",
       "order_index": 3
     },
     {
@@ -365,6 +362,12 @@
       "title": "Collections & Streams API",
       "description": "Generics, functional pipelines, and streams",
       "order_index": 3
+    },
+    {
+      "id": "mod-py-7",
+      "course_id": "py-adv",
+      "title": "Stage 7: Object-Oriented Programming (Classes & Objects)",
+      "order_index": 7
     }
   ],
   "topics": [
@@ -416,7 +419,8 @@
           "content": "All fundamental data types are immutable. Small integers (-5 to 256) are interned so identical values share the exact same object in memory.",
           "code_snippet": "a = 100\nb = 100\nprint(\"Same object?\", a is b) # True\nprint(\"Same content?\", a == b) # True"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_fundamentals.txt"
     },
     {
       "id": "top-py-operators-io",
@@ -466,7 +470,8 @@
           "content": "The `sep` keyword defines what character separates arguments; `end` controls what character prints after the final argument.",
           "code_snippet": "print(10, 20, 30, sep=\"-\", end=\"***\")\nprint(40, 50, sep=\":\")\n# Output: 10-20-30***40:50"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_fundamentals.txt"
     },
     {
       "id": "top-py-flow-control",
@@ -517,7 +522,8 @@
           "code_snippet": "a = 10\na = None # a still exists\nprint(a) # prints None\n\nb = 20\ndel b # b is destroyed\n# print(b) would raise NameError: name 'b' is not defined",
           "pitfalls": "Calling `del` on a variable does not necessarily delete the object immediately if another reference still points to it (reference counting garbage collection)."
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_control_flow.txt"
     },
     {
       "id": "top-py-loops",
@@ -574,7 +580,8 @@
           "content": "Pattern printing reinforces nested loop logic and string multiplication. Using `\" \".join([str(i)] * i)` or nested `for j in range(i)` prints geometric formations.",
           "code_snippet": "# Number triangle\nfor i in range(1, 5):\n    for j in range(i):\n        print(i, end=\" \")\n    print()"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_control_flow.txt"
     },
     {
       "id": "top-py-strings",
@@ -613,7 +620,8 @@
           "content": "Python provides built-in boolean validators to inspect character classes without regex overhead.",
           "code_snippet": "print(\"A123\".isalnum()) # True\nprint(\"Hello\".isalpha()) # True\nprint(\"99\".isdigit())    # True"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_data_structures.txt"
     },
     {
       "id": "top-py-lists",
@@ -663,7 +671,8 @@
           "content": "List comprehensions `[expr for item in seq if cond]` replace multi-line loops with fast, expressive syntax.",
           "code_snippet": "evens = [x for x in range(10) if x % 2 == 0]\nmatrix = [[1, 2], [3, 4]]\nflat = [val for row in matrix for val in row]\nprint(\"Flattened:\", flat)"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_data_structures.txt"
     },
     {
       "id": "top-py-tuples-sets",
@@ -702,7 +711,8 @@
           "content": "Perform union (`|`), intersection (`&`), difference (`-`), and symmetric difference (`^`) with native operators.",
           "code_snippet": "x = {1, 2, 3}\ny = {3, 4, 5}\nprint(\"Common:\", x & y) # {3}\nprint(\"Only in x:\", x - y) # {1, 2}"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_data_structures.txt"
     },
     {
       "id": "top-py-dictionaries",
@@ -752,7 +762,8 @@
           "content": "The idiom `d[x] = d.get(x, 0) + 1` builds frequency maps in O(N) time. Dict comprehensions `{k: v for ...}` construct mappings declaratively.",
           "code_snippet": "squares = {x: x**2 for x in range(1, 6)}\nprint(squares) # {1: 1, 2: 4, 3: 9, 4: 16, 5: 25}"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_data_structures.txt"
     },
     {
       "id": "top-py-functions",
@@ -791,7 +802,8 @@
           "content": "Scope determines variable visibility. Python looks up names in LEGB order: Local -> Enclosing -> Global -> Built-in. Variables declared inside a function are local.",
           "pitfalls": "A common trap is defining `def append_to(item, target_list=[]):`. Default values are evaluated ONCE when the function is defined, making mutable defaults shared across all calls!"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_functions.txt"
     },
     {
       "id": "top-py-recursion",
@@ -830,7 +842,8 @@
           "content": "The factorial of n (n!) is n * (n - 1)!. The base case is 0! = 1 and 1! = 1.",
           "code_snippet": "def fact(n):\n    if n <= 1:\n        return 1\n    return n * fact(n - 1)"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_functions.txt"
     },
     {
       "id": "top-py-modules-regex",
@@ -869,13 +882,14 @@
           "content": "`re.fullmatch()` verifies that the entire input satisfies the pattern from start `^` to end `$`. Use `\\d` for digits and `[6-9]` for specific leading ranges.",
           "code_snippet": "import re\nmobile = \"9885768283\"\nmatch = re.fullmatch(r\"[6-9]\\d{9}\", mobile)\nprint(\"Valid Mobile?\", match is not None)"
         }
-      ]
+      ],
+      "content_path": "rag/documents/PYTHON/python_exceptions_modules.txt"
     },
     {
       "id": "top-c-pointers",
       "module_id": "mod-c-2",
       "title": "Pointers and Memory Addressing",
-      "order_index": 1,
+      "order_index": 3,
       "learning_objective": "Understand pointers, memory addresses (& operator), dereferencing (* operator), and pointer arithmetic in C.",
       "content_standard": "In C, memory is a linear array of byte addresses. A pointer variable stores an address in memory. The `&` operator gets the address; the `*` operator accesses the value at that address.",
       "content_low": "### ⚡ Fast-Track Summary\n- Pointers store 64-bit/32-bit hardware memory addresses.\n- Pointer arithmetic scales automatically by `sizeof(T)`: `ptr + 1` advances by `sizeof(*ptr)` bytes.\n- Avoid undefined behavior: never dereference NULL, uninitialized, or freed pointers.",
@@ -907,13 +921,14 @@
           "content": "Adding 1 to a pointer doesn't simply add 1 byte; it advances by the size of the data type it points to. For an `int*`, `p + 1` advances by 4 bytes.",
           "pitfalls": "Never access memory after calling `free()` (dangling pointer) or dereference a pointer initialized without an address (wild pointer)."
         }
-      ]
+      ],
+      "content_path": "rag/documents/C/c_pointers_memory.txt"
     },
     {
       "id": "top-c-malloc",
       "module_id": "mod-c-2",
-      "title": "Dynamic Memory Allocation (malloc & free)",
-      "order_index": 2,
+      "title": "Dynamic Memory Allocation (malloc, calloc, free)",
+      "order_index": 4,
       "learning_objective": "Allocate heap memory dynamically with malloc/calloc, avoid memory leaks with free(), and handle allocation failures.",
       "content_standard": "Stack memory has a fixed size and lifetime tied to function execution. Dynamic memory allocation (`malloc`, `calloc`, `realloc`, `free`) requests memory from the system heap at runtime.",
       "content_low": "### ⚡ Fast-Track Summary\n- Heap allocation managed via `malloc(size_t)`. Always pair with `free(ptr)`.\n- Check for `NULL` to guard against Out-Of-Memory (OOM) conditions.\n- Use Valgrind/ASan to detect heap leaks and buffer overflows.",
@@ -938,7 +953,8 @@
           "content": "Always multiply the element count by `sizeof(type)`. Always check for NULL return.",
           "code_snippet": "int *data = malloc(100 * sizeof(int));\nif (data == NULL) {\n    fprintf(stderr, \"Memory allocation failed!\\n\");\n    exit(1);\n}\n// Use data...\nfree(data);\ndata = NULL;"
         }
-      ]
+      ],
+      "content_path": "rag/documents/C/c_pointers_memory.txt"
     },
     {
       "id": "top-cpp-oop",
@@ -999,6 +1015,69 @@
           "content": "Polymorphism allows an object of a derived class to be treated as an instance of its parent type while invoking the overridden child implementation at runtime."
         }
       ]
+    },
+    {
+      "id": "top-py-oop",
+      "module_id": "mod-py-7",
+      "title": "Classes, Objects, Encapsulation & Methods",
+      "order_index": 1,
+      "content_path": "rag/documents/PYTHON/python_oop.txt"
+    },
+    {
+      "id": "top-c-fundamentals",
+      "module_id": "mod-c-1",
+      "title": "C Fundamentals, Data Types & Console I/O",
+      "order_index": 1,
+      "content_path": "rag/documents/C/c_fundamentals.txt"
+    },
+    {
+      "id": "top-c-operators",
+      "module_id": "mod-c-1",
+      "title": "Arithmetic, Relational & Conditional Operators",
+      "order_index": 2,
+      "content_path": "rag/documents/C/c_fundamentals.txt"
+    },
+    {
+      "id": "top-c-control-flow",
+      "module_id": "mod-c-1",
+      "title": "Decision Making & Branching (if-else, switch)",
+      "order_index": 3,
+      "content_path": "rag/documents/C/c_control_flow.txt"
+    },
+    {
+      "id": "top-c-loops",
+      "module_id": "mod-c-1",
+      "title": "Iteration & Loop Architecture (for, while, do-while)",
+      "order_index": 4,
+      "content_path": "rag/documents/C/c_control_flow.txt"
+    },
+    {
+      "id": "top-c-arrays",
+      "module_id": "mod-c-1",
+      "title": "Single & Multidimensional Array Processing",
+      "order_index": 5,
+      "content_path": "rag/documents/C/c_arrays_strings.txt"
+    },
+    {
+      "id": "top-c-strings",
+      "module_id": "mod-c-2",
+      "title": "String Processing & Character Sequences",
+      "order_index": 1,
+      "content_path": "rag/documents/C/c_arrays_strings.txt"
+    },
+    {
+      "id": "top-c-functions",
+      "module_id": "mod-c-2",
+      "title": "Functions, Parameters & Call-by-Value",
+      "order_index": 2,
+      "content_path": "rag/documents/C/c_functions.txt"
+    },
+    {
+      "id": "top-c-structures",
+      "module_id": "mod-c-3",
+      "title": "Structures, Unions & Typedef Architecture",
+      "order_index": 1,
+      "content_path": "rag/documents/C/c_structures_unions.txt"
     }
   ],
   "mcq_questions": [
@@ -1596,15 +1675,16 @@
       "id": "code-py-base-conversion",
       "topic_id": "top-py-fundamentals",
       "title": "Integer Base Conversion & Identity Inspector",
-      "difficulty": "easy",
-      "problem_statement": "Read a single non-negative decimal integer N from standard input. Output its binary (using bin()), octal (using oct()), and hexadecimal (using hex()) representations on a single line separated by spaces.",
-      "input_format": "A single non-negative integer N.",
-      "output_format": "Three space-separated strings: binary, octal, and hexadecimal representations.",
+      "difficulty": "Easy",
+      "problem_statement": "Given a single non-negative integer N from standard input, print its binary, octal, and hexadecimal representations on a single line separated by a single space.",
+      "input_format": "A single non-negative integer N on standard input.",
+      "output_format": "Three space-separated strings: the binary representation (with 0b prefix), octal representation (with 0o prefix), and hexadecimal representation (with 0x prefix).",
       "constraints": "0 <= N <= 10^9",
       "sample_input": "15",
       "sample_output": "0b1111 0o17 0xf",
       "starter_code": {
-        "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().strip()\n    if not raw:\n        return\n    n = int(raw)\n    # Output binary, octal, and hex\n    print(f\"{bin(n)} {oct(n)} {hex(n)}\")\n\nif __name__ == \"__main__\":\n    solve()"
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    n = int(raw)\n    print(f\"{bin(n)} {oct(n)} {hex(n)}\")\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"0b\");\n        if (n == 0) {\n            printf(\"0\");\n        } else {\n            int temp = n;\n            int bits[32];\n            int count = 0;\n            while (temp > 0) {\n                bits[count] = temp % 2;\n                count++;\n                temp /= 2;\n            }\n            for (int i = count - 1; i >= 0; i--) {\n                printf(\"%d\", bits[i]);\n            }\n        }\n        printf(\" 0o%o 0x%x\\n\", n, n);\n    }\n    return 0;\n}\n"
       },
       "test_cases": [
         {
@@ -1630,166 +1710,19 @@
       ]
     },
     {
-      "id": "code-py-sum-evens",
-      "topic_id": "top-py-loops",
-      "title": "Sum of Even Integers",
-      "difficulty": "easy",
-      "problem_statement": "Read space-separated integers from standard input and compute the total sum of only the even integers in the sequence.",
-      "input_format": "A single line containing space-separated integers.",
-      "output_format": "A single integer representing the sum of even numbers.",
-      "constraints": "1 <= numbers count <= 1000, -10^5 <= num <= 10^5",
-      "sample_input": "1 2 3 4 5 6",
-      "sample_output": "12",
-      "starter_code": {
-        "python": "import sys\n\ndef solve():\n    input_data = sys.stdin.read().strip()\n    if not input_data:\n        print(0)\n        return\n    numbers = [int(x) for x in input_data.split()]\n    # TODO: Calculate sum of even integers\n    even_sum = 0\n    \n    print(even_sum)\n\nif __name__ == \"__main__\":\n    solve()"
-      },
-      "test_cases": [
-        {
-          "input": "1 2 3 4 5 6",
-          "expected_output": "12",
-          "is_hidden": false
-        },
-        {
-          "input": "2 4 6 8 10",
-          "expected_output": "30",
-          "is_hidden": false
-        },
-        {
-          "input": "1 3 5 7 9",
-          "expected_output": "0",
-          "is_hidden": true
-        },
-        {
-          "input": "-2 -4 5 7",
-          "expected_output": "-6",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
-      "id": "code-py-palindrome",
-      "topic_id": "top-py-functions",
-      "title": "Palindrome Validator",
-      "difficulty": "medium",
-      "problem_statement": "Read a string from stdin and determine if it is a palindrome (reads the same forward and backwards), ignoring case and non-alphanumeric characters. Print \"TRUE\" or \"FALSE\".",
-      "input_format": "A single line containing an input string.",
-      "output_format": "\"TRUE\" or \"FALSE\".",
-      "constraints": "1 <= string length <= 1000",
-      "sample_input": "A man, a plan, a canal: Panama",
-      "sample_output": "TRUE",
-      "starter_code": {
-        "python": "import sys\n\ndef is_palindrome(s: str) -> bool:\n    # TODO: Implement palindrome validation\n    return False\n\nif __name__ == \"__main__\":\n    text = sys.stdin.read().strip()\n    print(\"TRUE\" if is_palindrome(text) else \"FALSE\")"
-      },
-      "test_cases": [
-        {
-          "input": "A man, a plan, a canal: Panama",
-          "expected_output": "TRUE",
-          "is_hidden": false
-        },
-        {
-          "input": "race a car",
-          "expected_output": "FALSE",
-          "is_hidden": false
-        },
-        {
-          "input": "Was it a car or a cat I saw?",
-          "expected_output": "TRUE",
-          "is_hidden": true
-        },
-        {
-          "input": "hello",
-          "expected_output": "FALSE",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
-      "id": "code-c-reverse-array",
-      "topic_id": "top-c-pointers",
-      "title": "In-Place Pointer Swap",
-      "difficulty": "medium",
-      "problem_statement": "Given two integers A and B separated by space, swap their values in memory using pointers and print them swapped.",
-      "input_format": "Two integers A and B separated by space.",
-      "output_format": "The two integers swapped, separated by a space.",
-      "constraints": "-10^6 <= A, B <= 10^6",
-      "sample_input": "15 42",
-      "sample_output": "42 15",
-      "starter_code": {
-        "c": "#include <stdio.h>\n\nvoid swap(int *a, int *b) {\n    // TODO: swap values using pointers\n}\n\nint main() {\n    int a, b;\n    if (scanf(\"%d %d\", &a, &b) == 2) {\n        swap(&a, &b);\n        printf(\"%d %d\\n\", a, b);\n    }\n    return 0;\n}"
-      },
-      "test_cases": [
-        {
-          "input": "15 42",
-          "expected_output": "42 15",
-          "is_hidden": false
-        },
-        {
-          "input": "100 -50",
-          "expected_output": "-50 100",
-          "is_hidden": false
-        },
-        {
-          "input": "0 0",
-          "expected_output": "0 0",
-          "is_hidden": true
-        },
-        {
-          "input": "-999 999",
-          "expected_output": "999 -999",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
-      "id": "code-py-factorial",
-      "topic_id": "top-py-recursion",
-      "title": "Recursive Factorial Engine",
-      "difficulty": "easy",
-      "problem_statement": "Read an integer N from standard input (0 <= N <= 12) and print its factorial (N!) calculated using a recursive function.",
-      "input_format": "A single non-negative integer N.",
-      "output_format": "The factorial of N.",
-      "constraints": "0 <= N <= 12",
-      "sample_input": "5",
-      "sample_output": "120",
-      "starter_code": {
-        "python": "import sys\n\ndef factorial(n: int) -> int:\n    # TODO: Implement recursive factorial with base case\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nif __name__ == \"__main__\":\n    raw = sys.stdin.read().strip()\n    if raw:\n        n = int(raw)\n        print(factorial(n))"
-      },
-      "test_cases": [
-        {
-          "input": "5",
-          "expected_output": "120",
-          "is_hidden": false
-        },
-        {
-          "input": "0",
-          "expected_output": "1",
-          "is_hidden": false
-        },
-        {
-          "input": "3",
-          "expected_output": "6",
-          "is_hidden": false
-        },
-        {
-          "input": "7",
-          "expected_output": "5040",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
       "id": "code-py-min-ternary",
       "topic_id": "top-py-operators-io",
-      "title": "Find Minimum of 3 Numbers with Ternary Operator",
-      "difficulty": "easy",
-      "problem_statement": "Read 3 space-separated integers A, B, and C from standard input and print the minimum value using a nested ternary conditional operator.",
-      "input_format": "A single line containing three space-separated integers.",
-      "output_format": "The minimum integer.",
+      "title": "Find Minimum of 3 Numbers with Conditional Operator",
+      "difficulty": "Easy",
+      "problem_statement": "Read three space-separated integers A, B, and C from standard input and output the minimum value among them.",
+      "input_format": "A single line containing three space-separated integers A, B, and C.",
+      "output_format": "A single integer representing the minimum value.",
       "constraints": "-10^6 <= A, B, C <= 10^6",
       "sample_input": "10 20 5",
       "sample_output": "5",
       "starter_code": {
-        "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().strip()\n    if not raw:\n        return\n    a, b, c = [int(x) for x in raw.split()]\n    # TODO: Calculate minimum using nested ternary operator\n    min_val = a if a < b and a < c else b if b < c else c\n    print(min_val)\n\nif __name__ == \"__main__\":\n    solve()"
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    a, b, c = [int(x) for x in raw.split()]\n    min_val = a if a < b and a < c else (b if b < c else c)\n    print(min_val)\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int a, b, c;\n    if (scanf(\"%d %d %d\", &a, &b, &c) == 3) {\n        int min_val = a;\n        if (b < min_val) min_val = b;\n        if (c < min_val) min_val = c;\n        printf(\"%d\\n\", min_val);\n    }\n    return 0;\n}\n"
       },
       "test_cases": [
         {
@@ -1803,8 +1736,8 @@
           "is_hidden": false
         },
         {
-          "input": "-10 -20 -30",
-          "expected_output": "-30",
+          "input": "-5 -1 -10",
+          "expected_output": "-10",
           "is_hidden": true
         },
         {
@@ -1815,134 +1748,19 @@
       ]
     },
     {
-      "id": "code-py-str-merge",
-      "topic_id": "top-py-strings",
-      "title": "Alternate String Character Merger",
-      "difficulty": "medium",
-      "problem_statement": "Read two space-separated strings s1 and s2 from standard input. Merge them by taking characters alternately. If one string is longer than the other, append the remaining characters to the end.",
-      "input_format": "Two space-separated strings on a single line.",
-      "output_format": "The merged string.",
-      "constraints": "1 <= len(s1), len(s2) <= 500",
-      "sample_input": "karthi sahasra",
-      "sample_output": "ksaarhtahsira",
-      "starter_code": {
-        "python": "import sys\n\ndef merge_alternate(s1: str, s2: str) -> str:\n    # TODO: Merge characters alternatively and append remainder\n    output = []\n    i, j = 0, 0\n    while i < len(s1) or j < len(s2):\n        if i < len(s1):\n            output.append(s1[i])\n            i += 1\n        if j < len(s2):\n            output.append(s2[j])\n            j += 1\n    return \"\".join(output)\n\nif __name__ == \"__main__\":\n    parts = sys.stdin.read().strip().split()\n    if len(parts) >= 2:\n        print(merge_alternate(parts[0], parts[1]))"
-      },
-      "test_cases": [
-        {
-          "input": "karthi sahasra",
-          "expected_output": "ksaarhtahsira",
-          "is_hidden": false
-        },
-        {
-          "input": "abc 12345",
-          "expected_output": "a1b2c345",
-          "is_hidden": false
-        },
-        {
-          "input": "hello world",
-          "expected_output": "hweolrllod",
-          "is_hidden": true
-        },
-        {
-          "input": "a z",
-          "expected_output": "az",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
-      "id": "code-py-dedup-list",
-      "topic_id": "top-py-tuples-sets",
-      "title": "Order-Preserving List Deduplication",
-      "difficulty": "easy",
-      "problem_statement": "Read space-separated integers from stdin and print the sequence with all duplicates removed while strictly preserving the original first-occurrence order.",
-      "input_format": "A single line of space-separated integers.",
-      "output_format": "Space-separated integers with duplicates eliminated.",
-      "constraints": "1 <= count <= 1000",
-      "sample_input": "10 20 30 10 20 40",
-      "sample_output": "10 20 30 40",
-      "starter_code": {
-        "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().strip()\n    if not raw:\n        return\n    nums = [int(x) for x in raw.split()]\n    # TODO: Deduplicate while preserving first occurrence order\n    seen = set()\n    result = []\n    for x in nums:\n        if x not in seen:\n            seen.add(x)\n            result.append(x)\n    print(\" \".join(str(x) for x in result))\n\nif __name__ == \"__main__\":\n    solve()"
-      },
-      "test_cases": [
-        {
-          "input": "10 20 30 10 20 40",
-          "expected_output": "10 20 30 40",
-          "is_hidden": false
-        },
-        {
-          "input": "5 5 5 5",
-          "expected_output": "5",
-          "is_hidden": false
-        },
-        {
-          "input": "1 2 3 4",
-          "expected_output": "1 2 3 4",
-          "is_hidden": true
-        },
-        {
-          "input": "9 8 7 8 9 6",
-          "expected_output": "9 8 7 6",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
-      "id": "code-py-mobile-regex",
-      "topic_id": "top-py-modules-regex",
-      "title": "Mobile Number Regular Expression Validator",
-      "difficulty": "medium",
-      "problem_statement": "Read a mobile number string from standard input. Print \"VALID\" if it contains exactly 10 digits and starts with 6, 7, 8, or 9 (optional leading 0 or +91 prefix is also accepted). Otherwise print \"INVALID\".",
-      "input_format": "A single line containing the candidate phone number string.",
-      "output_format": "\"VALID\" or \"INVALID\".",
-      "constraints": "1 <= string length <= 20",
-      "sample_input": "9885768283",
-      "sample_output": "VALID",
-      "starter_code": {
-        "python": "import sys\nimport re\n\ndef validate_phone(number: str) -> bool:\n    # TODO: Validate with re.fullmatch\n    pattern = r\"(\\+91|0)?[6-9]\\d{9}\"\n    return bool(re.fullmatch(pattern, number))\n\nif __name__ == \"__main__\":\n    raw = sys.stdin.read().strip()\n    print(\"VALID\" if validate_phone(raw) else \"INVALID\")"
-      },
-      "test_cases": [
-        {
-          "input": "9885768283",
-          "expected_output": "VALID",
-          "is_hidden": false
-        },
-        {
-          "input": "+917485920584",
-          "expected_output": "VALID",
-          "is_hidden": false
-        },
-        {
-          "input": "07435637732",
-          "expected_output": "VALID",
-          "is_hidden": true
-        },
-        {
-          "input": "5543210987",
-          "expected_output": "INVALID",
-          "is_hidden": true
-        },
-        {
-          "input": "9885768283abc",
-          "expected_output": "INVALID",
-          "is_hidden": true
-        }
-      ]
-    },
-    {
       "id": "code-py-pattern-triangle",
       "topic_id": "top-py-flow-control",
       "title": "Right-Angled Number Triangle Generator",
-      "difficulty": "easy",
-      "problem_statement": "Read an integer N (1 <= N <= 9) from stdin and print a right-angled number triangle with N rows, where row i contains the number i repeated i times separated by a space.",
-      "input_format": "A single integer N.",
-      "output_format": "N lines representing the number triangle.",
+      "difficulty": "Easy",
+      "problem_statement": "Read an integer N (1 <= N <= 9) from standard input and print a right-angled number triangle of N rows. In each row i (from 1 to N), print the number i repeated i times, separated by a single space.",
+      "input_format": "A single positive integer N.",
+      "output_format": "N lines representing the number triangle pattern.",
       "constraints": "1 <= N <= 9",
       "sample_input": "4",
       "sample_output": "1\n2 2\n3 3 3\n4 4 4 4",
       "starter_code": {
-        "python": "import sys\n\ndef print_pattern(n: int):\n    # TODO: Generate right-angled number triangle\n    for i in range(1, n + 1):\n        print(\" \".join([str(i)] * i))\n\nif __name__ == \"__main__\":\n    raw = sys.stdin.read().strip()\n    if raw:\n        print_pattern(int(raw))"
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    n = int(raw)\n    for i in range(1, n + 1):\n        print(\" \".join([str(i)] * i))\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        for (int i = 1; i <= n; i++) {\n            for (int j = 0; j < i; j++) {\n                printf(\"%d%s\", i, (j == i - 1) ? \"\" : \" \");\n            }\n            printf(\"\\n\");\n        }\n    }\n    return 0;\n}\n"
       },
       "test_cases": [
         {
@@ -1968,18 +1786,95 @@
       ]
     },
     {
+      "id": "code-py-sum-evens",
+      "topic_id": "top-py-loops",
+      "title": "Sum of Even Numbers up to N",
+      "difficulty": "Easy",
+      "problem_statement": "Read a single positive integer N from standard input. Calculate and print the sum of all positive even integers from 1 up to and including N.",
+      "input_format": "A single positive integer N.",
+      "output_format": "A single integer representing the sum of even numbers.",
+      "constraints": "1 <= N <= 1000",
+      "sample_input": "6",
+      "sample_output": "12",
+      "starter_code": {
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    n = int(raw)\n    total = sum(i for i in range(2, n + 1, 2))\n    print(total)\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        int sum = 0;\n        for (int i = 2; i <= n; i += 2) {\n            sum += i;\n        }\n        printf(\"%d\\n\", sum);\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "6",
+          "expected_output": "12",
+          "is_hidden": false
+        },
+        {
+          "input": "10",
+          "expected_output": "30",
+          "is_hidden": false
+        },
+        {
+          "input": "1",
+          "expected_output": "0",
+          "is_hidden": true
+        },
+        {
+          "input": "20",
+          "expected_output": "110",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-str-merge",
+      "topic_id": "top-py-strings",
+      "title": "Alternate String Character Merger",
+      "difficulty": "Medium",
+      "problem_statement": "Read two space-separated strings s1 and s2 from standard input. Merge them by taking characters alternately starting with s1. If one string is longer than the other, append the remaining characters to the end.",
+      "input_format": "Two space-separated strings s1 and s2 on a single line.",
+      "output_format": "The merged string.",
+      "constraints": "1 <= len(s1), len(s2) <= 500",
+      "sample_input": "karthi sahasra",
+      "sample_output": "ksaarhtahsira",
+      "starter_code": {
+        "python": "import sys\n\nparts = sys.stdin.read().strip().split()\nif len(parts) >= 2:\n    s1, s2 = parts[0], parts[1]\n    merged = []\n    i, j = 0, 0\n    while i < len(s1) or j < len(s2):\n        if i < len(s1):\n            merged.append(s1[i])\n            i += 1\n        if j < len(s2):\n            merged.append(s2[j])\n            j += 1\n    print(\"\".join(merged))\n",
+        "c": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char s1[600], s2[600];\n    if (scanf(\"%s %s\", s1, s2) == 2) {\n        int i = 0;\n        int j = 0;\n        int len1 = strlen(s1);\n        int len2 = strlen(s2);\n        while (i < len1 || j < len2) {\n            if (i < len1) {\n                printf(\"%c\", s1[i]);\n                i++;\n            }\n            if (j < len2) {\n                printf(\"%c\", s2[j]);\n                j++;\n            }\n        }\n        printf(\"\\n\");\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "karthi sahasra",
+          "expected_output": "ksaarhtahsira",
+          "is_hidden": false
+        },
+        {
+          "input": "abc 12345",
+          "expected_output": "a1b2c345",
+          "is_hidden": false
+        },
+        {
+          "input": "hello world",
+          "expected_output": "hweolrllod",
+          "is_hidden": true
+        },
+        {
+          "input": "ab c",
+          "expected_output": "acb",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
       "id": "code-py-matrix-transpose",
       "topic_id": "top-py-lists",
-      "title": "Matrix Transpose via List Comprehension",
-      "difficulty": "medium",
-      "problem_statement": "Read input where the first line gives R (rows) and C (columns), followed by R lines of C space-separated integers. Print the transposed matrix (C rows with R integers each) using list comprehension.",
-      "input_format": "Line 1: R and C. Next R lines: C space-separated integers.",
-      "output_format": "C lines of R space-separated integers representing the transposed matrix.",
+      "title": "Matrix Transposition",
+      "difficulty": "Medium",
+      "problem_statement": "The first line contains R (rows) and C (columns). The next R lines contain C space-separated integers. Print the transposed matrix of dimension C x R.",
+      "input_format": "Line 1: integers R and C. Next R lines: C space-separated integers each.",
+      "output_format": "C lines containing R space-separated integers representing the transposed matrix.",
       "constraints": "1 <= R, C <= 50",
       "sample_input": "2 3\n1 2 3\n4 5 6",
       "sample_output": "1 4\n2 5\n3 6",
       "starter_code": {
-        "python": "import sys\n\ndef solve():\n    lines = sys.stdin.read().strip().split(\"\\n\")\n    if not lines or not lines[0]:\n        return\n    r, c = [int(x) for x in lines[0].split()]\n    matrix = []\n    for i in range(1, r + 1):\n        matrix.append([int(x) for x in lines[i].split()])\n    # TODO: Transpose using list comprehension\n    transposed = [[matrix[i][j] for i in range(r)] for j in range(c)]\n    for row in transposed:\n        print(\" \".join(str(x) for x in row))\n\nif __name__ == \"__main__\":\n    solve()"
+        "python": "import sys\n\ntokens = sys.stdin.read().strip().split()\nif len(tokens) >= 2:\n    r, c = int(tokens[0]), int(tokens[1])\n    idx = 2\n    matrix = []\n    for i in range(r):\n        row = [int(tokens[idx + j]) for j in range(c)]\n        matrix.append(row)\n        idx += c\n    transposed = [[matrix[i][j] for i in range(r)] for j in range(c)]\n    for row in transposed:\n        print(\" \".join(str(x) for x in row))\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int r, c;\n    if (scanf(\"%d %d\", &r, &c) == 2) {\n        int mat[50][50];\n        for (int i = 0; i < r; i++) {\n            for (int j = 0; j < c; j++) {\n                scanf(\"%d\", &mat[i][j]);\n            }\n        }\n        for (int j = 0; j < c; j++) {\n            for (int i = 0; i < r; i++) {\n                printf(\"%d%s\", mat[i][j], (i == r - 1) ? \"\" : \" \");\n            }\n            printf(\"\\n\");\n        }\n    }\n    return 0;\n}\n"
       },
       "test_cases": [
         {
@@ -1993,13 +1888,46 @@
           "is_hidden": false
         },
         {
-          "input": "1 3\n7 8 9",
-          "expected_output": "7\n8\n9",
+          "input": "1 3\n5 10 15",
+          "expected_output": "5\n10\n15",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-dedup-list",
+      "topic_id": "top-py-tuples-sets",
+      "title": "Order-Preserving List Deduplication",
+      "difficulty": "Easy",
+      "problem_statement": "Read space-separated integers from stdin and print the sequence with all duplicate elements removed, strictly maintaining the order of their first appearance.",
+      "input_format": "A single line containing space-separated integers.",
+      "output_format": "A single line of space-separated integers with duplicates removed.",
+      "constraints": "1 <= N <= 1000",
+      "sample_input": "10 20 30 10 20 40",
+      "sample_output": "10 20 30 40",
+      "starter_code": {
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    nums = [int(x) for x in raw.split()]\n    seen = set()\n    result = []\n    for x in nums:\n        if x not in seen:\n            seen.add(x)\n            result.append(x)\n    print(\" \".join(str(x) for x in result))\n",
+        "c": "#include <stdio.h>\n\nint main() {\n    int x;\n    int seen[1000];\n    int count = 0;\n    while (scanf(\"%d\", &x) == 1) {\n        int exists = 0;\n        for (int i = 0; i < count; i++) {\n            if (seen[i] == x) {\n                exists = 1;\n                break;\n            }\n        }\n        if (!exists) {\n            seen[count++] = x;\n        }\n    }\n    for (int i = 0; i < count; i++) {\n        printf(\"%d%s\", seen[i], (i == count - 1) ? \"\" : \" \");\n    }\n    printf(\"\\n\");\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "10 20 30 10 20 40",
+          "expected_output": "10 20 30 40",
+          "is_hidden": false
+        },
+        {
+          "input": "5 5 5 5",
+          "expected_output": "5",
+          "is_hidden": false
+        },
+        {
+          "input": "1 2 3 4 5",
+          "expected_output": "1 2 3 4 5",
           "is_hidden": true
         },
         {
-          "input": "3 1\n1\n2\n3",
-          "expected_output": "1 2 3",
+          "input": "9 1 9 2 9 3",
+          "expected_output": "9 1 2 3",
           "is_hidden": true
         }
       ]
@@ -2007,16 +1935,17 @@
     {
       "id": "code-py-word-frequency",
       "topic_id": "top-py-dictionaries",
-      "title": "Word Frequency Counter using Dictionary",
-      "difficulty": "medium",
-      "problem_statement": "Read a line of words from standard input. Count the frequency of each unique word (case-insensitive) and print each word and its count in alphabetical order formatted as \"word: count\".",
+      "title": "Word Frequency Counter",
+      "difficulty": "Medium",
+      "problem_statement": "Read a line of words from standard input. Count the occurrences of each unique word (case-insensitive) and print each word and its frequency in alphabetical order formatted as 'word: count'.",
       "input_format": "A single line containing space-separated words.",
-      "output_format": "Alphabetically sorted lines in format \"word: count\".",
+      "output_format": "Alphabetically sorted lines with 'word: count'.",
       "constraints": "1 <= word count <= 500",
       "sample_input": "apple banana apple Orange banana apple",
       "sample_output": "apple: 3\nbanana: 2\norange: 1",
       "starter_code": {
-        "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().strip()\n    if not raw:\n        return\n    words = raw.lower().split()\n    # TODO: Build frequency dictionary and print sorted\n    freq = {}\n    for w in words:\n        freq[w] = freq.get(w, 0) + 1\n    for w in sorted(freq.keys()):\n        print(f\"{w}: {freq[w]}\")\n\nif __name__ == \"__main__\":\n    solve()"
+        "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    words = raw.lower().split()\n    freq = {}\n    for w in words:\n        freq[w] = freq.get(w, 0) + 1\n    for w in sorted(freq.keys()):\n        print(f\"{w}: {freq[w]}\")\n",
+        "c": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\n\nint main() {\n    char w[100];\n    char words[200][100];\n    int counts[200];\n    int total = 0;\n    while (scanf(\"%s\", w) == 1) {\n        for (int k = 0; k < strlen(w); k++) {\n            w[k] = tolower(w[k]);\n        }\n        int found = 0;\n        for (int i = 0; i < total; i++) {\n            if (strcmp(words[i], w) == 0) {\n                counts[i]++;\n                found = 1;\n                break;\n            }\n        }\n        if (!found) {\n            strcpy(words[total], w);\n            counts[total] = 1;\n            total++;\n        }\n    }\n    for (int i = 0; i < total - 1; i++) {\n        for (int j = 0; j < total - i - 1; j++) {\n            if (strcmp(words[j], words[j + 1]) > 0) {\n                char temp_w[100];\n                strcpy(temp_w, words[j]);\n                strcpy(words[j], words[j + 1]);\n                strcpy(words[j + 1], temp_w);\n                int temp_c = counts[j];\n                counts[j] = counts[j + 1];\n                counts[j + 1] = temp_c;\n            }\n        }\n    }\n    for (int i = 0; i < total; i++) {\n        printf(\"%s: %d\\n\", words[i], counts[i]);\n    }\n    return 0;\n}\n"
       },
       "test_cases": [
         {
@@ -2030,13 +1959,292 @@
           "is_hidden": false
         },
         {
-          "input": "python Python PYTHON",
-          "expected_output": "python: 3",
+          "input": "cat dog bird",
+          "expected_output": "bird: 1\ncat: 1\ndog: 1",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-palindrome",
+      "topic_id": "top-py-functions",
+      "title": "Palindrome Validator Function",
+      "difficulty": "Medium",
+      "problem_statement": "Implement the function `is_palindrome(s)` that determines if a given string reads the same forwards and backwards, ignoring non-alphanumeric characters and case sensitivity. Return 'TRUE' if it is a palindrome, otherwise 'FALSE'.",
+      "input_format": "A single line of text from standard input.",
+      "output_format": "'TRUE' or 'FALSE'.",
+      "constraints": "1 <= string length <= 1000",
+      "sample_input": "A man, a plan, a canal: Panama",
+      "sample_output": "TRUE",
+      "starter_code": {
+        "python": "import sys\n\ndef is_palindrome(s: str) -> bool:\n    # Function topic: Implement solution inside function\n    cleaned = \"\".join(c.lower() for c in s if c.isalnum())\n    return cleaned == cleaned[::-1]\n\nif __name__ == \"__main__\":\n    text = sys.stdin.read().strip()\n    print(\"TRUE\" if is_palindrome(text) else \"FALSE\")\n",
+        "c": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\n\n// Function topic: Implement solution inside function\nint is_palindrome(char* s) {\n    int left = 0, right = strlen(s) - 1;\n    while (left < right) {\n        while (left < right && !isalnum(s[left])) left++;\n        while (left < right && !isalnum(s[right])) right--;\n        if (tolower(s[left]) != tolower(s[right])) return 0;\n        left++;\n        right--;\n    }\n    return 1;\n}\n\nint main() {\n    char s[1000];\n    if (fgets(s, sizeof(s), stdin)) {\n        printf(\"%s\\n\", is_palindrome(s) ? \"TRUE\" : \"FALSE\");\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "A man, a plan, a canal: Panama",
+          "expected_output": "TRUE",
+          "is_hidden": false
+        },
+        {
+          "input": "race a car",
+          "expected_output": "FALSE",
+          "is_hidden": false
+        },
+        {
+          "input": "Was it a car or a cat I saw?",
+          "expected_output": "TRUE",
           "is_hidden": true
         },
         {
-          "input": "cat dog bird",
-          "expected_output": "bird: 1\ncat: 1\ndog: 1",
+          "input": "hello",
+          "expected_output": "FALSE",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-factorial",
+      "topic_id": "top-py-recursion",
+      "title": "Recursive Factorial Engine",
+      "difficulty": "Medium",
+      "problem_statement": "Implement a pure recursive function `factorial(n)` that returns N! for any non-negative integer N without using iterative loops.",
+      "input_format": "A single non-negative integer N.",
+      "output_format": "A single integer representing N!.",
+      "constraints": "0 <= N <= 15",
+      "sample_input": "5",
+      "sample_output": "120",
+      "starter_code": {
+        "python": "import sys\n\ndef factorial(n: int) -> int:\n    # Function topic: pure recursive function\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nif __name__ == \"__main__\":\n    raw = sys.stdin.read().strip()\n    if raw:\n        print(factorial(int(raw)))\n",
+        "c": "#include <stdio.h>\n\n// Function topic: pure recursive function\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"%d\\n\", factorial(n));\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "5",
+          "expected_output": "120",
+          "is_hidden": false
+        },
+        {
+          "input": "0",
+          "expected_output": "1",
+          "is_hidden": false
+        },
+        {
+          "input": "1",
+          "expected_output": "1",
+          "is_hidden": true
+        },
+        {
+          "input": "6",
+          "expected_output": "720",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-bank-account",
+      "topic_id": "top-py-oop",
+      "title": "Object-Oriented Bank Account Manager",
+      "difficulty": "Medium",
+      "problem_statement": "In this Object-Oriented Programming challenge, design a class `BankAccount` containing:\n- `__init__(self, initial_balance: int)`: initializes account balance\n- `deposit(self, amount: int)`: deposits amount into balance\n- `withdraw(self, amount: int) -> bool`: deducts amount if funds exist and returns True, else returns False\n- `get_balance(self) -> int`: returns current balance.\n\nThe input begins with the starting balance, followed by transaction operations ('DEPOSIT X' or 'WITHDRAW X'). Output the final balance.",
+      "input_format": "Line 1: Starting balance integer.\nFollowing lines: 'DEPOSIT <amount>' or 'WITHDRAW <amount>'.",
+      "output_format": "A single integer representing the final balance.",
+      "constraints": "0 <= balance <= 10^8, 1 <= operations <= 100",
+      "sample_input": "100\nDEPOSIT 50\nWITHDRAW 30\nDEPOSIT 20",
+      "sample_output": "140",
+      "starter_code": {
+        "python": "import sys\n\n# OOP Topic: Use class and object encapsulation\nclass BankAccount:\n    def __init__(self, initial_balance: int = 0):\n        self.balance = initial_balance\n\n    def deposit(self, amount: int):\n        self.balance += amount\n\n    def withdraw(self, amount: int) -> bool:\n        if self.balance >= amount:\n            self.balance -= amount\n            return True\n        return False\n\n    def get_balance(self) -> int:\n        return self.balance\n\nif __name__ == \"__main__\":\n    lines = sys.stdin.read().strip().split(\"\\n\")\n    if lines and lines[0]:\n        account = BankAccount(int(lines[0]))\n        for line in lines[1:]:\n            parts = line.split()\n            if not parts:\n                continue\n            cmd, val = parts[0], int(parts[1])\n            if cmd == \"DEPOSIT\":\n                account.deposit(val)\n            elif cmd == \"WITHDRAW\":\n                account.withdraw(val)\n        print(account.get_balance())\n",
+        "c": "#include <stdio.h>\n#include <string.h>\n\n// OOP Topic in C using Struct and Method Encapsulation\ntypedef struct {\n    int balance;\n} BankAccount;\n\nvoid deposit(BankAccount* acc, int amount) {\n    acc->balance += amount;\n}\n\nint withdraw(BankAccount* acc, int amount) {\n    if (acc->balance >= amount) {\n        acc->balance -= amount;\n        return 1;\n    }\n    return 0;\n}\n\nint main() {\n    int initial;\n    if (scanf(\"%d\", &initial) == 1) {\n        BankAccount acc = { initial };\n        char cmd[20];\n        int val;\n        while (scanf(\"%s %d\", cmd, &val) == 2) {\n            if (strcmp(cmd, \"DEPOSIT\") == 0) deposit(&acc, val);\n            else if (strcmp(cmd, \"WITHDRAW\") == 0) withdraw(&acc, val);\n        }\n        printf(\"%d\\n\", acc.balance);\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "100\nDEPOSIT 50\nWITHDRAW 30\nDEPOSIT 20",
+          "expected_output": "140",
+          "is_hidden": false
+        },
+        {
+          "input": "500\nWITHDRAW 200\nWITHDRAW 400",
+          "expected_output": "300",
+          "is_hidden": false
+        },
+        {
+          "input": "0\nDEPOSIT 1000\nWITHDRAW 250",
+          "expected_output": "750",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-py-mobile-regex",
+      "topic_id": "top-py-modules-regex",
+      "title": "Mobile Number Regular Expression Validator",
+      "difficulty": "Medium",
+      "problem_statement": "Read a mobile number string from standard input. Print 'VALID' if it is a valid 10-digit number starting with 6, 7, 8, or 9 (an optional leading 0 or +91 prefix is accepted). Otherwise print 'INVALID'.",
+      "input_format": "A single line containing the candidate phone number string.",
+      "output_format": "'VALID' or 'INVALID'.",
+      "constraints": "1 <= string length <= 25",
+      "sample_input": "9885768283",
+      "sample_output": "VALID",
+      "starter_code": {
+        "python": "import sys\nimport re\n\nraw = sys.stdin.read().strip()\npattern = r\"(\\+91|0)?[6-9]\\d{9}$\"\nprint(\"VALID\" if re.match(pattern, raw) else \"INVALID\")\n",
+        "c": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\n\nint main() {\n    char s[50];\n    if (scanf(\"%s\", s) == 1) {\n        int start = 0;\n        if (s[0] == '+' && s[1] == '9' && s[2] == '1') start = 3;\n        else if (s[0] == '0') start = 1;\n        int length = strlen(s) - start;\n        int valid = (length == 10) && (s[start] >= '6' && s[start] <= '9');\n        for (int i = start; i < strlen(s); i++) {\n            if (!isdigit(s[i])) valid = 0;\n        }\n        printf(\"%s\\n\", valid ? \"VALID\" : \"INVALID\");\n    }\n    return 0;\n}\n"
+      },
+      "test_cases": [
+        {
+          "input": "9885768283",
+          "expected_output": "VALID",
+          "is_hidden": false
+        },
+        {
+          "input": "+917485920584",
+          "expected_output": "VALID",
+          "is_hidden": false
+        },
+        {
+          "input": "5543210987",
+          "expected_output": "INVALID",
+          "is_hidden": true
+        },
+        {
+          "input": "988576828",
+          "expected_output": "INVALID",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-c-fundamentals",
+      "topic_id": "top-c-fundamentals",
+      "title": "C Data Types & Base Inspector",
+      "difficulty": "Easy",
+      "problem_statement": "Read an integer N from standard input. Output its binary, octal, and hexadecimal representation separated by spaces.",
+      "input_format": "A single non-negative integer N.",
+      "output_format": "Three space-separated strings: binary, octal, and hexadecimal.",
+      "constraints": "0 <= N <= 10^9",
+      "sample_input": "15",
+      "sample_output": "0b1111 0o17 0xf",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"0b\");\n        if (n == 0) {\n            printf(\"0\");\n        } else {\n            int temp = n;\n            int bits[32];\n            int count = 0;\n            while (temp > 0) {\n                bits[count] = temp % 2;\n                count++;\n                temp /= 2;\n            }\n            for (int i = count - 1; i >= 0; i--) {\n                printf(\"%d\", bits[i]);\n            }\n        }\n        printf(\" 0o%o 0x%x\\n\", n, n);\n    }\n    return 0;\n}\n",
+        "python": "import sys\nraw = sys.stdin.read().strip()\nif raw:\n    n = int(raw)\n    print(f\"{bin(n)} {oct(n)} {hex(n)}\")\n"
+      },
+      "test_cases": [
+        {
+          "input": "15",
+          "expected_output": "0b1111 0o17 0xf",
+          "is_hidden": false
+        },
+        {
+          "input": "0",
+          "expected_output": "0b0 0o0 0x0",
+          "is_hidden": false
+        },
+        {
+          "input": "255",
+          "expected_output": "0b11111111 0o377 0xff",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-c-loops",
+      "topic_id": "top-c-loops",
+      "title": "Sum of Even Integers in C",
+      "difficulty": "Easy",
+      "problem_statement": "Read an integer N from standard input. Compute and print the sum of all positive even integers from 1 up to and including N using a for loop.",
+      "input_format": "A single positive integer N.",
+      "output_format": "A single integer representing the sum of even numbers.",
+      "constraints": "1 <= N <= 1000",
+      "sample_input": "6",
+      "sample_output": "12",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        int sum = 0;\n        for (int i = 2; i <= n; i += 2) {\n            sum += i;\n        }\n        printf(\"%d\\n\", sum);\n    }\n    return 0;\n}\n",
+        "python": "import sys\nraw = sys.stdin.read().strip()\nif raw:\n    n = int(raw)\n    print(sum(i for i in range(2, n + 1, 2)))\n"
+      },
+      "test_cases": [
+        {
+          "input": "6",
+          "expected_output": "12",
+          "is_hidden": false
+        },
+        {
+          "input": "10",
+          "expected_output": "30",
+          "is_hidden": false
+        },
+        {
+          "input": "1",
+          "expected_output": "0",
+          "is_hidden": true
+        },
+        {
+          "input": "20",
+          "expected_output": "110",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-c-reverse-array",
+      "topic_id": "top-c-pointers",
+      "title": "In-Place Array Reversal using Pointers",
+      "difficulty": "Medium",
+      "problem_statement": "Read N space-separated integers from stdin. Reverse the sequence and print the reversed array elements separated by single spaces.",
+      "input_format": "Line 1: integer count N.\nLine 2: N space-separated integers.",
+      "output_format": "N space-separated integers in reversed order.",
+      "constraints": "1 <= N <= 500",
+      "sample_input": "5\n10 20 30 40 50",
+      "sample_output": "50 40 30 20 10",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        int arr[500];\n        for (int i = 0; i < n; i++) {\n            scanf(\"%d\", &arr[i]);\n        }\n        for (int i = n - 1; i >= 0; i--) {\n            printf(\"%d%s\", arr[i], (i == 0) ? \"\" : \" \");\n        }\n        printf(\"\\n\");\n    }\n    return 0;\n}\n",
+        "python": "import sys\ntokens = sys.stdin.read().strip().split()\nif tokens:\n    n = int(tokens[0])\n    nums = tokens[1:n+1]\n    print(\" \".join(reversed(nums)))\n"
+      },
+      "test_cases": [
+        {
+          "input": "5\n10 20 30 40 50",
+          "expected_output": "50 40 30 20 10",
+          "is_hidden": false
+        },
+        {
+          "input": "3\n1 2 3",
+          "expected_output": "3 2 1",
+          "is_hidden": false
+        },
+        {
+          "input": "1\n42",
+          "expected_output": "42",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-c-functions",
+      "topic_id": "top-c-functions",
+      "title": "Recursive Factorial in C",
+      "difficulty": "Medium",
+      "problem_statement": "Implement a recursive function `int factorial(int n)` in C that computes n! for a non-negative integer n.",
+      "input_format": "A single non-negative integer N.",
+      "output_format": "A single integer representing n!.",
+      "constraints": "0 <= N <= 12",
+      "sample_input": "5",
+      "sample_output": "120",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\n// Function topic: Implement pure recursive function\nint factorial(int n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"%d\\n\", factorial(n));\n    }\n    return 0;\n}\n",
+        "python": "import sys\ndef factorial(n: int) -> int:\n    if n <= 1: return 1\n    return n * factorial(n - 1)\nif __name__ == '__main__':\n    raw = sys.stdin.read().strip()\n    if raw: print(factorial(int(raw)))\n"
+      },
+      "test_cases": [
+        {
+          "input": "5",
+          "expected_output": "120",
+          "is_hidden": false
+        },
+        {
+          "input": "3",
+          "expected_output": "6",
+          "is_hidden": false
+        },
+        {
+          "input": "0",
+          "expected_output": "1",
           "is_hidden": true
         }
       ]

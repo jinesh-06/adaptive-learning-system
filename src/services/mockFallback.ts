@@ -7,6 +7,7 @@
 
 import platformData from '../data/platformData.json';
 import { executeCodeInBrowser } from './pythonRunner';
+import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
   window.location.hostname.includes('github.io') ||
@@ -484,6 +485,7 @@ export const mockTopicDetails: Record<string, any> = {
 });
 
 export const mockQuizzes: Record<string, any[]> = {
+
   'top-py-loops': [
     {
       id: 'mcq-py-loop-1',
@@ -1001,12 +1003,100 @@ export const mockCodingChallenges: Record<string, any> = {
   }
 };
 
-// Populate additional coding challenges from platformData
+// Populate coding challenges from verified platformData
 (platformData.coding_questions || []).forEach((cq: any) => {
-  if (!mockCodingChallenges[cq.topic_id]) {
-    mockCodingChallenges[cq.topic_id] = cq;
-  }
+  mockCodingChallenges[cq.topic_id] = cq;
 });
+
+// Populate all 16 Python Fundamentals curriculum topics into mock details, quizzes, and coding challenges
+PYTHON_FUNDAMENTALS_TOPICS.forEach((pyTopic) => {
+  mockTopicDetails[pyTopic.id] = {
+    id: pyTopic.id,
+    course_id: 'py-beg',
+    language: 'python',
+    level: pyTopic.difficulty.toLowerCase(),
+    title: pyTopic.title,
+    prerequisites: pyTopic.prerequisiteId ? [pyTopic.prerequisiteId] : [],
+    content_standard: pyTopic.conceptExplanation,
+    syntax: pyTopic.syntax,
+    common_mistakes: pyTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${pyTopic.id}-sec-1`,
+        title: `1. Concept: ${pyTopic.title}`,
+        order_index: 1,
+        content: pyTopic.conceptExplanation,
+        code_snippet: pyTopic.simpleExample.code,
+        pitfalls: pyTopic.simpleExample.explanation,
+        mini_check: pyTopic.quiz[0] ? {
+          question: pyTopic.quiz[0].question,
+          options: pyTopic.quiz[0].options,
+          correct_index: pyTopic.quiz[0].correctIndex,
+          explanation: pyTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${pyTopic.id}-sec-2`,
+        title: `2. Syntax & Mechanics`,
+        order_index: 2,
+        content: pyTopic.stepByStep.join('\n\n'),
+        code_snippet: pyTopic.codeExample,
+        pitfalls: pyTopic.commonMistakes[0]?.explanation || 'Review syntax carefully before execution.',
+        mini_check: pyTopic.quiz[1] ? {
+          question: pyTopic.quiz[1].question,
+          options: pyTopic.quiz[1].options,
+          correct_index: pyTopic.quiz[1].correctIndex,
+          explanation: pyTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${pyTopic.id}-sec-3`,
+        title: `3. Real-World Application`,
+        order_index: 3,
+        content: `${pyTopic.realWorldExample.scenario}\n\n${pyTopic.realWorldExample.explanation}`,
+        code_snippet: pyTopic.realWorldExample.code,
+        pitfalls: 'Test edge cases with dynamic input.',
+        mini_check: pyTopic.quiz[2] ? {
+          question: pyTopic.quiz[2].question,
+          options: pyTopic.quiz[2].options,
+          correct_index: pyTopic.quiz[2].correctIndex,
+          explanation: pyTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[pyTopic.id] = pyTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[pyTopic.id] = {
+    id: `code-${pyTopic.id}`,
+    topic_id: pyTopic.id,
+    title: `${pyTopic.title} Practice Challenge`,
+    difficulty: pyTopic.difficulty.toLowerCase(),
+    problem_statement: pyTopic.practice.prompt,
+    input_format: 'Standard Python input.',
+    output_format: 'Clean console output.',
+    constraints: 'Standard runtime constraints.',
+    starter_code: {
+      python: pyTopic.practice.starterCode
+    },
+    test_cases: [
+      {
+        input: '',
+        expected_output: pyTopic.practice.expectedOutputMatcher
+      }
+    ]
+  };
+});
+
 
 export const mockDiagnosticQuestions = [
   {
@@ -1190,6 +1280,175 @@ export const mockDiagnosticQuestions = [
   }
 ];
 
+export const mockDiagnosticQuestionsByLang: Record<string, any[]> = {
+  python: mockDiagnosticQuestions,
+  c: [
+    {
+      id: 'diag-c-1',
+      category: 'concept',
+      question: 'What is the size in bytes of any pointer (e.g., int*, char*) on a standard 64-bit operating system?',
+      options: ['4 bytes', '8 bytes', '16 bytes', 'Depends on target data type'],
+      correct_index: 1,
+      explanation: 'On a 64-bit architecture, memory addresses are 64 bits wide, making all pointers occupy exactly 8 bytes.'
+    },
+    {
+      id: 'diag-c-2',
+      category: 'concept',
+      question: 'What is the crucial difference between malloc() and calloc() in standard C?',
+      options: [
+        'calloc() zero-initializes memory, while malloc() leaves indeterminate garbage values',
+        'malloc() allocates on stack, calloc() on heap',
+        'calloc() cannot be freed with free()',
+        'malloc() requires two parameters'
+      ],
+      correct_index: 0,
+      explanation: 'calloc zeroes out allocated memory, while malloc leaves previous memory content intact.'
+    },
+    {
+      id: 'diag-c-3',
+      category: 'problem_solving',
+      question: 'What will be the final value of variable val after executing: int val = 15; int *ptr = &val; *ptr = *ptr + 10; *ptr *= 2;?',
+      options: ['15', '25', '50', 'Segmentation Fault'],
+      correct_index: 2,
+      explanation: '*ptr modifies val directly in memory: (15 + 10) * 2 = 50.'
+    },
+    {
+      id: 'diag-c-4',
+      category: 'problem_solving',
+      question: 'How many times does this while loop execute: int i = 0; while (i++ < 3) { ... }?',
+      options: ['2 times', '3 times', '4 times', 'Infinite loop'],
+      correct_index: 1,
+      explanation: 'Postfix i++ tests before incrementing, resulting in exactly 3 iterations (for i=0, 1, 2).'
+    },
+    {
+      id: 'diag-c-5',
+      category: 'coding_ability',
+      question: 'Which sequence properly frees heap memory and defends against dangling pointers?',
+      options: ['free(ptr); ptr = NULL;', 'delete ptr;', 'ptr = NULL; free(ptr);', 'free(&ptr);'],
+      correct_index: 0,
+      explanation: 'free releases the buffer, and setting ptr = NULL prevents accidental double-free or dangling access.'
+    },
+    {
+      id: 'diag-c-6',
+      category: 'coding_ability',
+      question: 'Which syntax correctly declares a function pointer named op taking two ints and returning int?',
+      options: ['int (*op)(int, int);', 'int *op(int, int);', 'func<int(int, int)> op;', '(*op)(int, int) -> int;'],
+      correct_index: 0,
+      explanation: 'Parentheses around (*op) ensure op is a pointer to a function returning int.'
+    }
+  ],
+  cpp: [
+    {
+      id: 'diag-cpp-1',
+      category: 'concept',
+      question: 'In C++, what is the only fundamental difference between a class and a struct?',
+      options: [
+        'Default member and inheritance visibility is private for class, and public for struct',
+        'struct cannot have methods',
+        'class is always on heap, struct on stack',
+        'struct cannot use inheritance'
+      ],
+      correct_index: 0,
+      explanation: 'In C++, classes and structs are identical in feature set; their only distinction is default access.'
+    },
+    {
+      id: 'diag-cpp-2',
+      category: 'concept',
+      question: 'What is the core principle of RAII (Resource Acquisition Is Initialization)?',
+      options: [
+        'Tying resource lifetime to stack object scope and deterministic destructors',
+        'Initializing all pointers to NULL at boot',
+        'Parallelizing constructors',
+        'Garbage collecting dead objects'
+      ],
+      correct_index: 0,
+      explanation: 'RAII binds resource ownership to object lifetime, ensuring automatic cleanup when exiting scope.'
+    },
+    {
+      id: 'diag-cpp-3',
+      category: 'problem_solving',
+      question: 'What keyword enables dynamic dispatch and runtime polymorphism on a base class method?',
+      options: ['virtual', 'override', 'dynamic', 'polymorphic'],
+      correct_index: 0,
+      explanation: 'The virtual keyword creates vtable entries for runtime dispatch.'
+    },
+    {
+      id: 'diag-cpp-4',
+      category: 'problem_solving',
+      question: 'Why pass large objects as const std::string& rather than std::string?',
+      options: ['Avoids expensive heap copying of the string buffer', 'Runs asynchronously', 'Converts string to bytes', 'Locks thread'],
+      correct_index: 0,
+      explanation: 'Const reference passes by address without copying heap memory.'
+    },
+    {
+      id: 'diag-cpp-5',
+      category: 'coding_ability',
+      question: 'Which smart pointer represents exclusive, zero-overhead ownership?',
+      options: ['std::unique_ptr', 'std::shared_ptr', 'std::weak_ptr', 'std::auto_ptr'],
+      correct_index: 0,
+      explanation: 'std::unique_ptr gives unique non-shared ownership with zero overhead.'
+    },
+    {
+      id: 'diag-cpp-6',
+      category: 'coding_ability',
+      question: 'What does std::vector::reserve(100) do?',
+      options: ['Pre-allocates capacity without changing size', 'Fills vector with 100 elements', 'Caps max size at 100', 'Clears vector'],
+      correct_index: 0,
+      explanation: 'reserve(n) pre-allocates memory capacity to prevent reallocations.'
+    }
+  ],
+  java: [
+    {
+      id: 'diag-java-1',
+      category: 'concept',
+      question: 'What is the difference between == and .equals() for String objects in Java?',
+      options: ['== tests reference identity, .equals() compares character content', '== is case-insensitive', 'They are completely identical', '.equals() only works on primitives'],
+      correct_index: 0,
+      explanation: '== checks if references point to the exact same object in memory, while .equals() checks semantic text equality.'
+    },
+    {
+      id: 'diag-java-2',
+      category: 'concept',
+      question: 'Which access modifier restricts visibility strictly to within the declaring class?',
+      options: ['private', 'protected', 'default', 'public'],
+      correct_index: 0,
+      explanation: 'private limits access exclusively to within the class itself.'
+    },
+    {
+      id: 'diag-java-3',
+      category: 'problem_solving',
+      question: 'What happens when calling a method on a null reference in Java?',
+      options: ['Throws NullPointerException at runtime', 'Returns null silently', 'Compilation error', 'Prints empty string'],
+      correct_index: 0,
+      explanation: 'Dereferencing a null reference throws a java.lang.NullPointerException.'
+    },
+    {
+      id: 'diag-java-4',
+      category: 'problem_solving',
+      question: 'Which keyword explicitly calls a constructor in the parent class?',
+      options: ['super(...)', 'this(...)', 'parent(...)', 'base(...)'],
+      correct_index: 0,
+      explanation: 'super() invokes the superclass constructor.'
+    },
+    {
+      id: 'diag-java-5',
+      category: 'coding_ability',
+      question: 'Which Java collection guarantees unique elements and O(1) average lookup?',
+      options: ['HashSet', 'ArrayList', 'TreeSet', 'LinkedList'],
+      correct_index: 0,
+      explanation: 'HashSet uses a hash table providing constant time average lookup and uniqueness.'
+    },
+    {
+      id: 'diag-java-6',
+      category: 'coding_ability',
+      question: 'When is a finally block guaranteed to execute in try-catch-finally?',
+      options: ['Always, whether an exception occurs, is caught, or not (unless System.exit())', 'Only when an exception is thrown', 'Only when no exception is thrown', 'In a daemon thread'],
+      correct_index: 0,
+      explanation: 'finally blocks execute during stack unwinding for guaranteed resource disposal.'
+    }
+  ]
+};
+
 // Fallback handlers for api.ts
 export const mockHandlers = {
   getPlatformStats: async () => ({
@@ -1268,8 +1527,31 @@ export const mockHandlers = {
     };
   },
 
-  getTopicCodingChallenge: async (topicId: string) => {
-    return mockCodingChallenges[topicId] || mockCodingChallenges['top-py-loops'];
+  getTopicCodingChallenge: async (topicId: string, language?: string) => {
+    const langKey = (language || 'python').toLowerCase();
+    let challenge = mockCodingChallenges[topicId];
+    if (!challenge) {
+      if (langKey === 'c' && !topicId.startsWith('top-c-')) {
+        challenge = mockCodingChallenges[topicId.replace('top-py-', 'top-c-')];
+      } else if (langKey === 'python' && !topicId.startsWith('top-py-')) {
+        challenge = mockCodingChallenges[topicId.replace('top-c-', 'top-py-')];
+      }
+    }
+    if (!challenge) {
+      challenge = mockCodingChallenges['top-py-fundamentals'] || Object.values(mockCodingChallenges)[0];
+    }
+    const sc = challenge.starter_code;
+    let selectedSc = '';
+    if (typeof sc === 'object' && sc !== null) {
+      selectedSc = sc[langKey] || sc['python'] || sc['c'] || '';
+    } else {
+      selectedSc = String(sc || '');
+    }
+    return {
+      ...challenge,
+      starter_code: selectedSc,
+      starter_codes: typeof sc === 'object' ? sc : { python: selectedSc, c: selectedSc }
+    };
   },
 
   runCode: async (code: string, language: string, input: string = '') => {
@@ -1482,22 +1764,39 @@ export const mockHandlers = {
 
   // Diagnostic Test
   getDiagnosticQuestions: async (language: string = 'python') => {
+    const langKey = language.toLowerCase() === 'c++' ? 'cpp' : language.toLowerCase();
+    const list = mockDiagnosticQuestionsByLang[langKey] || mockDiagnosticQuestionsByLang.python;
     return {
       language,
-      total_questions: mockDiagnosticQuestions.length,
-      questions: mockDiagnosticQuestions.map(({ correct_index, explanation, ...rest }) => rest)
+      total_questions: list.length,
+      questions: list.map(({ correct_index, explanation, ...rest }) => rest)
     };
   },
 
-  submitDiagnosticTest: async (language: string, answers: Record<string, number>, timeSpent: number) => {
+  submitDiagnosticTest: async (
+    language: string,
+    answers: Record<string, number>,
+    timeSpent: number,
+    observations?: Record<string, any>
+  ) => {
+    const langKey = language.toLowerCase() === 'c++' ? 'cpp' : language.toLowerCase();
+    const list = mockDiagnosticQuestionsByLang[langKey] || mockDiagnosticQuestionsByLang.python;
     let correct = 0;
-    const breakdown = mockDiagnosticQuestions.map(q => {
+    const catTotals: Record<string, number> = {};
+    const catCorrect: Record<string, number> = {};
+
+    const breakdown = list.map(q => {
+      const cat = q.category || 'concept';
+      catTotals[cat] = (catTotals[cat] || 0) + 1;
       const userChoice = answers[q.id];
       const isCorrect = userChoice === q.correct_index;
-      if (isCorrect) correct++;
+      if (isCorrect) {
+        correct++;
+        catCorrect[cat] = (catCorrect[cat] || 0) + 1;
+      }
       return {
         id: q.id,
-        category: q.category,
+        category: cat,
         is_correct: isCorrect,
         user_choice: userChoice,
         correct_index: q.correct_index,
@@ -1505,24 +1804,64 @@ export const mockHandlers = {
       };
     });
 
-    const score = Math.round((correct / mockDiagnosticQuestions.length) * 100);
-    const level = score >= 75 ? 'advanced' : score >= 40 ? 'intermediate' : 'beginner';
-    const startingTopic = level === 'advanced' ? 'top-py-recursion' : level === 'intermediate' ? 'top-py-functions' : 'top-py-loops';
+    const score = Math.round((correct / list.length) * 100);
+    const conceptScore = catTotals.concept ? Math.round(((catCorrect.concept || 0) / catTotals.concept) * 100) : score;
+    const psScore = catTotals.problem_solving ? Math.round(((catCorrect.problem_solving || 0) / catTotals.problem_solving) * 100) : score;
+    const codingScore = catTotals.coding_ability ? Math.round(((catCorrect.coding_ability || 0) / catTotals.coding_ability) * 100) : score;
+
+    const switchCount = observations?.revisions_count || 0;
+    const avgHesitation = observations?.avg_hesitation_seconds || 6.0;
+
+    let cognitiveLoad: 'LOW' | 'MEDIUM' | 'HIGH' = 'MEDIUM';
+    let suggestedMode = 'BALANCED';
+    let level = 'intermediate';
+
+    if (score >= 80 && avgHesitation < 15) {
+      cognitiveLoad = 'LOW';
+      suggestedMode = 'CONCISE';
+      level = 'advanced';
+    } else if (score < 50 || switchCount > 3 || avgHesitation > 18) {
+      cognitiveLoad = 'HIGH';
+      suggestedMode = 'SIMPLIFIED';
+      level = 'beginner';
+    } else {
+      cognitiveLoad = 'MEDIUM';
+      suggestedMode = 'BALANCED';
+      level = 'intermediate';
+    }
+
+    const startingTopicMap: Record<string, Record<string, string>> = {
+      python: { beginner: 'top-py-fundamentals', intermediate: 'top-py-functions', advanced: 'top-py-recursion' },
+      c: { beginner: 'top-c-fundamentals', intermediate: 'top-c-pointers', advanced: 'top-c-structures' },
+      cpp: { beginner: 'top-cpp-fundamentals', intermediate: 'top-cpp-oop', advanced: 'top-cpp-containers' },
+      java: { beginner: 'top-java-fundamentals', intermediate: 'top-java-oop', advanced: 'top-java-collections' }
+    };
+    const startingTopic = (startingTopicMap[langKey] || startingTopicMap.python)[level];
 
     return {
       success: true,
       diagnostic_result: {
         language,
         total_score: score,
-        concept_score: Math.round(score * 0.9),
-        problem_solving_score: score,
-        coding_score: Math.min(100, Math.round(score * 1.1)),
+        concept_score: conceptScore,
+        problem_solving_score: psScore,
+        coding_score: codingScore,
         recommended_level: level,
         starting_topic_id: startingTopic,
-        evaluated_at: new Date().toISOString()
+        cognitive_load: cognitiveLoad,
+        suggested_mode: suggestedMode,
+        confidence: 0.88,
+        evaluated_at: new Date().toISOString(),
+        observations: {
+          total_time_seconds: timeSpent,
+          avg_seconds_per_question: Math.round((timeSpent / list.length) * 10) / 10,
+          revisions_count: switchCount,
+          predicted_load: cognitiveLoad,
+          confidence: 0.88
+        }
       },
       question_breakdown: breakdown,
-      message: `Diagnostic test complete! Recommended starting point: ${level.toUpperCase()} track.`
+      message: `Diagnostic test complete! Recommended starting point: ${level.toUpperCase()} track with ${suggestedMode} cognitive mode.`
     };
   },
 
@@ -1679,5 +2018,314 @@ export const mockHandlers = {
       },
       cognitive_trajectory: ['HIGH', 'MEDIUM', 'LOW']
     };
+  },
+
+  // Python Fundamentals Adaptive Flow
+  getPythonFundamentals: async () => {
+    const storedProgress = getStoredArray('cog_python_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    const adaptedLessons = getStoredArray('cog_python_adapted', []);
+    const adaptedMap: Record<string, any> = {};
+    adaptedLessons.forEach((a: any) => {
+      adaptedMap[a.topic_id] = a;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = PYTHON_FUNDAMENTALS_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = PYTHON_FUNDAMENTALS_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[PYTHON_FUNDAMENTALS_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      const hasAdapted = !!adaptedMap[topic.id];
+      if (hasAdapted && status !== 'COMPLETED') {
+        status = 'ADAPTATION_AVAILABLE';
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: hasAdapted
+      };
+    });
+
+    const totalTopics = PYTHON_FUNDAMENTALS_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: "Python Fundamentals",
+      subtitle: "Build a strong foundation in Python through guided lessons, practice, and adaptive learning.",
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 3,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: "Calibrated & Active",
+      topics: topicsOutput
+    };
+  },
+
+  getPythonTopic: async (topicId: string) => {
+    const topic = PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) || PYTHON_FUNDAMENTALS_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updatePythonProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const stored = getStoredArray('cog_python_progress', []);
+    const idx = stored.findIndex((p: any) => p.topic_id === payload.topic_id);
+    let record = idx >= 0 ? stored[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+
+    record = {
+      ...record,
+      status: payload.status || record.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (record.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : record.quiz_score,
+      attempts: (record.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (record.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+
+    if (idx >= 0) {
+      stored[idx] = record;
+    } else {
+      stored.push(record);
+    }
+    setStoredArray('cog_python_progress', stored);
+    return { success: true, progress: record };
+  },
+
+  analyzePythonSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    const errors = (payload.code_errors || 0) + (payload.incorrect_attempts || 0);
+    const hints = payload.hints_requested || 0;
+    const timeSpent = payload.time_spent_seconds || 60;
+    const revisits = payload.revisits_count || 0;
+
+    let needsAdaptation = false;
+    let strategy = 'BALANCED';
+    let cognitiveState = 'MEDIUM';
+    let reason = 'Learning pace is optimal and progression is steady.';
+    let suggestedChanges = [
+      'Continue with standard curriculum pacing'
+    ];
+
+    if (errors >= 2 || hints >= 2 || (payload.quiz_accuracy !== undefined && payload.quiz_accuracy < 70) || revisits >= 2) {
+      needsAdaptation = true;
+      strategy = 'SIMPLIFY';
+      cognitiveState = 'HIGH';
+      reason = 'Recent learning signals suggest that a more guided, step-by-step explanation may help with this topic.';
+      suggestedChanges = [
+        'Simpler explanation with intuitive everyday analogies',
+        'More step-by-step breakdown of core mechanics',
+        'Additional visual representation and diagrams',
+        'Easier first practice questions with progressive scaffolding'
+      ];
+    } else if (errors === 0 && hints === 0 && (payload.quiz_accuracy || 0) >= 90 && timeSpent < 180) {
+      needsAdaptation = true;
+      strategy = 'INCREASE_DIFFICULTY';
+      cognitiveState = 'LOW';
+      reason = 'High mastery and rapid problem solving detected. Advanced deep-dive insights and challenging patterns are ready.';
+      suggestedChanges = [
+        'Dense architectural explanation with edge cases',
+        'Challenging algorithmic variation exercises',
+        'Under-the-hood memory representation insights'
+      ];
+    }
+
+    const signalsSummary: string[] = [];
+    if (payload.incorrect_attempts && payload.incorrect_attempts > 0) {
+      signalsSummary.push(`${payload.incorrect_attempts} incorrect attempts observed on practice checks`);
+    }
+    if (payload.hints_requested && payload.hints_requested > 0) {
+      signalsSummary.push(`${payload.hints_requested} hints requested for guidance`);
+    }
+    if (payload.code_errors && payload.code_errors > 0) {
+      signalsSummary.push(`${payload.code_errors} code syntax/runtime errors caught`);
+    }
+    if (payload.revisits_count && payload.revisits_count > 1) {
+      signalsSummary.push(`Revisited concept sections ${payload.revisits_count} times`);
+    }
+    if (timeSpent > 300) {
+      signalsSummary.push('Deliberate, extended time invested exploring concept sections');
+    }
+    if (signalsSummary.length === 0) {
+      signalsSummary.push('Consistent, stable reading pace and active practice');
+    }
+
+    return {
+      topic_id: payload.topic_id,
+      suggested: needsAdaptation,
+      cognitive_state: cognitiveState,
+      confidence: 0.88,
+      strategy,
+      reason,
+      suggested_adaptation: suggestedChanges,
+      signals_summary: signalsSummary
+    };
+  },
+
+  generateAdaptedLesson: async (payload: {
+    topic_id: string;
+    strategy?: string;
+    signals?: any;
+  }) => {
+    const topic = PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === payload.topic_id) || PYTHON_FUNDAMENTALS_TOPICS[0];
+    const isSimplified = payload.strategy !== 'INCREASE_DIFFICULTY';
+
+    const adaptedLesson = {
+      topic_id: topic.id,
+      topic_title: topic.title,
+      adaptation_badge: isSimplified ? 'Simplified & Step-by-Step' : 'Accelerated Deep Dive',
+      adaptation_strategy: payload.strategy || 'SIMPLIFY',
+      concept_breakdown: [
+        {
+          heading: `Deconstructing ${topic.title}: The Core Intuition`,
+          content: isSimplified
+            ? `Think of ${topic.title.toLowerCase()} like a familiar daily system. Instead of abstract rules, focus on what the computer is doing step by step.`
+            : `Delving into ${topic.title} at an architectural level. In CPython, execution characteristics and memory layouts drive how this operates under the hood.`
+        },
+        {
+          heading: "Everyday Analogy",
+          content: isSimplified
+            ? `Imagine an organized postal sorting office or a labeled recipe card. Before executing any instructions, Python validates names and references so every piece has a clear address.`
+            : `Under the hood, memory pointers, bytecode compilation (PyCodeObject), and reference counts dictate the evaluation semantics.`
+        }
+      ],
+      step_by_step_example: {
+        title: "Calibrated Walkthrough",
+        steps: [
+          "Step 1: Inspect what data is being provided and its structure.",
+          "Step 2: Trace line-by-line what happens when Python executes the statement.",
+          "Step 3: Verify the output matches expectations without side effects."
+        ],
+        code: topic.codeExample,
+        explanation: "Notice how breaking down the execution line-by-line prevents cognitive overload and clarifies state transitions."
+      },
+      visual_representation: {
+        type: "flowchart",
+        description: "Visual flow: [Input State] -> [Step-by-step Transformation] -> [Verified Output]",
+        diagram_text: `+--------------------+       +-------------------------+       +----------------------+\n|   Input Expression  |  -->  |  Evaluation / Execution  |  -->  |    Clean Result      |\n+--------------------+       +-------------------------+       +----------------------+`
+      },
+      practice_challenge: {
+        instruction: isSimplified
+          ? `Let's solve this in small bite-sized steps! Modify the code below to print the expected output:`
+          : `Advanced Challenge: Complete the implementation considering optimal edge case handling:`,
+        starter_code: topic.practice.starterCode,
+        solution: topic.practice.solution,
+        hint: topic.practice.hint
+      },
+      knowledge_check: topic.quiz.slice(0, 2).map((q, idx) => ({
+        id: `adapted-q-${idx + 1}`,
+        question: q.question,
+        options: q.options,
+        correct_index: q.correctIndex,
+        explanation: q.explanation
+      })),
+      key_takeaways: [
+        `Mastery of ${topic.title} builds the groundwork for subsequent modules.`,
+        "Focus on tracing code step-by-step when encountering complex logic.",
+        "Practice incremental testing: write 2 lines, run them, and verify output."
+      ]
+    };
+
+    const stored = getStoredArray('cog_python_adapted', []);
+    const existingIdx = stored.findIndex((a: any) => a.topic_id === topic.id);
+    if (existingIdx >= 0) {
+      stored[existingIdx] = adaptedLesson;
+    } else {
+      stored.push(adaptedLesson);
+    }
+    setStoredArray('cog_python_adapted', stored);
+
+    return {
+      success: true,
+      cached: false,
+      topic_id: topic.id,
+      topic_title: topic.title,
+      lesson_data: adaptedLesson
+    };
+  },
+
+  getAdaptedLesson: async (topicId: string) => {
+    const stored = getStoredArray('cog_python_adapted', []);
+    const found = stored.find((a: any) => a.topic_id === topicId);
+    if (found) {
+      return {
+        success: true,
+        topic_id: topicId,
+        topic_title: found.topic_title || topicId,
+        lesson_data: found
+      };
+    }
+    // If not found in storage, generate one on the fly
+    return await mockHandlers.generateAdaptedLesson({ topic_id: topicId });
   }
 };

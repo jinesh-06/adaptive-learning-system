@@ -134,10 +134,11 @@ export const api = {
   },
 
   // Code Sandbox
-  getTopicCodingChallenge: async (topicId: string) => {
-    const data = await fetchJson(`${API_BASE}/topics/${topicId}/coding`);
+  getTopicCodingChallenge: async (topicId: string, language?: string) => {
+    const langParam = language ? `?language=${encodeURIComponent(language)}` : '';
+    const data = await fetchJson(`${API_BASE}/topics/${topicId}/coding${langParam}`);
     if (data) return data;
-    return mockHandlers.getTopicCodingChallenge(topicId);
+    return mockHandlers.getTopicCodingChallenge(topicId, language);
   },
 
   runCode: async (code: string, language: string, customInput?: string) => {
@@ -480,16 +481,21 @@ export const api = {
     return mockHandlers.getDiagnosticQuestions(language);
   },
 
-  submitDiagnostic: async (language: string, answers: Record<string, number>, timeSpent: number = 60) => {
+  submitDiagnostic: async (
+    language: string,
+    answers: Record<string, number>,
+    timeSpent: number = 60,
+    observations?: Record<string, any>
+  ) => {
     try {
       const res = await fetch(`${API_BASE}/diagnostic/${encodeURIComponent(language)}/submit`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ answers, time_spent: timeSpent })
+        body: JSON.stringify({ answers, time_spent: timeSpent, observations })
       });
       if (res.ok) return await res.json();
     } catch {}
-    return mockHandlers.submitDiagnosticTest(language, answers, timeSpent);
+    return mockHandlers.submitDiagnosticTest(language, answers, timeSpent, observations);
   },
 
   submitDiagnosticTest: async (language: string, answers: Record<string, number>, timeSpent: number) => {
@@ -635,5 +641,94 @@ export const api = {
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getLearningHistory();
+  },
+
+  // Python Fundamentals Adaptive Flow
+  getPythonFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonFundamentals();
+  },
+
+  getPythonTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonTopic(topicId);
+  },
+
+  updatePythonProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzePythonSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  generateAdaptedLesson: async (payload: {
+    topic_id: string;
+    strategy?: string;
+    signals?: any;
+    force_refresh?: boolean;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adaptation/generate`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.generateAdaptedLesson(payload);
+  },
+
+  getAdaptedLesson: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adapted/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getAdaptedLesson(topicId);
   }
 };
+

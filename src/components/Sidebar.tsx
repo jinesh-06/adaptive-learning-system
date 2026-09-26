@@ -20,6 +20,7 @@ import {
   FolderGit2,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Sun,
   Moon,
   Monitor,
@@ -44,6 +45,8 @@ interface SidebarProps {
   openDemoModal?: () => void;
   isMobileOpen?: boolean;
   setIsMobileOpen?: (open: boolean) => void;
+  isDesktopOpen?: boolean;
+  setIsDesktopOpen?: (open: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -57,16 +60,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   openOnboardingModal,
   openDemoModal,
   isMobileOpen = false,
-  setIsMobileOpen
+  setIsMobileOpen,
+  isDesktopOpen = true,
+  setIsDesktopOpen
 }) => {
   const { user, preferences, updateLanguage, logout } = useAuth();
   const { currentLoad, confidence } = useCognitive();
   const { theme, setTheme, reducedMotion, toggleReducedMotion } = useTheme();
 
+  // Escape key closes mobile sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileOpen && setIsMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, setIsMobileOpen]);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [streakDays, setStreakDays] = useState<number>(3);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
-  const [activeTopicTitle, setActiveTopicTitle] = useState<string>('Loops and Iteration');
 
   useEffect(() => {
     api.getUserSnapshot().then(res => {
@@ -75,16 +90,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
     }).catch(() => {});
   }, [user]);
-
-  useEffect(() => {
-    if (selectedTopicId) {
-      api.getTopicDetail(selectedTopicId).then(data => {
-        if (data && data.title) {
-          setActiveTopicTitle(data.title);
-        }
-      }).catch(() => {});
-    }
-  }, [selectedTopicId]);
 
   const languages = [
     { id: 'python', label: 'Python', icon: '🐍', tag: 'Data & AI' },
@@ -100,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'LOW':
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 aura-low';
       case 'HIGH':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30 aura-high';
+        return 'bg-rose-500/10 text-rose-400 border-rose-500/30 aura-high animate-pulse';
       default:
         return 'bg-amber-500/10 text-amber-400 border-amber-500/30 aura-medium';
     }
@@ -109,6 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'landing', label: 'Overview / Home', icon: Home },
     { id: 'catalog', label: 'Curriculum & Roadmaps', icon: BookOpen },
+    { id: 'python-dashboard', label: 'Python Fundamentals', icon: GraduationCap },
     { id: 'diagnostic', label: 'Diagnostic Assessment', icon: Zap },
     { id: 'dashboard', label: 'Learner Dashboard', icon: BarChart3 },
     { id: 'bookmarks', label: 'Saved Bookmarks', icon: Bookmark },
@@ -130,14 +136,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
           className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden animate-fade-in"
+          aria-hidden="true"
         />
       )}
 
+      {/* Floating Collapse / Expand Toggle Button for Desktop */}
+      <button
+        onClick={() => setIsDesktopOpen && setIsDesktopOpen(prev => !prev)}
+        aria-label={isDesktopOpen ? "Collapse curriculum sidebar" : "Expand curriculum sidebar"}
+        aria-expanded={isDesktopOpen}
+        title={isDesktopOpen ? "Collapse curriculum sidebar (Ctrl+B)" : "Expand curriculum sidebar (Ctrl+B)"}
+        className={`hidden lg:flex fixed top-20 z-50 items-center justify-center w-6 h-10 rounded-r-xl border border-l-0 border-slate-800 bg-slate-950/95 hover:bg-slate-900 text-slate-400 hover:text-cyan-400 shadow-xl transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none cursor-pointer ${
+          isDesktopOpen ? 'left-[260px]' : 'left-0'
+        }`}
+      >
+        {isDesktopOpen ? (
+          <ChevronLeft className="w-3.5 h-3.5 transition-transform hover:-translate-x-0.5" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-400 transition-transform hover:translate-x-0.5" />
+        )}
+      </button>
+
       {/* Vertical Sidebar */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-64 bg-slate-950 border-r border-slate-800/90 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        aria-label="Curriculum and navigation sidebar"
+        className={`fixed top-0 left-0 bottom-0 z-50 w-[260px] bg-slate-950 border-r border-slate-800/90 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${isDesktopOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'}`}
       >
         {/* TOP SECTION: Brand & Language & Search */}
         <div className="p-4 border-b border-slate-800/80 space-y-3 shrink-0">
@@ -238,78 +263,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* MIDDLE SECTION: Navigation Menu Items */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-          {/* Group 1: 3-Stage Active Learning Flow */}
-          <div className="space-y-1.5">
-            <div className="px-2.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-              <span>Active Lesson Journey</span>
-              <span className="text-cyan-400">1-2-3 Flow</span>
-            </div>
-
-            {/* Current Lesson Badge */}
-            <div className="px-2.5 py-1 text-xs text-slate-300 font-medium truncate" title={activeTopicTitle}>
-              📖 {activeTopicTitle}
-            </div>
-
-            {/* Step 1: Learn Lesson */}
-            <button
-              onClick={() => handleNavClick('lesson')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'lesson'
-                  ? 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 shadow-sm shadow-cyan-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'lesson' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  1
-                </div>
-                <span>Learn Lesson</span>
-              </div>
-              <span className="text-[10px] font-mono text-cyan-400/80">Theory</span>
-            </button>
-
-            {/* Step 2: Practice Quiz */}
-            <button
-              onClick={() => handleNavClick('quiz')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'quiz'
-                  ? 'bg-purple-500/15 border border-purple-500/30 text-purple-300 shadow-sm shadow-purple-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'quiz' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  2
-                </div>
-                <span>Practice Quiz</span>
-              </div>
-              <span className="text-[10px] font-mono text-purple-400/80">Test</span>
-            </button>
-
-            {/* Step 3: Coding Challenge */}
-            <button
-              onClick={() => handleNavClick('coding')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'coding'
-                  ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 shadow-sm shadow-emerald-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'coding' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  3
-                </div>
-                <span>Coding Challenge</span>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-400/80">Apply</span>
-            </button>
-          </div>
 
           {/* Group 2: Platform Navigation */}
           <div className="space-y-1">
@@ -324,9 +277,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-slate-800/90 border border-slate-700 text-cyan-400 shadow-sm'
+                      ? 'bg-slate-800/90 border border-slate-700/80 text-cyan-400 shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-cyan-400'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
                   }`}
                 >

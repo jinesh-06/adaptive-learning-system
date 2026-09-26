@@ -11,7 +11,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_PROJECT_ROOT / ".env", override=False)
 load_dotenv()  # Fallback to current working directory .env
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
 
 
 def get_model_name() -> str:
