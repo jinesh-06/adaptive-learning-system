@@ -25,15 +25,15 @@ export interface TestCase {
 
 export interface CodingChallengeData {
   id: string;
+  topic_id?: string;
   title: string;
   difficulty: string;
   problem_statement: string;
   input_format?: string;
   output_format?: string;
   constraints?: string;
-  starter_code: {
-    python: string;
-  };
+  language?: string;
+  starter_code: Record<string, string>;
   test_cases: TestCase[];
 }
 
@@ -64,6 +64,13 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
   const [activeTab, setActiveTab] = useState<'tests' | 'custom'>('tests');
   const [copied, setCopied] = useState<boolean>(false);
 
+  const activeLang = challenge?.language || (topicId.includes('-c-') ? 'c' : topicId.includes('-cpp-') ? 'cpp' : topicId.includes('-java-') ? 'java' : 'python');
+
+  const extractStarter = (data: any, lang: string): string => {
+    if (!data?.starter_code) return '';
+    return data.starter_code[lang] || data.starter_code.python || (typeof data.starter_code === 'object' ? Object.values(data.starter_code)[0] : '') || '';
+  };
+
   useEffect(() => {
     let isMounted = true;
     if (!initialChallenge) {
@@ -72,7 +79,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         .then(data => {
           if (isMounted && data) {
             setChallenge(data);
-            setCode(data.starter_code?.python || '# Write your solution\n');
+            setCode(extractStarter(data, activeLang));
           } else if (isMounted) {
             // High quality fallback challenge
             const fallback: CodingChallengeData = {
@@ -83,6 +90,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
               input_format: 'A single non-negative integer N on standard input.',
               output_format: 'Three space-separated strings: binary, octal, and hexadecimal values.',
               constraints: '0 <= N <= 10^9',
+              language: 'python',
               starter_code: {
                 python: 'import sys\n\ndef solve():\n    raw = sys.stdin.read().strip()\n    if not raw:\n        return\n    n = int(raw)\n    # Your logic here:\n    print(f"{bin(n)} {oct(n)} {hex(n)}")\n\nif __name__ == "__main__":\n    solve()\n'
               },
@@ -93,7 +101,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
               ]
             };
             setChallenge(fallback);
-            setCode(fallback.starter_code.python);
+            setCode(extractStarter(fallback, 'python'));
           }
           setLoading(false);
         })
@@ -101,7 +109,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
           if (isMounted) setLoading(false);
         });
     } else {
-      setCode(initialChallenge.starter_code?.python || '');
+      setCode(extractStarter(initialChallenge, activeLang));
     }
 
     return () => {
@@ -126,7 +134,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
 
     for (const tc of challenge.test_cases) {
       try {
-        const res = await executeCodeInBrowser(code, 'python', tc.input);
+        const res = await executeCodeInBrowser(code, activeLang, tc.input);
         const cleanActual = (res.stdout || '').trim();
         const cleanExpected = tc.expected_output.trim();
         const passed = cleanActual === cleanExpected;
@@ -156,7 +164,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
     if (everyPassed) {
       try {
         confetti({
-          particleCount: 80,
+          particleCount: 60,
           spread: 70,
           origin: { y: 0.8 }
         });
@@ -173,7 +181,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
     setIsRunning(true);
     setCustomOutput(null);
     try {
-      const res = await executeCodeInBrowser(code, 'python', customInput);
+      const res = await executeCodeInBrowser(code, activeLang, customInput);
       setIsRunning(false);
       setCustomOutput(res.stdout || res.stderr || '(No output produced)');
     } catch (err: any) {
@@ -184,7 +192,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
 
   const handleResetCode = () => {
     if (challenge) {
-      setCode(challenge.starter_code?.python || '');
+      setCode(extractStarter(challenge, activeLang));
       setTestResults(null);
       setAllPassed(false);
     }

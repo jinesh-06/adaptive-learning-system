@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, CheckCircle2, RotateCcw, Lightbulb, Sparkles, AlertCircle, HelpCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { executeCodeInBrowser } from '../../services/pythonRunner';
@@ -11,6 +11,7 @@ export interface TryYourselfProps {
   hint?: string;
   solution?: string;
   topicId?: string;
+  language?: string;
 }
 
 export const TryYourselfSandbox: React.FC<TryYourselfProps> = ({
@@ -19,7 +20,8 @@ export const TryYourselfSandbox: React.FC<TryYourselfProps> = ({
   expectedOutputMatcher = '20',
   hint = 'Remember syntax: variable_name = value, then call print(variable_name).',
   solution = 'age = 20\nprint(age)',
-  topicId = 'top-py-fundamentals'
+  topicId = 'top-py-fundamentals',
+  language = 'python'
 }) => {
   const [code, setCode] = useState<string>(initialCode);
   const [output, setOutput] = useState<string | null>(null);
@@ -31,6 +33,14 @@ export const TryYourselfSandbox: React.FC<TryYourselfProps> = ({
   const [showHint, setShowHint] = useState<boolean>(false);
   const [showSolution, setShowSolution] = useState<boolean>(false);
   const [attempts, setAttempts] = useState<number>(0);
+
+  useEffect(() => {
+    setCode(initialCode);
+    setOutput(null);
+    setValidationResult(null);
+    setShowHint(false);
+    setShowSolution(false);
+  }, [initialCode, topicId]);
 
   const handleRunAndCheck = async () => {
     setIsRunning(true);
@@ -44,7 +54,7 @@ export const TryYourselfSandbox: React.FC<TryYourselfProps> = ({
     });
 
     try {
-      const res = await executeCodeInBrowser(code, 'python');
+      const res = await executeCodeInBrowser(code, language);
       setIsRunning(false);
       setOutput(res.stdout || res.stderr || '(No output produced)');
 

@@ -8,6 +8,9 @@
 import platformData from '../data/platformData.json';
 import { executeCodeInBrowser } from './pythonRunner';
 import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
+import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
+import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
+import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
   window.location.hostname.includes('github.io') ||
@@ -1092,6 +1095,312 @@ PYTHON_FUNDAMENTALS_TOPICS.forEach((pyTopic) => {
       {
         input: '',
         expected_output: pyTopic.practice.expectedOutputMatcher
+      }
+    ]
+  };
+});
+
+// Populate all C Fundamentals curriculum topics into mock details, quizzes, and coding challenges
+C_FUNDAMENTALS_TOPICS.forEach((cTopic) => {
+  mockTopicDetails[cTopic.id] = {
+    id: cTopic.id,
+    course_id: 'c-beg',
+    language: 'c',
+    level: cTopic.difficulty.toLowerCase(),
+    title: cTopic.title,
+    prerequisites: cTopic.prerequisiteId ? [cTopic.prerequisiteId] : [],
+    content_standard: cTopic.conceptExplanation,
+    syntax: cTopic.syntax,
+    learningObjectives: cTopic.learningObjectives,
+    conceptExplanation: cTopic.conceptExplanation,
+    simpleExample: cTopic.simpleExample,
+    codeExample: cTopic.codeExample,
+    expectedOutput: cTopic.expectedOutput,
+    stepByStep: cTopic.stepByStep,
+    commonMistakes: cTopic.commonMistakes,
+    realWorldExample: cTopic.realWorldExample,
+    practice: cTopic.practice,
+    quiz: cTopic.quiz,
+    summary: cTopic.summary,
+    common_mistakes: cTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${cTopic.id}-sec-1`,
+        title: `1. Concept: ${cTopic.title}`,
+        order_index: 1,
+        content: cTopic.conceptExplanation,
+        code_snippet: cTopic.simpleExample.code,
+        pitfalls: cTopic.simpleExample.explanation,
+        mini_check: cTopic.quiz[0] ? {
+          question: cTopic.quiz[0].question,
+          options: cTopic.quiz[0].options,
+          correct_index: cTopic.quiz[0].correctIndex,
+          explanation: cTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${cTopic.id}-sec-2`,
+        title: `2. Syntax & Memory Architecture`,
+        order_index: 2,
+        content: cTopic.stepByStep.join('\n\n'),
+        code_snippet: cTopic.codeExample,
+        pitfalls: cTopic.commonMistakes[0]?.explanation || 'Review pointer arithmetic and memory boundaries carefully.',
+        mini_check: cTopic.quiz[1] ? {
+          question: cTopic.quiz[1].question,
+          options: cTopic.quiz[1].options,
+          correct_index: cTopic.quiz[1].correctIndex,
+          explanation: cTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${cTopic.id}-sec-3`,
+        title: `3. Real-World Systems Application`,
+        order_index: 3,
+        content: `${cTopic.realWorldExample.scenario}\n\n${cTopic.realWorldExample.explanation}`,
+        code_snippet: cTopic.realWorldExample.code,
+        pitfalls: 'Ensure standard boundary checks and avoid undefined behavior.',
+        mini_check: cTopic.quiz[2] ? {
+          question: cTopic.quiz[2].question,
+          options: cTopic.quiz[2].options,
+          correct_index: cTopic.quiz[2].correctIndex,
+          explanation: cTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[cTopic.id] = cTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[cTopic.id] = {
+    id: `code-${cTopic.id}`,
+    topic_id: cTopic.id,
+    language: 'c',
+    title: `${cTopic.title} Practice Challenge`,
+    difficulty: cTopic.difficulty.toLowerCase(),
+    problem_statement: cTopic.practice.prompt,
+    input_format: 'Standard C console input.',
+    output_format: 'Clean console output.',
+    constraints: 'Standard ANSI C99/C11 execution limits.',
+    starter_code: {
+      c: cTopic.practice.starterCode,
+      python: cTopic.practice.starterCode
+    },
+    test_cases: [
+      {
+        input: '',
+        expected_output: cTopic.practice.expectedOutputMatcher
+      }
+    ]
+  };
+});
+
+// Populate all C++ Fundamentals curriculum topics into mock details, quizzes, and coding challenges
+CPP_FUNDAMENTALS_TOPICS.forEach((cppTopic) => {
+  mockTopicDetails[cppTopic.id] = {
+    id: cppTopic.id,
+    course_id: 'cpp-beg',
+    language: 'cpp',
+    level: cppTopic.difficulty.toLowerCase(),
+    title: cppTopic.title,
+    prerequisites: cppTopic.prerequisiteId ? [cppTopic.prerequisiteId] : [],
+    content_standard: cppTopic.conceptExplanation,
+    syntax: cppTopic.syntax,
+    learningObjectives: cppTopic.learningObjectives,
+    conceptExplanation: cppTopic.conceptExplanation,
+    simpleExample: cppTopic.simpleExample,
+    codeExample: cppTopic.codeExample,
+    expectedOutput: cppTopic.expectedOutput,
+    stepByStep: cppTopic.stepByStep,
+    commonMistakes: cppTopic.commonMistakes,
+    realWorldExample: cppTopic.realWorldExample,
+    practice: cppTopic.practice,
+    quiz: cppTopic.quiz,
+    summary: cppTopic.summary,
+    common_mistakes: cppTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${cppTopic.id}-sec-1`,
+        title: `1. Concept: ${cppTopic.title}`,
+        order_index: 1,
+        content: cppTopic.conceptExplanation,
+        code_snippet: cppTopic.simpleExample.code,
+        pitfalls: cppTopic.simpleExample.explanation,
+        mini_check: cppTopic.quiz[0] ? {
+          question: cppTopic.quiz[0].question,
+          options: cppTopic.quiz[0].options,
+          correct_index: cppTopic.quiz[0].correctIndex,
+          explanation: cppTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${cppTopic.id}-sec-2`,
+        title: `2. Modern C++ Mechanics & RAII`,
+        order_index: 2,
+        content: cppTopic.stepByStep.join('\n\n'),
+        code_snippet: cppTopic.codeExample,
+        pitfalls: cppTopic.commonMistakes[0]?.explanation || 'Prevent dangling references and unintended copies.',
+        mini_check: cppTopic.quiz[1] ? {
+          question: cppTopic.quiz[1].question,
+          options: cppTopic.quiz[1].options,
+          correct_index: cppTopic.quiz[1].correctIndex,
+          explanation: cppTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${cppTopic.id}-sec-3`,
+        title: `3. High-Performance Application`,
+        order_index: 3,
+        content: `${cppTopic.realWorldExample.scenario}\n\n${cppTopic.realWorldExample.explanation}`,
+        code_snippet: cppTopic.realWorldExample.code,
+        pitfalls: 'Watch for lifetime boundaries with temporary objects.',
+        mini_check: cppTopic.quiz[2] ? {
+          question: cppTopic.quiz[2].question,
+          options: cppTopic.quiz[2].options,
+          correct_index: cppTopic.quiz[2].correctIndex,
+          explanation: cppTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[cppTopic.id] = cppTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[cppTopic.id] = {
+    id: `code-${cppTopic.id}`,
+    topic_id: cppTopic.id,
+    language: 'cpp',
+    title: `${cppTopic.title} Practice Challenge`,
+    difficulty: cppTopic.difficulty.toLowerCase(),
+    problem_statement: cppTopic.practice.prompt,
+    input_format: 'Standard C++ stream input.',
+    output_format: 'Clean stream output.',
+    constraints: 'Standard C++17/20 runtime limits.',
+    starter_code: {
+      cpp: cppTopic.practice.starterCode,
+      python: cppTopic.practice.starterCode
+    },
+    test_cases: [
+      {
+        input: '',
+        expected_output: cppTopic.practice.expectedOutputMatcher
+      }
+    ]
+  };
+});
+
+// Populate all Java Fundamentals curriculum topics into mock details, quizzes, and coding challenges
+JAVA_FUNDAMENTALS_TOPICS.forEach((javaTopic) => {
+  mockTopicDetails[javaTopic.id] = {
+    id: javaTopic.id,
+    course_id: 'java-beg',
+    language: 'java',
+    level: javaTopic.difficulty.toLowerCase(),
+    title: javaTopic.title,
+    prerequisites: javaTopic.prerequisiteId ? [javaTopic.prerequisiteId] : [],
+    content_standard: javaTopic.conceptExplanation,
+    syntax: javaTopic.syntax,
+    learningObjectives: javaTopic.learningObjectives,
+    conceptExplanation: javaTopic.conceptExplanation,
+    simpleExample: javaTopic.simpleExample,
+    codeExample: javaTopic.codeExample,
+    expectedOutput: javaTopic.expectedOutput,
+    stepByStep: javaTopic.stepByStep,
+    commonMistakes: javaTopic.commonMistakes,
+    realWorldExample: javaTopic.realWorldExample,
+    practice: javaTopic.practice,
+    quiz: javaTopic.quiz,
+    summary: javaTopic.summary,
+    common_mistakes: javaTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${javaTopic.id}-sec-1`,
+        title: `1. Concept: ${javaTopic.title}`,
+        order_index: 1,
+        content: javaTopic.conceptExplanation,
+        code_snippet: javaTopic.simpleExample.code,
+        pitfalls: javaTopic.simpleExample.explanation,
+        mini_check: javaTopic.quiz[0] ? {
+          question: javaTopic.quiz[0].question,
+          options: javaTopic.quiz[0].options,
+          correct_index: javaTopic.quiz[0].correctIndex,
+          explanation: javaTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${javaTopic.id}-sec-2`,
+        title: `2. JVM Architecture & Class Execution`,
+        order_index: 2,
+        content: javaTopic.stepByStep.join('\n\n'),
+        code_snippet: javaTopic.codeExample,
+        pitfalls: javaTopic.commonMistakes[0]?.explanation || 'Prevent NullPointerExceptions and strict type mismatches.',
+        mini_check: javaTopic.quiz[1] ? {
+          question: javaTopic.quiz[1].question,
+          options: javaTopic.quiz[1].options,
+          correct_index: javaTopic.quiz[1].correctIndex,
+          explanation: javaTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${javaTopic.id}-sec-3`,
+        title: `3. Enterprise Java Application`,
+        order_index: 3,
+        content: `${javaTopic.realWorldExample.scenario}\n\n${javaTopic.realWorldExample.explanation}`,
+        code_snippet: javaTopic.realWorldExample.code,
+        pitfalls: 'Ensure strict exception handling and resource hygiene.',
+        mini_check: javaTopic.quiz[2] ? {
+          question: javaTopic.quiz[2].question,
+          options: javaTopic.quiz[2].options,
+          correct_index: javaTopic.quiz[2].correctIndex,
+          explanation: javaTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[javaTopic.id] = javaTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[javaTopic.id] = {
+    id: `code-${javaTopic.id}`,
+    topic_id: javaTopic.id,
+    language: 'java',
+    title: `${javaTopic.title} Practice Challenge`,
+    difficulty: javaTopic.difficulty.toLowerCase(),
+    problem_statement: javaTopic.practice.prompt,
+    input_format: 'Standard Java System.in / Scanner input.',
+    output_format: 'Clean console output.',
+    constraints: 'Standard JVM execution limits.',
+    starter_code: {
+      java: javaTopic.practice.starterCode,
+      python: javaTopic.practice.starterCode
+    },
+    test_cases: [
+      {
+        input: '',
+        expected_output: javaTopic.practice.expectedOutputMatcher
       }
     ]
   };

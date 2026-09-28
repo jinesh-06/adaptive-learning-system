@@ -48,22 +48,24 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic,
               try {
                 const struct = await api.getCourseStructure(c.id);
                 const topics = (struct.modules || []).flatMap((m: any) => m.topics || []);
+                const defaultTopic = c.language === 'c' ? 'top-c-fundamentals' : c.language === 'cpp' ? 'top-cpp-fundamentals' : c.language === 'java' ? 'top-java-fundamentals' : 'top-py-fundamentals';
                 return {
                   ...c,
-                  topics_count: topics.length || 3,
+                  topics_count: topics.length || (c.language === 'c' ? 5 : 3),
                   duration_hours: c.level === 'beginner' ? 6 : c.level === 'intermediate' ? 10 : 14,
                   difficulty: c.level === 'beginner' ? 'Beginner' : c.level === 'intermediate' ? 'Intermediate' : 'Advanced',
                   progress: c.level === 'beginner' ? 65 : 20,
-                  first_topic_id: topics[0]?.id || 'top-py-loops'
+                  first_topic_id: topics[0]?.id || defaultTopic
                 };
               } catch {
+                const defaultTopic = c.language === 'c' ? 'top-c-fundamentals' : c.language === 'cpp' ? 'top-cpp-fundamentals' : c.language === 'java' ? 'top-java-fundamentals' : 'top-py-fundamentals';
                 return {
                   ...c,
-                  topics_count: 4,
+                  topics_count: c.language === 'c' ? 5 : 3,
                   duration_hours: 8,
                   difficulty: 'Beginner',
                   progress: 30,
-                  first_topic_id: 'top-py-loops'
+                  first_topic_id: defaultTopic
                 };
               }
             })
@@ -259,15 +261,24 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic,
                   <button
                     onClick={() => {
                       const isPyFund =
-                        course.id === 'py-beg' ||
-                        course.id === 'course-py-fund' ||
-                        course.title.toLowerCase().includes('fundamentals') ||
-                        (course.language === 'python' && course.level === 'beginner');
+                        course.language === 'python' &&
+                        (course.id === 'py-beg' ||
+                          course.id === 'course-py-fund' ||
+                          course.title.toLowerCase().includes('fundamentals') ||
+                          course.level === 'beginner');
 
                       if (isPyFund && onOpenPythonDashboard) {
                         onOpenPythonDashboard();
                       } else {
-                        onSelectTopic(course.first_topic_id || 'top-py-loops');
+                        const defaultTopic =
+                          course.language === 'c'
+                            ? 'top-c-fundamentals'
+                            : course.language === 'cpp'
+                            ? 'top-cpp-fundamentals'
+                            : course.language === 'java'
+                            ? 'top-java-fundamentals'
+                            : 'top-py-fundamentals';
+                        onSelectTopic(course.first_topic_id || defaultTopic);
                       }
                     }}
                     className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 group/btn"

@@ -4,17 +4,107 @@ import { Eye, Layers, ArrowRight, RefreshCw, Box, Check, X, ShieldAlert } from '
 export interface VisualConceptExplainerProps {
   topicId?: string;
   topicTitle?: string;
+  language?: string;
 }
 
 export const VisualConceptExplainer: React.FC<VisualConceptExplainerProps> = ({
   topicId = 'top-py-fundamentals',
-  topicTitle = 'Datatypes & Immutability'
+  topicTitle = 'Datatypes & Immutability',
+  language = 'python'
 }) => {
   // Interactive state for the visual simulation
   const [step, setStep] = useState<number>(0);
 
-  // Simulation steps for Python Object References and Immutability
-  const steps = [
+  const lang = (language || (topicId.includes('-c-') ? 'c' : topicId.includes('-cpp-') ? 'cpp' : topicId.includes('-java-') ? 'java' : 'python')).toLowerCase();
+
+  // Multi-language simulation steps for memory models
+  const steps = lang === 'c' ? [
+    {
+      title: 'Step 1: Direct Stack Allocation (int a = 100;)',
+      description: 'C allocates 4 contiguous bytes directly on the CPU execution stack at address 0x7FFE04. Variable "a" directly represents this hardware slot.',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '100' },
+      variableB: null,
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int [4 bytes]', val: '100', refCount: 1, isTargetA: true, isTargetB: false }
+      ]
+    },
+    {
+      title: 'Step 2: Pointer Initialization (int *ptr = &a;)',
+      description: 'Pointer variable "ptr" stores the explicit physical memory address 0x7FFE04. In C, address-of (&) exposes direct memory topology.',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '100' },
+      variableB: { name: 'ptr', targetAddr: '0x7FFE04', val: '0x7FFE04' },
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int (Stack)', val: '100', refCount: 1, isTargetA: true, isTargetB: true }
+      ]
+    },
+    {
+      title: 'Step 3: Dereferencing & In-Place Mutation (*ptr = 200;)',
+      description: 'Dereferencing (*ptr) writes value 200 directly into address 0x7FFE04 without reallocation. Memory in C is mutable and direct.',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '200' },
+      variableB: { name: 'ptr', targetAddr: '0x7FFE04', val: '0x7FFE04' },
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int (Mutated)', val: '200', refCount: 1, isTargetA: true, isTargetB: true }
+      ]
+    }
+  ] : lang === 'cpp' ? [
+    {
+      title: 'Step 1: Value Allocation (int a = 100;)',
+      description: 'C++ allocates variable "a" on the stack frame. No heap allocations or runtime garbage collection headers are incurred (Zero-Overhead Principle).',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '100' },
+      variableB: null,
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int', val: '100', refCount: 1, isTargetA: true, isTargetB: false }
+      ]
+    },
+    {
+      title: 'Step 2: Reference Binding (int &ref = a;)',
+      description: 'An lvalue reference "ref" is an immutable alias bound permanently to "a". It shares the identical memory address (0x7FFE04) with zero indirection cost.',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '100' },
+      variableB: { name: 'ref', targetAddr: '0x7FFE04', val: '100' },
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int (Shared Slot)', val: '100', refCount: 1, isTargetA: true, isTargetB: true }
+      ]
+    },
+    {
+      title: 'Step 3: Direct Mutation via Reference (ref = 300;)',
+      description: 'Assigning to "ref" writes 300 directly to the underlying variable "a". Evaluating "a" now yields 300 with optimal machine code generation.',
+      variableA: { name: 'a', targetAddr: '0x7FFE04', val: '300' },
+      variableB: { name: 'ref', targetAddr: '0x7FFE04', val: '300' },
+      heapObjects: [
+        { addr: '0x7FFE04', type: 'int (Updated)', val: '300', refCount: 1, isTargetA: true, isTargetB: true }
+      ]
+    }
+  ] : lang === 'java' ? [
+    {
+      title: 'Step 1: Primitive on JVM Stack (int num = 100;)',
+      description: 'Java stores the 32-bit primitive integer directly in the thread stack frame operand area. No object header overhead exists.',
+      variableA: { name: 'num', targetAddr: 'Stack:Slot-1', val: '100' },
+      variableB: null,
+      heapObjects: [
+        { addr: 'Stack:Slot-1', type: 'int (primitive)', val: '100', refCount: 1, isTargetA: true, isTargetB: false }
+      ]
+    },
+    {
+      title: 'Step 2: Reference Type on JVM Heap (Integer obj = 100;)',
+      description: 'Autoboxing instantiates a java.lang.Integer object on the JVM Heap. Variable "obj" holds an 8-byte reference pointer.',
+      variableA: { name: 'num', targetAddr: 'Stack:Slot-1', val: '100' },
+      variableB: { name: 'obj', targetAddr: '0xJvmHeap-1', val: '100' },
+      heapObjects: [
+        { addr: 'Stack:Slot-1', type: 'primitive int', val: '100', refCount: 1, isTargetA: true, isTargetB: false },
+        { addr: '0xJvmHeap-1', type: 'Integer (Heap)', val: '100', refCount: 1, isTargetA: false, isTargetB: true }
+      ]
+    },
+    {
+      title: 'Step 3: Primitive vs Wrapper Reassignment',
+      description: 'Primitives mutate directly in the stack. Wrapper objects (Integer, String) are immutable, causing the JVM to point to new heap addresses on change.',
+      variableA: { name: 'num', targetAddr: 'Stack:Slot-1', val: '200' },
+      variableB: { name: 'obj', targetAddr: '0xJvmHeap-2', val: '200' },
+      heapObjects: [
+        { addr: 'Stack:Slot-1', type: 'primitive int', val: '200', refCount: 1, isTargetA: true, isTargetB: false },
+        { addr: '0xJvmHeap-2', type: 'New Integer', val: '200', refCount: 1, isTargetA: false, isTargetB: true }
+      ]
+    }
+  ] : [
     {
       title: 'Step 1: Creating variable a = 100',
       description: 'Python creates an integer object 100 in heap memory and assigns variable "a" as a reference tag pointing to it.',

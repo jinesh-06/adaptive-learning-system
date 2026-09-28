@@ -5,6 +5,16 @@ import { api } from '../services/api';
 import { telemetry } from '../services/telemetry';
 import { mockTopicDetails, mockCourses } from '../services/mockFallback';
 import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
+import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
+import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
+import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
+
+const ALL_TOPICS: any[] = [
+  ...PYTHON_FUNDAMENTALS_TOPICS,
+  ...C_FUNDAMENTALS_TOPICS,
+  ...CPP_FUNDAMENTALS_TOPICS,
+  ...JAVA_FUNDAMENTALS_TOPICS
+];
 import {
   BookOpen,
   Code,
@@ -108,18 +118,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
     const loadTopic = async () => {
       setLoading(true);
-      const pyTopic = PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId);
+      const curTopic = ALL_TOPICS.find(t => t.id === topicId);
       try {
         const data = await api.getTopicDetail(topicId);
         if (data) {
-          setTopic(pyTopic ? { ...pyTopic, ...data } : data);
+          setTopic(curTopic ? { ...curTopic, ...data } : data);
         } else {
           // Fallback to local mock topic details
-          setTopic(pyTopic ? { ...pyTopic, ...mockTopicDetails[topicId] } : (mockTopicDetails[topicId] || mockTopicDetails['top-py-fundamentals']));
+          const fallback = mockTopicDetails[topicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
+          setTopic(curTopic ? { ...curTopic, ...fallback } : fallback);
         }
       } catch (err) {
         console.warn('Failed to load topic detail via API, using mock:', err);
-        setTopic(pyTopic ? { ...pyTopic, ...mockTopicDetails[topicId] } : (mockTopicDetails[topicId] || mockTopicDetails['top-py-fundamentals']));
+        const fallback = mockTopicDetails[topicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
+        setTopic(curTopic ? { ...curTopic, ...fallback } : fallback);
       } finally {
         setLoading(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -142,6 +154,27 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   // Determine previous and next topics from curriculum sequence
   const curriculumSequence = useMemo(() => {
+    if (topicId.startsWith('top-c-')) {
+      return C_FUNDAMENTALS_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: 'C Fundamentals'
+      }));
+    }
+    if (topicId.startsWith('top-cpp-')) {
+      return CPP_FUNDAMENTALS_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: 'C++ Modern Fundamentals'
+      }));
+    }
+    if (topicId.startsWith('top-java-')) {
+      return JAVA_FUNDAMENTALS_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: 'Java Core Architecture'
+      }));
+    }
     const isPyFund = PYTHON_FUNDAMENTALS_TOPICS.some(t => t.id === topicId);
     if (isPyFund) {
       return PYTHON_FUNDAMENTALS_TOPICS.map(t => ({
@@ -150,7 +183,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
         moduleTitle: 'Python Fundamentals'
       }));
     }
-    const pyCourse = mockCourses.find(c => c.language === (topic?.language || 'python')) || mockCourses[0];
+    const courseLang = topic?.language || (topicId.includes('-c-') ? 'c' : topicId.includes('-cpp-') ? 'cpp' : topicId.includes('-java-') ? 'java' : 'python');
+    const pyCourse = mockCourses.find(c => c.language === courseLang) || mockCourses[0];
     if (!pyCourse || !pyCourse.modules) return [];
     return pyCourse.modules.flatMap((m: any) =>
       m.topics.map((t: any) => ({
@@ -231,17 +265,23 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     );
   }
 
-  const courseTitle = topic.language === 'python' ? 'Python Programming' : `${(topic.language || 'Code').toUpperCase()} Track`;
+  const courseTitle = topic.language === 'python'
+    ? 'Python Programming'
+    : topic.language === 'c'
+    ? 'C Programming Foundations'
+    : topic.language === 'cpp'
+    ? 'C++ Modern Fundamentals'
+    : topic.language === 'java'
+    ? 'Java Core Architecture & Basics'
+    : `${(topic.language || 'Code').toUpperCase()} Track`;
   const moduleName = curriculumSequence[currentIndex]?.moduleTitle || 'Core Fundamentals';
   const progressPercent = Math.min(100, Math.round(((currentIndex + 1) / (curriculumSequence.length || 1)) * 100));
 
   // Key takeaways for summary
-  const summaryItems = [
-    'Variables serve as memory reference labels to Python objects',
-    'Fundamental datatypes (int, float, bool, str, tuple) are strictly immutable',
-    'Small integers and short strings are interned for rapid memory lookup',
-    'The is operator checks memory identity, whereas == tests equality',
-    'Immutable objects cannot be modified in-place; reassignment binds a new object'
+  const summaryItems = topic.summary || [
+    'Master fundamental syntax and language paradigms',
+    'Understand memory layout and runtime execution boundaries',
+    'Write clean, well-tested code that prevents common anti-patterns'
   ];
 
   return (
@@ -468,11 +508,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             </h2>
             <div className="text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed space-y-3">
               <p>
-                In Python, <strong className="text-white light-theme:text-slate-900">everything is an object</strong>. When you write a statement such as <code>x = 10</code>, Python does not allocate a storage slot specifically labelled "x". Instead, it creates an integer object <code>10</code> in heap memory, and binds the name <code>x</code> to reference that object.
+                {topic.shortDescription || topic.desc || topic.conceptExplanation?.split('\n\n')[0] || 'Understand core operational primitives, memory organization, and syntax.'}
               </p>
-              <p>
-                Understanding how Python handles data types and object mutability is one of the most critical foundational milestones for writing bug-free, efficient, and idiomatic Python programs.
-              </p>
+              {topic.conceptExplanation?.split('\n\n')[1] && (
+                <p>{topic.conceptExplanation.split('\n\n')[1]}</p>
+              )}
             </div>
           </section>
 
@@ -512,22 +552,16 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             {/* STANDARD MODE RENDERING */}
             {activeMode === 'STANDARD' && (
               <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
-                <p>
-                  Python provides 14 primary built-in data types grouped into fundamental numbers, sequences, sets, mappings, and singletons.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200">
-                    <strong className="text-cyan-400 light-theme:text-blue-600 block mb-1">Fundamental Types:</strong>
-                    <code>int</code>, <code>float</code>, <code>complex</code>, <code>bool</code>, <code>str</code>. All are strictly immutable.
-                  </div>
-                  <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200">
-                    <strong className="text-purple-400 light-theme:text-purple-600 block mb-1">Collections & Sequences:</strong>
-                    <code>list</code> (mutable), <code>tuple</code> (immutable), <code>dict</code> (mutable key-value), <code>set</code> (mutable unique).
-                  </div>
+                <div className="whitespace-pre-line leading-relaxed space-y-2">
+                  {topic.conceptExplanation || topic.content_standard}
                 </div>
-                <p>
-                  <strong>Immutability Rule:</strong> Once an immutable object is allocated in memory, its content can never be modified. When you perform operations like <code>x = x + 1</code>, Python evaluates the right-hand side, allocates a brand new integer object, and re-points the variable label <code>x</code> to that new address.
-                </p>
+                {topic.simpleExample && (
+                  <div className="mt-3 p-3.5 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200 space-y-2">
+                    <strong className="text-xs text-cyan-400 light-theme:text-blue-600 font-mono uppercase tracking-wider block">Foundational Example:</strong>
+                    <pre className="font-mono text-xs text-emerald-300 light-theme:text-emerald-800 overflow-x-auto whitespace-pre-wrap">{topic.simpleExample.code}</pre>
+                    <p className="text-xs text-slate-400 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -535,32 +569,25 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             {activeMode === 'DETAILED' && (
               <div className="p-6 rounded-2xl bg-slate-900/50 light-theme:bg-white border border-purple-500/30 space-y-5 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
                 <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 light-theme:text-purple-800 font-medium">
-                  <strong>Detailed Technical Breakdown:</strong> Covering CPython 3 object structure, PyObject headers, reference counting, and object interning caches.
+                  <strong>Deep Architecture Breakdown:</strong> Execution pipeline, memory allocation, and runtime mechanics for {topic.title}.
                 </div>
 
                 <div className="space-y-3">
                   <h3 className="text-base font-bold text-white light-theme:text-slate-900">
-                    Why It Works: The CPython Object Architecture
+                    Step-by-Step Architectural Mechanics
                   </h3>
-                  <p>
-                    Under the hood, every Python object is backed by a C structure called <code>PyObject</code>. This contains two vital header fields:
-                  </p>
-                  <ol className="list-decimal pl-5 space-y-1 text-xs sm:text-sm">
-                    <li><code>ob_refcnt</code>: A 64-bit reference counter tracking how many variable references point to this object.</li>
-                    <li><code>ob_type</code>: A pointer to the type description object (defining its supported methods, arithmetic, and properties).</li>
-                  </ol>
-                </div>
-
-                <div className="space-y-3 pt-2 border-t border-slate-800 light-theme:border-slate-200">
-                  <h3 className="text-base font-bold text-white light-theme:text-slate-900">
-                    How It Works: Object Interning & Memory Optimization
-                  </h3>
-                  <p>
-                    Because allocating thousands of small numbers would burden the heap and garbage collector, CPython automatically pre-allocates an internal array of integer objects for values between <strong>-5 and 256</strong>.
-                  </p>
-                  <p>
-                    Any time your code uses an integer in this range (e.g. <code>a = 100; b = 100</code>), Python returns the exact same cached reference. Therefore, <code>a is b</code> evaluates to <code>True</code>! For numbers outside this range (e.g. 1000), separate objects may be created unless interned by compilation folding.
-                  </p>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    {(topic.stepByStep || [
+                      "1. Program parsing and syntax tree construction",
+                      "2. Static type checking and symbol table resolution",
+                      "3. Code generation or bytecode interpretation",
+                      "4. Stack and heap frame allocation during runtime execution"
+                    ]).map((step: string, sIdx: number) => (
+                      <div key={sIdx} className="p-2.5 rounded-lg bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800/80 light-theme:border-slate-200">
+                        {step}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -569,19 +596,21 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             {activeMode === 'SIMPLIFIED' && (
               <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-cyan-500/30 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
                 <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 light-theme:text-blue-800 font-medium">
-                  <strong>Everyday Analogy:</strong> Think of variables as sticky name tags on gift boxes.
+                  <strong>Everyday Analogy & Core Concept:</strong>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-base font-bold text-white light-theme:text-slate-900">
-                    Simple Definition:
+                    {topic.title} Made Simple
                   </h3>
-                  <p>
-                    A <strong className="text-white light-theme:text-slate-900">variable</strong> is just a name tag. An <strong className="text-white light-theme:text-slate-900">object</strong> is the box with value inside.
+                  <p className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700">
+                    {topic.shortDescription || topic.desc || (topic.conceptExplanation ? topic.conceptExplanation.split('.')[0] + '.' : 'Master the foundational mechanics.')}
                   </p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-xs sm:text-sm">
-                    <li><strong className="text-emerald-400">Immutable:</strong> A sealed box that cannot be opened or changed. If you want a different number, you stick the name tag onto a new box.</li>
-                    <li><strong className="text-amber-400">Mutable:</strong> An open shopping cart. You can add or take away items without getting a new cart.</li>
-                  </ul>
+                  {topic.simpleExample && (
+                    <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800">
+                      <p className="text-xs text-emerald-400 font-semibold mb-1">Key Rule:</p>
+                      <p className="text-xs text-slate-300 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -594,11 +623,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
               Syntax & Usage
             </h2>
             <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-slate-50 p-4 font-mono text-xs sm:text-sm text-cyan-300 light-theme:text-blue-800 overflow-x-auto leading-relaxed">
-              <pre>{topic.syntax || `# Base conversions & variable binding\na = 15\nprint(bin(a)) # Output: 0b1111\nprint(hex(a)) # Output: 0xf\n\n# Memory identity check\nx = 256; y = 256\nprint(x is y) # True (interning)\nprint(id(x) == id(y)) # True`}</pre>
+              <pre>{topic.syntax || `// Syntax for ${topic.title}\n${topic.codeExample || ''}`}</pre>
             </div>
           </section>
 
-          {/* SECTION 6: INTERACTIVE CODE EXAMPLE (Connected to pythonRunner) */}
+          {/* SECTION 6: INTERACTIVE CODE EXAMPLE (Connected to code runner) */}
           <section id="section-code-example" className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg sm:text-xl font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
@@ -609,25 +638,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             </div>
 
             <InteractiveCodeBlock
-              title="Python Memory Identity & Immutability Sandbox"
-              language="python"
+              title={`${topic.title} Interactive Sandbox`}
+              language={topic.language || 'python'}
               topicId={topicId}
-              initialCode={`# 1. Variables referencing identical integer objects (Interning)
-a = 100
-b = 100
-print("Same value (==)?", a == b)
-print("Same memory reference (is)?", a is b)
-print("Address of a:", id(a))
-
-# 2. Immutability: Modify variable 'a'
-a = a + 1
-print("\\nAfter a = a + 1:")
-print("New value of a:", a)
-print("Value of b:", b)
-print("Did address change?", a is not b)
-print("New address of a:", id(a))
-`}
-              explanationOfOutput="Notice how `a` and `b` initially share the exact same memory address (`id(a) == id(b)`). When we compute `a = a + 1`, Python allocates a new integer 101 and rebinds the label `a`. Variable `b` continues pointing to the original immutable integer 100."
+              initialCode={topic.codeExample || topic.simpleExample?.code || `// Interactive code for ${topic.title}`}
+              explanationOfOutput={topic.expectedOutput || topic.simpleExample?.explanation || `Executed ${topic.title} successfully.`}
             />
           </section>
 
@@ -635,6 +650,7 @@ print("New address of a:", id(a))
           <VisualConceptExplainer
             topicId={topicId}
             topicTitle={topic.title}
+            language={topic.language || 'python'}
           />
 
           {/* SECTION 8: KEY TAKEAWAYS */}
@@ -644,9 +660,18 @@ print("New address of a:", id(a))
                 <Sparkles className="w-4 h-4" />
                 Key Takeaway
               </div>
-              <p className="text-sm font-semibold text-white light-theme:text-slate-900 leading-relaxed">
-                A variable in Python refers to an object. Mutable objects can be modified in-place, while immutable objects cannot be changed once created. Reassigning an immutable variable creates a new object in memory.
-              </p>
+              <ul className="space-y-1.5 text-sm text-slate-200 light-theme:text-slate-800">
+                {(topic.summary || [
+                  'Master core procedural and architectural foundations',
+                  'Verify memory structures and strict compiler bounds',
+                  'Apply structured control patterns for robust execution'
+                ]).map((item: string, sIdx: number) => (
+                  <li key={sIdx} className="flex items-start gap-2">
+                    <span className="text-cyan-400 font-bold">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
 
@@ -654,45 +679,47 @@ print("New address of a:", id(a))
           <section id="section-mistakes" className="space-y-3">
             <h2 className="text-lg sm:text-xl font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
               <span className="w-2 h-5 rounded-full bg-rose-500" />
-              Common Mistakes
+              Common Mistakes & Pitfalls
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Mistake 1 */}
-              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-950/10 light-theme:bg-rose-50/50 space-y-2 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-rose-400 light-theme:text-rose-700">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>Mistake: Trying to modify immutable string in-place</span>
+              {(topic.commonMistakes && topic.commonMistakes.length > 0
+                ? topic.commonMistakes
+                : [
+                    {
+                      mistake: 'Syntax and Type Mismatch',
+                      codeSnippet: '// Invalid syntax or mismatched type assignment',
+                      correction: 'Declare exact type matches and verify function prototypes.',
+                      explanation: 'Statically typed languages catch these errors during compilation.'
+                    }
+                  ]
+              ).map((mistake: any, mIdx: number) => (
+                <div
+                  key={mIdx}
+                  className={`p-4 rounded-xl border space-y-2 text-xs ${
+                    mIdx % 2 === 0
+                      ? 'border-rose-500/30 bg-rose-950/10 light-theme:bg-rose-50/50'
+                      : 'border-amber-500/30 bg-amber-950/10 light-theme:bg-amber-50/50'
+                  }`}
+                >
+                  <div className={`flex items-center gap-1.5 font-bold ${mIdx % 2 === 0 ? 'text-rose-400 light-theme:text-rose-700' : 'text-amber-400 light-theme:text-amber-700'}`}>
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>Mistake: {mistake.mistake}</span>
+                  </div>
+                  {mistake.codeSnippet && (
+                    <div className="p-2.5 rounded-lg bg-slate-950 light-theme:bg-white font-mono text-[11px] text-rose-300 border border-rose-500/20 overflow-x-auto">
+                      <pre className="whitespace-pre-wrap">{mistake.codeSnippet}</pre>
+                    </div>
+                  )}
+                  <p className="text-slate-300 light-theme:text-slate-700">
+                    <strong className="text-emerald-400 light-theme:text-emerald-700 block mb-0.5">Correction:</strong>
+                    {mistake.correction}
+                  </p>
+                  <p className="text-slate-400 light-theme:text-slate-600 italic">
+                    {mistake.explanation}
+                  </p>
                 </div>
-                <div className="p-2.5 rounded-lg bg-slate-950 light-theme:bg-white font-mono text-[11px] text-rose-300 border border-rose-500/20">
-                  <code>
-                    s = "Hello"<br />
-                    s[0] = "h" # ❌ TypeError: 'str' does not support item assignment
-                  </code>
-                </div>
-                <p className="text-slate-300 light-theme:text-slate-600">
-                  Strings cannot be changed in place. Instead, create a new string using slicing or formatting: <code>s = "h" + s[1:]</code>.
-                </p>
-              </div>
-
-              {/* Mistake 2 */}
-              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/10 light-theme:bg-amber-50/50 space-y-2 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-amber-400 light-theme:text-amber-700">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>Mistake: Confusing `is` with `==`</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-slate-950 light-theme:bg-white font-mono text-[11px] text-amber-300 border border-amber-500/20">
-                  <code>
-                    list1 = [1, 2, 3]<br />
-                    list2 = [1, 2, 3]<br />
-                    print(list1 is list2) # ❌ False (Distinct objects!)<br />
-                    print(list1 == list2) # ✔ True (Same contents)
-                  </code>
-                </div>
-                <p className="text-slate-300 light-theme:text-slate-600">
-                  Use <code>==</code> when comparing values/content. Use <code>is</code> only when verifying if two variables point to the exact same memory address (e.g. <code>x is None</code>).
-                </p>
-              </div>
+              ))}
             </div>
           </section>
 
@@ -702,29 +729,43 @@ print("New address of a:", id(a))
               <span className="w-2 h-5 rounded-full bg-emerald-500" />
               Real-World Application
             </h2>
-            <div className="p-5 rounded-2xl bg-slate-900/50 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 text-xs sm:text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed space-y-2.5">
-              <p>
-                In production systems, understanding data types and immutability directly affects:
-              </p>
-              <ul className="list-disc pl-5 space-y-1.5 text-xs text-slate-400 light-theme:text-slate-600">
-                <li><strong className="text-white light-theme:text-slate-800">Thread Safety & Concurrency:</strong> Immutable objects like tuples and frozensets can be freely shared across multiple threads without lock contention.</li>
-                <li><strong className="text-white light-theme:text-slate-800">Dictionary Keys:</strong> Only immutable, hashable types can be used as keys in Python dictionaries. Attempting to use a mutable list as a key raises an immediate <code>TypeError: unhashable type: 'list'</code>.</li>
-                <li><strong className="text-white light-theme:text-slate-800">Database Serialization:</strong> Parsing JSON payloads into typed records prevents accidental mutation bugs in REST and GraphQL APIs.</li>
-              </ul>
+            <div className="p-5 rounded-2xl bg-slate-900/50 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 text-xs sm:text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed space-y-3">
+              {topic.realWorldExample ? (
+                <>
+                  <div className="flex items-center gap-2 font-bold text-cyan-400 light-theme:text-blue-600 text-xs uppercase tracking-wide">
+                    <span>Industry Scenario:</span>
+                    <span className="text-white light-theme:text-slate-900">{topic.realWorldExample.scenario}</span>
+                  </div>
+                  <p className="text-slate-300 light-theme:text-slate-700 leading-relaxed">
+                    {topic.realWorldExample.explanation}
+                  </p>
+                  {topic.realWorldExample.code && (
+                    <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-slate-50 p-3.5 font-mono text-xs text-emerald-400 light-theme:text-emerald-700 overflow-x-auto">
+                      <pre>{topic.realWorldExample.code}</pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p>
+                  High-performance production environments rely on predictable resource consumption, strict memory budgeting, and zero-overhead abstractions.
+                </p>
+              )}
             </div>
           </section>
 
           {/* SECTION 11: TRY YOURSELF INTERACTIVE PRACTICE */}
           <TryYourselfSandbox
             topicId={topicId}
-            prompt="Create a variable called age and assign it the integer value 20. Then print the value of age using print(age)."
-            expectedOutputMatcher="20"
-            hint="Define age = 20, then call print(age)."
-            solution="age = 20\nprint(age)"
+            language={topic.language || 'python'}
+            prompt={topic.practice?.prompt}
+            initialCode={topic.practice?.starterCode}
+            expectedOutputMatcher={topic.practice?.expectedOutputMatcher}
+            hint={topic.practice?.hint}
+            solution={topic.practice?.solution}
           />
 
           {/* SECTION 12: IN-LESSON MINI QUIZ */}
-          <InLessonQuiz topicId={topicId} />
+          <InLessonQuiz topicId={topicId} initialQuestions={topic.quiz} />
 
           {/* SECTION 13: IN-LESSON CODING CHALLENGE */}
           <InLessonCodingChallenge

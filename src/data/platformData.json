@@ -1028,35 +1028,210 @@
       "module_id": "mod-c-1",
       "title": "C Fundamentals, Data Types & Console I/O",
       "order_index": 1,
-      "content_path": "rag/documents/C/c_fundamentals.txt"
+      "content_path": "rag/documents/C/top-c-fundamentals.txt",
+      "learning_objective": "Understand the C compilation stages: Preprocessor, Compiler, Assembler, and Linker; Declare primitive data types with exact memory byte widths (char, int, float, double); Perform formatted console I/O using printf() and scanf() with precise format specifiers; Understand memory addresses and the importance of & in variable assignments",
+      "content_standard": "C is a procedural, statically-typed programming language developed in 1972 by Dennis Ritchie at Bell Labs. It remains the lingua franca of system programming, operating system kernels (Linux, Windows, macOS), embedded hardware, and high-performance game engines.\n\nUnlike interpreted languages, C source code (*.c) is compiled directly into native machine instructions via four distinct phases:\n1. **Preprocessing (cpp)**: Header expansions (#include), macro substitutions (#define), and conditional compilation (#ifdef).\n2. **Compilation**: Translates preprocessed source code into assembly language instructions.\n3. **Assembly**: Translates assembly instructions into machine binary object files (*.o / *.obj).\n4. **Linking (ld)**: Merges object files and standard library definitions into a single runnable executable.\n\nEvery C program begins execution at the main() function entry point:\n`int main(void)` returns an integer exit status code back to the host operating system (where 0 indicates successful execution).",
+      "content_low": "C is a procedural, statically-typed programming language developed in 1972 by Dennis Ritchie at Bell Labs. It remains the lingua franca of system programming, operating system kernels (Linux, Windows, macOS), embedded hardware, and high-performance game engines.\n\nUnlike interpreted languages, C source code (*.c) is compiled directly into native machine instructions via four distinct phases:\n1. **Preprocessing (cpp)**: Header expansions (#include), macro substitutions (#define), and conditional compilation (#ifdef).\n2. **Compilation**: Translates preprocessed source code into assembly language instructions.\n3. **Assembly**: Translates assembly instructions into machine binary object files (*.o / *.obj).\n4. **Linking (ld)**: Merges object files and standard library definitions into a single runnable executable.\n\nEvery C program begins execution at the main() function entry point:\n`int main(void)` returns an integer exit status code back to the host operating system (where 0 indicates successful execution).",
+      "content_medium": "C is a procedural, statically-typed programming language developed in 1972 by Dennis Ritchie at Bell Labs. It remains the lingua franca of system programming, operating system kernels (Linux, Windows, macOS), embedded hardware, and high-performance game engines.\n\nUnlike interpreted languages, C source code (*.c) is compiled directly into native machine instructions via four distinct phases:\n1. **Preprocessing (cpp)**: Header expansions (#include), macro substitutions (#define), and conditional compilation (#ifdef).\n2. **Compilation**: Translates preprocessed source code into assembly language instructions.\n3. **Assembly**: Translates assembly instructions into machine binary object files (*.o / *.obj).\n4. **Linking (ld)**: Merges object files and standard library definitions into a single runnable executable.\n\nEvery C program begins execution at the main() function entry point:\n`int main(void)` returns an integer exit status code back to the host operating system (where 0 indicates successful execution).",
+      "content_high": "C is a procedural, statically-typed programming language developed in 1972 by Dennis Ritchie at Bell Labs. It remains the lingua franca of system programming, operating system kernels (Linux, Windows, macOS), embedded hardware, and high-performance game engines.\n\nUnlike interpreted languages, C source code (*.c) is compiled directly into native machine instructions via four distinct phases:\n1. **Preprocessing (cpp)**: Header expansions (#include), macro substitutions (#define), and conditional compilation (#ifdef).\n2. **Compilation**: Translates preprocessed source code into assembly language instructions.\n3. **Assembly**: Translates assembly instructions into machine binary object files (*.o / *.obj).\n4. **Linking (ld)**: Merges object files and standard library definitions into a single runnable executable.\n\nEvery C program begins execution at the main() function entry point:\n`int main(void)` returns an integer exit status code back to the host operating system (where 0 indicates successful execution).",
+      "syntax": "// Standard C Program Structure\n#include <stdio.h>\n\nint main(void) {\n    // 1. Primitive Declarations & Sizes\n    char letter = 'A';          // 1 byte: -128 to 127\n    int count = 42;             // 4 bytes: -2,147,483,648 to 2,147,483,647\n    float price = 19.99f;       // 4 bytes: ~7 decimal digits of precision\n    double pi = 3.1415926535;   // 8 bytes: ~15 decimal digits of precision\n\n    // 2. Formatted Output\n    printf(\"Char: %c, Int: %d, Float: %.2f, Double: %.6f\\n\", letter, count, price, pi);\n\n    // 3. Address Inspection\n    printf(\"Memory address of count: %p\\n\", (void*)&count);\n\n    return 0;\n}",
+      "examples": "#include <stdio.h>\n\nint main(void) {\n    int units = 5;\n    double unit_price = 12.50;\n    double total = units * unit_price;\n\n    printf(\"=== Invoice Summary ===\\n\");\n    printf(\"Units Purchased: %d\\n\", units);\n    printf(\"Price per Unit:  $%.2f\\n\", unit_price);\n    printf(\"Total Cost:      $%.2f\\n\", total);\n    printf(\"Memory Size:     %zu bytes\\n\", sizeof(total));\n\n    return 0;\n}",
+      "common_mistakes": "scanf(\"%d\", num); // Missing address-of & operator: scanf(\"%d\", &num); // Correctly passes the memory pointer\n\ndouble result = 5 / 2; // Evaluates to 2.0 instead of 2.5: double result = 5.0 / 2; // Or ((double)5 / 2)",
+      "practice_prompt": "Write a C program that calculates the perimeter of a rectangle with length 14 and width 6. Print: \"Perimeter: 40\".",
+      "sections": [
+        {
+          "id": "top-c-fundamentals-sec-1",
+          "title": "1. Concept: C Fundamentals, Data Types & Console I/O",
+          "order_index": 1,
+          "content": "C is a procedural, statically-typed programming language developed in 1972 by Dennis Ritchie at Bell Labs. It remains the lingua franca of system programming, operating system kernels (Linux, Windows, macOS), embedded hardware, and high-performance game engines.\n\nUnlike interpreted languages, C source code (*.c) is compiled directly into native machine instructions via four distinct phases:\n1. **Preprocessing (cpp)**: Header expansions (#include), macro substitutions (#define), and conditional compilation (#ifdef).\n2. **Compilation**: Translates preprocessed source code into assembly language instructions.\n3. **Assembly**: Translates assembly instructions into machine binary object files (*.o / *.obj).\n4. **Linking (ld)**: Merges object files and standard library definitions into a single runnable executable.\n\nEvery C program begins execution at the main() function entry point:\n`int main(void)` returns an integer exit status code back to the host operating system (where 0 indicates successful execution).",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int age = 21;\n    double score = 95.5;\n    printf(\"Age: %d, Score: %.1f\\n\", age, score);\n    return 0;\n}",
+          "pitfalls": "The code includes standard input/output prototypes, declares integer and floating-point variables on the stack, and prints them with %d and %.1f format specifiers."
+        },
+        {
+          "id": "top-c-fundamentals-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. #include <stdio.h> provides function signatures for printf and scanf.\n\n2. Variables \"units\", \"unit_price\", and \"total\" are allocated in the local stack frame.\n\n3. Arithmetic multiplication (units * unit_price) promotes \"units\" to double precision automatically.\n\n4. printf interprets format specifiers: %d for signed integers and %.2f for double-precision floats formatted to 2 decimals.\n\n5. sizeof(total) returns the unsigned memory footprint (8 bytes on 64-bit architectures).",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int units = 5;\n    double unit_price = 12.50;\n    double total = units * unit_price;\n\n    printf(\"=== Invoice Summary ===\\n\");\n    printf(\"Units Purchased: %d\\n\", units);\n    printf(\"Price per Unit:  $%.2f\\n\", unit_price);\n    printf(\"Total Cost:      $%.2f\\n\", total);\n    printf(\"Memory Size:     %zu bytes\\n\", sizeof(total));\n\n    return 0;\n}",
+          "pitfalls": "scanf expects the memory address where the read value should be stored. Passing a raw integer causes an invalid memory dereference (Segmentation Fault)."
+        },
+        {
+          "id": "top-c-fundamentals-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "High-Frequency Embedded Temperature Sensor\n\nEmbedded controllers and RTOS microcontrollers rely on clean C math and minimal memory consumption to process telemetry streams in real time.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int sensor_id = 402;\n    double raw_celsius = 28.4;\n    double fahrenheit = (raw_celsius * 9.0 / 5.0) + 32.0;\n\n    printf(\"[TELEMETRY NODE #%d]\\n\", sensor_id);\n    printf(\"Raw Reading:  %.1f C\\n\", raw_celsius);\n    printf(\"Fahrenheit:   %.1f F\\n\", fahrenheit);\n    printf(\"Status:       %s\\n\", (raw_celsius > 30.0) ? \"WARNING: HIGH TEMP\" : \"NORMAL\");\n\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ]
     },
     {
       "id": "top-c-operators",
       "module_id": "mod-c-1",
       "title": "Arithmetic, Relational & Conditional Operators",
       "order_index": 2,
-      "content_path": "rag/documents/C/c_fundamentals.txt"
+      "content_path": "rag/documents/C/top-c-operators.txt",
+      "learning_objective": "Master prefix vs postfix increment (++i vs i++) semantics; Understand short-circuit evaluation in logical AND (&&) and logical OR (||); Apply ternary conditional operator for clean expression-level branching; Avoid undefined behaviors caused by modifying a variable multiple times in a single expression",
+      "content_standard": "Operators in C provide low-level arithmetic, relational, and bitwise evaluation with explicit operator precedence rules.\n\nKey distinctions:\n- **Prefix vs Postfix**: `++i` increments variable `i` before yielding the value, while `i++` yields the current value before incrementing.\n- **Short-Circuit Evaluation**: In `A && B`, if `A` is 0 (false), `B` is NEVER evaluated. In `A || B`, if `A` is non-zero (true), `B` is NEVER evaluated.\n- **Ternary Operator**: `condition ? expr1 : expr2` yields values as an inline expression.",
+      "content_low": "Operators in C provide low-level arithmetic, relational, and bitwise evaluation with explicit operator precedence rules.\n\nKey distinctions:\n- **Prefix vs Postfix**: `++i` increments variable `i` before yielding the value, while `i++` yields the current value before incrementing.\n- **Short-Circuit Evaluation**: In `A && B`, if `A` is 0 (false), `B` is NEVER evaluated. In `A || B`, if `A` is non-zero (true), `B` is NEVER evaluated.\n- **Ternary Operator**: `condition ? expr1 : expr2` yields values as an inline expression.",
+      "content_medium": "Operators in C provide low-level arithmetic, relational, and bitwise evaluation with explicit operator precedence rules.\n\nKey distinctions:\n- **Prefix vs Postfix**: `++i` increments variable `i` before yielding the value, while `i++` yields the current value before incrementing.\n- **Short-Circuit Evaluation**: In `A && B`, if `A` is 0 (false), `B` is NEVER evaluated. In `A || B`, if `A` is non-zero (true), `B` is NEVER evaluated.\n- **Ternary Operator**: `condition ? expr1 : expr2` yields values as an inline expression.",
+      "content_high": "Operators in C provide low-level arithmetic, relational, and bitwise evaluation with explicit operator precedence rules.\n\nKey distinctions:\n- **Prefix vs Postfix**: `++i` increments variable `i` before yielding the value, while `i++` yields the current value before incrementing.\n- **Short-Circuit Evaluation**: In `A && B`, if `A` is 0 (false), `B` is NEVER evaluated. In `A || B`, if `A` is non-zero (true), `B` is NEVER evaluated.\n- **Ternary Operator**: `condition ? expr1 : expr2` yields values as an inline expression.",
+      "syntax": "int a = 5;\nint x = ++a; // a becomes 6, x is 6 (prefix)\nint y = a++; // y is 6, a becomes 7 (postfix)\nint result = (x > 0 && y > 0) ? 1 : 0;",
+      "examples": "#include <stdio.h>\n\nint main(void) {\n    int score = 85;\n    char grade = (score >= 90) ? 'A' : (score >= 80) ? 'B' : 'C';\n\n    int x = 5;\n    int post = x++;\n    int pre = ++x;\n\n    printf(\"Grade: %c\\n\", grade);\n    printf(\"post: %d, pre: %d, final x: %d\\n\", post, pre, x);\n    return 0;\n}",
+      "common_mistakes": "int result = i++ + ++i; // Undefined Behavior!: i++; int result = i + 1; // Split into sequential statements",
+      "practice_prompt": "Write a C program that uses ternary operator to check if an integer number 17 is even or odd. Print \"Odd\".",
+      "sections": [
+        {
+          "id": "top-c-operators-sec-1",
+          "title": "1. Concept: Arithmetic, Relational & Conditional Operators",
+          "order_index": 1,
+          "content": "Operators in C provide low-level arithmetic, relational, and bitwise evaluation with explicit operator precedence rules.\n\nKey distinctions:\n- **Prefix vs Postfix**: `++i` increments variable `i` before yielding the value, while `i++` yields the current value before incrementing.\n- **Short-Circuit Evaluation**: In `A && B`, if `A` is 0 (false), `B` is NEVER evaluated. In `A || B`, if `A` is non-zero (true), `B` is NEVER evaluated.\n- **Ternary Operator**: `condition ? expr1 : expr2` yields values as an inline expression.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int a = 10, b = 20;\n    int max = (a > b) ? a : b;\n    printf(\"Maximum: %d\\n\", max);\n    return 0;\n}",
+          "pitfalls": "Demonstrates the ternary conditional operator evaluating the maximum value."
+        },
+        {
+          "id": "top-c-operators-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Ternary operator chains determine letter grade based on numeric score threshold.\n\n2. x++ returns original 5, then increments x to 6.\n\n3. ++x increments x from 6 to 7, then returns 7.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int score = 85;\n    char grade = (score >= 90) ? 'A' : (score >= 80) ? 'B' : 'C';\n\n    int x = 5;\n    int post = x++;\n    int pre = ++x;\n\n    printf(\"Grade: %c\\n\", grade);\n    printf(\"post: %d, pre: %d, final x: %d\\n\", post, pre, x);\n    return 0;\n}",
+          "pitfalls": "Modifying a variable multiple times between sequence points causes undefined behavior in standard C."
+        },
+        {
+          "id": "top-c-operators-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Flag Masking & Bitwise Permission Validation\n\nOperating system kernels like Linux use bitwise operators to evaluate file system permissions with zero performance overhead.",
+          "code_snippet": "#include <stdio.h>\n\n#define READ_PERM  (1 << 0)\n#define WRITE_PERM (1 << 1)\n#define EXEC_PERM  (1 << 2)\n\nint main(void) {\n    int user_perms = READ_PERM | WRITE_PERM;\n    printf(\"Can Read?  %s\\n\", (user_perms & READ_PERM) ? \"YES\" : \"NO\");\n    printf(\"Can Exec?  %s\\n\", (user_perms & EXEC_PERM) ? \"YES\" : \"NO\");\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ]
     },
     {
       "id": "top-c-control-flow",
       "module_id": "mod-c-1",
       "title": "Decision Making & Branching (if-else, switch)",
       "order_index": 3,
-      "content_path": "rag/documents/C/c_control_flow.txt"
+      "content_path": "rag/documents/C/top-c-control-flow.txt",
+      "learning_objective": "Construct multi-way decision trees using if-else if-else chains; Implement fast switch-case statements with break fallthrough control; Understand how C evaluates 0 as false and any non-zero value as true",
+      "content_standard": "In C, conditionals evaluate boolean truth based on integer representation: 0 is false, while any non-zero integer is true.\n\nThe `switch` statement creates a jump table in compiled assembly, executing O(1) jump jumps based on integral or character constants. Every case statement must be terminated with a `break` statement unless intentional fallthrough is desired.",
+      "content_low": "In C, conditionals evaluate boolean truth based on integer representation: 0 is false, while any non-zero integer is true.\n\nThe `switch` statement creates a jump table in compiled assembly, executing O(1) jump jumps based on integral or character constants. Every case statement must be terminated with a `break` statement unless intentional fallthrough is desired.",
+      "content_medium": "In C, conditionals evaluate boolean truth based on integer representation: 0 is false, while any non-zero integer is true.\n\nThe `switch` statement creates a jump table in compiled assembly, executing O(1) jump jumps based on integral or character constants. Every case statement must be terminated with a `break` statement unless intentional fallthrough is desired.",
+      "content_high": "In C, conditionals evaluate boolean truth based on integer representation: 0 is false, while any non-zero integer is true.\n\nThe `switch` statement creates a jump table in compiled assembly, executing O(1) jump jumps based on integral or character constants. Every case statement must be terminated with a `break` statement unless intentional fallthrough is desired.",
+      "syntax": "switch (expression) {\n    case CONST1:\n        // statements\n        break;\n    case CONST2:\n        // statements\n        break;\n    default:\n        // fallback\n        break;\n}",
+      "examples": "#include <stdio.h>\n\nint main(void) {\n    char command = 'S';\n\n    switch (command) {\n        case 'S':\n        case 's':\n            printf(\"Action: START_ENGINE\\n\");\n            break;\n        case 'P':\n        case 'p':\n            printf(\"Action: PAUSE_ENGINE\\n\");\n            break;\n        default:\n            printf(\"Action: UNKNOWN_COMMAND\\n\");\n            break;\n    }\n    return 0;\n}",
+      "common_mistakes": "if (x = 5) { ... } // Single equals is ASSIGNMENT, always evaluates to true!: if (x == 5) { ... } // Double equals tests equality",
+      "practice_prompt": "Write a C program that tests whether an integer month number 3 is in Spring (3, 4, 5). If so, print \"Spring\".",
+      "sections": [
+        {
+          "id": "top-c-control-flow-sec-1",
+          "title": "1. Concept: Decision Making & Branching (if-else, switch)",
+          "order_index": 1,
+          "content": "In C, conditionals evaluate boolean truth based on integer representation: 0 is false, while any non-zero integer is true.\n\nThe `switch` statement creates a jump table in compiled assembly, executing O(1) jump jumps based on integral or character constants. Every case statement must be terminated with a `break` statement unless intentional fallthrough is desired.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int code = 200;\n    if (code == 200) {\n        printf(\"HTTP Status: OK\\n\");\n    } else {\n        printf(\"HTTP Status: Error\\n\");\n    }\n    return 0;\n}",
+          "pitfalls": "Evaluates status code with if-else branching."
+        },
+        {
+          "id": "top-c-control-flow-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Switch evaluates character constant command.\n\n2. Case 'S' falls through to case 's' sharing the print statement.\n\n3. break statement halts execution and jumps past the switch block.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    char command = 'S';\n\n    switch (command) {\n        case 'S':\n        case 's':\n            printf(\"Action: START_ENGINE\\n\");\n            break;\n        case 'P':\n        case 'p':\n            printf(\"Action: PAUSE_ENGINE\\n\");\n            break;\n        default:\n            printf(\"Action: UNKNOWN_COMMAND\\n\");\n            break;\n    }\n    return 0;\n}",
+          "pitfalls": "Single = assigns 5 to x, and because 5 is non-zero, the condition is always evaluated as true."
+        },
+        {
+          "id": "top-c-control-flow-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Embedded Microcontroller State Machine\n\nState machines in embedded firmware use enums and switch-case jump tables for zero-latency deterministic dispatch.",
+          "code_snippet": "#include <stdio.h>\n\ntypedef enum { STATE_IDLE, STATE_ACTIVE, STATE_FAULT } SystemState;\n\nint main(void) {\n    SystemState current = STATE_ACTIVE;\n    switch (current) {\n        case STATE_IDLE:   printf(\"System is idling.\\n\"); break;\n        case STATE_ACTIVE: printf(\"System is processing workload.\\n\"); break;\n        case STATE_FAULT:  printf(\"Safety lockdown initiated!\\n\"); break;\n    }\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ]
     },
     {
       "id": "top-c-loops",
       "module_id": "mod-c-1",
       "title": "Iteration & Loop Architecture (for, while, do-while)",
       "order_index": 4,
-      "content_path": "rag/documents/C/c_control_flow.txt"
+      "content_path": "rag/documents/C/top-c-loops.txt",
+      "learning_objective": "Choose appropriately between for, while, and do-while loops; Understand the guaranteed single-execution guarantee of do-while loops; Control loop flow using break (early termination) and continue (skip iteration)",
+      "content_standard": "Loops in C execute a block of statements repeatedly based on a continuation condition.\n- **for loop**: Best when the exact number of iterations is known in advance (`for(init; cond; step)`).\n- **while loop**: Best when iteration depends on a dynamic condition evaluated before entry.\n- **do-while loop**: Evaluates condition at exit, guaranteeing the loop body executes AT LEAST once.",
+      "content_low": "Loops in C execute a block of statements repeatedly based on a continuation condition.\n- **for loop**: Best when the exact number of iterations is known in advance (`for(init; cond; step)`).\n- **while loop**: Best when iteration depends on a dynamic condition evaluated before entry.\n- **do-while loop**: Evaluates condition at exit, guaranteeing the loop body executes AT LEAST once.",
+      "content_medium": "Loops in C execute a block of statements repeatedly based on a continuation condition.\n- **for loop**: Best when the exact number of iterations is known in advance (`for(init; cond; step)`).\n- **while loop**: Best when iteration depends on a dynamic condition evaluated before entry.\n- **do-while loop**: Evaluates condition at exit, guaranteeing the loop body executes AT LEAST once.",
+      "content_high": "Loops in C execute a block of statements repeatedly based on a continuation condition.\n- **for loop**: Best when the exact number of iterations is known in advance (`for(init; cond; step)`).\n- **while loop**: Best when iteration depends on a dynamic condition evaluated before entry.\n- **do-while loop**: Evaluates condition at exit, guaranteeing the loop body executes AT LEAST once.",
+      "syntax": "for (int i = 0; i < N; i++) { /* code */ }\nwhile (condition) { /* code */ }\ndo { /* code */ } while (condition);",
+      "examples": "#include <stdio.h>\n\nint main(void) {\n    int sum = 0;\n    for (int i = 1; i <= 5; i++) {\n        if (i == 3) continue; // Skip 3\n        sum += i;\n    }\n    printf(\"Sum (excluding 3): %d\\n\", sum);\n    return 0;\n}",
+      "common_mistakes": "while (count < 5); { count++; } // Semicolon creates infinite empty loop!: while (count < 5) { count++; } // Remove the stray semicolon",
+      "practice_prompt": "Write a C program that computes the factorial of 5 (1*2*3*4*5) using a loop and prints \"Factorial: 120\".",
+      "sections": [
+        {
+          "id": "top-c-loops-sec-1",
+          "title": "1. Concept: Iteration & Loop Architecture (for, while, do-while)",
+          "order_index": 1,
+          "content": "Loops in C execute a block of statements repeatedly based on a continuation condition.\n- **for loop**: Best when the exact number of iterations is known in advance (`for(init; cond; step)`).\n- **while loop**: Best when iteration depends on a dynamic condition evaluated before entry.\n- **do-while loop**: Evaluates condition at exit, guaranteeing the loop body executes AT LEAST once.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    for (int i = 1; i <= 3; i++) {\n        printf(\"Iteration %d\\n\", i);\n    }\n    return 0;\n}",
+          "pitfalls": "Classic for loop counting from 1 to 3."
+        },
+        {
+          "id": "top-c-loops-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Counter i iterates from 1 through 5.\n\n2. When i == 3, continue skips the sum accumulation step.\n\n3. 1 + 2 + 4 + 5 = 12.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int sum = 0;\n    for (int i = 1; i <= 5; i++) {\n        if (i == 3) continue; // Skip 3\n        sum += i;\n    }\n    printf(\"Sum (excluding 3): %d\\n\", sum);\n    return 0;\n}",
+          "pitfalls": "A stray semicolon after while() creates a loop that repeatedly executes an empty statement, causing an infinite freeze."
+        },
+        {
+          "id": "top-c-loops-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Buffer Checksum Computation\n\nNetwork drivers iterate over incoming bytes using for loops to calculate XOR parity checksums for packet integrity.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    unsigned char packet[] = { 0x10, 0x24, 0x05, 0x88 };\n    int checksum = 0;\n    int len = sizeof(packet) / sizeof(packet[0]);\n\n    for (int i = 0; i < len; i++) {\n        checksum ^= packet[i];\n    }\n    printf(\"Computed XOR Checksum: 0x%02X\\n\", checksum);\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ]
     },
     {
       "id": "top-c-arrays",
       "module_id": "mod-c-1",
       "title": "Single & Multidimensional Array Processing",
       "order_index": 5,
-      "content_path": "rag/documents/C/c_arrays_strings.txt"
+      "content_path": "rag/documents/C/top-c-arrays.txt",
+      "learning_objective": "Understand how C arrays occupy contiguous sequential memory slots; Calculate array length safely using sizeof(arr) / sizeof(arr[0]); Prevent catastrophic buffer overflow vulnerabilities by enforcing boundary safety",
+      "content_standard": "In C, an array is a collection of elements of identical data type stored in contiguous memory locations.\nArray indices are strictly 0-indexed: an array of size N has valid indices from 0 up to N-1.\n\nCrucially, **C does NOT perform array boundary checks at runtime**. Accessing `arr[10]` on a 5-element array results in reading or corrupting adjacent memory (Undefined Behavior / Buffer Overflow), which is the leading cause of memory-corruption security vulnerabilities.",
+      "content_low": "In C, an array is a collection of elements of identical data type stored in contiguous memory locations.\nArray indices are strictly 0-indexed: an array of size N has valid indices from 0 up to N-1.\n\nCrucially, **C does NOT perform array boundary checks at runtime**. Accessing `arr[10]` on a 5-element array results in reading or corrupting adjacent memory (Undefined Behavior / Buffer Overflow), which is the leading cause of memory-corruption security vulnerabilities.",
+      "content_medium": "In C, an array is a collection of elements of identical data type stored in contiguous memory locations.\nArray indices are strictly 0-indexed: an array of size N has valid indices from 0 up to N-1.\n\nCrucially, **C does NOT perform array boundary checks at runtime**. Accessing `arr[10]` on a 5-element array results in reading or corrupting adjacent memory (Undefined Behavior / Buffer Overflow), which is the leading cause of memory-corruption security vulnerabilities.",
+      "content_high": "In C, an array is a collection of elements of identical data type stored in contiguous memory locations.\nArray indices are strictly 0-indexed: an array of size N has valid indices from 0 up to N-1.\n\nCrucially, **C does NOT perform array boundary checks at runtime**. Accessing `arr[10]` on a 5-element array results in reading or corrupting adjacent memory (Undefined Behavior / Buffer Overflow), which is the leading cause of memory-corruption security vulnerabilities.",
+      "syntax": "type array_name[SIZE]; // Uninitialized declaration\ntype array_name[] = {val1, val2, val3}; // Sized by initializer\nsize_t count = sizeof(array_name) / sizeof(array_name[0]);",
+      "examples": "#include <stdio.h>\n\nint main(void) {\n    int scores[] = {88, 92, 79, 95, 84};\n    int len = sizeof(scores) / sizeof(scores[0]);\n    int sum = 0;\n\n    for (int i = 0; i < len; i++) {\n        sum += scores[i];\n    }\n    double average = (double)sum / len;\n    printf(\"Total Students: %d\\n\", len);\n    printf(\"Class Average:  %.1f\\n\", average);\n    return 0;\n}",
+      "common_mistakes": "int arr[5]; arr[5] = 100; // Out-of-bounds index (valid are 0-4): arr[4] = 100; // Correct last index for size 5",
+      "practice_prompt": "Write a C program that finds the maximum value in an array {12, 45, 7, 89, 23} and prints \"Max: 89\".",
+      "sections": [
+        {
+          "id": "top-c-arrays-sec-1",
+          "title": "1. Concept: Single & Multidimensional Array Processing",
+          "order_index": 1,
+          "content": "In C, an array is a collection of elements of identical data type stored in contiguous memory locations.\nArray indices are strictly 0-indexed: an array of size N has valid indices from 0 up to N-1.\n\nCrucially, **C does NOT perform array boundary checks at runtime**. Accessing `arr[10]` on a 5-element array results in reading or corrupting adjacent memory (Undefined Behavior / Buffer Overflow), which is the leading cause of memory-corruption security vulnerabilities.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int primes[4] = {2, 3, 5, 7};\n    printf(\"First prime: %d, Fourth prime: %d\\n\", primes[0], primes[3]);\n    return 0;\n}",
+          "pitfalls": "Demonstrates 0-indexed array access in C."
+        },
+        {
+          "id": "top-c-arrays-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Array scores allocates 5 * 4 = 20 contiguous bytes on the stack.\n\n2. sizeof(scores) yields 20 bytes; sizeof(scores[0]) yields 4 bytes; len evaluates to 5.\n\n3. Loop aggregates sum and casts to double for fractional division.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int scores[] = {88, 92, 79, 95, 84};\n    int len = sizeof(scores) / sizeof(scores[0]);\n    int sum = 0;\n\n    for (int i = 0; i < len; i++) {\n        sum += scores[i];\n    }\n    double average = (double)sum / len;\n    printf(\"Total Students: %d\\n\", len);\n    printf(\"Class Average:  %.1f\\n\", average);\n    return 0;\n}",
+          "pitfalls": "Accessing index equal to the array size writes past the boundary, causing stack corruption."
+        },
+        {
+          "id": "top-c-arrays-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "2D Pixel Grayscale Matrix Transformation\n\nGraphics, game rendering, and image filtering store pixel grids in row-major 2D contiguous arrays.",
+          "code_snippet": "#include <stdio.h>\n\nint main(void) {\n    int matrix[2][3] = {\n        {10, 20, 30},\n        {40, 50, 60}\n    };\n    printf(\"Row 1, Col 2: %d\\n\", matrix[0][1]);\n    printf(\"Row 2, Col 3: %d\\n\", matrix[1][2]);\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ]
     },
     {
       "id": "top-c-strings",
@@ -1078,6 +1253,258 @@
       "title": "Structures, Unions & Typedef Architecture",
       "order_index": 1,
       "content_path": "rag/documents/C/c_structures_unions.txt"
+    },
+    {
+      "id": "top-cpp-fundamentals",
+      "module_id": "mod-cpp-1",
+      "title": "C++ Modern Fundamentals: Type Deduction, Streams & Namespaces",
+      "order_index": 1,
+      "learning_objective": "Understand the modern C++ philosophy: zero-overhead abstractions and strong static typing; Use type deduction with auto to write readable, expressive, refactor-resilient code; Perform type-safe console stream I/O using std::cin, std::cout, and std::endl; Manage symbol visibility using namespaces and avoid \"using namespace std;\" anti-patterns",
+      "content_standard": "C++ was created by Bjarne Stroustrup in 1979 as an enhancement to the C language (\"C with Classes\"). Since C++11, C++ has undergone a massive modernization, emphasizing type safety, RAII (Resource Acquisition Is Initialization), smart pointers, and zero-cost abstractions.\n\nCore Modern C++ Highlights:\n1. **Type Deduction (`auto`)**: The compiler deduces the exact type from the initialization expression at compile time with zero runtime overhead.\n2. **Standard Streams (`<iostream>`)**: Type-safe stream insertion (`<<`) and extraction (`>>`) replace error-prone C format specifiers.\n3. **Namespaces**: The standard library is housed in the `std::` namespace, preventing global identifier collisions.\n4. **Standard Strings (`std::string`)**: Safe, dynamically-resized string objects with rich member functions replacing raw null-terminated C char arrays.",
+      "content_low": "C++ was created by Bjarne Stroustrup in 1979 as an enhancement to the C language (\"C with Classes\"). Since C++11, C++ has undergone a massive modernization, emphasizing type safety, RAII (Resource Acquisition Is Initialization), smart pointers, and zero-cost abstractions.\n\nCore Modern C++ Highlights:\n1. **Type Deduction (`auto`)**: The compiler deduces the exact type from the initialization expression at compile time with zero runtime overhead.\n2. **Standard Streams (`<iostream>`)**: Type-safe stream insertion (`<<`) and extraction (`>>`) replace error-prone C format specifiers.\n3. **Namespaces**: The standard library is housed in the `std::` namespace, preventing global identifier collisions.\n4. **Standard Strings (`std::string`)**: Safe, dynamically-resized string objects with rich member functions replacing raw null-terminated C char arrays.",
+      "content_medium": "C++ was created by Bjarne Stroustrup in 1979 as an enhancement to the C language (\"C with Classes\"). Since C++11, C++ has undergone a massive modernization, emphasizing type safety, RAII (Resource Acquisition Is Initialization), smart pointers, and zero-cost abstractions.\n\nCore Modern C++ Highlights:\n1. **Type Deduction (`auto`)**: The compiler deduces the exact type from the initialization expression at compile time with zero runtime overhead.\n2. **Standard Streams (`<iostream>`)**: Type-safe stream insertion (`<<`) and extraction (`>>`) replace error-prone C format specifiers.\n3. **Namespaces**: The standard library is housed in the `std::` namespace, preventing global identifier collisions.\n4. **Standard Strings (`std::string`)**: Safe, dynamically-resized string objects with rich member functions replacing raw null-terminated C char arrays.",
+      "content_high": "C++ was created by Bjarne Stroustrup in 1979 as an enhancement to the C language (\"C with Classes\"). Since C++11, C++ has undergone a massive modernization, emphasizing type safety, RAII (Resource Acquisition Is Initialization), smart pointers, and zero-cost abstractions.\n\nCore Modern C++ Highlights:\n1. **Type Deduction (`auto`)**: The compiler deduces the exact type from the initialization expression at compile time with zero runtime overhead.\n2. **Standard Streams (`<iostream>`)**: Type-safe stream insertion (`<<`) and extraction (`>>`) replace error-prone C format specifiers.\n3. **Namespaces**: The standard library is housed in the `std::` namespace, preventing global identifier collisions.\n4. **Standard Strings (`std::string`)**: Safe, dynamically-resized string objects with rich member functions replacing raw null-terminated C char arrays.",
+      "syntax": "// Standard Modern C++ Entry\n#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // 1. auto type deduction\n    auto count = 100;                 // deduced as int\n    auto ratio = 3.14159;             // deduced as double\n    auto name = std::string(\"Ada\");   // deduced as std::string\n\n    // 2. Stream I/O\n    std::cout << name << \" counted \" << count << \" items.\" << std::endl;\n\n    // 3. Range-based for loop\n    std::vector<int> numbers = {10, 20, 30};\n    for (const auto& num : numbers) {\n        std::cout << num << \" \";\n    }\n    std::cout << \"\\n\";\n\n    return 0;\n}",
+      "examples": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string product = \"Quantum Core Processor\";\n    auto stock = 42;\n    auto price = 299.99;\n    auto is_available = stock > 0;\n\n    std::cout << \"=== Product Overview ===\" << std::endl;\n    std::cout << \"Item:      \" << product << std::endl;\n    std::cout << \"Stock:     \" << stock << \" units\" << std::endl;\n    std::cout << \"Price:     $\" << price << std::endl;\n    std::cout << \"Available: \" << (is_available ? \"YES\" : \"NO\") << std::endl;\n\n    return 0;\n}",
+      "common_mistakes": "using namespace std; // Placed at top of headers or global scope: std::cout << ...; // Explicit namespace prefix or scoped using std::cout;\n\nauto x; // Uninitialized auto variable: auto x = 0; // auto requires an initializer to deduce the type",
+      "practice_prompt": "Write a modern C++ program that stores your name in an auto variable and prints \"Hello Modern C++\".",
+      "sections": [
+        {
+          "id": "top-cpp-fundamentals-sec-1",
+          "title": "1. Concept: C++ Modern Fundamentals: Type Deduction, Streams & Namespaces",
+          "order_index": 1,
+          "content": "C++ was created by Bjarne Stroustrup in 1979 as an enhancement to the C language (\"C with Classes\"). Since C++11, C++ has undergone a massive modernization, emphasizing type safety, RAII (Resource Acquisition Is Initialization), smart pointers, and zero-cost abstractions.\n\nCore Modern C++ Highlights:\n1. **Type Deduction (`auto`)**: The compiler deduces the exact type from the initialization expression at compile time with zero runtime overhead.\n2. **Standard Streams (`<iostream>`)**: Type-safe stream insertion (`<<`) and extraction (`>>`) replace error-prone C format specifiers.\n3. **Namespaces**: The standard library is housed in the `std::` namespace, preventing global identifier collisions.\n4. **Standard Strings (`std::string`)**: Safe, dynamically-resized string objects with rich member functions replacing raw null-terminated C char arrays.",
+          "code_snippet": "#include <iostream>\n#include <string>\n\nint main() {\n    auto language = std::string(\"Modern C++\");\n    auto version = 20;\n    std::cout << \"Welcome to \" << language << \" \" << version << \"!\" << std::endl;\n    return 0;\n}",
+          "pitfalls": "Uses auto type deduction and type-safe stream output with std::cout and std::endl."
+        },
+        {
+          "id": "top-cpp-fundamentals-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. #include <iostream> and <string> import standard stream and string classes.\n\n2. Variables use auto for clean, type-deduced initialization without manual verbosity.\n\n3. Stream insertion operator << chains multiple types (strings, ints, doubles) seamlessly without format specifiers.\n\n4. std::endl flushes the output buffer and emits a newline character.",
+          "code_snippet": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string product = \"Quantum Core Processor\";\n    auto stock = 42;\n    auto price = 299.99;\n    auto is_available = stock > 0;\n\n    std::cout << \"=== Product Overview ===\" << std::endl;\n    std::cout << \"Item:      \" << product << std::endl;\n    std::cout << \"Stock:     \" << stock << \" units\" << std::endl;\n    std::cout << \"Price:     $\" << price << std::endl;\n    std::cout << \"Available: \" << (is_available ? \"YES\" : \"NO\") << std::endl;\n\n    return 0;\n}",
+          "pitfalls": "\"using namespace std;\" imports thousands of standard library symbols into global scope, leading to unexpected name collision errors (e.g. std::size vs local variable size)."
+        },
+        {
+          "id": "top-cpp-fundamentals-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "High-Throughput Financial Order Stream\n\nElectronic trading algorithms utilize modern C++ streams and type deductions to achieve microsecond latency with complete type guarantees.",
+          "code_snippet": "#include <iostream>\n#include <string>\n\nint main() {\n    auto ticker = std::string(\"NVDA\");\n    auto shares = 150;\n    auto bid_price = 118.75;\n    auto total_value = shares * bid_price;\n\n    std::cout << \"[ORDER ROUTER] BOUGHT \" << shares << \" of \" << ticker\n              << \" @ $\" << bid_price << \" | Total: $\" << total_value << std::endl;\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/CPP/top-cpp-fundamentals.txt"
+    },
+    {
+      "id": "top-cpp-control-functions",
+      "module_id": "mod-cpp-1",
+      "title": "Control Flow, Function Overloading & Default Arguments",
+      "order_index": 2,
+      "learning_objective": "Apply function overloading based on argument signatures; Configure default parameter values in function prototypes; Use C++17 if-statements with initializers: if (auto val = expr; cond)",
+      "content_standard": "C++ enhances standard functions with:\n1. **Function Overloading**: Multiple functions can share the exact same name as long as their parameter types or argument counts differ.\n2. **Default Arguments**: Trailing parameters can declare fallback values.\n3. **C++17 Init Statements**: Scope variables directly within `if` and `switch` headers: `if (auto status = check(); status.ok()) { ... }`.",
+      "content_low": "C++ enhances standard functions with:\n1. **Function Overloading**: Multiple functions can share the exact same name as long as their parameter types or argument counts differ.\n2. **Default Arguments**: Trailing parameters can declare fallback values.\n3. **C++17 Init Statements**: Scope variables directly within `if` and `switch` headers: `if (auto status = check(); status.ok()) { ... }`.",
+      "content_medium": "C++ enhances standard functions with:\n1. **Function Overloading**: Multiple functions can share the exact same name as long as their parameter types or argument counts differ.\n2. **Default Arguments**: Trailing parameters can declare fallback values.\n3. **C++17 Init Statements**: Scope variables directly within `if` and `switch` headers: `if (auto status = check(); status.ok()) { ... }`.",
+      "content_high": "C++ enhances standard functions with:\n1. **Function Overloading**: Multiple functions can share the exact same name as long as their parameter types or argument counts differ.\n2. **Default Arguments**: Trailing parameters can declare fallback values.\n3. **C++17 Init Statements**: Scope variables directly within `if` and `switch` headers: `if (auto status = check(); status.ok()) { ... }`.",
+      "syntax": "// Function Overloading\nint add(int a, int b) { return a + b; }\ndouble add(double a, double b) { return a + b; }\n\n// C++17 if with initializer\nif (auto count = getItems(); count > 0) {\n    std::cout << \"Items found: \" << count << std::endl;\n}",
+      "examples": "#include <iostream>\n\nint multiply(int a, int b) { return a * b; }\ndouble multiply(double a, double b) { return a * b; }\n\nint main() {\n    std::cout << \"Int Mult:    \" << multiply(4, 5) << std::endl;\n    std::cout << \"Double Mult: \" << multiply(2.5, 4.0) << std::endl;\n    return 0;\n}",
+      "common_mistakes": "void func(int a = 10, int b); // Non-trailing default argument: void func(int b, int a = 10); // Defaults must be trailing on the right",
+      "practice_prompt": "Write a C++ program with an overloaded function \"square\" that works for int (3 -> 9) and double (2.5 -> 6.25). Print square(4).",
+      "sections": [
+        {
+          "id": "top-cpp-control-functions-sec-1",
+          "title": "1. Concept: Control Flow, Function Overloading & Default Arguments",
+          "order_index": 1,
+          "content": "C++ enhances standard functions with:\n1. **Function Overloading**: Multiple functions can share the exact same name as long as their parameter types or argument counts differ.\n2. **Default Arguments**: Trailing parameters can declare fallback values.\n3. **C++17 Init Statements**: Scope variables directly within `if` and `switch` headers: `if (auto status = check(); status.ok()) { ... }`.",
+          "code_snippet": "#include <iostream>\n\nvoid greet(std::string name, std::string prefix = \"Hello\") {\n    std::cout << prefix << \", \" << name << \"!\" << std::endl;\n}\n\nint main() {\n    greet(\"Alice\");\n    greet(\"Bob\", \"Good morning\");\n    return 0;\n}",
+          "pitfalls": "Demonstrates default argument fallback in modern C++."
+        },
+        {
+          "id": "top-cpp-control-functions-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Compiler inspects parameter signatures at the call site.\n\n2. multiply(4, 5) dispatches to the (int, int) overload.\n\n3. multiply(2.5, 4.0) dispatches to the (double, double) overload.",
+          "code_snippet": "#include <iostream>\n\nint multiply(int a, int b) { return a * b; }\ndouble multiply(double a, double b) { return a * b; }\n\nint main() {\n    std::cout << \"Int Mult:    \" << multiply(4, 5) << std::endl;\n    std::cout << \"Double Mult: \" << multiply(2.5, 4.0) << std::endl;\n    return 0;\n}",
+          "pitfalls": "Default arguments must appear on the rightmost parameters so arguments align unambiguously at the call site."
+        },
+        {
+          "id": "top-cpp-control-functions-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "High-Performance Graphics Color Blender\n\nRendering pipelines overload math functions to optimize between integer hardware registers and floating-point shader pipelines.",
+          "code_snippet": "#include <iostream>\n\nunsigned int blend(unsigned int c1, unsigned int c2) { return (c1 + c2) / 2; }\ndouble blend(double c1, double c2, double alpha = 0.5) { return c1 * alpha + c2 * (1.0 - alpha); }\n\nint main() {\n    std::cout << \"Int Blend: \" << blend(200, 100) << std::endl;\n    std::cout << \"Alpha Blend: \" << blend(1.0, 0.0, 0.75) << std::endl;\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/CPP/top-cpp-control-functions.txt"
+    },
+    {
+      "id": "top-cpp-references-memory",
+      "module_id": "mod-cpp-1",
+      "title": "Pointers, References & Dynamic Memory (new/delete)",
+      "order_index": 3,
+      "learning_objective": "Distinguish between pass-by-value, pass-by-pointer, and pass-by-reference; Understand that references cannot be null and cannot be reseated after initialization; Manage heap memory safely using new and delete without memory leaks",
+      "content_standard": "In C++, a **Reference (`type&`)** is an alias for an existing object in memory.\nUnlike pointers:\n1. References **cannot be null**.\n2. References **must be initialized upon declaration**.\n3. References **cannot be reassigned** to refer to a different object after binding.\n\nPassing by `const type&` avoids expensive copy constructors while preserving read-only safety.",
+      "content_low": "In C++, a **Reference (`type&`)** is an alias for an existing object in memory.\nUnlike pointers:\n1. References **cannot be null**.\n2. References **must be initialized upon declaration**.\n3. References **cannot be reassigned** to refer to a different object after binding.\n\nPassing by `const type&` avoids expensive copy constructors while preserving read-only safety.",
+      "content_medium": "In C++, a **Reference (`type&`)** is an alias for an existing object in memory.\nUnlike pointers:\n1. References **cannot be null**.\n2. References **must be initialized upon declaration**.\n3. References **cannot be reassigned** to refer to a different object after binding.\n\nPassing by `const type&` avoids expensive copy constructors while preserving read-only safety.",
+      "content_high": "In C++, a **Reference (`type&`)** is an alias for an existing object in memory.\nUnlike pointers:\n1. References **cannot be null**.\n2. References **must be initialized upon declaration**.\n3. References **cannot be reassigned** to refer to a different object after binding.\n\nPassing by `const type&` avoids expensive copy constructors while preserving read-only safety.",
+      "syntax": "int val = 42;\nint& ref = val;        // Alias to val (&ref == &val)\nconst int& cRef = val; // Read-only alias\n\nint* ptr = new int(100); // Heap allocation\ndelete ptr;              // Free memory\nptr = nullptr;",
+      "examples": "#include <iostream>\n\nint main() {\n    int original = 50;\n    int& alias = original;\n\n    alias = 99; // Modifies original directly\n    std::cout << \"Original Value: \" << original << std::endl;\n    std::cout << \"Same Address?   \" << (&original == &alias ? \"YES\" : \"NO\") << std::endl;\n\n    return 0;\n}",
+      "common_mistakes": "int* p = new int[10]; delete p; // Mismatched delete operator: delete[] p; // Array allocations must use delete[]",
+      "practice_prompt": "Write a C++ function increment(int& n) that adds 10 to its argument. In main, pass an int initialized to 15, then print \"Result: 25\".",
+      "sections": [
+        {
+          "id": "top-cpp-references-memory-sec-1",
+          "title": "1. Concept: Pointers, References & Dynamic Memory (new/delete)",
+          "order_index": 1,
+          "content": "In C++, a **Reference (`type&`)** is an alias for an existing object in memory.\nUnlike pointers:\n1. References **cannot be null**.\n2. References **must be initialized upon declaration**.\n3. References **cannot be reassigned** to refer to a different object after binding.\n\nPassing by `const type&` avoids expensive copy constructors while preserving read-only safety.",
+          "code_snippet": "#include <iostream>\n\nvoid swap(int& a, int& b) {\n    int temp = a;\n    a = b;\n    b = temp;\n}\n\nint main() {\n    int x = 10, y = 20;\n    swap(x, y);\n    std::cout << \"x: \" << x << \", y: \" << y << std::endl;\n    return 0;\n}",
+          "pitfalls": "Demonstrates pass-by-reference altering caller variables without explicit pointer dereferencing."
+        },
+        {
+          "id": "top-cpp-references-memory-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. original is allocated on the stack with value 50.\n\n2. alias is bound as an lvalue reference to original (sharing the identical memory address).\n\n3. Mutating alias changes original immediately without pointer dereference syntax.",
+          "code_snippet": "#include <iostream>\n\nint main() {\n    int original = 50;\n    int& alias = original;\n\n    alias = 99; // Modifies original directly\n    std::cout << \"Original Value: \" << original << std::endl;\n    std::cout << \"Same Address?   \" << (&original == &alias ? \"YES\" : \"NO\") << std::endl;\n\n    return 0;\n}",
+          "pitfalls": "Allocations made with new[] must be freed with delete[] to ensure all destructors run."
+        },
+        {
+          "id": "top-cpp-references-memory-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Zero-Copy Matrix Pass in Physics Simulation\n\nPassing large collections by const reference avoids cloning gigabytes of data on the heap.",
+          "code_snippet": "#include <iostream>\n#include <vector>\n\nvoid computePhysics(const std::vector<double>& largeMesh) {\n    std::cout << \"Processing \" << largeMesh.size() << \" vertices without copying memory!\\n\";\n}\n\nint main() {\n    std::vector<double> mesh(100000, 1.0);\n    computePhysics(mesh); // Fast zero-copy reference pass\n    return 0;\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/CPP/top-cpp-references-memory.txt"
+    },
+    {
+      "id": "top-java-fundamentals",
+      "module_id": "mod-java-1",
+      "title": "Java Core Architecture: JVM, Bytecode & Strong Typing",
+      "order_index": 1,
+      "learning_objective": "Understand the WORA principle: javac compiler, bytecode (.class), and the Java Virtual Machine (JVM); Distinguish the 8 Java primitive types from reference types and wrapper classes; Master the class entry point: public static void main(String[] args); Perform formatted console I/O using System.out.println() and System.out.printf()",
+      "content_standard": "Java was released in 1995 by James Gosling at Sun Microsystems with the famous motto: \"Write Once, Run Anywhere\" (WORA).\n\nThe Java Execution Architecture:\n1. **Source Code (`*.java`)**: Human-readable Java instructions.\n2. **Compiler (`javac`)**: Translates source code into platform-independent intermediate **Bytecode** stored in `*.class` files.\n3. **Java Virtual Machine (JVM)**: Loads bytecode via the **ClassLoader**, verifies byte safety, and executes instructions using the **Just-In-Time (JIT) Compiler** and interpreter directly on the underlying host OS.\n4. **Automatic Memory Management**: The JVM Garbage Collector (GC) runs concurrently to track object references and deallocate unreferenced heap memory automatically.\n\nEvery Java application is composed of at least one `class`, and execution begins at the static entry point:\n`public static void main(String[] args)`.",
+      "content_low": "Java was released in 1995 by James Gosling at Sun Microsystems with the famous motto: \"Write Once, Run Anywhere\" (WORA).\n\nThe Java Execution Architecture:\n1. **Source Code (`*.java`)**: Human-readable Java instructions.\n2. **Compiler (`javac`)**: Translates source code into platform-independent intermediate **Bytecode** stored in `*.class` files.\n3. **Java Virtual Machine (JVM)**: Loads bytecode via the **ClassLoader**, verifies byte safety, and executes instructions using the **Just-In-Time (JIT) Compiler** and interpreter directly on the underlying host OS.\n4. **Automatic Memory Management**: The JVM Garbage Collector (GC) runs concurrently to track object references and deallocate unreferenced heap memory automatically.\n\nEvery Java application is composed of at least one `class`, and execution begins at the static entry point:\n`public static void main(String[] args)`.",
+      "content_medium": "Java was released in 1995 by James Gosling at Sun Microsystems with the famous motto: \"Write Once, Run Anywhere\" (WORA).\n\nThe Java Execution Architecture:\n1. **Source Code (`*.java`)**: Human-readable Java instructions.\n2. **Compiler (`javac`)**: Translates source code into platform-independent intermediate **Bytecode** stored in `*.class` files.\n3. **Java Virtual Machine (JVM)**: Loads bytecode via the **ClassLoader**, verifies byte safety, and executes instructions using the **Just-In-Time (JIT) Compiler** and interpreter directly on the underlying host OS.\n4. **Automatic Memory Management**: The JVM Garbage Collector (GC) runs concurrently to track object references and deallocate unreferenced heap memory automatically.\n\nEvery Java application is composed of at least one `class`, and execution begins at the static entry point:\n`public static void main(String[] args)`.",
+      "content_high": "Java was released in 1995 by James Gosling at Sun Microsystems with the famous motto: \"Write Once, Run Anywhere\" (WORA).\n\nThe Java Execution Architecture:\n1. **Source Code (`*.java`)**: Human-readable Java instructions.\n2. **Compiler (`javac`)**: Translates source code into platform-independent intermediate **Bytecode** stored in `*.class` files.\n3. **Java Virtual Machine (JVM)**: Loads bytecode via the **ClassLoader**, verifies byte safety, and executes instructions using the **Just-In-Time (JIT) Compiler** and interpreter directly on the underlying host OS.\n4. **Automatic Memory Management**: The JVM Garbage Collector (GC) runs concurrently to track object references and deallocate unreferenced heap memory automatically.\n\nEvery Java application is composed of at least one `class`, and execution begins at the static entry point:\n`public static void main(String[] args)`.",
+      "syntax": "// Standard Java Program Structure\npublic class Main {\n    public static void main(String[] args) {\n        // 1. Eight Primitive Types:\n        byte b = 127;                // 1 byte: -128 to 127\n        short s = 32000;             // 2 bytes: -32,768 to 32,767\n        int i = 2147483647;          // 4 bytes: standard integer\n        long l = 9223372036854775807L;// 8 bytes (note 'L' suffix)\n        float f = 3.14f;             // 4 bytes (note 'f' suffix)\n        double d = 2.718281828459;   // 8 bytes (default float)\n        char c = 'J';                // 2 bytes (16-bit Unicode)\n        boolean flag = true;         // true or false\n\n        // 2. Reference Types:\n        String title = \"Java Platform\";\n\n        // 3. Formatted Output:\n        System.out.printf(\"Language: %s, Version: %d, Float: %.2f\\n\", title, 21, d);\n    }\n}",
+      "examples": "public class Main {\n    public static void main(String[] args) {\n        String student = \"Maya Lin\";\n        int credits = 15;\n        double costPerCredit = 320.50;\n        double totalTuition = credits * costPerCredit;\n\n        System.out.println(\"=== Enrollment Invoice ===\");\n        System.out.println(\"Student Name:  \" + student);\n        System.out.println(\"Total Credits: \" + credits);\n        System.out.printf(\"Tuition Fee:   $%.2f\\n\", totalTuition);\n    }\n}",
+      "common_mistakes": "if (name == \"Alice\") // Testing String equality with ==: if (name.equals(\"Alice\")) // Use .equals() for content comparison\n\nlong bigNum = 3000000000; // Missing 'L' suffix: long bigNum = 3000000000L; // Append L to denote a 64-bit literal",
+      "practice_prompt": "Write a Java program that declares an int variable score with value 98 and prints \"Student Score: 98\".",
+      "sections": [
+        {
+          "id": "top-java-fundamentals-sec-1",
+          "title": "1. Concept: Java Core Architecture: JVM, Bytecode & Strong Typing",
+          "order_index": 1,
+          "content": "Java was released in 1995 by James Gosling at Sun Microsystems with the famous motto: \"Write Once, Run Anywhere\" (WORA).\n\nThe Java Execution Architecture:\n1. **Source Code (`*.java`)**: Human-readable Java instructions.\n2. **Compiler (`javac`)**: Translates source code into platform-independent intermediate **Bytecode** stored in `*.class` files.\n3. **Java Virtual Machine (JVM)**: Loads bytecode via the **ClassLoader**, verifies byte safety, and executes instructions using the **Just-In-Time (JIT) Compiler** and interpreter directly on the underlying host OS.\n4. **Automatic Memory Management**: The JVM Garbage Collector (GC) runs concurrently to track object references and deallocate unreferenced heap memory automatically.\n\nEvery Java application is composed of at least one `class`, and execution begins at the static entry point:\n`public static void main(String[] args)`.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        int studentId = 101;\n        double gpa = 3.92;\n        boolean isEnrolled = true;\n        System.out.println(\"ID: \" + studentId + \" | GPA: \" + gpa + \" | Active: \" + isEnrolled);\n    }\n}",
+          "pitfalls": "Defines a class Main with primitive variables printed via System.out.println."
+        },
+        {
+          "id": "top-java-fundamentals-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. javac compiles Main.java into Main.class bytecode.\n\n2. JVM launches and calls public static void main(String[] args).\n\n3. Primitive variables (credits, costPerCredit) are stored in the local thread stack.\n\n4. String \"Maya Lin\" is stored in the JVM Heap String Constant Pool.\n\n5. System.out.printf applies formatted string output.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        String student = \"Maya Lin\";\n        int credits = 15;\n        double costPerCredit = 320.50;\n        double totalTuition = credits * costPerCredit;\n\n        System.out.println(\"=== Enrollment Invoice ===\");\n        System.out.println(\"Student Name:  \" + student);\n        System.out.println(\"Total Credits: \" + credits);\n        System.out.printf(\"Tuition Fee:   $%.2f\\n\", totalTuition);\n    }\n}",
+          "pitfalls": "In Java, == compares memory references (whether both variables point to the exact same heap address), while .equals() compares character values."
+        },
+        {
+          "id": "top-java-fundamentals-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Enterprise Bank Transaction Ledger\n\nEnterprise banks use Java because the JVM guarantees zero buffer overflows, memory safety, and thread-safe garbage collection across mission-critical services.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        long accountId = 9876543210L;\n        double balance = 5400.75;\n        double withdrawal = 450.00;\n\n        if (balance >= withdrawal) {\n            balance -= withdrawal;\n            System.out.println(\"[LEDGER AUDIT] Account: \" + accountId);\n            System.out.printf(\"Debited: $%.2f | New Balance: $%.2f\\n\", withdrawal, balance);\n        }\n    }\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/JAVA/top-java-fundamentals.txt"
+    },
+    {
+      "id": "top-java-control-flow",
+      "module_id": "mod-java-1",
+      "title": "Control Flow, Switch Expressions & Loop Constructs",
+      "order_index": 2,
+      "learning_objective": "Construct if-else chains and modern switch expressions without fallthrough bugs; Iterate over collections using the enhanced for-each loop: for (Type x : collection); Manage loop termination with break and continue statements",
+      "content_standard": "Java provides robust control flow structures.\nSince Java 14, **Switch Expressions** support arrow syntax (`case X -> Y`), which eliminates the need for `break` statements and prevents accidental fallthrough bugs.\nThe **Enhanced for-each loop** (`for (int n : numbers)`) iterates through arrays and Iterable collections without manual index counters.",
+      "content_low": "Java provides robust control flow structures.\nSince Java 14, **Switch Expressions** support arrow syntax (`case X -> Y`), which eliminates the need for `break` statements and prevents accidental fallthrough bugs.\nThe **Enhanced for-each loop** (`for (int n : numbers)`) iterates through arrays and Iterable collections without manual index counters.",
+      "content_medium": "Java provides robust control flow structures.\nSince Java 14, **Switch Expressions** support arrow syntax (`case X -> Y`), which eliminates the need for `break` statements and prevents accidental fallthrough bugs.\nThe **Enhanced for-each loop** (`for (int n : numbers)`) iterates through arrays and Iterable collections without manual index counters.",
+      "content_high": "Java provides robust control flow structures.\nSince Java 14, **Switch Expressions** support arrow syntax (`case X -> Y`), which eliminates the need for `break` statements and prevents accidental fallthrough bugs.\nThe **Enhanced for-each loop** (`for (int n : numbers)`) iterates through arrays and Iterable collections without manual index counters.",
+      "syntax": "// Enhanced for-each loop\nint[] numbers = {10, 20, 30};\nfor (int num : numbers) {\n    System.out.println(num);\n}",
+      "examples": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {85, 92, 78, 96, 88};\n        int sum = 0;\n        int max = scores[0];\n\n        for (int s : scores) {\n            sum += s;\n            if (s > max) max = s;\n        }\n\n        double average = (double) sum / scores.length;\n        System.out.println(\"Total Scores: \" + scores.length);\n        System.out.println(\"Highest:      \" + max);\n        System.out.printf(\"Average:      %.1f\\n\", average);\n    }\n}",
+      "common_mistakes": "for (int i = 0; i <= arr.length; i++) // Array index out of bounds: for (int i = 0; i < arr.length; i++) // Use strict less-than",
+      "practice_prompt": "Write a Java program with an array {2, 4, 6, 8}. Calculate their sum and print \"Total: 20\".",
+      "sections": [
+        {
+          "id": "top-java-control-flow-sec-1",
+          "title": "1. Concept: Control Flow, Switch Expressions & Loop Constructs",
+          "order_index": 1,
+          "content": "Java provides robust control flow structures.\nSince Java 14, **Switch Expressions** support arrow syntax (`case X -> Y`), which eliminates the need for `break` statements and prevents accidental fallthrough bugs.\nThe **Enhanced for-each loop** (`for (int n : numbers)`) iterates through arrays and Iterable collections without manual index counters.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        int day = 3;\n        String dayName = switch (day) {\n            case 1 -> \"Monday\";\n            case 2 -> \"Tuesday\";\n            case 3 -> \"Wednesday\";\n            default -> \"Other\";\n        };\n        System.out.println(\"Day: \" + dayName);\n    }\n}",
+          "pitfalls": "Demonstrates modern Java switch expression."
+        },
+        {
+          "id": "top-java-control-flow-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. Enhanced for-each loop iterates directly over integer array.\n\n2. sum accumulates all elements.\n\n3. if condition updates maximum value.\n\n4. Average is formatted to 1 decimal place.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        int[] scores = {85, 92, 78, 96, 88};\n        int sum = 0;\n        int max = scores[0];\n\n        for (int s : scores) {\n            sum += s;\n            if (s > max) max = s;\n        }\n\n        double average = (double) sum / scores.length;\n        System.out.println(\"Total Scores: \" + scores.length);\n        System.out.println(\"Highest:      \" + max);\n        System.out.printf(\"Average:      %.1f\\n\", average);\n    }\n}",
+          "pitfalls": "In Java, arrays of length N are indexed from 0 to N-1. Using <= raises ArrayIndexOutOfBoundsException."
+        },
+        {
+          "id": "top-java-control-flow-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "E-Commerce Order Status Dispatcher\n\nModern microservices in Java use switch expressions with string keys for clear event-driven dispatch.",
+          "code_snippet": "public class Main {\n    public static void main(String[] args) {\n        String status = \"SHIPPED\";\n        String message = switch (status) {\n            case \"PENDING\" -> \"Order received and queued.\";\n            case \"SHIPPED\" -> \"Package in transit with tracking.\";\n            case \"DELIVERED\" -> \"Delivered to customer address.\";\n            default -> \"Unknown status.\";\n        };\n        System.out.println(\"Status Update: \" + message);\n    }\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/JAVA/top-java-control-flow.txt"
+    },
+    {
+      "id": "top-java-methods-arrays",
+      "module_id": "mod-java-1",
+      "title": "Static Methods, Memory Stack/Heap & Arrays",
+      "order_index": 3,
+      "learning_objective": "Define modular reusable static helper methods with return values and parameters; Understand Java's strict pass-by-value evaluation model; Contrast primitive stack allocation with heap object instantiation",
+      "content_standard": "In Java:\n1. **Methods**: Functions declared inside a class. `static` methods belong to the class itself and can be invoked without instantiating an object.\n2. **Pass-by-Value**: Java is **strictly pass-by-value**. When passing primitives, a copy of the value is passed. When passing object references, a copy of the reference pointer is passed.\n3. **Memory Organization**:\n   - **Stack**: Stores method call frames, local primitives, and reference handles. Stack memory is automatically reclaimed when a method returns.\n   - **Heap**: Stores all objects and arrays. Managed by the JVM Garbage Collector.",
+      "content_low": "In Java:\n1. **Methods**: Functions declared inside a class. `static` methods belong to the class itself and can be invoked without instantiating an object.\n2. **Pass-by-Value**: Java is **strictly pass-by-value**. When passing primitives, a copy of the value is passed. When passing object references, a copy of the reference pointer is passed.\n3. **Memory Organization**:\n   - **Stack**: Stores method call frames, local primitives, and reference handles. Stack memory is automatically reclaimed when a method returns.\n   - **Heap**: Stores all objects and arrays. Managed by the JVM Garbage Collector.",
+      "content_medium": "In Java:\n1. **Methods**: Functions declared inside a class. `static` methods belong to the class itself and can be invoked without instantiating an object.\n2. **Pass-by-Value**: Java is **strictly pass-by-value**. When passing primitives, a copy of the value is passed. When passing object references, a copy of the reference pointer is passed.\n3. **Memory Organization**:\n   - **Stack**: Stores method call frames, local primitives, and reference handles. Stack memory is automatically reclaimed when a method returns.\n   - **Heap**: Stores all objects and arrays. Managed by the JVM Garbage Collector.",
+      "content_high": "In Java:\n1. **Methods**: Functions declared inside a class. `static` methods belong to the class itself and can be invoked without instantiating an object.\n2. **Pass-by-Value**: Java is **strictly pass-by-value**. When passing primitives, a copy of the value is passed. When passing object references, a copy of the reference pointer is passed.\n3. **Memory Organization**:\n   - **Stack**: Stores method call frames, local primitives, and reference handles. Stack memory is automatically reclaimed when a method returns.\n   - **Heap**: Stores all objects and arrays. Managed by the JVM Garbage Collector.",
+      "syntax": "public static returnType methodName(ParamType p1, ParamType p2) {\n    // method body\n    return value;\n}",
+      "examples": "public class Main {\n    public static double calculateBMI(double weightKg, double heightM) {\n        return weightKg / (heightM * heightM);\n    }\n\n    public static void main(String[] args) {\n        double weight = 70.0;\n        double height = 1.75;\n        double bmi = calculateBMI(weight, height);\n\n        System.out.printf(\"Weight: %.1f kg, Height: %.2f m\\n\", weight, height);\n        System.out.printf(\"Calculated BMI: %.1f\\n\", bmi);\n    }\n}",
+      "common_mistakes": "public void helper() { ... } // Calling non-static method directly from static main: public static void helper() { ... } // Add static keyword or create an instance",
+      "practice_prompt": "Write a static method cube(int n) that returns n*n*n. In main, print \"Cube: \" + cube(3).",
+      "sections": [
+        {
+          "id": "top-java-methods-arrays-sec-1",
+          "title": "1. Concept: Static Methods, Memory Stack/Heap & Arrays",
+          "order_index": 1,
+          "content": "In Java:\n1. **Methods**: Functions declared inside a class. `static` methods belong to the class itself and can be invoked without instantiating an object.\n2. **Pass-by-Value**: Java is **strictly pass-by-value**. When passing primitives, a copy of the value is passed. When passing object references, a copy of the reference pointer is passed.\n3. **Memory Organization**:\n   - **Stack**: Stores method call frames, local primitives, and reference handles. Stack memory is automatically reclaimed when a method returns.\n   - **Heap**: Stores all objects and arrays. Managed by the JVM Garbage Collector.",
+          "code_snippet": "public class Main {\n    public static int square(int n) {\n        return n * n;\n    }\n\n    public static void main(String[] args) {\n        int result = square(7);\n        System.out.println(\"Square of 7: \" + result);\n    }\n}",
+          "pitfalls": "Demonstrates static method declaration and invocation."
+        },
+        {
+          "id": "top-java-methods-arrays-sec-2",
+          "title": "2. Syntax & Mechanics",
+          "order_index": 2,
+          "content": "1. calculateBMI is a static method returning a double precision float.\n\n2. Arguments (weight, height) are copied into the method's stack frame.\n\n3. The computed double value is returned to the caller main method.",
+          "code_snippet": "public class Main {\n    public static double calculateBMI(double weightKg, double heightM) {\n        return weightKg / (heightM * heightM);\n    }\n\n    public static void main(String[] args) {\n        double weight = 70.0;\n        double height = 1.75;\n        double bmi = calculateBMI(weight, height);\n\n        System.out.printf(\"Weight: %.1f kg, Height: %.2f m\\n\", weight, height);\n        System.out.printf(\"Calculated BMI: %.1f\\n\", bmi);\n    }\n}",
+          "pitfalls": "Static methods exist without an instance. They cannot directly call instance methods or instance variables without creating an object."
+        },
+        {
+          "id": "top-java-methods-arrays-sec-3",
+          "title": "3. Real-World Application",
+          "order_index": 3,
+          "content": "Cryptographic Hash Utility Validation\n\nMicroservice utilities use static helper methods for stateless, deterministic data verification.",
+          "code_snippet": "public class Main {\n    public static boolean validateChecksum(int[] data, int expectedSum) {\n        int sum = 0;\n        for (int val : data) sum += val;\n        return sum == expectedSum;\n    }\n\n    public static void main(String[] args) {\n        int[] packet = {10, 25, 40, 15};\n        boolean isValid = validateChecksum(packet, 90);\n        System.out.println(\"Packet Integrity Valid? \" + isValid);\n    }\n}",
+          "pitfalls": "Test boundary conditions."
+        }
+      ],
+      "content_path": "rag/documents/JAVA/top-java-methods-arrays.txt"
     }
   ],
   "mcq_questions": [
@@ -1668,6 +2095,278 @@
       ],
       "correct_index": 1,
       "explanation": "Java supports single class inheritance for simplicity; multiple inheritance is achieved through interfaces."
+    },
+    {
+      "id": "mcq-top-c-fundamentals-1",
+      "topic_id": "top-c-fundamentals",
+      "question_text": "Which compilation phase is responsible for expanding #include directives and #define macros?",
+      "options": [
+        "Compiler",
+        "Preprocessor",
+        "Assembler",
+        "Linker"
+      ],
+      "correct_option_index": 1,
+      "explanation": "The Preprocessor handles all directives beginning with # before compilation begins.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-fundamentals-2",
+      "topic_id": "top-c-fundamentals",
+      "question_text": "What is the result of the expression 7 / 2 in C?",
+      "options": [
+        "3.5",
+        "3",
+        "4",
+        "Compilation Error"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Dividing two integer literals in C performs integer truncation, yielding 3.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-fundamentals-3",
+      "topic_id": "top-c-fundamentals",
+      "question_text": "Why is the & operator required when calling scanf(\"%d\", &val)?",
+      "options": [
+        "It instructs scanf to format the number as decimal",
+        "It passes the memory address of val so scanf can write the value into it",
+        "It prevents buffer overflows in stdin",
+        "It is purely optional syntax sugar"
+      ],
+      "correct_option_index": 1,
+      "explanation": "C passes arguments by value. To allow a function to modify a caller variable, you must pass its memory address using &.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-operators-1",
+      "topic_id": "top-c-operators",
+      "question_text": "Given int x = 3; what is the value of int y = x++;?",
+      "options": [
+        "y = 3, x = 4",
+        "y = 4, x = 4",
+        "y = 3, x = 3",
+        "Compilation Error"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Postfix increment yields the original value (3) to y, then increments x to 4.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-control-flow-1",
+      "topic_id": "top-c-control-flow",
+      "question_text": "What happens if you omit the break statement at the end of a switch case in C?",
+      "options": [
+        "The compiler throws a SyntaxError",
+        "Execution falls through into the subsequent case block",
+        "The switch terminates automatically",
+        "The program crashes with a segmentation fault"
+      ],
+      "correct_option_index": 1,
+      "explanation": "C switch statements feature intentional fallthrough; without break, control continues into the next case.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-loops-1",
+      "topic_id": "top-c-loops",
+      "question_text": "Which loop construct guarantees that its body will execute at least once?",
+      "options": [
+        "for loop",
+        "while loop",
+        "do-while loop",
+        "nested loop"
+      ],
+      "correct_option_index": 2,
+      "explanation": "A do-while loop evaluates its condition at the bottom, guaranteeing at least one execution.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-c-arrays-1",
+      "topic_id": "top-c-arrays",
+      "question_text": "If int nums[10]; is declared on a 64-bit system, what is the value of sizeof(nums)?",
+      "options": [
+        "10 bytes",
+        "40 bytes",
+        "80 bytes",
+        "8 bytes"
+      ],
+      "correct_option_index": 1,
+      "explanation": "An int is 4 bytes. 10 ints contiguous in memory take 10 * 4 = 40 bytes.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-cpp-fundamentals-1",
+      "topic_id": "top-cpp-fundamentals",
+      "question_text": "When is the type of an auto variable determined in modern C++?",
+      "options": [
+        "At runtime by dynamic inspection",
+        "At compile-time based on the initializer",
+        "At program launch by the OS loader",
+        "When the variable is first accessed"
+      ],
+      "correct_option_index": 1,
+      "explanation": "In C++, auto is strictly compile-time type deduction with zero runtime overhead or performance penalty.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-cpp-fundamentals-2",
+      "topic_id": "top-cpp-fundamentals",
+      "question_text": "Why is \"using namespace std;\" discouraged in professional C++ codebases?",
+      "options": [
+        "It degrades runtime performance by 50%",
+        "It causes global symbol namespace pollution and name collisions",
+        "It disables compiler optimizations",
+        "It is deprecated in C++20"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Importing the entire standard library into global scope causes ambiguous symbol conflicts with user-defined identifiers.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-cpp-fundamentals-3",
+      "topic_id": "top-cpp-fundamentals",
+      "question_text": "What is the primary difference between \\n and std::endl in C++?",
+      "options": [
+        "\\n only works on Linux; std::endl works everywhere",
+        "std::endl inserts a newline AND explicitly flushes the output stream buffer",
+        "std::endl is 10x faster than \\n",
+        "There is zero difference"
+      ],
+      "correct_option_index": 1,
+      "explanation": "std::endl writes a newline and triggers a stream flush (std::flush), which can cause performance overhead in tight loops.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-cpp-control-functions-1",
+      "topic_id": "top-cpp-control-functions",
+      "question_text": "Which of the following functions can NOT legally overload int calc(int a)?",
+      "options": [
+        "double calc(double a)",
+        "double calc(int a)",
+        "int calc(int a, int b)",
+        "int calc(double a)"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Functions cannot be overloaded based solely on return type in C++; their parameter lists must differ.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-cpp-references-memory-1",
+      "topic_id": "top-cpp-references-memory",
+      "question_text": "Which of the following is TRUE regarding C++ references compared to pointers?",
+      "options": [
+        "References can be assigned to nullptr",
+        "References cannot be reseated to point to another object after initialization",
+        "References require explicit * dereferencing",
+        "References consume 8 bytes of stack memory each time"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Once bound to an object, a C++ reference is permanently linked to that object.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-java-fundamentals-1",
+      "topic_id": "top-java-fundamentals",
+      "question_text": "What is the role of the Java Virtual Machine (JVM)?",
+      "options": [
+        "Translates Java source code into C code",
+        "Executes compiled Java bytecode (.class) on the host operating system",
+        "Acts as an IDE code editor",
+        "Manages network domains exclusively"
+      ],
+      "correct_option_index": 1,
+      "explanation": "The JVM is the runtime engine that loads, verifies, and executes platform-independent bytecode.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-java-fundamentals-2",
+      "topic_id": "top-java-fundamentals",
+      "question_text": "How should you compare the content of two String objects in Java?",
+      "options": [
+        "Using == operator",
+        "Using .equals() method",
+        "Using .compare() operator",
+        "Using .isSame()"
+      ],
+      "correct_option_index": 1,
+      "explanation": "== compares memory reference pointers. To compare text content, you must always use .equals().",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-java-fundamentals-3",
+      "topic_id": "top-java-fundamentals",
+      "question_text": "Which of the following is NOT one of Java's 8 primitive data types?",
+      "options": [
+        "byte",
+        "boolean",
+        "String",
+        "float"
+      ],
+      "correct_option_index": 2,
+      "explanation": "String is a reference class type in java.lang, not a primitive.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-java-control-flow-1",
+      "topic_id": "top-java-control-flow",
+      "question_text": "What exception is thrown if you access arr[5] on an array of length 5 in Java?",
+      "options": [
+        "NullPointerException",
+        "ArrayIndexOutOfBoundsException",
+        "IllegalArgumentException",
+        "SegmentationFault"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Java runtime enforces strict boundary checks, throwing ArrayIndexOutOfBoundsException on out-of-range indices.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
+    },
+    {
+      "id": "mcq-top-java-methods-arrays-1",
+      "topic_id": "top-java-methods-arrays",
+      "question_text": "Is Java pass-by-value or pass-by-reference?",
+      "options": [
+        "Always pass-by-value",
+        "Always pass-by-reference",
+        "Pass-by-value for primitives, pass-by-reference for objects",
+        "Depends on compiler flags"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Java is strictly pass-by-value. For objects, a copy of the reference address is passed by value.",
+      "difficulty": "medium",
+      "bloom_level": "apply",
+      "expected_time_seconds": 30
     }
   ],
   "coding_questions": [
@@ -2246,6 +2945,237 @@
           "input": "0",
           "expected_output": "1",
           "is_hidden": true
+        }
+      ]
+    },
+    {
+      "id": "code-top-c-fundamentals",
+      "topic_id": "top-c-fundamentals",
+      "language": "c",
+      "title": "C Fundamentals, Data Types & Console I/O Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C program that calculates the perimeter of a rectangle with length 14 and width 6. Print: \"Perimeter: 40\".",
+      "input_format": "Standard C console input.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main(void) {\n    int length = 14;\n    int width = 6;\n    // Calculate perimeter: 2 * (length + width)\n    int perimeter = 2 * (length + width);\n    printf(\"Perimeter: %d\\n\", perimeter);\n    return 0;\n}",
+        "python": "#include <stdio.h>\n\nint main(void) {\n    int length = 14;\n    int width = 6;\n    // Calculate perimeter: 2 * (length + width)\n    int perimeter = 2 * (length + width);\n    printf(\"Perimeter: %d\\n\", perimeter);\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Perimeter: 40"
+        }
+      ]
+    },
+    {
+      "id": "code-top-c-operators",
+      "topic_id": "top-c-operators",
+      "language": "c",
+      "title": "Arithmetic, Relational & Conditional Operators Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C program that uses ternary operator to check if an integer number 17 is even or odd. Print \"Odd\".",
+      "input_format": "Standard C console input.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main(void) {\n    int n = 17;\n    printf(\"%s\\n\", (n % 2 == 0) ? \"Even\" : \"Odd\");\n    return 0;\n}",
+        "python": "#include <stdio.h>\n\nint main(void) {\n    int n = 17;\n    printf(\"%s\\n\", (n % 2 == 0) ? \"Even\" : \"Odd\");\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Odd"
+        }
+      ]
+    },
+    {
+      "id": "code-top-c-control-flow",
+      "topic_id": "top-c-control-flow",
+      "language": "c",
+      "title": "Decision Making & Branching (if-else, switch) Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C program that tests whether an integer month number 3 is in Spring (3, 4, 5). If so, print \"Spring\".",
+      "input_format": "Standard C console input.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main(void) {\n    int month = 3;\n    if (month >= 3 && month <= 5) {\n        printf(\"Spring\\n\");\n    }\n    return 0;\n}",
+        "python": "#include <stdio.h>\n\nint main(void) {\n    int month = 3;\n    if (month >= 3 && month <= 5) {\n        printf(\"Spring\\n\");\n    }\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Spring"
+        }
+      ]
+    },
+    {
+      "id": "code-top-c-loops",
+      "topic_id": "top-c-loops",
+      "language": "c",
+      "title": "Iteration & Loop Architecture (for, while, do-while) Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C program that computes the factorial of 5 (1*2*3*4*5) using a loop and prints \"Factorial: 120\".",
+      "input_format": "Standard C console input.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main(void) {\n    int fact = 1;\n    for (int i = 1; i <= 5; i++) {\n        fact *= i;\n    }\n    printf(\"Factorial: %d\\n\", fact);\n    return 0;\n}",
+        "python": "#include <stdio.h>\n\nint main(void) {\n    int fact = 1;\n    for (int i = 1; i <= 5; i++) {\n        fact *= i;\n    }\n    printf(\"Factorial: %d\\n\", fact);\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Factorial: 120"
+        }
+      ]
+    },
+    {
+      "id": "code-top-c-arrays",
+      "topic_id": "top-c-arrays",
+      "language": "c",
+      "title": "Single & Multidimensional Array Processing Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C program that finds the maximum value in an array {12, 45, 7, 89, 23} and prints \"Max: 89\".",
+      "input_format": "Standard C console input.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "c": "#include <stdio.h>\n\nint main(void) {\n    int arr[] = {12, 45, 7, 89, 23};\n    int max = arr[0];\n    for (int i = 1; i < 5; i++) {\n        if (arr[i] > max) max = arr[i];\n    }\n    printf(\"Max: %d\\n\", max);\n    return 0;\n}",
+        "python": "#include <stdio.h>\n\nint main(void) {\n    int arr[] = {12, 45, 7, 89, 23};\n    int max = arr[0];\n    for (int i = 1; i < 5; i++) {\n        if (arr[i] > max) max = arr[i];\n    }\n    printf(\"Max: %d\\n\", max);\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Max: 89"
+        }
+      ]
+    },
+    {
+      "id": "code-top-cpp-fundamentals",
+      "topic_id": "top-cpp-fundamentals",
+      "language": "cpp",
+      "title": "C++ Modern Fundamentals: Type Deduction, Streams & Namespaces Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a modern C++ program that stores your name in an auto variable and prints \"Hello Modern C++\".",
+      "input_format": "Standard C++ console stream.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "cpp": "#include <iostream>\n#include <string>\n\nint main() {\n    auto message = std::string(\"Hello Modern C++\");\n    std::cout << message << std::endl;\n    return 0;\n}",
+        "python": "#include <iostream>\n#include <string>\n\nint main() {\n    auto message = std::string(\"Hello Modern C++\");\n    std::cout << message << std::endl;\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Hello Modern C++"
+        }
+      ]
+    },
+    {
+      "id": "code-top-cpp-control-functions",
+      "topic_id": "top-cpp-control-functions",
+      "language": "cpp",
+      "title": "Control Flow, Function Overloading & Default Arguments Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a C++ program with an overloaded function \"square\" that works for int (3 -> 9) and double (2.5 -> 6.25). Print square(4).",
+      "input_format": "Standard C++ console stream.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "cpp": "#include <iostream>\n\nint square(int n) { return n * n; }\ndouble square(double n) { return n * n; }\n\nint main() {\n    std::cout << square(4) << std::endl;\n    return 0;\n}",
+        "python": "#include <iostream>\n\nint square(int n) { return n * n; }\ndouble square(double n) { return n * n; }\n\nint main() {\n    std::cout << square(4) << std::endl;\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "16"
+        }
+      ]
+    },
+    {
+      "id": "code-top-cpp-references-memory",
+      "topic_id": "top-cpp-references-memory",
+      "language": "cpp",
+      "title": "Pointers, References & Dynamic Memory (new/delete) Practice Challenge",
+      "difficulty": "Intermediate",
+      "problem_statement": "Write a C++ function increment(int& n) that adds 10 to its argument. In main, pass an int initialized to 15, then print \"Result: 25\".",
+      "input_format": "Standard C++ console stream.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard execution constraints.",
+      "starter_code": {
+        "cpp": "#include <iostream>\n\nvoid increment(int& n) {\n    n += 10;\n}\n\nint main() {\n    int val = 15;\n    increment(val);\n    std::cout << \"Result: \" << val << std::endl;\n    return 0;\n}",
+        "python": "#include <iostream>\n\nvoid increment(int& n) {\n    n += 10;\n}\n\nint main() {\n    int val = 15;\n    increment(val);\n    std::cout << \"Result: \" << val << std::endl;\n    return 0;\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Result: 25"
+        }
+      ]
+    },
+    {
+      "id": "code-top-java-fundamentals",
+      "topic_id": "top-java-fundamentals",
+      "language": "java",
+      "title": "Java Core Architecture: JVM, Bytecode & Strong Typing Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a Java program that declares an int variable score with value 98 and prints \"Student Score: 98\".",
+      "input_format": "Standard Java System.in / Scanner.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard JVM execution constraints.",
+      "starter_code": {
+        "java": "public class Main {\n    public static void main(String[] args) {\n        int score = 98;\n        System.out.println(\"Student Score: \" + score);\n    }\n}",
+        "python": "public class Main {\n    public static void main(String[] args) {\n        int score = 98;\n        System.out.println(\"Student Score: \" + score);\n    }\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Student Score: 98"
+        }
+      ]
+    },
+    {
+      "id": "code-top-java-control-flow",
+      "topic_id": "top-java-control-flow",
+      "language": "java",
+      "title": "Control Flow, Switch Expressions & Loop Constructs Practice Challenge",
+      "difficulty": "Beginner",
+      "problem_statement": "Write a Java program with an array {2, 4, 6, 8}. Calculate their sum and print \"Total: 20\".",
+      "input_format": "Standard Java System.in / Scanner.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard JVM execution constraints.",
+      "starter_code": {
+        "java": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {2, 4, 6, 8};\n        int sum = 0;\n        for (int n : nums) sum += n;\n        System.out.println(\"Total: \" + sum);\n    }\n}",
+        "python": "public class Main {\n    public static void main(String[] args) {\n        int[] nums = {2, 4, 6, 8};\n        int sum = 0;\n        for (int n : nums) sum += n;\n        System.out.println(\"Total: \" + sum);\n    }\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Total: 20"
+        }
+      ]
+    },
+    {
+      "id": "code-top-java-methods-arrays",
+      "topic_id": "top-java-methods-arrays",
+      "language": "java",
+      "title": "Static Methods, Memory Stack/Heap & Arrays Practice Challenge",
+      "difficulty": "Intermediate",
+      "problem_statement": "Write a static method cube(int n) that returns n*n*n. In main, print \"Cube: \" + cube(3).",
+      "input_format": "Standard Java System.in / Scanner.",
+      "output_format": "Standard console output.",
+      "constraints": "Standard JVM execution constraints.",
+      "starter_code": {
+        "java": "public class Main {\n    public static int cube(int n) {\n        return n * n * n;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Cube: \" + cube(3));\n    }\n}",
+        "python": "public class Main {\n    public static int cube(int n) {\n        return n * n * n;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Cube: \" + cube(3));\n    }\n}"
+      },
+      "test_cases": [
+        {
+          "input": "",
+          "expected_output": "Cube: 27"
         }
       ]
     }
