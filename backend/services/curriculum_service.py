@@ -1,6 +1,7 @@
 """Curriculum Service providing access to courses, modules, topics, quizzes, and coding challenges."""
 
 import json
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 from backend.services.state_store import state_store
 
@@ -10,6 +11,31 @@ class CurriculumService:
 
     def __init__(self):
         self.data = state_store.platform_data
+
+        # Load authoritative C topics data
+        self.c_topics: Dict[str, Any] = {}
+        c_path = Path(__file__).resolve().parent.parent / "data" / "c_topics_data.json"
+        if c_path.exists():
+            try:
+                with open(c_path, "r", encoding="utf-8") as f:
+                    c_json = json.load(f)
+                    for t in c_json.get("topics", []):
+                        self.c_topics[t["id"]] = t
+            except Exception as e:
+                print(f"[CurriculumService] Failed to load c_topics_data.json: {e}")
+
+        # Load authoritative Python topics data
+        self.python_topics: Dict[str, Any] = {}
+        py_path = Path(__file__).resolve().parent.parent / "data" / "python_topics_data.json"
+        if py_path.exists():
+            try:
+                with open(py_path, "r", encoding="utf-8") as f:
+                    py_json = json.load(f)
+                    for key in ["fundamentals", "intermediate", "advanced"]:
+                        for t in py_json.get(key, []):
+                            self.python_topics[t["id"]] = t
+            except Exception as e:
+                print(f"[CurriculumService] Failed to load python_topics_data.json: {e}")
 
     def get_courses(self, language: Optional[str] = None, level: Optional[str] = None) -> List[Dict[str, Any]]:
         raw_courses = self.data.get("courses", [])
@@ -23,29 +49,69 @@ class CurriculumService:
             if level and c.get("level", "").lower() != level.lower():
                 continue
 
-            c_modules = [m for m in modules if m.get("course_id") == c.get("id")]
-            c_modules.sort(key=lambda m: m.get("order_index", 0))
+            c_id = c.get("id")
+            if c_id == "py-beg":
+                try:
+                    from backend.routes.python_routes import TOPIC_METADATA
+                    structured_modules = [
+                        {
+                            "id": "mod-py-fund-core",
+                            "title": "Python Core & Syntax",
+                            "order": 1,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(TOPIC_METADATA[:8])]
+                        },
+                        {
+                            "id": "mod-py-fund-advanced",
+                            "title": "Data Structures & Modules",
+                            "order": 2,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(TOPIC_METADATA[8:])]
+                        }
+                    ]
+                except Exception:
+                    structured_modules = []
+            elif c_id == "c-beg":
+                try:
+                    from backend.routes.c_routes import TOPIC_METADATA as C_TOPIC_METADATA
+                    structured_modules = [
+                        {
+                            "id": "mod-c-core",
+                            "title": "C Core & Logic",
+                            "order": 1,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(C_TOPIC_METADATA[:8])]
+                        },
+                        {
+                            "id": "mod-c-advanced",
+                            "title": "Pointers & Systems",
+                            "order": 2,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(C_TOPIC_METADATA[8:])]
+                        }
+                    ]
+                except Exception:
+                    structured_modules = []
+            else:
+                c_modules = [m for m in modules if m.get("course_id") == c.get("id")]
+                c_modules.sort(key=lambda m: m.get("order_index", 0))
 
-            structured_modules = []
-            for m in c_modules:
-                m_topics = [t for t in topics if t.get("module_id") == m.get("id")]
-                m_topics.sort(key=lambda t: t.get("order_index", 0))
+                structured_modules = []
+                for m in c_modules:
+                    m_topics = [t for t in topics if t.get("module_id") == m.get("id")]
+                    m_topics.sort(key=lambda t: t.get("order_index", 0))
 
-                structured_topics = []
-                for idx, t in enumerate(m_topics):
-                    structured_topics.append({
-                        "id": t.get("id"),
-                        "title": t.get("title"),
-                        "level": c.get("level"),
-                        "status": "COMPLETED" if idx == 0 else "IN_PROGRESS" if idx == 1 else "LOCKED"
+                    structured_topics = []
+                    for idx, t in enumerate(m_topics):
+                        structured_topics.append({
+                            "id": t.get("id"),
+                            "title": t.get("title"),
+                            "level": c.get("level"),
+                            "status": "COMPLETED" if idx == 0 else "IN_PROGRESS" if idx == 1 else "LOCKED"
+                        })
+
+                    structured_modules.append({
+                        "id": m.get("id"),
+                        "title": m.get("title"),
+                        "order": m.get("order_index", 1),
+                        "topics": structured_topics
                     })
-
-                structured_modules.append({
-                    "id": m.get("id"),
-                    "title": m.get("title"),
-                    "order": m.get("order_index", 1),
-                    "topics": structured_topics
-                })
 
             results.append({
                 "id": c.get("id"),
@@ -66,11 +132,55 @@ class CurriculumService:
         return None
 
     def get_topic_detail(self, topic_id: str) -> Optional[Dict[str, Any]]:
+        # 1. Check C Topics
+        if topic_id in self.c_topics:
+            t = dict(self.c_topics[topic_id])
+            if not t.get("sections"):
+                t["sections"] = [
+                    {
+                        "id": f"{topic_id}-sec-1",
+                        "title": "1. Core Conceptual Overview",
+                        "order_index": 1,
+                        "content": t.get("conceptExplanation", ""),
+                        "code_snippet": t.get("syntax", ""),
+                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                    },
+                    {
+                        "id": f"{topic_id}-sec-2",
+                        "title": "2. Syntax & Implementation",
+                        "order_index": 2,
+                        "content": t.get("conceptExplanation", ""),
+                        "code_snippet": t.get("codeExample", ""),
+                        "pitfalls": t.get("commonMistakes", [{}])[0].get("whyWrong", "") if t.get("commonMistakes") else ""
+                    }
+                ]
+            if not t.get("content_standard"):
+                t["content_standard"] = t.get("conceptExplanation", "")
+            return t
+
+        # 2. Check Python Topics
+        if topic_id in self.python_topics:
+            t = dict(self.python_topics[topic_id])
+            if not t.get("sections"):
+                t["sections"] = [
+                    {
+                        "id": f"{topic_id}-sec-1",
+                        "title": "1. Core Conceptual Overview",
+                        "order_index": 1,
+                        "content": t.get("conceptExplanation", t.get("content_standard", "")),
+                        "code_snippet": t.get("syntax", ""),
+                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                    }
+                ]
+            if not t.get("content_standard"):
+                t["content_standard"] = t.get("conceptExplanation", "")
+            return t
+
+        # 3. Check platform_data.json topics
         topics = self.data.get("topics", [])
         for t in topics:
             if t.get("id") == topic_id:
                 topic_copy = dict(t)
-                # Ensure sections structure is present
                 if not topic_copy.get("sections"):
                     topic_copy["sections"] = [
                         {
@@ -86,10 +196,56 @@ class CurriculumService:
         return None
 
     def get_topic_quiz(self, topic_id: str) -> Dict[str, Any]:
+        # 1. Check if C topic has rich quiz
+        if topic_id in self.c_topics and self.c_topics[topic_id].get("quiz"):
+            c_quiz = self.c_topics[topic_id]["quiz"]
+            formatted = []
+            for q in c_quiz:
+                c_idx = q.get("correct_index") if "correct_index" in q else q.get("correctIndex", 0)
+                formatted.append({
+                    "id": q.get("id"),
+                    "question": q.get("question") or q.get("question_text"),
+                    "options": q.get("options", []),
+                    "correct_index": c_idx,
+                    "correctIndex": c_idx,
+                    "explanation": q.get("explanation", "Good job analyzing the concept!"),
+                    "difficulty": q.get("difficulty", "medium")
+                })
+            return {
+                "topic_id": topic_id,
+                "title": f"Knowledge Check: {self.c_topics[topic_id].get('title', topic_id)}",
+                "target_difficulty": "standard",
+                "adaptive_note": "Standard calibrated quiz based on your active mastery.",
+                "questions": formatted
+            }
+
+        # 2. Check if Python topic has rich quiz
+        if topic_id in self.python_topics and self.python_topics[topic_id].get("quiz"):
+            py_quiz = self.python_topics[topic_id]["quiz"]
+            formatted = []
+            for q in py_quiz:
+                c_idx = q.get("correct_index") if "correct_index" in q else q.get("correctIndex", 0)
+                formatted.append({
+                    "id": q.get("id"),
+                    "question": q.get("question") or q.get("question_text"),
+                    "options": q.get("options", []),
+                    "correct_index": c_idx,
+                    "correctIndex": c_idx,
+                    "explanation": q.get("explanation", "Good job analyzing the concept!"),
+                    "difficulty": q.get("difficulty", "medium")
+                })
+            return {
+                "topic_id": topic_id,
+                "title": f"Knowledge Check: {self.python_topics[topic_id].get('title', topic_id)}",
+                "target_difficulty": "standard",
+                "adaptive_note": "Standard calibrated quiz based on your active mastery.",
+                "questions": formatted
+            }
+
+        # 3. Existing mcqs from platformData
         mcqs = self.data.get("mcq_questions", [])
         topic_mcqs = [q for q in mcqs if q.get("topic_id") == topic_id]
         if not topic_mcqs:
-            # Fallback question if not explicitly in platformData
             topic_mcqs = [
                 {
                     "id": f"mcq-{topic_id}-1",
@@ -106,32 +262,88 @@ class CurriculumService:
                 }
             ]
 
-        # Format questions for the frontend
         formatted_questions = []
         for q in topic_mcqs:
+            c_idx = q.get("correct_option_index") if "correct_option_index" in q else q.get("correct_index", 0)
             formatted_questions.append({
                 "id": q.get("id"),
                 "question": q.get("question_text") or q.get("question"),
                 "options": q.get("options", []),
-                "correct_index": q.get("correct_option_index") if "correct_option_index" in q else q.get("correct_index", 0),
-                "explanation": q.get("explanation", "Good job analyzing the concept!")
+                "correct_index": c_idx,
+                "correctIndex": c_idx,
+                "explanation": q.get("explanation", "Good job analyzing the concept!"),
+                "difficulty": q.get("difficulty", "medium")
             })
 
         return {
             "topic_id": topic_id,
             "title": f"Knowledge Check: {topic_id}",
+            "target_difficulty": "standard",
+            "adaptive_note": "Standard calibrated quiz based on your active mastery.",
             "questions": formatted_questions
         }
 
     def get_coding_challenge(self, topic_id: str, language: Optional[str] = "python") -> Dict[str, Any]:
-        coding_qs = self.data.get("coding_questions", [])
         lang_key = (language or "python").lower()
         if lang_key in ("c++", "cpp"):
             lang_key = "c"
 
+        # 1. Check if C topic has coding challenge
+        if topic_id in self.c_topics and self.c_topics[topic_id].get("codingChallenge"):
+            cc = self.c_topics[topic_id]["codingChallenge"]
+            starter = cc.get("starter_code", "")
+            prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
+            return {
+                "id": f"code-{topic_id}",
+                "topic_id": topic_id,
+                "title": cc.get("title", f"Coding Challenge: {self.c_topics[topic_id].get('title', topic_id)}"),
+                "difficulty": cc.get("difficulty", "Easy"),
+                "problem_statement": prob_desc,
+                "description": prob_desc,
+                "input_format": cc.get("input_format", "Standard input format."),
+                "output_format": cc.get("output_format", "Standard output format."),
+                "constraints": cc.get("constraints", "Standard constraints apply."),
+                "sample_input": cc.get("test_cases", [{}])[0].get("input", "") if cc.get("test_cases") else "",
+                "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
+                "starter_code": starter,
+                "starter_codes": {"c": starter, "python": starter},
+                "test_cases": cc.get("test_cases", []),
+                "solution": cc.get("solution_code", starter)
+            }
+
+        # 2. Check if Python topic has coding challenge
+        if topic_id in self.python_topics and self.python_topics[topic_id].get("codingChallenge"):
+            cc = self.python_topics[topic_id]["codingChallenge"]
+            starter = cc.get("starter_code", "")
+            if isinstance(starter, dict):
+                selected_sc = starter.get(lang_key) or starter.get("python") or ""
+                all_sc = starter
+            else:
+                selected_sc = str(starter)
+                all_sc = {"python": selected_sc, "c": selected_sc}
+            prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
+            return {
+                "id": f"code-{topic_id}",
+                "topic_id": topic_id,
+                "title": cc.get("title", f"Coding Challenge: {self.python_topics[topic_id].get('title', topic_id)}"),
+                "difficulty": cc.get("difficulty", "Easy"),
+                "problem_statement": prob_desc,
+                "description": prob_desc,
+                "input_format": cc.get("input_format", "Standard input format."),
+                "output_format": cc.get("output_format", "Standard output format."),
+                "constraints": cc.get("constraints", "Standard constraints apply."),
+                "sample_input": cc.get("test_cases", [{}])[0].get("input", "") if cc.get("test_cases") else "",
+                "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
+                "starter_code": selected_sc,
+                "starter_codes": all_sc,
+                "test_cases": cc.get("test_cases", []),
+                "solution": cc.get("solution_code", selected_sc)
+            }
+
+        # 3. Existing logic from platformData
+        coding_qs = self.data.get("coding_questions", [])
         challenges = [c for c in coding_qs if c.get("topic_id") == topic_id]
         if not challenges:
-            # Fallback search if topic_id is mapped (e.g. top-c-fundamentals vs top-py-fundamentals)
             if lang_key == "c" and not topic_id.startswith("top-c-"):
                 c_equivalent = topic_id.replace("top-py-", "top-c-")
                 challenges = [c for c in coding_qs if c.get("topic_id") == c_equivalent]

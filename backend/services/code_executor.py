@@ -544,7 +544,10 @@ class CodeExecutor:
                 b = re.sub(r'^(?:(?:int|void|float|double|char|long|bool|unsigned)\s+)+', '', b)
                 b = re.sub(r'([a-zA-Z_]\w*(?:\[[^\]]+\])*)\[\s*([a-zA-Z_]\w*)\+\+\s*\]\s*=\s*(.*)', r'\1[\2] = \3; \2 += 1', b)
                 b = re.sub(r'([a-zA-Z_]\w*(?:\[[^\]]+\])*)\[\s*([a-zA-Z_]\w*)\-\-\s*\]\s*=\s*(.*)', r'\1[\2] = \3; \2 -= 1', b)
-                b = b.replace('++', ' += 1').replace('--', ' -= 1')
+                b = re.sub(r'([a-zA-Z_]\w*)\+\+', r'\1 += 1', b)
+                b = re.sub(r'([a-zA-Z_]\w*)\-\-', r'\1 -= 1', b)
+                b = re.sub(r'\+\+([a-zA-Z_]\w*)', r'\1 += 1', b)
+                b = re.sub(r'\-\-([a-zA-Z_]\w*)', r'\1 -= 1', b)
                 return b
 
             if p.startswith('while ') or p.startswith('while('):
@@ -640,7 +643,10 @@ class CodeExecutor:
             stmt = re.sub(r'([a-zA-Z_]\w*(?:\[[^\]]+\])*)\[\s*([a-zA-Z_]\w*)\+\+\s*\]\s*=\s*(.*)', r'\1[\2] = \3; \2 += 1', stmt)
             stmt = re.sub(r'([a-zA-Z_]\w*(?:\[[^\]]+\])*)\[\s*([a-zA-Z_]\w*)\-\-\s*\]\s*=\s*(.*)', r'\1[\2] = \3; \2 -= 1', stmt)
             stmt = stmt.replace('/=', '//=')
-            stmt = stmt.replace('++', ' += 1').replace('--', ' -= 1')
+            stmt = re.sub(r'([a-zA-Z_]\w*)\+\+', r'\1 += 1', stmt)
+            stmt = re.sub(r'([a-zA-Z_]\w*)\-\-', r'\1 -= 1', stmt)
+            stmt = re.sub(r'\+\+([a-zA-Z_]\w*)', r'\1 += 1', stmt)
+            stmt = re.sub(r'\-\-([a-zA-Z_]\w*)', r'\1 -= 1', stmt)
             stmt = stmt.replace('&&', ' and ').replace('||', ' or ')
             stmt = stmt.replace('true', 'True').replace('false', 'False').replace('NULL', 'None')
             py_lines.append(pad(stmt))

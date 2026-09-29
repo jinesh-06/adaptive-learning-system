@@ -8,6 +8,8 @@
 import platformData from '../data/platformData.json';
 import { executeCodeInBrowser } from './pythonRunner';
 import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
+import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
+import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
 import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
 import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
 import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
@@ -1202,6 +1204,13 @@ C_FUNDAMENTALS_TOPICS.forEach((cTopic) => {
   };
 });
 
+// Backward compatibility alias for legacy top-c-fundamentals
+if (mockTopicDetails['top-c-intro']) {
+  mockTopicDetails['top-c-fundamentals'] = mockTopicDetails['top-c-intro'];
+  mockQuizzes['top-c-fundamentals'] = mockQuizzes['top-c-intro'];
+  mockCodingChallenges['top-c-fundamentals'] = mockCodingChallenges['top-c-intro'];
+}
+
 // Populate all C++ Fundamentals curriculum topics into mock details, quizzes, and coding challenges
 CPP_FUNDAMENTALS_TOPICS.forEach((cppTopic) => {
   mockTopicDetails[cppTopic.id] = {
@@ -1405,6 +1414,128 @@ JAVA_FUNDAMENTALS_TOPICS.forEach((javaTopic) => {
     ]
   };
 });
+
+// Populate all Python Intermediate curriculum topics into mock details, quizzes, and coding challenges
+PYTHON_INTERMEDIATE_TOPICS.forEach((pyIntTopic) => {
+  mockTopicDetails[pyIntTopic.id] = {
+    id: pyIntTopic.id,
+    course_id: 'py-int',
+    language: 'python',
+    level: pyIntTopic.difficulty.toLowerCase(),
+    title: pyIntTopic.title,
+    prerequisites: pyIntTopic.prerequisiteId ? [pyIntTopic.prerequisiteId] : [],
+    content_standard: pyIntTopic.conceptExplanation,
+    syntax: pyIntTopic.syntax,
+    learningObjectives: pyIntTopic.learningObjectives,
+    conceptExplanation: pyIntTopic.conceptExplanation,
+    simpleExample: pyIntTopic.simpleExample,
+    codeExample: pyIntTopic.codeExample,
+    expectedOutput: pyIntTopic.expectedOutput,
+    stepByStep: pyIntTopic.stepByStep,
+    commonMistakes: pyIntTopic.commonMistakes,
+    realWorldExample: pyIntTopic.realWorldExample,
+    practice: pyIntTopic.practice,
+    quiz: pyIntTopic.quiz,
+    challenge: (pyIntTopic as any).challenge,
+    summary: pyIntTopic.summary,
+    common_mistakes: pyIntTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${pyIntTopic.id}-sec-1`,
+        title: `1. Core Architectural Concept: ${pyIntTopic.title}`,
+        order_index: 1,
+        content: pyIntTopic.conceptExplanation,
+        code_snippet: pyIntTopic.simpleExample.code,
+        pitfalls: pyIntTopic.simpleExample.explanation,
+        mini_check: pyIntTopic.quiz[0] ? {
+          question: pyIntTopic.quiz[0].question,
+          options: pyIntTopic.quiz[0].options,
+          correct_index: pyIntTopic.quiz[0].correctIndex,
+          explanation: pyIntTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${pyIntTopic.id}-sec-2`,
+        title: `2. Execution Flow & Algorithmic Mechanics`,
+        order_index: 2,
+        content: pyIntTopic.stepByStep.join('\n\n'),
+        code_snippet: pyIntTopic.codeExample,
+        pitfalls: pyIntTopic.commonMistakes[0]?.explanation || 'Avoid unnecessary nested traversals and memory leaks.',
+        mini_check: pyIntTopic.quiz[1] ? {
+          question: pyIntTopic.quiz[1].question,
+          options: pyIntTopic.quiz[1].options,
+          correct_index: pyIntTopic.quiz[1].correctIndex,
+          explanation: pyIntTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${pyIntTopic.id}-sec-3`,
+        title: `3. Production Scale Engineering`,
+        order_index: 3,
+        content: `${pyIntTopic.realWorldExample.scenario}\n\n${pyIntTopic.realWorldExample.explanation}`,
+        code_snippet: pyIntTopic.realWorldExample.code,
+        pitfalls: 'Mind asymptotic space boundaries and pointer lifetimes under high load.',
+        mini_check: pyIntTopic.quiz[2] ? {
+          question: pyIntTopic.quiz[2].question,
+          options: pyIntTopic.quiz[2].options,
+          correct_index: pyIntTopic.quiz[2].correctIndex,
+          explanation: pyIntTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[pyIntTopic.id] = pyIntTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  const ch = (pyIntTopic as any).challenge;
+  if (ch) {
+    mockCodingChallenges[pyIntTopic.id] = {
+      id: `code-${pyIntTopic.id}`,
+      topic_id: pyIntTopic.id,
+      language: 'python',
+      title: ch.title,
+      difficulty: pyIntTopic.difficulty.toLowerCase(),
+      problem_statement: ch.problemStatement,
+      input_format: ch.inputFormat,
+      output_format: ch.outputFormat,
+      constraints: ch.constraints,
+      starter_code: {
+        python: ch.starterCode
+      },
+      test_cases: ch.testCases
+    };
+  } else {
+    mockCodingChallenges[pyIntTopic.id] = {
+      id: `code-${pyIntTopic.id}`,
+      topic_id: pyIntTopic.id,
+      language: 'python',
+      title: `${pyIntTopic.title} Practice Challenge`,
+      difficulty: pyIntTopic.difficulty.toLowerCase(),
+      problem_statement: pyIntTopic.practice.prompt,
+      input_format: 'Standard Python console input.',
+      output_format: 'Clean console output.',
+      constraints: 'Standard runtime execution limits.',
+      starter_code: {
+        python: pyIntTopic.practice.starterCode
+      },
+      test_cases: [
+        {
+          input: '',
+          expected_output: pyIntTopic.practice.expectedOutputMatcher
+        }
+      ]
+    };
+  }
+});
+
 
 
 export const mockDiagnosticQuestions = [
@@ -1819,6 +1950,29 @@ export const mockHandlers = {
       adaptive_action: passed ? 'ADVANCE' : 'SIMPLIFY'
     });
     setStoredArray(MOCK_STORAGE_KEYS.HISTORY, history.slice(0, 30));
+
+    // Persist progress directly to course track progress
+    if (topicId.startsWith('top-py-')) {
+      const storageKey = topicId.startsWith('top-py-adv-')
+        ? 'cog_python_adv_progress'
+        : topicId.startsWith('top-py-int-')
+        ? 'cog_python_int_progress'
+        : 'cog_python_progress';
+      const stored = getStoredArray(storageKey, []);
+      const idx = stored.findIndex((p: any) => p.topic_id === topicId);
+      let record = idx >= 0 ? stored[idx] : { topic_id: topicId, attempts: 0, time_spent_seconds: 0 };
+      record = {
+        ...record,
+        status: passed ? 'COMPLETED' : 'IN_PROGRESS',
+        completion_pct: passed ? 100 : Math.max(record.completion_pct || 0, 50),
+        quiz_score: score,
+        attempts: (record.attempts || 0) + 1,
+        time_spent_seconds: (record.time_spent_seconds || 0) + timeSpent
+      };
+      if (idx >= 0) stored[idx] = record;
+      else stored.push(record);
+      setStoredArray(storageKey, stored);
+    }
 
     return {
       score,
@@ -2425,8 +2579,306 @@ export const mockHandlers = {
     };
   },
 
+  getCFundamentals: async () => {
+    const storedProgress = getStoredArray('cog_c_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    const adaptedLessons = getStoredArray('cog_c_adapted', []);
+    const adaptedMap: Record<string, any> = {};
+    adaptedLessons.forEach((a: any) => {
+      adaptedMap[a.topic_id] = a;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = C_FUNDAMENTALS_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = C_FUNDAMENTALS_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[C_FUNDAMENTALS_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      const hasAdapted = !!adaptedMap[topic.id];
+      if (hasAdapted && status !== 'COMPLETED') {
+        status = 'ADAPTATION_AVAILABLE';
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: hasAdapted
+      };
+    });
+
+    const totalTopics = C_FUNDAMENTALS_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: 'C Programming Foundations',
+      subtitle: 'Master systems programming, hardware memory models, pointers, and manual memory management through 16 structured, cognitive load-aware topics.',
+      total_modules: 4,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 4,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      topics: topicsOutput
+    };
+  },
+
+  getPythonIntermediate: async () => {
+    const storedProgress = getStoredArray('cog_python_int_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    const adaptedLessons = getStoredArray('cog_python_adapted', []);
+    const adaptedMap: Record<string, any> = {};
+    adaptedLessons.forEach((a: any) => {
+      adaptedMap[a.topic_id] = a;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = PYTHON_INTERMEDIATE_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = PYTHON_INTERMEDIATE_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[PYTHON_INTERMEDIATE_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      const hasAdapted = !!adaptedMap[topic.id];
+      if (hasAdapted && status !== 'COMPLETED') {
+        status = 'ADAPTATION_AVAILABLE';
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: hasAdapted
+      };
+    });
+
+    const totalTopics = PYTHON_INTERMEDIATE_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: "Intermediate Python & Data Structures",
+      subtitle: "Master intermediate Python programming, advanced data structures, efficient problem-solving techniques, and practical implementation through interactive lessons and coding exercises.",
+      total_modules: 4,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 4,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: "Cognitive Engine Calibrated & Active",
+      topics: topicsOutput
+    };
+  },
+
+  getPythonAdvanced: async () => {
+    const storedProgress = getStoredArray('cog_python_adv_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    const adaptedLessons = getStoredArray('cog_python_adapted', []);
+    const adaptedMap: Record<string, any> = {};
+    adaptedLessons.forEach((a: any) => {
+      adaptedMap[a.topic_id] = a;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = PYTHON_ADVANCED_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = PYTHON_ADVANCED_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[PYTHON_ADVANCED_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      const hasAdapted = !!adaptedMap[topic.id];
+      if (hasAdapted && status !== 'COMPLETED') {
+        status = 'ADAPTATION_AVAILABLE';
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: hasAdapted
+      };
+    });
+
+    const totalTopics = PYTHON_ADVANCED_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: "Advanced Python, OOP & Async",
+      subtitle: "Master advanced Python programming through object-oriented design, asynchronous execution, decorators, generators, memory management, and real-world application development.",
+      total_modules: 4,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: "Cognitive Engine Calibrated & Active",
+      topics: topicsOutput
+    };
+  },
+
   getPythonTopic: async (topicId: string) => {
-    const topic = PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) || PYTHON_FUNDAMENTALS_TOPICS[0];
+    const topic =
+      PYTHON_ADVANCED_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_FUNDAMENTALS_TOPICS[0];
     return {
       success: true,
       topic
@@ -2441,7 +2893,14 @@ export const mockHandlers = {
     attempts_delta?: number;
     time_spent_delta?: number;
   }) => {
-    const stored = getStoredArray('cog_python_progress', []);
+    const storageKey = payload.topic_id.startsWith('top-c-')
+      ? 'cog_c_progress'
+      : payload.topic_id.startsWith('top-py-adv-')
+      ? 'cog_python_adv_progress'
+      : payload.topic_id.startsWith('top-py-int-')
+      ? 'cog_python_int_progress'
+      : 'cog_python_progress';
+    const stored = getStoredArray(storageKey, []);
     const idx = stored.findIndex((p: any) => p.topic_id === payload.topic_id);
     let record = idx >= 0 ? stored[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
 
@@ -2459,8 +2918,19 @@ export const mockHandlers = {
     } else {
       stored.push(record);
     }
-    setStoredArray('cog_python_progress', stored);
+    setStoredArray(storageKey, stored);
     return { success: true, progress: record };
+  },
+
+  updateCProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    return mockHandlers.updatePythonProgress(payload);
   },
 
   analyzePythonSignals: async (payload: {

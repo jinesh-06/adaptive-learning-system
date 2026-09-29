@@ -37,31 +37,27 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       setLoading(true);
       api.getTopicQuiz(topicId)
         .then(data => {
-          if (isMounted && data && Array.isArray(data) && data.length > 0) {
-            setQuestions(data);
+          const qList = Array.isArray(data) ? data : (data && Array.isArray(data.questions) ? data.questions : []);
+          if (isMounted && qList.length > 0) {
+            setQuestions(qList);
           } else if (isMounted) {
             // Default fallback question for the topic
             setQuestions([
               {
                 id: 'default-q1',
-                question: 'Which of the following Python data types is strictly IMMUTABLE?',
-                options: ['List', 'Dictionary', 'Tuple', 'Set'],
-                correct_index: 2,
-                explanation: 'Tuples cannot be modified after creation. Lists, Dictionaries, and Sets are all mutable data structures in Python.',
+                question: 'Which of the following data types represents a single character in C?',
+                options: ['char', 'string', 'text', 'chr'],
+                correct_index: 0,
+                explanation: 'In C, the char type occupies 1 byte and stores a single ASCII or character code.',
                 difficulty: 'easy'
               },
               {
                 id: 'default-q2',
-                question: 'What does the expression `a is b` test in Python?',
-                options: [
-                  'Whether a and b have the exact same value',
-                  'Whether a and b reference the exact same object in memory',
-                  'Whether a and b have the same data type',
-                  'Whether a is greater than b'
-                ],
+                question: 'What is the format specifier used to print an integer in C with printf()?',
+                options: ['%s', '%d', '%f', '%c'],
                 correct_index: 1,
-                explanation: 'The `is` keyword tests identity (memory address reference), whereas `==` checks value equality.',
-                difficulty: 'medium'
+                explanation: '%d (or %i) denotes a signed decimal integer for printf and scanf.',
+                difficulty: 'easy'
               }
             ]);
           }
@@ -104,6 +100,32 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       is_correct: wasRight,
       difficulty: currentQ.difficulty
     });
+
+    // Check if this was the last question in the quiz
+    const isLastQuestion = currentIndex === questions.length - 1;
+    if (isLastQuestion) {
+      const finalScore = wasRight ? score + 1 : score;
+      const quizPct = Math.round((finalScore / questions.length) * 100);
+      if (topicId.startsWith('top-c-')) {
+        api.updateCProgress({
+          topic_id: topicId,
+          status: 'IN_PROGRESS',
+          quiz_score: quizPct,
+          completion_pct: quizPct >= 70 ? 80 : 50,
+          attempts_delta: 1,
+          time_spent_delta: timeSpent
+        }).catch(err => console.warn('Could not save C quiz progress:', err));
+      } else if (topicId.startsWith('top-py-')) {
+        api.updatePythonProgress({
+          topic_id: topicId,
+          status: 'IN_PROGRESS',
+          quiz_score: quizPct,
+          completion_pct: quizPct >= 70 ? 80 : 50,
+          attempts_delta: 1,
+          time_spent_delta: timeSpent
+        }).catch(err => console.warn('Could not save Python quiz progress:', err));
+      }
+    }
 
     // Feed signal into adaptive engine
     if (!wasRight) {

@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fade-in entrance animation used across all pages */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.35s ease-out both;
+}
+
 :root {
   color-scheme: dark;
 }

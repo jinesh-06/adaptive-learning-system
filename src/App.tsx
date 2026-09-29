@@ -31,8 +31,13 @@ import { BookmarksPage } from './pages/BookmarksPage';
 import { NotesPage } from './pages/NotesPage';
 import { LearningHistoryPage } from './pages/LearningHistoryPage';
 import { PythonFundamentalsDashboard } from './pages/PythonFundamentalsDashboard';
+import { PythonIntermediateDashboard } from './pages/PythonIntermediateDashboard';
+import { PythonAdvancedDashboard } from './pages/PythonAdvancedDashboard';
+import { CProgrammingFoundationsDashboard } from './pages/CProgrammingFoundationsDashboard';
 import { AdaptedLessonPage } from './pages/AdaptedLessonPage';
 import { PYTHON_FUNDAMENTALS_TOPICS } from './data/pythonFundamentalsData';
+import { PYTHON_INTERMEDIATE_TOPICS } from './data/pythonIntermediateData';
+import { PYTHON_ADVANCED_TOPICS } from './data/pythonAdvancedData';
 import { C_FUNDAMENTALS_TOPICS } from './data/cFundamentalsData';
 import { CPP_FUNDAMENTALS_TOPICS } from './data/cppFundamentalsData';
 import { JAVA_FUNDAMENTALS_TOPICS } from './data/javaFundamentalsData';
@@ -186,6 +191,16 @@ const AppContent: React.FC = () => {
       return null;
     }
 
+    const pyAdvIndex = PYTHON_ADVANCED_TOPICS.findIndex(t => t.id === currentTopicId);
+    if (pyAdvIndex >= 0 && pyAdvIndex < PYTHON_ADVANCED_TOPICS.length - 1) {
+      return PYTHON_ADVANCED_TOPICS[pyAdvIndex + 1].id;
+    }
+
+    const pyIntIndex = PYTHON_INTERMEDIATE_TOPICS.findIndex(t => t.id === currentTopicId);
+    if (pyIntIndex >= 0 && pyIntIndex < PYTHON_INTERMEDIATE_TOPICS.length - 1) {
+      return PYTHON_INTERMEDIATE_TOPICS[pyIntIndex + 1].id;
+    }
+
     const pyIndex = PYTHON_FUNDAMENTALS_TOPICS.findIndex(t => t.id === currentTopicId);
     if (pyIndex >= 0 && pyIndex < PYTHON_FUNDAMENTALS_TOPICS.length - 1) {
       return PYTHON_FUNDAMENTALS_TOPICS[pyIndex + 1].id;
@@ -221,6 +236,16 @@ const AppContent: React.FC = () => {
       return null;
     }
 
+    const pyAdvIndex = PYTHON_ADVANCED_TOPICS.findIndex(t => t.id === currentTopicId);
+    if (pyAdvIndex > 0) {
+      return PYTHON_ADVANCED_TOPICS[pyAdvIndex - 1].id;
+    }
+
+    const pyIntIndex = PYTHON_INTERMEDIATE_TOPICS.findIndex(t => t.id === currentTopicId);
+    if (pyIntIndex > 0) {
+      return PYTHON_INTERMEDIATE_TOPICS[pyIntIndex - 1].id;
+    }
+
     const pyIndex = PYTHON_FUNDAMENTALS_TOPICS.findIndex(t => t.id === currentTopicId);
     if (pyIndex > 0) {
       return PYTHON_FUNDAMENTALS_TOPICS[pyIndex - 1].id;
@@ -238,7 +263,13 @@ const AppContent: React.FC = () => {
     if (nextTopicId) {
       setSelectedTopicId(nextTopicId);
       navigate(`/${view}/${nextTopicId}`);
-    } else if (currentTopicId.startsWith('top-c-') || currentTopicId.startsWith('top-cpp-') || currentTopicId.startsWith('top-java-')) {
+    } else if (currentTopicId.startsWith('top-py-adv-')) {
+      navigate('/python-advanced-dashboard');
+    } else if (currentTopicId.startsWith('top-py-int-')) {
+      navigate('/python-intermediate-dashboard');
+    } else if (currentTopicId.startsWith('top-c-')) {
+      navigate('/c-dashboard');
+    } else if (currentTopicId.startsWith('top-cpp-') || currentTopicId.startsWith('top-java-')) {
       navigate('/catalog');
     } else {
       navigate('/python-dashboard');
@@ -279,6 +310,9 @@ const AppContent: React.FC = () => {
         onOpenCoding={() => navigate(`/coding/${activeTopicId}`)}
         onBackToCatalog={() => navigate('/catalog')}
         onBackToPythonDashboard={() => navigate('/python-dashboard')}
+        onBackToPythonIntermediateDashboard={() => navigate('/python-intermediate-dashboard')}
+        onBackToPythonAdvancedDashboard={() => navigate('/python-advanced-dashboard')}
+        onBackToCDashboard={() => navigate('/c-dashboard')}
         onOpenAdaptedLesson={(tId) => navigate(`/adapted-lesson/${tId || activeTopicId}`)}
         onOpenAiDrawer={() => setAiDrawerOpen(true)}
         onOpenSearch={() => setSearchModalOpen(true)}
@@ -304,7 +338,13 @@ const AppContent: React.FC = () => {
         topicId={activeTopicId}
         onBackToOriginal={() => navigate(`/lesson/${activeTopicId}`)}
         onNextTopic={() => handleNextTopicFor(activeTopicId, 'adapted-lesson')}
-        onBackToDashboard={() => navigate('/python-dashboard')}
+        onBackToDashboard={() =>
+          activeTopicId.startsWith('top-py-adv-')
+            ? navigate('/python-advanced-dashboard')
+            : activeTopicId.startsWith('top-py-int-')
+            ? navigate('/python-intermediate-dashboard')
+            : navigate('/python-dashboard')
+        }
         onStartQuiz={() => navigate(`/quiz/${activeTopicId}`)}
       />
     );
@@ -454,6 +494,9 @@ const AppContent: React.FC = () => {
                 <CourseCatalogPage
                   onSelectTopic={handleSelectTopic}
                   onOpenPythonDashboard={() => navigate('/python-dashboard')}
+                  onOpenPythonIntermediateDashboard={() => navigate('/python-intermediate-dashboard')}
+                  onOpenPythonAdvancedDashboard={() => navigate('/python-advanced-dashboard')}
+                  onOpenCDashboard={() => navigate('/c-dashboard')}
                 />
               }
             />
@@ -472,6 +515,59 @@ const AppContent: React.FC = () => {
                 />
               }
             />
+
+            <Route
+              path="/python-intermediate-dashboard"
+              element={
+                <PythonIntermediateDashboard
+                  onSelectTopic={handleSelectTopic}
+                  onSelectAdaptedLesson={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/adapted-lesson/${topicId}`);
+                  }}
+                  onBackToCatalog={() => navigate('/catalog')}
+                />
+              }
+            />
+            <Route path="/intermediate-python-dashboard" element={<Navigate to="/python-intermediate-dashboard" replace />} />
+
+            <Route
+              path="/python-advanced-dashboard"
+              element={
+                <PythonAdvancedDashboard
+                  onSelectTopic={handleSelectTopic}
+                  onSelectAdaptedLesson={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/adapted-lesson/${topicId}`);
+                  }}
+                  onBackToCatalog={() => navigate('/catalog')}
+                />
+              }
+            />
+            <Route path="/advanced-python-dashboard" element={<Navigate to="/python-advanced-dashboard" replace />} />
+
+            <Route
+              path="/c-dashboard"
+              element={
+                <CProgrammingFoundationsDashboard
+                  onSelectTopic={handleSelectTopic}
+                  onSelectAdaptedLesson={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/adapted-lesson/${topicId}`);
+                  }}
+                  onBackToCatalog={() => navigate('/catalog')}
+                  onStartQuiz={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/quiz/${topicId}`);
+                  }}
+                  onOpenCoding={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/coding/${topicId}`);
+                  }}
+                />
+              }
+            />
+            <Route path="/c-foundations-dashboard" element={<Navigate to="/c-dashboard" replace />} />
 
             <Route path="/lesson" element={<Navigate to={`/lesson/${selectedTopicId}`} replace />} />
             <Route path="/lesson/:topicId" element={<LessonRouteWrapper />} />

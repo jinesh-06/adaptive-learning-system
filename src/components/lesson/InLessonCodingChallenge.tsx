@@ -174,6 +174,25 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         challenge_id: challenge.id
       });
       localStorage.setItem(`topic_challenge_passed_${topicId}`, 'true');
+
+      // Persist progress to backend
+      if (topicId.startsWith('top-c-')) {
+        api.updateCProgress({
+          topic_id: topicId,
+          status: 'COMPLETED',
+          completion_pct: 100,
+          attempts_delta: 1,
+          time_spent_delta: 60
+        }).catch(err => console.warn('Could not save C code challenge progress:', err));
+      } else if (topicId.startsWith('top-py-')) {
+        api.updatePythonProgress({
+          topic_id: topicId,
+          status: 'COMPLETED',
+          completion_pct: 100,
+          attempts_delta: 1,
+          time_spent_delta: 60
+        }).catch(err => console.warn('Could not save Python code challenge progress:', err));
+      }
     }
   };
 

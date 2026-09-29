@@ -80,6 +80,25 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "cognitive_load": ml_eval.get("cognitive_load")
     })
 
+    # Persist topic progress into SQLite user_progress table
+    course_id = (
+        "c-beg" if topic_id.startswith("top-c-") else
+        ("py-adv" if topic_id.startswith("top-py-adv-") else
+         ("py-int" if topic_id.startswith("top-py-int-") else
+          ("cpp-beg" if topic_id.startswith("top-cpp-") else
+           ("java-beg" if topic_id.startswith("top-java-") else "py-beg"))))
+    )
+    state_store.save_topic_progress(
+        user_id=user_id,
+        course_id=course_id,
+        topic_id=topic_id,
+        status="COMPLETED" if passed else "IN_PROGRESS",
+        quiz_score=percentage,
+        completion_pct=100.0 if passed else max(50.0, float(percentage)),
+        attempts_delta=1,
+        time_spent_delta=payload.time_spent or 0.0
+    )
+
     adaptive_feedback = {
         "cognitive_level": ml_eval.get("cognitive_level"),
         "cognitive_load": ml_eval.get("cognitive_load"),

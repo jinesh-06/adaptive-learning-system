@@ -1,5 +1,6 @@
 export interface CommonMistake {
   mistake: string;
+  codeSnippet?: string;
   correction: string;
   explanation: string;
 }
@@ -15,7 +16,7 @@ export interface PracticeChallenge {
 export interface TopicQuizQuestion {
   id: string;
   question: string;
-  codeSnippet?: string;
+  codeSnippet?: string | null;
   options: string[];
   correctIndex: number;
   explanation: string;

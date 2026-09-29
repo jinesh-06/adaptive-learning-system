@@ -30,7 +30,9 @@ import {
   Zap,
   Flame,
   CheckCircle2,
-  GraduationCap
+  GraduationCap,
+  Layers,
+  Cpu
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -111,10 +113,160 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const navItems = [
+  interface NavItem {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    dashboardView?: string;
+    topicId?: string;
+    matcher?: (topicId: string, currentView: string) => boolean;
+  }
+
+  // Language-specific track configurations for Python, C, C++, and Java
+  const languageTracksMap: Record<string, NavItem[]> = {
+    python: [
+      {
+        id: 'python-dashboard',
+        label: 'Python Fundamentals',
+        icon: GraduationCap,
+        dashboardView: 'python-dashboard',
+        topicId: 'top-py-fundamentals',
+        matcher: (tId, view) =>
+          view === 'python-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-') && !tId.startsWith('top-py-int-') && !tId.startsWith('top-py-adv-'))
+      },
+      {
+        id: 'python-intermediate-dashboard',
+        label: 'Intermediate Python & DSA',
+        icon: Layers,
+        dashboardView: 'python-intermediate-dashboard',
+        topicId: 'top-py-int-comprehensions',
+        matcher: (tId, view) =>
+          view === 'python-intermediate-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-int-'))
+      },
+      {
+        id: 'python-advanced-dashboard',
+        label: 'Advanced Python & Async',
+        icon: Cpu,
+        dashboardView: 'python-advanced-dashboard',
+        topicId: 'top-py-adv-args-kwargs',
+        matcher: (tId, view) =>
+          view === 'python-advanced-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-adv-'))
+      }
+    ],
+    c: [
+      {
+        id: 'c-foundations',
+        label: 'C Programming Foundations',
+        icon: GraduationCap,
+        dashboardView: 'c-dashboard',
+        topicId: 'top-c-intro',
+        matcher: (tId, view) =>
+          view === 'c-dashboard' ||
+          view === 'c-foundations' ||
+          view === 'c-foundations-dashboard' ||
+          view === 'c-beg' ||
+          (view === 'lesson' && tId.startsWith('top-c-'))
+      },
+      {
+        id: 'c-pointers',
+        label: 'C Pointers & Memory Management',
+        icon: Layers,
+        topicId: 'top-c-pointers',
+        matcher: (tId, view) =>
+          view === 'c-int' ||
+          (view === 'lesson' && [
+            'top-c-pointers',
+            'top-c-dynamic-memory',
+            'top-c-arrays',
+            'top-c-strings'
+          ].includes(tId))
+      },
+      {
+        id: 'c-systems',
+        label: 'Advanced C Systems & Capstone',
+        icon: Cpu,
+        topicId: 'top-c-structures',
+        matcher: (tId, view) =>
+          view === 'c-adv' ||
+          (view === 'lesson' && ['top-c-structures', 'top-c-files', 'top-c-preprocessor', 'top-c-project'].includes(tId))
+      }
+    ],
+    cpp: [
+      {
+        id: 'cpp-fundamentals',
+        label: 'C++ Modern Fundamentals',
+        icon: GraduationCap,
+        topicId: 'top-cpp-fundamentals',
+        matcher: (tId, view) =>
+          view === 'cpp-beg' ||
+          (view === 'lesson' && [
+            'top-cpp-fundamentals',
+            'top-cpp-control-functions'
+          ].includes(tId))
+      },
+      {
+        id: 'cpp-oop',
+        label: 'Object-Oriented C++',
+        icon: Layers,
+        topicId: 'top-cpp-oop',
+        matcher: (tId, view) =>
+          view === 'cpp-int' ||
+          (view === 'lesson' && tId === 'top-cpp-oop')
+      },
+      {
+        id: 'cpp-advanced',
+        label: 'Advanced C++ & STL Architecture',
+        icon: Cpu,
+        topicId: 'top-cpp-references-memory',
+        matcher: (tId, view) =>
+          view === 'cpp-adv' ||
+          (view === 'lesson' && tId === 'top-cpp-references-memory')
+      }
+    ],
+    java: [
+      {
+        id: 'java-basics',
+        label: 'Java Core Architecture & Basics',
+        icon: GraduationCap,
+        topicId: 'top-java-fundamentals',
+        matcher: (tId, view) =>
+          view === 'java-beg' ||
+          (view === 'lesson' && [
+            'top-java-fundamentals',
+            'top-java-control-flow'
+          ].includes(tId))
+      },
+      {
+        id: 'java-oop',
+        label: 'Java Object-Oriented Design',
+        icon: Layers,
+        topicId: 'top-java-oop',
+        matcher: (tId, view) =>
+          view === 'java-int' ||
+          (view === 'lesson' && tId === 'top-java-oop')
+      },
+      {
+        id: 'java-advanced',
+        label: 'Advanced Java & Collections Framework',
+        icon: Cpu,
+        topicId: 'top-java-methods-arrays',
+        matcher: (tId, view) =>
+          view === 'java-adv' ||
+          (view === 'lesson' && tId === 'top-java-methods-arrays')
+      }
+    ]
+  };
+
+  const currentLang = preferences.selected_language || 'python';
+  const currentLanguageTracks = languageTracksMap[currentLang] || languageTracksMap.python;
+
+  const navItems: NavItem[] = [
     { id: 'landing', label: 'Overview / Home', icon: Home },
     { id: 'catalog', label: 'Curriculum & Roadmaps', icon: BookOpen },
-    { id: 'python-dashboard', label: 'Python Fundamentals', icon: GraduationCap },
+    ...currentLanguageTracks,
     { id: 'diagnostic', label: 'Diagnostic Assessment', icon: Zap },
     { id: 'dashboard', label: 'Learner Dashboard', icon: BarChart3 },
     { id: 'bookmarks', label: 'Saved Bookmarks', icon: Bookmark },
@@ -127,6 +279,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleNavClick = (viewId: string) => {
     setCurrentView(viewId);
     if (setIsMobileOpen) setIsMobileOpen(false);
+  };
+
+  const handleNavItemClick = (item: NavItem) => {
+    if (item.dashboardView) {
+      setCurrentView(item.dashboardView);
+    } else if (item.topicId) {
+      onSelectTopic(item.topicId);
+    } else {
+      setCurrentView(item.id);
+    }
+    if (setIsMobileOpen) setIsMobileOpen(false);
+  };
+
+  const isItemActive = (item: NavItem) => {
+    if (item.matcher) {
+      return item.matcher(selectedTopicId, currentView);
+    }
+    return currentView === item.id;
   };
 
   return (
@@ -256,7 +426,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Search className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-[11px]">Search concepts...</span>
               </div>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">{navigator.platform?.toLowerCase().includes('mac') ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
           )}
         </div>
@@ -272,11 +442,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {navItems.map(item => {
               const Icon = item.icon;
-              const isActive = currentView === item.id;
+              const isActive = isItemActive(item);
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  onClick={() => handleNavItemClick(item)}
                   className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-slate-800/90 border border-slate-700/80 text-cyan-400 shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-cyan-400'

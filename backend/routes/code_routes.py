@@ -84,6 +84,35 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
         "cognitive_load": ml_eval.get("cognitive_load")
     })
 
+    # Persist topic progress into SQLite user_progress table
+    course_id = (
+        "c-beg" if payload.topicId.startswith("top-c-") else
+        ("py-adv" if payload.topicId.startswith("top-py-adv-") else
+         ("py-int" if payload.topicId.startswith("top-py-int-") else
+          ("cpp-beg" if payload.topicId.startswith("top-cpp-") else
+           ("java-beg" if payload.topicId.startswith("top-java-") else "py-beg"))))
+    )
+    if is_overall_pass:
+        state_store.save_topic_progress(
+            user_id=user_id,
+            course_id=course_id,
+            topic_id=payload.topicId,
+            status="COMPLETED",
+            completion_pct=100.0,
+            attempts_delta=1,
+            time_spent_delta=payload.codingTimeSeconds or 0.0
+        )
+    else:
+        state_store.save_topic_progress(
+            user_id=user_id,
+            course_id=course_id,
+            topic_id=payload.topicId,
+            status="IN_PROGRESS",
+            completion_pct=max(25.0, float(accuracy)),
+            attempts_delta=1,
+            time_spent_delta=payload.codingTimeSeconds or 0.0
+        )
+
     # Extract primary stdout / error
     stdout_display = eval_result.get("output") or (eval_result["details"][0]["actual"] if eval_result.get("details") else "")
     err_display = eval_result.get("error")

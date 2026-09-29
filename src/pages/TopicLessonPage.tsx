@@ -5,12 +5,16 @@ import { api } from '../services/api';
 import { telemetry } from '../services/telemetry';
 import { mockTopicDetails, mockCourses } from '../services/mockFallback';
 import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
+import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
+import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
 import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
 import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
 import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
 
 const ALL_TOPICS: any[] = [
   ...PYTHON_FUNDAMENTALS_TOPICS,
+  ...PYTHON_INTERMEDIATE_TOPICS,
+  ...PYTHON_ADVANCED_TOPICS,
   ...C_FUNDAMENTALS_TOPICS,
   ...CPP_FUNDAMENTALS_TOPICS,
   ...JAVA_FUNDAMENTALS_TOPICS
@@ -61,6 +65,9 @@ export interface TopicLessonPageProps {
   onOpenCoding?: () => void;
   onBackToCatalog?: () => void;
   onBackToPythonDashboard?: () => void;
+  onBackToPythonIntermediateDashboard?: () => void;
+  onBackToPythonAdvancedDashboard?: () => void;
+  onBackToCDashboard?: () => void;
   onOpenAdaptedLesson?: (topicId: string) => void;
   onOpenAiDrawer?: () => void;
   onOpenSearch?: () => void;
@@ -78,6 +85,9 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   onOpenCoding,
   onBackToCatalog,
   onBackToPythonDashboard,
+  onBackToPythonIntermediateDashboard,
+  onBackToPythonAdvancedDashboard,
+  onBackToCDashboard,
   onOpenAdaptedLesson,
   onOpenAiDrawer,
   onOpenSearch,
@@ -101,6 +111,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   // Feedback state
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
+  const [completedLocally, setCompletedLocally] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -158,7 +169,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       return C_FUNDAMENTALS_TOPICS.map(t => ({
         id: t.id,
         title: t.title,
-        moduleTitle: 'C Fundamentals'
+        moduleTitle: t.moduleTitle || 'Core Language Foundations'
       }));
     }
     if (topicId.startsWith('top-cpp-')) {
@@ -173,6 +184,22 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
         id: t.id,
         title: t.title,
         moduleTitle: 'Java Core Architecture'
+      }));
+    }
+    const isPyAdv = PYTHON_ADVANCED_TOPICS.some(t => t.id === topicId) || topicId.startsWith('top-py-adv-');
+    if (isPyAdv) {
+      return PYTHON_ADVANCED_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle
+      }));
+    }
+    const isPyInt = PYTHON_INTERMEDIATE_TOPICS.some(t => t.id === topicId) || topicId.startsWith('top-py-int-');
+    if (isPyInt) {
+      return PYTHON_INTERMEDIATE_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle
       }));
     }
     const isPyFund = PYTHON_FUNDAMENTALS_TOPICS.some(t => t.id === topicId);
@@ -200,8 +227,26 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const nextTopic = currentIndex >= 0 && currentIndex < curriculumSequence.length - 1 ? curriculumSequence[currentIndex + 1] : null;
 
   const handleTopicNavigation = (targetId: string) => {
+    if (topicId.startsWith('top-c-')) {
+      api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-py-')) {
+      api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    }
     if (onSelectTopic) {
       onSelectTopic(targetId);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    setCompletedLocally(true);
+    try {
+      if (topicId.startsWith('top-c-')) {
+        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-py-')) {
+        await api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      }
+    } catch (err) {
+      console.warn('Could not save completion progress:', err);
     }
   };
 
@@ -232,6 +277,9 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     setFeedbackSent(type);
     try {
       await api.submitContentFeedback(topicId, type);
+      if (topicId.startsWith('top-c-')) {
+        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      }
     } catch (err) {
       console.error('Feedback error:', err);
     }
@@ -265,14 +313,28 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     );
   }
 
-  const courseTitle = topic.language === 'python'
-    ? 'Python Programming'
-    : topic.language === 'c'
+  const isAdvanced = topicId.startsWith('top-py-adv-') || PYTHON_ADVANCED_TOPICS.some(t => t.id === topicId);
+  const isIntermediate = topicId.startsWith('top-py-int-') || PYTHON_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+  const courseTitle = isAdvanced
+    ? 'Advanced Python & Async'
+    : isIntermediate
+    ? 'Intermediate Python & DSA'
+    : topic.language === 'python'
+    ? 'Python Fundamentals'
+    : topic.language === 'c' || topicId.startsWith('top-c-')
     ? 'C Programming Foundations'
     : topic.language === 'cpp'
-    ? 'C++ Modern Fundamentals'
+    ? (topicId === 'top-cpp-references-memory'
+        ? 'Advanced C++ & STL Architecture'
+        : topicId === 'top-cpp-oop'
+        ? 'Object-Oriented C++'
+        : 'C++ Modern Fundamentals')
     : topic.language === 'java'
-    ? 'Java Core Architecture & Basics'
+    ? (topicId === 'top-java-methods-arrays'
+        ? 'Advanced Java & Collections Framework'
+        : topicId === 'top-java-oop'
+        ? 'Java Object-Oriented Design'
+        : 'Java Core Architecture & Basics')
     : `${(topic.language || 'Code').toUpperCase()} Track`;
   const moduleName = curriculumSequence[currentIndex]?.moduleTitle || 'Core Fundamentals';
   const progressPercent = Math.min(100, Math.round(((currentIndex + 1) / (curriculumSequence.length || 1)) * 100));
@@ -318,12 +380,33 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
             {/* Breadcrumb Path */}
             <nav className="flex items-center gap-1.5 text-xs text-slate-400 light-theme:text-slate-500 truncate">
-              {onBackToPythonDashboard && topicId.startsWith('top-py-') ? (
+              {isAdvanced && onBackToPythonAdvancedDashboard ? (
+                <button
+                  onClick={onBackToPythonAdvancedDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Advanced Python & Async
+                </button>
+              ) : isIntermediate && onBackToPythonIntermediateDashboard ? (
+                <button
+                  onClick={onBackToPythonIntermediateDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Intermediate Python & DSA
+                </button>
+              ) : onBackToPythonDashboard && topicId.startsWith('top-py-') ? (
                 <button
                   onClick={onBackToPythonDashboard}
                   className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
                 >
                   Python Fundamentals
+                </button>
+              ) : onBackToCDashboard && topicId.startsWith('top-c-') ? (
+                <button
+                  onClick={onBackToCDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  C Programming Foundations
                 </button>
               ) : onBackToCatalog ? (
                 <button
@@ -885,6 +968,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             nextTopic={nextTopic}
             onSelectTopic={handleTopicNavigation}
             onReviewLesson={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onMarkCompleted={handleMarkCompleted}
+            isCompleted={completedLocally}
           />
         </main>
 

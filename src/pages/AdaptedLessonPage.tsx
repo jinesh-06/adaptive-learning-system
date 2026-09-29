@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { PYTHON_FUNDAMENTALS_TOPICS, PythonTopic } from '../data/pythonFundamentalsData';
+import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
+import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
 import { executeCodeInBrowser } from '../services/pythonRunner';
 import {
   Sparkles,
@@ -41,7 +43,7 @@ export const AdaptedLessonPage: React.FC<AdaptedLessonPageProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [adaptedData, setAdaptedData] = useState<any>(null);
-  const [topicInfo, setTopicInfo] = useState<PythonTopic | null>(null);
+  const [topicInfo, setTopicInfo] = useState<any | null>(null);
 
   // Practice runner state
   const [userCode, setUserCode] = useState<string>('');
@@ -55,13 +57,23 @@ export const AdaptedLessonPage: React.FC<AdaptedLessonPageProps> = ({
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
-    const topic = PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) || PYTHON_FUNDAMENTALS_TOPICS[0];
+    const topic =
+      PYTHON_ADVANCED_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) ||
+      PYTHON_FUNDAMENTALS_TOPICS[0];
     setTopicInfo(topic);
     loadAdaptedLesson(topic.id);
   }, [topicId]);
 
   const loadAdaptedLesson = async (tId: string) => {
     setLoading(true);
+    const activeTopic =
+      PYTHON_ADVANCED_TOPICS.find(t => t.id === tId) ||
+      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === tId) ||
+      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === tId) ||
+      PYTHON_FUNDAMENTALS_TOPICS[0];
+
     try {
       const res = await api.getAdaptedLesson(tId);
       if (res && res.lesson_data) {
@@ -73,14 +85,54 @@ export const AdaptedLessonPage: React.FC<AdaptedLessonPageProps> = ({
         if (genRes && genRes.lesson_data) {
           setAdaptedData(genRes.lesson_data);
           setUserCode(genRes.lesson_data.practice_challenge?.starter_code || '');
+        } else if (activeTopic) {
+          generateClientFallback(activeTopic);
         }
       }
     } catch (err) {
       console.warn('Failed to load adapted lesson from API, generating client fallback:', err);
+      if (activeTopic) generateClientFallback(activeTopic);
     } finally {
       setLoading(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const generateClientFallback = (t: any) => {
+    const data = {
+      topic_id: t.id,
+      topic_title: t.title,
+      topic_number: t.numberDisplay,
+      adaptation_strategy: 'SIMPLIFY',
+      strategy_label: 'Simplified + Step-by-Step Scaffolding',
+      header_note: 'Based on your recent learning signals, this version provides a guided, step-by-step alternative explanation.',
+      concept_analogy: `Let's visualize ${t.title} through a clear real-world analogy: ${t.shortDescription}`,
+      detailed_explanation: t.conceptExplanation || t.shortDescription,
+      steps: [
+        { step: 1, title: 'Core Need', description: t.learningObjectives?.[0] || 'Understand the core definition and problem it solves.' },
+        { step: 2, title: 'Syntax & Mechanics', description: 'Inspect the syntax and step-by-step operational mechanics.' },
+        { step: 3, title: 'Hands-on Practice', description: 'Run the interactive code in the sandbox below.' }
+      ],
+      guided_code: t.codeExample || t.simpleExample?.code || '# Code example',
+      expected_output: t.expectedOutput || 'Executed successfully',
+      practice_challenge: {
+        prompt: t.practice?.prompt || 'Practice the concept',
+        starter_code: t.practice?.starterCode || '# Write code here\n',
+        expected_output_matcher: t.practice?.expectedOutputMatcher || '',
+        hint: t.practice?.hint || 'Check lesson examples',
+        solution: t.practice?.solution || ''
+      },
+      knowledge_check: (t.quiz || []).map((q: any, idx: number) => ({
+        id: q.id || `kc-${idx}`,
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        explanation: q.explanation
+      })),
+      summary: t.summary || ['Master core mechanics step by step.']
+    };
+    setAdaptedData(data);
+    setUserCode(t.practice?.starterCode || '');
   };
 
   const handleRunCode = async () => {

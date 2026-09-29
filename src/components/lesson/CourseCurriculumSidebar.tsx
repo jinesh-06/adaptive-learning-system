@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { mockCourses } from '../../services/mockFallback';
+import { ADVANCED_MODULES, PYTHON_ADVANCED_TOPICS } from '../../data/pythonAdvancedData';
+import { INTERMEDIATE_MODULES, PYTHON_INTERMEDIATE_TOPICS } from '../../data/pythonIntermediateData';
 
 export interface CurriculumTopic {
   id: string;
@@ -56,11 +58,54 @@ export const CourseCurriculumSidebar: React.FC<CourseCurriculumSidebarProps> = (
 
     const loadCurriculum = async () => {
       setLoading(true);
+
+      // Check if currentTopicId belongs to Advanced Python
+      if (currentTopicId.startsWith('top-py-adv-') || PYTHON_ADVANCED_TOPICS.some(t => t.id === currentTopicId)) {
+        const advMods: CurriculumModule[] = ADVANCED_MODULES.map((m, mIdx) => ({
+          id: m.id,
+          title: m.title,
+          order: mIdx + 1,
+          topics: PYTHON_ADVANCED_TOPICS.filter(t => t.moduleId === m.id).map(t => ({
+            id: t.id,
+            title: t.title,
+            level: t.difficulty,
+            duration: `${t.estimatedMinutes}m`
+          }))
+        }));
+        if (isMounted) {
+          setModules(advMods);
+          initializeExpanded(advMods);
+        }
+        return;
+      }
+
+      // Check if currentTopicId belongs to Intermediate Python
+      if (currentTopicId.startsWith('top-py-int-') || PYTHON_INTERMEDIATE_TOPICS.some(t => t.id === currentTopicId)) {
+        const intMods: CurriculumModule[] = INTERMEDIATE_MODULES.map((m, mIdx) => ({
+          id: m.id,
+          title: m.title,
+          order: mIdx + 1,
+          topics: PYTHON_INTERMEDIATE_TOPICS.filter(t => t.moduleId === m.id).map(t => ({
+            id: t.id,
+            title: t.title,
+            level: t.difficulty,
+            duration: `${t.estimatedMinutes}m`
+          }))
+        }));
+        if (isMounted) {
+          setModules(intMods);
+          initializeExpanded(intMods);
+        }
+        return;
+      }
+
       try {
         // Try getting course structure from API
         const courseData = await api.getCourses(language);
         if (isMounted && courseData && courseData.length > 0) {
-          const targetCourse = courseData.find((c: any) => c.language === language) || courseData[0];
+          const targetCourse = courseData.find((c: any) =>
+            c.language === language && c.modules?.some((m: any) => m.topics?.some((t: any) => t.id === currentTopicId))
+          ) || courseData.find((c: any) => c.language === language) || courseData[0];
           if (targetCourse && targetCourse.modules) {
             setModules(targetCourse.modules);
             initializeExpanded(targetCourse.modules);
@@ -72,7 +117,9 @@ export const CourseCurriculumSidebar: React.FC<CourseCurriculumSidebarProps> = (
       }
 
       // Fallback to mockCourses
-      const mockC = mockCourses.find((c: any) => c.language === language) || mockCourses[0];
+      const mockC = mockCourses.find((c: any) =>
+        c.language === language && c.modules?.some((m: any) => m.topics?.some((t: any) => t.id === currentTopicId))
+      ) || mockCourses.find((c: any) => c.language === language) || mockCourses[0];
       if (isMounted && mockC && mockC.modules) {
         setModules(mockC.modules);
         initializeExpanded(mockC.modules);

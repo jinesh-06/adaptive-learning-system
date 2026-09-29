@@ -643,6 +643,36 @@ export const api = {
     return mockHandlers.getLearningHistory();
   },
 
+  // C Programming Foundations Flow
+  getCFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/c/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCFundamentals();
+  },
+
+  updateCProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/c/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCProgress(payload);
+  },
+
   // Python Fundamentals Adaptive Flow
   getPythonFundamentals: async () => {
     try {
@@ -652,6 +682,28 @@ export const api = {
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonFundamentals();
+  },
+
+  // Intermediate Python & Data Structures Flow
+  getPythonIntermediate: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/intermediate`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonIntermediate();
+  },
+
+  // Advanced Python, OOP & Async Flow
+  getPythonAdvanced: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/advanced`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonAdvanced();
   },
 
   getPythonTopic: async (topicId: string) => {
