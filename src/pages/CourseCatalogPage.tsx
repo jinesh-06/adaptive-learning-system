@@ -24,6 +24,7 @@ interface CourseCatalogProps {
   onOpenPythonIntermediateDashboard?: () => void;
   onOpenPythonAdvancedDashboard?: () => void;
   onOpenCDashboard?: () => void;
+  onOpenJavaDashboard?: () => void;
 }
 
 export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
@@ -31,7 +32,8 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
   onOpenPythonDashboard,
   onOpenPythonIntermediateDashboard,
   onOpenPythonAdvancedDashboard,
-  onOpenCDashboard
+  onOpenCDashboard,
+  onOpenJavaDashboard
 }) => {
   const { preferences, updateLanguage } = useAuth();
   const { currentLoad } = useCognitive();
@@ -62,11 +64,12 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
         const list = await api.getCourses(selectedLanguage);
         if (Array.isArray(list)) {
           // Preload all curriculum progress data in parallel
-          const [pyFundData, pyIntData, pyAdvData, cFundData] = await Promise.all([
+          const [pyFundData, pyIntData, pyAdvData, cFundData, javaFundData] = await Promise.all([
             api.getPythonFundamentals().catch(() => null),
             api.getPythonIntermediate().catch(() => null),
             api.getPythonAdvanced().catch(() => null),
-            api.getCFundamentals().catch(() => null)
+            api.getCFundamentals().catch(() => null),
+            api.getJavaFundamentals().catch(() => null)
           ]);
 
           const detailed = await Promise.all(
@@ -96,6 +99,15 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
                   c.title.toLowerCase().includes('foundations') ||
                   c.level === 'beginner');
 
+              const isJavaFund =
+                c.language === 'java' &&
+                (c.id === 'java-beg' ||
+                  c.id === 'java-basics' ||
+                  c.id === 'course-java-fund' ||
+                  c.title.toLowerCase().includes('architecture') ||
+                  c.title.toLowerCase().includes('core') ||
+                  c.level === 'beginner');
+
               let topics_count = 16;
               let duration_hours = 6;
               let progress = 0;
@@ -121,6 +133,11 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
                 duration_hours = 8.5;
                 progress = Number(cFundData?.overall_progress ?? 0);
                 first_topic_id = cFundData?.current_topic_id || 'top-c-intro';
+              } else if (isJavaFund) {
+                topics_count = javaFundData?.total_topics || 28;
+                duration_hours = 8;
+                progress = Number(javaFundData?.overall_progress ?? 0);
+                first_topic_id = javaFundData?.current_topic_id || 'top-java-intro';
               } else {
                 try {
                   const struct = await api.getCourseStructure(c.id);
@@ -129,12 +146,12 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
                   topics_count = topics.length || (c.id === 'c-int' ? 12 : c.id === 'c-adv' ? 14 : 6);
                   duration_hours = c.level === 'intermediate' ? 10 : c.level === 'advanced' ? 14 : 8;
                   progress = topics.length > 0 ? Math.round((completed / topics.length) * 100) : 0;
-                  first_topic_id = topics[0]?.id || (c.language === 'c' ? 'top-c-intro' : 'top-py-intro');
+                  first_topic_id = topics[0]?.id || (c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro');
                 } catch {
                   topics_count = 6;
                   duration_hours = 8;
                   progress = 0;
-                  first_topic_id = c.language === 'c' ? 'top-c-intro' : 'top-py-intro';
+                  first_topic_id = c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro';
                 }
               }
 
@@ -379,6 +396,8 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
                         onOpenPythonDashboard();
                       } else if (course.language === 'c' && onOpenCDashboard) {
                         onOpenCDashboard();
+                      } else if (course.language === 'java' && onOpenJavaDashboard) {
+                        onOpenJavaDashboard();
                       } else {
                         const defaultTopic =
                           course.language === 'c'

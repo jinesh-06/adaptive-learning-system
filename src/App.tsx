@@ -34,6 +34,7 @@ import { PythonFundamentalsDashboard } from './pages/PythonFundamentalsDashboard
 import { PythonIntermediateDashboard } from './pages/PythonIntermediateDashboard';
 import { PythonAdvancedDashboard } from './pages/PythonAdvancedDashboard';
 import { CProgrammingFoundationsDashboard } from './pages/CProgrammingFoundationsDashboard';
+import { JavaArchitectureBasicsDashboard } from './pages/JavaArchitectureBasicsDashboard';
 import { AdaptedLessonPage } from './pages/AdaptedLessonPage';
 import { PYTHON_FUNDAMENTALS_TOPICS } from './data/pythonFundamentalsData';
 import { PYTHON_INTERMEDIATE_TOPICS } from './data/pythonIntermediateData';
@@ -313,6 +314,7 @@ const AppContent: React.FC = () => {
         onBackToPythonIntermediateDashboard={() => navigate('/python-intermediate-dashboard')}
         onBackToPythonAdvancedDashboard={() => navigate('/python-advanced-dashboard')}
         onBackToCDashboard={() => navigate('/c-dashboard')}
+        onBackToJavaDashboard={() => navigate('/java-dashboard')}
         onOpenAdaptedLesson={(tId) => navigate(`/adapted-lesson/${tId || activeTopicId}`)}
         onOpenAiDrawer={() => setAiDrawerOpen(true)}
         onOpenSearch={() => setSearchModalOpen(true)}
@@ -497,6 +499,7 @@ const AppContent: React.FC = () => {
                   onOpenPythonIntermediateDashboard={() => navigate('/python-intermediate-dashboard')}
                   onOpenPythonAdvancedDashboard={() => navigate('/python-advanced-dashboard')}
                   onOpenCDashboard={() => navigate('/c-dashboard')}
+                  onOpenJavaDashboard={() => navigate('/java-dashboard')}
                 />
               }
             />
@@ -568,6 +571,29 @@ const AppContent: React.FC = () => {
               }
             />
             <Route path="/c-foundations-dashboard" element={<Navigate to="/c-dashboard" replace />} />
+
+            <Route
+              path="/java-dashboard"
+              element={
+                <JavaArchitectureBasicsDashboard
+                  onSelectTopic={handleSelectTopic}
+                  onSelectAdaptedLesson={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/adapted-lesson/${topicId}`);
+                  }}
+                  onBackToCatalog={() => navigate('/catalog')}
+                  onStartQuiz={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/quiz/${topicId}`);
+                  }}
+                  onOpenCoding={(topicId) => {
+                    setSelectedTopicId(topicId);
+                    navigate(`/coding/${topicId}`);
+                  }}
+                />
+              }
+            />
+            <Route path="/java-basics" element={<Navigate to="/java-dashboard" replace />} />
 
             <Route path="/lesson" element={<Navigate to={`/lesson/${selectedTopicId}`} replace />} />
             <Route path="/lesson/:topicId" element={<LessonRouteWrapper />} />

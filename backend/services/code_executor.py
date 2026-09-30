@@ -784,6 +784,124 @@ class CodeExecutor:
             }
 
     @classmethod
+    def execute_java(cls, code: str, stdin_input: str = "", timeout: float = 6.0) -> Dict[str, Any]:
+        """Execute Java code safely via javac compilation and JVM execution in a temporary directory."""
+        start_time = time.time()
+        import tempfile
+
+        javac_path = r"C:\Program Files\Java\jdk1.8.0_111\bin\javac.exe"
+        if not os.path.exists(javac_path):
+            javac_path = shutil.which("javac") or "javac"
+
+        # Detect public class name or default to Main
+        class_match = re.search(r'public\s+class\s+([a-zA-Z_]\w*)', code)
+        class_name = class_match.group(1) if class_match else "Main"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_file = os.path.join(tmpdir, f"{class_name}.java")
+            try:
+                with open(src_file, "w", encoding="utf-8") as f:
+                    f.write(code)
+            except Exception as e:
+                return {
+                    "success": False,
+                    "status": "RUNTIME_ERROR",
+                    "output": f"Failed to write source file: {str(e)}",
+                    "error": str(e),
+                    "compilation_error": None,
+                    "execution_time": 0.0,
+                    "execution_time_ms": 0
+                }
+
+            # Compile using javac
+            try:
+                comp_proc = subprocess.run(
+                    [javac_path, f"{class_name}.java"],
+                    cwd=tmpdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=8.0
+                )
+                if comp_proc.returncode != 0:
+                    elapsed = round(time.time() - start_time, 3)
+                    comp_err = comp_proc.stderr.strip() or comp_proc.stdout.strip()
+                    return {
+                        "success": False,
+                        "status": "COMPILATION_ERROR",
+                        "output": comp_err,
+                        "error": comp_err,
+                        "compilation_error": comp_err,
+                        "execution_time": elapsed,
+                        "execution_time_ms": int(elapsed * 1000)
+                    }
+            except subprocess.TimeoutExpired:
+                return {
+                    "success": False,
+                    "status": "TIME_LIMIT_EXCEEDED",
+                    "output": "Java compilation timed out",
+                    "error": "Compilation timeout",
+                    "compilation_error": "Compilation timeout",
+                    "execution_time": 8.0,
+                    "execution_time_ms": 8000
+                }
+            except Exception as e:
+                elapsed = round(time.time() - start_time, 3)
+                return {
+                    "success": False,
+                    "status": "COMPILATION_ERROR",
+                    "output": f"Compiler execution failed: {str(e)}",
+                    "error": str(e),
+                    "compilation_error": str(e),
+                    "execution_time": elapsed,
+                    "execution_time_ms": int(elapsed * 1000)
+                }
+
+            # Run bytecode using java launcher
+            try:
+                run_proc = subprocess.run(
+                    ["java", "-cp", tmpdir, class_name],
+                    input=stdin_input if stdin_input is not None else "",
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout
+                )
+                elapsed = round(time.time() - start_time, 3)
+                success = (run_proc.returncode == 0)
+                out = run_proc.stdout if success else (run_proc.stdout + ("\n" if run_proc.stdout else "") + run_proc.stderr).strip()
+                err = run_proc.stderr.strip() if not success else None
+                return {
+                    "success": success,
+                    "status": "PASSED" if success else "RUNTIME_ERROR",
+                    "output": out,
+                    "error": err,
+                    "compilation_error": None,
+                    "execution_time": elapsed,
+                    "execution_time_ms": int(elapsed * 1000)
+                }
+            except subprocess.TimeoutExpired:
+                elapsed = round(time.time() - start_time, 3)
+                return {
+                    "success": False,
+                    "status": "TIME_LIMIT_EXCEEDED",
+                    "output": f"Time Limit Exceeded ({timeout}s limit)",
+                    "error": f"Time Limit Exceeded ({timeout}s limit)",
+                    "compilation_error": None,
+                    "execution_time": elapsed,
+                    "execution_time_ms": int(elapsed * 1000)
+                }
+            except Exception as e:
+                elapsed = round(time.time() - start_time, 3)
+                return {
+                    "success": False,
+                    "status": "RUNTIME_ERROR",
+                    "output": f"Runtime execution error: {str(e)}",
+                    "error": str(e),
+                    "compilation_error": None,
+                    "execution_time": elapsed,
+                    "execution_time_ms": int(elapsed * 1000)
+                }
+
+    @classmethod
     def run_code(cls, code: str, language: str = "python", custom_input: Optional[str] = None) -> Dict[str, Any]:
         """Run code with custom input."""
         lang = language.lower()
@@ -791,17 +909,21 @@ class CodeExecutor:
             res = cls.execute_python(code, custom_input or "")
         elif lang in ("c", "cpp"):
             res = cls.execute_c(code, custom_input or "")
+        elif lang in ("java",):
+            res = cls.execute_java(code, custom_input or "")
         else:
             res = cls.execute_python(code, custom_input or "")
 
         return {
             "success": res["success"],
-            "stdout": res["output"],
-            "stderr": res["error"] or "",
+            "output": res.get("output", ""),
+            "stdout": res.get("output", ""),
+            "error": res.get("error") or "",
+            "stderr": res.get("error") or "",
             "compilation_error": res.get("compilation_error"),
-            "execution_time_seconds": res["execution_time"],
-            "execution_time_ms": res["execution_time_ms"],
-            "status": res["status"]
+            "execution_time_seconds": res.get("execution_time", 0.0),
+            "execution_time_ms": res.get("execution_time_ms", 0),
+            "status": res.get("status", "PASSED" if res["success"] else "RUNTIME_ERROR")
         }
 
     @classmethod
@@ -866,6 +988,8 @@ class CodeExecutor:
 
             if lang in ("c", "cpp"):
                 res = cls.execute_c(code, stdin_input=tc_input)
+            elif lang in ("java",):
+                res = cls.execute_java(code, stdin_input=tc_input)
             else:
                 res = cls.execute_python(code, stdin_input=tc_input)
 

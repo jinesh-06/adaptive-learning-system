@@ -68,6 +68,7 @@ export interface TopicLessonPageProps {
   onBackToPythonIntermediateDashboard?: () => void;
   onBackToPythonAdvancedDashboard?: () => void;
   onBackToCDashboard?: () => void;
+  onBackToJavaDashboard?: () => void;
   onOpenAdaptedLesson?: (topicId: string) => void;
   onOpenAiDrawer?: () => void;
   onOpenSearch?: () => void;
@@ -88,6 +89,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   onBackToPythonIntermediateDashboard,
   onBackToPythonAdvancedDashboard,
   onBackToCDashboard,
+  onBackToJavaDashboard,
   onOpenAdaptedLesson,
   onOpenAiDrawer,
   onOpenSearch,
@@ -183,7 +185,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       return JAVA_FUNDAMENTALS_TOPICS.map(t => ({
         id: t.id,
         title: t.title,
-        moduleTitle: 'Java Core Architecture'
+        moduleTitle: t.moduleTitle || 'Java Core Architecture & Basics'
       }));
     }
     const isPyAdv = PYTHON_ADVANCED_TOPICS.some(t => t.id === topicId) || topicId.startsWith('top-py-adv-');
@@ -229,6 +231,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const handleTopicNavigation = (targetId: string) => {
     if (topicId.startsWith('top-c-')) {
       api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-java-')) {
+      api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
     } else if (topicId.startsWith('top-py-')) {
       api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
     }
@@ -242,6 +246,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     try {
       if (topicId.startsWith('top-c-')) {
         await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-java-')) {
+        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       } else if (topicId.startsWith('top-py-')) {
         await api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       }
@@ -279,6 +285,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       await api.submitContentFeedback(topicId, type);
       if (topicId.startsWith('top-c-')) {
         await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-java-')) {
+        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       }
     } catch (err) {
       console.error('Feedback error:', err);
@@ -329,12 +337,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
         : topicId === 'top-cpp-oop'
         ? 'Object-Oriented C++'
         : 'C++ Modern Fundamentals')
-    : topic.language === 'java'
-    ? (topicId === 'top-java-methods-arrays'
-        ? 'Advanced Java & Collections Framework'
-        : topicId === 'top-java-oop'
-        ? 'Java Object-Oriented Design'
-        : 'Java Core Architecture & Basics')
+    : topic.language === 'java' || topicId.startsWith('top-java-')
+    ? 'Java Core Architecture & Basics'
     : `${(topic.language || 'Code').toUpperCase()} Track`;
   const moduleName = curriculumSequence[currentIndex]?.moduleTitle || 'Core Fundamentals';
   const progressPercent = Math.min(100, Math.round(((currentIndex + 1) / (curriculumSequence.length || 1)) * 100));
@@ -407,6 +411,13 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                   className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
                 >
                   C Programming Foundations
+                </button>
+              ) : onBackToJavaDashboard && topicId.startsWith('top-java-') ? (
+                <button
+                  onClick={onBackToJavaDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Java Core Architecture & Basics
                 </button>
               ) : onBackToCatalog ? (
                 <button

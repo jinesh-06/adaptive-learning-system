@@ -2895,6 +2895,8 @@ export const mockHandlers = {
   }) => {
     const storageKey = payload.topic_id.startsWith('top-c-')
       ? 'cog_c_progress'
+      : payload.topic_id.startsWith('top-java-')
+      ? 'cog_java_progress'
       : payload.topic_id.startsWith('top-py-adv-')
       ? 'cog_python_adv_progress'
       : payload.topic_id.startsWith('top-py-int-')
@@ -2931,6 +2933,116 @@ export const mockHandlers = {
     time_spent_delta?: number;
   }) => {
     return mockHandlers.updatePythonProgress(payload);
+  },
+
+  getJavaFundamentals: async () => {
+    const storedProgress = getStoredArray('cog_java_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = JAVA_FUNDAMENTALS_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = JAVA_FUNDAMENTALS_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[JAVA_FUNDAMENTALS_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: false
+      };
+    });
+
+    const totalTopics = JAVA_FUNDAMENTALS_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: 'Java Core Architecture & Basics',
+      subtitle: 'Build a strong foundation in Java by understanding its architecture, programming fundamentals, control structures, methods, arrays, and problem-solving techniques.',
+      total_modules: 3,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 4,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      topics: topicsOutput
+    };
+  },
+
+  getJavaTopic: async (topicId: string) => {
+    const topic = JAVA_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) || JAVA_FUNDAMENTALS_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateJavaProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeJavaSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
   },
 
   analyzePythonSignals: async (payload: {

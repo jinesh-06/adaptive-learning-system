@@ -673,6 +673,67 @@ export const api = {
     return mockHandlers.updateCProgress(payload);
   },
 
+  // Java Core Architecture & Basics Flow
+  getJavaFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/java/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaFundamentals();
+  },
+
+  getJavaTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaTopic(topicId);
+  },
+
+  updateJavaProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateJavaProgress(payload);
+  },
+
+  analyzeJavaSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeJavaSignals(payload);
+  },
+
   // Python Fundamentals Adaptive Flow
   getPythonFundamentals: async () => {
     try {

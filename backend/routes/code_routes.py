@@ -40,13 +40,13 @@ async def get_coding_challenge(topic_id: str, language: Optional[str] = Query("p
 async def run_code(payload: CodeRunRequest):
     res = code_executor.run_code(payload.code, payload.language, payload.custom_input)
     return {
-        "success": res["success"],
-        "stdout": res["output"],
-        "stderr": res.get("error") or "",
+        "success": res.get("success", False),
+        "stdout": res.get("stdout") or res.get("output") or "",
+        "stderr": res.get("stderr") or res.get("error") or "",
         "compilation_error": res.get("compilation_error"),
-        "execution_time_seconds": res.get("execution_time", 0.0),
+        "execution_time_seconds": res.get("execution_time_seconds") or res.get("execution_time", 0.0),
         "execution_time_ms": res.get("execution_time_ms", 0),
-        "status": res.get("status", "PASSED" if res["success"] else "RUNTIME_ERROR")
+        "status": res.get("status", "PASSED" if res.get("success") else "RUNTIME_ERROR")
     }
 
 

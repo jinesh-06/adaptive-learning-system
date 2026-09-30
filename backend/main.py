@@ -27,6 +27,7 @@ from backend.routes.diagnostic_routes import router as diagnostic_router
 from backend.routes.user_routes import router as user_router
 from backend.routes.python_routes import router as python_router
 from backend.routes.c_routes import router as c_router
+from backend.routes.java_routes import router as java_router
 
 app = FastAPI(
     title="Cognitive Adaptive Learning API",
@@ -59,6 +60,7 @@ api_router.include_router(diagnostic_router)
 api_router.include_router(user_router)
 api_router.include_router(python_router)
 api_router.include_router(c_router)
+api_router.include_router(java_router)
 
 # Mount the /api sub-application
 app.mount("/api", api_router)

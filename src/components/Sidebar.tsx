@@ -231,31 +231,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         id: 'java-basics',
         label: 'Java Core Architecture & Basics',
         icon: GraduationCap,
-        topicId: 'top-java-fundamentals',
+        dashboardView: 'java-dashboard',
+        topicId: 'top-java-intro',
         matcher: (tId, view) =>
+          view === 'java-dashboard' ||
+          view === 'java-basics' ||
           view === 'java-beg' ||
-          (view === 'lesson' && [
-            'top-java-fundamentals',
-            'top-java-control-flow'
-          ].includes(tId))
+          (view === 'lesson' && tId.startsWith('top-java-') && !tId.startsWith('top-java-variables') && !tId.startsWith('top-java-methods'))
       },
       {
         id: 'java-oop',
-        label: 'Java Object-Oriented Design',
+        label: 'Fundamentals & Control Flow',
         icon: Layers,
-        topicId: 'top-java-oop',
+        dashboardView: 'java-dashboard',
+        topicId: 'top-java-variables-constants',
         matcher: (tId, view) =>
-          view === 'java-int' ||
-          (view === 'lesson' && tId === 'top-java-oop')
+          view === 'lesson' && [
+            'top-java-variables-constants',
+            'top-java-primitive-types',
+            'top-java-reference-types',
+            'top-java-type-casting',
+            'top-java-operators',
+            'top-java-user-input-scanner',
+            'top-java-conditionals',
+            'top-java-for-loop',
+            'top-java-while-loops',
+            'top-java-loop-control',
+            'top-java-mod2-problems'
+          ].includes(tId)
       },
       {
         id: 'java-advanced',
-        label: 'Advanced Java & Collections Framework',
+        label: 'Methods, Arrays & Capstone',
         icon: Cpu,
-        topicId: 'top-java-methods-arrays',
+        dashboardView: 'java-dashboard',
+        topicId: 'top-java-methods-intro',
         matcher: (tId, view) =>
-          view === 'java-adv' ||
-          (view === 'lesson' && tId === 'top-java-methods-arrays')
+          view === 'lesson' && [
+            'top-java-methods-intro',
+            'top-java-method-parameters',
+            'top-java-method-overloading',
+            'top-java-pass-by-value',
+            'top-java-arrays-intro',
+            'top-java-array-operations',
+            'top-java-search-sort',
+            'top-java-multidimensional-arrays',
+            'top-java-strings',
+            'top-java-problem-solving',
+            'top-java-final-project'
+          ].includes(tId)
       }
     ]
   };
@@ -394,7 +418,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={lang.id}
                     onClick={() => {
                       updateLanguage(lang.id);
+                      setCurrentView('landing');
                       setLanguageSelectorOpen(false);
+                      if (setIsMobileOpen) setIsMobileOpen(false);
                     }}
                     className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                       preferences.selected_language === lang.id

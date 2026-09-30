@@ -37,6 +37,18 @@ class CurriculumService:
             except Exception as e:
                 print(f"[CurriculumService] Failed to load python_topics_data.json: {e}")
 
+        # Load authoritative Java topics data
+        self.java_topics: Dict[str, Any] = {}
+        java_path = Path(__file__).resolve().parent.parent / "data" / "java_topics_data.json"
+        if java_path.exists():
+            try:
+                with open(java_path, "r", encoding="utf-8") as f:
+                    java_json = json.load(f)
+                    for t in java_json.get("topics", []):
+                        self.java_topics[t["id"]] = t
+            except Exception as e:
+                print(f"[CurriculumService] Failed to load java_topics_data.json: {e}")
+
     def get_courses(self, language: Optional[str] = None, level: Optional[str] = None) -> List[Dict[str, Any]]:
         raw_courses = self.data.get("courses", [])
         modules = self.data.get("modules", [])
@@ -84,6 +96,31 @@ class CurriculumService:
                             "title": "Pointers & Systems",
                             "order": 2,
                             "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(C_TOPIC_METADATA[8:])]
+                        }
+                    ]
+                except Exception:
+                    structured_modules = []
+            elif c_id in ("java-beg", "java-basics") or c.get("language") == "java":
+                try:
+                    from backend.routes.java_routes import TOPIC_METADATA as JAVA_TOPIC_METADATA
+                    structured_modules = [
+                        {
+                            "id": "mod-java-architecture-basics",
+                            "title": "Module 01: Java Core Architecture & Basics",
+                            "order": 1,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[:6])]
+                        },
+                        {
+                            "id": "mod-java-fundamentals-control",
+                            "title": "Module 02: Java Fundamentals & Control Structures",
+                            "order": 2,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[6:17])]
+                        },
+                        {
+                            "id": "mod-java-methods-arrays",
+                            "title": "Module 03: Java Methods & Arrays",
+                            "order": 3,
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[17:])]
                         }
                     ]
                 except Exception:
@@ -176,7 +213,33 @@ class CurriculumService:
                 t["content_standard"] = t.get("conceptExplanation", "")
             return t
 
-        # 3. Check platform_data.json topics
+        # 3. Check Java Topics
+        if topic_id in self.java_topics:
+            t = dict(self.java_topics[topic_id])
+            if not t.get("sections"):
+                t["sections"] = [
+                    {
+                        "id": f"{topic_id}-sec-1",
+                        "title": "1. Core Conceptual Overview",
+                        "order_index": 1,
+                        "content": t.get("conceptExplanation", ""),
+                        "code_snippet": t.get("syntax", ""),
+                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                    },
+                    {
+                        "id": f"{topic_id}-sec-2",
+                        "title": "2. Syntax & Implementation",
+                        "order_index": 2,
+                        "content": t.get("conceptExplanation", ""),
+                        "code_snippet": t.get("codeExample", ""),
+                        "pitfalls": t.get("commonMistakes", [{}])[0].get("explanation", "") if t.get("commonMistakes") else ""
+                    }
+                ]
+            if not t.get("content_standard"):
+                t["content_standard"] = t.get("conceptExplanation", "")
+            return t
+
+        # 4. Check platform_data.json topics
         topics = self.data.get("topics", [])
         for t in topics:
             if t.get("id") == topic_id:
@@ -242,7 +305,30 @@ class CurriculumService:
                 "questions": formatted
             }
 
-        # 3. Existing mcqs from platformData
+        # 3. Check if Java topic has rich quiz
+        if topic_id in self.java_topics and self.java_topics[topic_id].get("quiz"):
+            java_quiz = self.java_topics[topic_id]["quiz"]
+            formatted = []
+            for q in java_quiz:
+                c_idx = q.get("correct_index") if "correct_index" in q else q.get("correctIndex", 0)
+                formatted.append({
+                    "id": q.get("id"),
+                    "question": q.get("question") or q.get("question_text"),
+                    "options": q.get("options", []),
+                    "correct_index": c_idx,
+                    "correctIndex": c_idx,
+                    "explanation": q.get("explanation", "Good job analyzing the concept!"),
+                    "difficulty": q.get("difficulty", "medium")
+                })
+            return {
+                "topic_id": topic_id,
+                "title": f"Knowledge Check: {self.java_topics[topic_id].get('title', topic_id)}",
+                "target_difficulty": "standard",
+                "adaptive_note": "Standard calibrated quiz based on your active mastery.",
+                "questions": formatted
+            }
+
+        # 4. Existing mcqs from platformData
         mcqs = self.data.get("mcq_questions", [])
         topic_mcqs = [q for q in mcqs if q.get("topic_id") == topic_id]
         if not topic_mcqs:
@@ -320,7 +406,7 @@ class CurriculumService:
                 all_sc = starter
             else:
                 selected_sc = str(starter)
-                all_sc = {"python": selected_sc, "c": selected_sc}
+                all_sc = {"python": selected_sc, "c": selected_sc, "java": selected_sc}
             prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
             return {
                 "id": f"code-{topic_id}",
@@ -340,7 +426,36 @@ class CurriculumService:
                 "solution": cc.get("solution_code", selected_sc)
             }
 
-        # 3. Existing logic from platformData
+        # 3. Check if Java topic has coding challenge
+        if topic_id in self.java_topics and self.java_topics[topic_id].get("codingChallenge"):
+            cc = self.java_topics[topic_id]["codingChallenge"]
+            starter = cc.get("starter_code", "")
+            if isinstance(starter, dict):
+                selected_sc = starter.get(lang_key) or starter.get("java") or ""
+                all_sc = starter
+            else:
+                selected_sc = str(starter)
+                all_sc = {"java": selected_sc, "python": selected_sc, "c": selected_sc}
+            prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
+            return {
+                "id": f"code-{topic_id}",
+                "topic_id": topic_id,
+                "title": cc.get("title", f"Coding Challenge: {self.java_topics[topic_id].get('title', topic_id)}"),
+                "difficulty": cc.get("difficulty", "Easy"),
+                "problem_statement": prob_desc,
+                "description": prob_desc,
+                "input_format": cc.get("input_format", "Standard input format."),
+                "output_format": cc.get("output_format", "Standard output format."),
+                "constraints": cc.get("constraints", "Standard constraints apply."),
+                "sample_input": cc.get("test_cases", [{}])[0].get("input", "") if cc.get("test_cases") else "",
+                "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
+                "starter_code": selected_sc,
+                "starter_codes": all_sc,
+                "test_cases": cc.get("test_cases", []),
+                "solution": cc.get("solution_code", selected_sc)
+            }
+
+        # 4. Existing logic from platformData
         coding_qs = self.data.get("coding_questions", [])
         challenges = [c for c in coding_qs if c.get("topic_id") == topic_id]
         if not challenges:
