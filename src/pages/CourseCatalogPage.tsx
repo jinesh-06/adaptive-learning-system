@@ -20,9 +20,35 @@ import {
 
 interface CourseCatalogProps {
   onSelectTopic: (topicId: string) => void;
+  onOpenPythonDashboard?: () => void;
+  onOpenPythonIntermediateDashboard?: () => void;
+  onOpenPythonAdvancedDashboard?: () => void;
+  onOpenCDashboard?: () => void;
+  onOpenCIntermediateDashboard?: () => void;
+  onOpenCAdvancedDashboard?: () => void;
+  onOpenCppDashboard?: () => void;
+  onOpenCppOopDashboard?: () => void;
+  onOpenCppAdvDashboard?: () => void;
+  onOpenJavaDashboard?: () => void;
+  onOpenJavaOopDashboard?: () => void;
+  onOpenJavaAdvDashboard?: () => void;
 }
 
-export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic }) => {
+export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
+  onSelectTopic,
+  onOpenPythonDashboard,
+  onOpenPythonIntermediateDashboard,
+  onOpenPythonAdvancedDashboard,
+  onOpenCDashboard,
+  onOpenCIntermediateDashboard,
+  onOpenCAdvancedDashboard,
+  onOpenCppDashboard,
+  onOpenCppOopDashboard,
+  onOpenCppAdvDashboard,
+  onOpenJavaDashboard,
+  onOpenJavaOopDashboard,
+  onOpenJavaAdvDashboard
+}) => {
   const { preferences, updateLanguage } = useAuth();
   const { currentLoad } = useCognitive();
   const [courses, setCourses] = useState<any[]>([]);
@@ -36,42 +62,235 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic 
 
   const [loading, setLoading] = useState(true);
 
+  // Sync selectedLanguage when preferences change (e.g. from Sidebar dropdown)
   useEffect(() => {
+    if (preferences.selected_language && preferences.selected_language !== selectedLanguage) {
+      setSelectedLanguage(preferences.selected_language);
+    }
+  }, [preferences.selected_language]);
+
+  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    api.getCourses(selectedLanguage)
-      .then(async list => {
+
+    const loadCoursesWithLiveProgress = async () => {
+      try {
+        const list = await api.getCourses(selectedLanguage);
         if (Array.isArray(list)) {
-          // Fetch full structure for each course to calculate topics count and progress
+          // Preload all curriculum progress data in parallel
+          const [pyFundData, pyIntData, pyAdvData, cFundData, cIntData, cAdvData, cppFundData, cppOopData, cppAdvData, javaFundData, javaOopData, javaAdvData] = await Promise.all([
+            api.getPythonFundamentals().catch(() => null),
+            api.getPythonIntermediate().catch(() => null),
+            api.getPythonAdvanced().catch(() => null),
+            api.getCFundamentals().catch(() => null),
+            api.getCIntermediate?.().catch(() => null) || Promise.resolve(null),
+            api.getCAdvanced?.().catch(() => null) || Promise.resolve(null),
+            api.getCppFundamentals().catch(() => null),
+            api.getCppOopDashboard().catch(() => null),
+            api.getCppAdvDashboard().catch(() => null),
+            api.getJavaFundamentals().catch(() => null),
+            api.getJavaOopDashboard().catch(() => null),
+            api.getJavaAdvDashboard().catch(() => null)
+          ]);
+
           const detailed = await Promise.all(
             list.map(async c => {
-              try {
-                const struct = await api.getCourseStructure(c.id);
-                const topics = (struct.modules || []).flatMap((m: any) => m.topics || []);
-                return {
-                  ...c,
-                  topics_count: topics.length || 3,
-                  duration_hours: c.level === 'beginner' ? 6 : c.level === 'intermediate' ? 10 : 14,
-                  difficulty: c.level === 'beginner' ? 'Beginner' : c.level === 'intermediate' ? 'Intermediate' : 'Advanced',
-                  progress: c.level === 'beginner' ? 65 : 20,
-                  first_topic_id: topics[0]?.id || 'top-py-loops'
-                };
-              } catch {
-                return {
-                  ...c,
-                  topics_count: 4,
-                  duration_hours: 8,
-                  difficulty: 'Beginner',
-                  progress: 30,
-                  first_topic_id: 'top-py-loops'
-                };
+              const isPyAdv =
+                c.language === 'python' &&
+                (c.id === 'py-adv' ||
+                  c.title.toLowerCase().includes('advanced') ||
+                  c.level === 'advanced');
+
+              const isPyInt =
+                c.language === 'python' &&
+                (c.id === 'py-int' ||
+                  c.title.toLowerCase().includes('intermediate') ||
+                  c.level === 'intermediate');
+
+              const isPyFund =
+                c.language === 'python' &&
+                (c.id === 'py-beg' ||
+                  c.id === 'course-py-fund' ||
+                  c.title.toLowerCase().includes('fundamentals') ||
+                  c.level === 'beginner');
+
+              const isCFund =
+                c.language === 'c' &&
+                (c.id === 'c-beg' ||
+                  c.title.toLowerCase().includes('foundations') ||
+                  c.level === 'beginner');
+
+              const isCInt =
+                c.language === 'c' &&
+                (c.id === 'c-int' ||
+                  c.title.toLowerCase().includes('pointer') ||
+                  c.title.toLowerCase().includes('memory') ||
+                  c.level === 'intermediate');
+
+                            const isCAdv =
+                c.language === 'c' &&
+                (c.id === 'c-advanced-systems' ||
+                  c.title.toLowerCase().includes('advanced') ||
+                  c.level === 'advanced');
+
+              const isCppFund =
+                c.language === 'cpp' &&
+                (c.id === 'cpp-beg' ||
+                  c.id === 'cpp-fundamentals' ||
+                  c.id === 'course-cpp-fund' ||
+                  c.title.toLowerCase().includes('modern') ||
+                  c.title.toLowerCase().includes('fundamentals') ||
+                  c.level === 'beginner');
+
+              const isCppOop =
+                c.language === 'cpp' &&
+                (c.id === 'cpp-int' ||
+                  c.id === 'cpp-oop' ||
+                  c.title.toLowerCase().includes('object-oriented') ||
+                  c.level === 'intermediate');
+
+              const isCppAdv =
+                c.language === 'cpp' &&
+                (c.id === 'cpp-adv' ||
+                  c.id === 'cpp-advanced' ||
+                  c.title.toLowerCase().includes('stl') ||
+                  c.level === 'advanced');
+
+              const isJavaFund =
+                c.language === 'java' &&
+                (c.id === 'java-beg' ||
+                  c.id === 'java-basics' ||
+                  c.id === 'course-java-fund' ||
+                  c.title.toLowerCase().includes('architecture') ||
+                  c.title.toLowerCase().includes('core') ||
+                  c.level === 'beginner');
+
+              const isJavaOop =
+                c.language === 'java' &&
+                (c.id === 'java-int' ||
+                  c.id === 'java-oop' ||
+                  c.title.toLowerCase().includes('object-oriented') ||
+                  c.title.toLowerCase().includes('design') ||
+                  c.level === 'intermediate');
+
+              const isJavaAdv =
+                c.language === 'java' &&
+                (c.id === 'java-adv' ||
+                  c.id === 'java-advanced' ||
+                  c.title.toLowerCase().includes('collections') ||
+                  c.level === 'advanced');
+
+              let topics_count = 16;
+              let duration_hours = 6;
+              let progress = 0;
+              let first_topic_id = 'top-py-intro';
+
+              if (isPyFund) {
+                topics_count = pyFundData?.total_topics || 16;
+                duration_hours = 6;
+                progress = Number(pyFundData?.overall_progress ?? 0);
+                first_topic_id = pyFundData?.current_topic_id || 'top-py-intro';
+              } else if (isPyInt) {
+                topics_count = pyIntData?.total_topics || 26;
+                duration_hours = 10;
+                progress = Number(pyIntData?.overall_progress ?? 0);
+                first_topic_id = pyIntData?.current_topic_id || 'top-py-int-comprehensions';
+              } else if (isPyAdv) {
+                topics_count = pyAdvData?.total_topics || 53;
+                duration_hours = 14;
+                progress = Number(pyAdvData?.overall_progress ?? 0);
+                first_topic_id = pyAdvData?.current_topic_id || 'top-py-adv-args-kwargs';
+              } else if (isCFund) {
+                topics_count = cFundData?.total_topics || 16;
+                duration_hours = 8.5;
+                progress = Number(cFundData?.overall_progress ?? 0);
+                first_topic_id = cFundData?.current_topic_id || 'top-c-intro';
+              } else if (isCInt) {
+                topics_count = cIntData?.total_topics || 16;
+                duration_hours = 10;
+                progress = Number(cIntData?.overall_progress ?? 0);
+                first_topic_id = cIntData?.current_topic_id || 'top-c-pointers-intro';
+              } else if (isCAdv) {
+                topics_count = cAdvData?.total_topics || 16;
+                duration_hours = 14;
+                progress = Number(cAdvData?.overall_progress ?? 0);
+                first_topic_id = cAdvData?.current_topic_id || 'top-c-advanced-structures';
+              } else if (isCppFund) {
+                topics_count = cppFundData?.total_topics || 24;
+                duration_hours = 8;
+                progress = Number(cppFundData?.overall_progress ?? 0);
+                first_topic_id = cppFundData?.current_topic_id || 'top-cpp-intro';
+              } else if (isCppOop) {
+                topics_count = cppOopData?.total_topics || 16;
+                duration_hours = 10;
+                progress = Number(cppOopData?.overall_progress ?? 0);
+                first_topic_id = cppOopData?.current_topic_id || 'top-cpp-oop-intro';
+              } else if (isCppAdv) {
+                topics_count = cppAdvData?.total_topics || 33;
+                duration_hours = 14;
+                progress = Number(cppAdvData?.overall_progress ?? 0);
+                first_topic_id = cppAdvData?.current_topic_id || 'top-cpp-adv-generic-programming-intro';
+              } else if (isJavaFund) {
+                topics_count = javaFundData?.total_topics || 28;
+                duration_hours = 8;
+                progress = Number(javaFundData?.overall_progress ?? 0);
+                first_topic_id = javaFundData?.current_topic_id || 'top-java-intro';
+              } else if (isJavaOop) {
+                topics_count = javaOopData?.total_topics || 37;
+                duration_hours = 10;
+                progress = Number(javaOopData?.overall_progress ?? 0);
+                first_topic_id = javaOopData?.current_topic_id || 'top-java-oop-intro';
+              } else if (isJavaAdv) {
+                topics_count = javaAdvData?.total_topics || 28;
+                duration_hours = 14;
+                progress = Number(javaAdvData?.overall_progress ?? 0);
+                first_topic_id = javaAdvData?.current_topic_id || 'top-java-adv-01-collections-intro';
+              } else {
+                try {
+                  const struct = await api.getCourseStructure(c.id);
+                  const topics = (struct.modules || []).flatMap((m: any) => m.topics || []);
+                  const completed = topics.filter((t: any) => t.status === 'COMPLETED' || t.completion_percentage >= 95).length;
+                  topics_count = topics.length || (c.id === 'c-int' ? 12 : c.id === 'c-advanced-systems' ? 16 : 6);
+                  duration_hours = c.level === 'intermediate' ? 10 : c.level === 'advanced' ? 14 : 8;
+                  progress = topics.length > 0 ? Math.round((completed / topics.length) * 100) : 0;
+                  first_topic_id = topics[0]?.id || (c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro');
+                } catch {
+                  topics_count = 6;
+                  duration_hours = 8;
+                  progress = 0;
+                  first_topic_id = c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro';
+                }
               }
+
+              return {
+                ...c,
+                topics_count,
+                duration_hours,
+                difficulty: c.level === 'beginner' ? 'Beginner' : c.level === 'intermediate' ? 'Intermediate' : 'Advanced',
+                progress,
+                first_topic_id
+              };
             })
           );
-          setCourses(detailed);
+
+          if (isMounted) {
+            setCourses(detailed);
+          }
         }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error('Failed to load courses with live progress:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadCoursesWithLiveProgress();
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedLanguage]);
 
   // Filter logic
@@ -256,10 +475,83 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({ onSelectTopic 
 
                   {/* Card CTA */}
                   <button
-                    onClick={() => onSelectTopic(course.first_topic_id || 'top-py-loops')}
+                    onClick={() => {
+                      const isPyAdv =
+                        course.language === 'python' &&
+                        (course.id === 'py-adv' ||
+                          course.title.toLowerCase().includes('advanced') ||
+                          course.level === 'advanced');
+
+                      const isPyInt =
+                        course.language === 'python' &&
+                        (course.id === 'py-int' ||
+                          course.title.toLowerCase().includes('intermediate') ||
+                          course.level === 'intermediate');
+
+                      const isPyFund =
+                        course.language === 'python' &&
+                        (course.id === 'py-beg' ||
+                          course.id === 'course-py-fund' ||
+                          course.title.toLowerCase().includes('fundamentals') ||
+                          course.level === 'beginner');
+
+                      if (isPyAdv && onOpenPythonAdvancedDashboard) {
+                        onOpenPythonAdvancedDashboard();
+                      } else if (isPyInt && onOpenPythonIntermediateDashboard) {
+                        onOpenPythonIntermediateDashboard();
+                      } else if (isPyFund && onOpenPythonDashboard) {
+                        onOpenPythonDashboard();
+                      } else if (course.language === 'c') {
+                        const isCAdv = course.id === 'c-advanced-systems' || course.level === 'advanced' || course.title.toLowerCase().includes('advanced') || course.title.toLowerCase().includes('systems');
+                        const isCInt = course.id === 'c-int' || course.title.toLowerCase().includes('pointer') || course.title.toLowerCase().includes('memory') || course.level === 'intermediate';
+                        if (isCAdv && onOpenCAdvancedDashboard) {
+                          onOpenCAdvancedDashboard();
+                        } else if (isCInt && onOpenCIntermediateDashboard) {
+                          onOpenCIntermediateDashboard();
+                        } else if (onOpenCDashboard) {
+                          onOpenCDashboard();
+                        } else {
+                          onSelectTopic(course.first_topic_id || 'top-c-intro');
+                        }
+                      } else if (course.language === 'cpp') {
+                        const isAdv = course.id === 'cpp-adv' || course.id === 'cpp-advanced' || course.title.toLowerCase().includes('stl') || course.level === 'advanced';
+                        const isOop = course.id === 'cpp-int' || course.id === 'cpp-oop' || course.title.toLowerCase().includes('object-oriented') || course.level === 'intermediate';
+                        if (isAdv && onOpenCppAdvDashboard) {
+                          onOpenCppAdvDashboard();
+                        } else if (isOop && onOpenCppOopDashboard) {
+                          onOpenCppOopDashboard();
+                        } else if (onOpenCppDashboard) {
+                          onOpenCppDashboard();
+                        } else {
+                          onSelectTopic(course.first_topic_id || (isAdv ? 'top-cpp-adv-generic-programming-intro' : 'top-cpp-oop-intro'));
+                        }
+                      } else if (course.language === 'java') {
+                        const isAdv = course.id === 'java-adv' || course.id === 'java-advanced' || course.title.toLowerCase().includes('collections') || course.level === 'advanced';
+                        const isOop = course.id === 'java-int' || course.id === 'java-oop' || course.title.toLowerCase().includes('object-oriented') || course.level === 'intermediate';
+                        if (isAdv && onOpenJavaAdvDashboard) {
+                          onOpenJavaAdvDashboard();
+                        } else if (isOop && onOpenJavaOopDashboard) {
+                          onOpenJavaOopDashboard();
+                        } else if (onOpenJavaDashboard) {
+                          onOpenJavaDashboard();
+                        } else {
+                          onSelectTopic(course.first_topic_id || (isAdv ? 'top-java-adv-01-collections-intro' : (isOop ? 'top-java-oop-intro' : 'top-java-intro')));
+                        }
+                      } else {
+                        const defaultTopic =
+                          course.language === 'c'
+                            ? 'top-c-intro'
+                            : course.language === 'cpp'
+                            ? 'top-cpp-intro'
+                            : course.language === 'java'
+                            ? 'top-java-fundamentals'
+                            : 'top-py-fundamentals';
+                        onSelectTopic(course.first_topic_id || defaultTopic);
+                      }
+                    }}
                     className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 group/btn"
                   >
-                    <span>Start Lesson</span>
+                    <span>{course.progress === 100 ? 'Review Course' : course.progress > 0 ? 'Continue Course' : 'Start Lesson'}</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
                   </button>
                 </div>

@@ -69,7 +69,7 @@ async def retrain_ml_model():
             "success": True,
             "message": f"Retraining complete. Random Forest F1: {metrics.get('f1_score', 0.96):.4f}",
             "metrics": metrics
-        }
+        } 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retraining failed: {str(e)}")
 

@@ -84,29 +84,42 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
     const textToInsert = token === 'tab' ? '    ' : token;
     setCode(prev => {
       const next = prev + textToInsert;
-      saveLocalDraft(activeTopic, next);
+      saveLocalDraft(`${activeTopic}_${currentLang}`, next);
       return next;
     });
   };
+
+  const initialLang = (activeTopic.startsWith('top-c-') ? 'c' : (preferences?.selected_language || 'python'));
+  const [currentLang, setCurrentLang] = useState<string>(initialLang);
+
+  useEffect(() => {
+    const desired = activeTopic.startsWith('top-c-') ? 'c' : (preferences?.selected_language || 'python');
+    setCurrentLang(desired);
+  }, [preferences?.selected_language, activeTopic]);
 
   useEffect(() => {
     const loadChallenge = async () => {
       setLoading(true);
       try {
-        const data = await api.getTopicCodingChallenge(activeTopic);
+        const data = await api.getTopicCodingChallenge(activeTopic, currentLang);
         setChallenge(data);
 
         // Check local draft first
-        const localDraft = loadLocalDraft(activeTopic);
+        const draftKey = `${activeTopic}_${currentLang}`;
+        const localDraft = loadLocalDraft(draftKey);
         if (localDraft) {
           setCode(localDraft);
         } else {
           // Pre-fill starter code
-          const langKey = preferences.selected_language;
-          const starter = (data.starter_code && data.starter_code[langKey]) ||
-            (data.starter_code && Object.values(data.starter_code)[0]) ||
-            '# Write your solution here\n';
-          setCode(starter);
+          let starter = '';
+          if (data.starter_codes && data.starter_codes[currentLang]) {
+            starter = data.starter_codes[currentLang];
+          } else if (typeof data.starter_code === 'string') {
+            starter = data.starter_code;
+          } else if (data.starter_code && typeof data.starter_code === 'object') {
+            starter = data.starter_code[currentLang] || Object.values(data.starter_code)[0] || '';
+          }
+          setCode(starter || '# Write your solution here\n');
         }
       } catch (err) {
         console.error('Failed to load coding challenge:', err);
@@ -123,13 +136,13 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
     setExecResult(null);
 
     // Behavioral event: CODE_START
-    telemetry.logEvent('CODE_START', 0, { topic_id: activeTopic });
-  }, [activeTopic, preferences.selected_language]);
+    telemetry.logEvent('CODE_START', 0, { topic_id: activeTopic, language: currentLang });
+  }, [activeTopic, currentLang]);
 
   const handleEditorChange = (value?: string) => {
     const updated = value || '';
     setCode(updated);
-    saveLocalDraft(activeTopic, updated);
+    saveLocalDraft(`${activeTopic}_${currentLang}`, updated);
     setKeystrokes(prev => prev + 1);
   };
 
@@ -137,12 +150,51 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
     setPasteEvents(prev => prev + 1);
   };
 
+  const handleSwitchLanguage = (newLang: string) => {
+    setCurrentLang(newLang);
+    const draftKey = `${activeTopic}_${newLang}`;
+    const localDraft = loadLocalDraft(draftKey);
+    if (localDraft) {
+      setCode(localDraft);
+    } else if (challenge) {
+      let starter = '';
+      if (challenge.starter_codes && challenge.starter_codes[newLang]) {
+        starter = challenge.starter_codes[newLang];
+      } else if (typeof challenge.starter_code === 'string') {
+        starter = challenge.starter_code;
+      } else if (challenge.starter_code && typeof challenge.starter_code === 'object') {
+        starter = challenge.starter_code[newLang] || Object.values(challenge.starter_code)[0] || '';
+      }
+      if (starter) {
+        setCode(starter);
+        saveLocalDraft(draftKey, starter);
+      }
+    }
+  };
+
+  const handleResetCode = () => {
+    if (challenge) {
+      let starter = '';
+      if (challenge.starter_codes && challenge.starter_codes[currentLang]) {
+        starter = challenge.starter_codes[currentLang];
+      } else if (typeof challenge.starter_code === 'string') {
+        starter = challenge.starter_code;
+      } else if (challenge.starter_code && typeof challenge.starter_code === 'object') {
+        starter = challenge.starter_code[currentLang] || Object.values(challenge.starter_code)[0] || '';
+      }
+      if (starter) {
+        setCode(starter);
+        saveLocalDraft(`${activeTopic}_${currentLang}`, starter);
+      }
+    }
+  };
+
   // Run with custom input
   const handleRunCustom = async () => {
     setRunning(true);
     setActiveTab('output');
     try {
-      const res = await api.runCode(code, preferences.selected_language, customInput);
+      const res = await api.runCode(code, currentLang, customInput);
       setExecResult(res);
     } catch (err: any) {
       setExecResult({
@@ -165,7 +217,7 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
       const res = await api.submitCode({
         topicId: activeTopic,
         code,
-        language: preferences.selected_language,
+        language: currentLang,
         codingTimeSeconds: elapsedSeconds,
         keystrokes,
         pasteEvents
@@ -485,41 +537,64 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Problem Specification (5 cols) */}
         <div className="lg:col-span-5 p-6 rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl space-y-5 text-xs text-slate-300 max-h-[750px] overflow-y-auto">
+          {/* Header Title & Difficulty Badge */}
+          <div className="flex items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+            <h2 className="font-bold text-white text-base">
+              {challenge?.title || 'Interactive Coding Challenge'}
+            </h2>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              challenge?.difficulty?.toLowerCase() === 'hard'
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                : challenge?.difficulty?.toLowerCase() === 'medium'
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+            }`}>
+              {challenge?.difficulty || 'Easy'}
+            </span>
+          </div>
+
           <div>
-            <h3 className="font-bold text-white text-sm mb-2">Problem Description</h3>
-            <p className="leading-relaxed text-slate-300 whitespace-pre-line">
-              {challenge.problem_statement}
+            <h3 className="font-bold text-cyan-400 text-xs mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" />
+              Problem Description
+            </h3>
+            <p className="leading-relaxed text-slate-200 whitespace-pre-line text-xs font-sans">
+              {challenge?.problem_statement || challenge?.description || 'Implement the solution matching the specifications below.'}
             </p>
           </div>
 
           <div>
-            <h3 className="font-bold text-slate-300 mb-1">Input Format</h3>
-            <p className="text-slate-400">{challenge.input_format}</p>
+            <h3 className="font-bold text-slate-400 text-[11px] mb-1 uppercase tracking-wider">Input Format</h3>
+            <p className="text-slate-300 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 leading-relaxed font-sans">
+              {challenge?.input_format || 'A single non-negative integer on standard input.'}
+            </p>
           </div>
 
           <div>
-            <h3 className="font-bold text-slate-300 mb-1">Output Format</h3>
-            <p className="text-slate-400">{challenge.output_format}</p>
+            <h3 className="font-bold text-slate-400 text-[11px] mb-1 uppercase tracking-wider">Output Format</h3>
+            <p className="text-slate-300 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/80 leading-relaxed font-sans">
+              {challenge?.output_format || 'Standard console output as described.'}
+            </p>
           </div>
 
           <div>
-            <h3 className="font-bold text-slate-300 mb-1">Constraints</h3>
-            <pre className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-cyan-300 font-mono text-[11px]">
-              {challenge.constraints}
+            <h3 className="font-bold text-slate-400 text-[11px] mb-1 uppercase tracking-wider">Constraints</h3>
+            <pre className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-cyan-300 font-mono text-[11px]">
+              {challenge?.constraints || '0 <= N <= 10^9'}
             </pre>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <h3 className="font-bold text-slate-300 mb-1">Sample Input</h3>
-              <pre className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-300 font-mono text-[11px]">
-                {challenge.sample_input}
+              <h3 className="font-bold text-slate-400 text-[11px] mb-1 uppercase tracking-wider">Sample Input</h3>
+              <pre className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-200 font-mono text-[11px] whitespace-pre-wrap">
+                {challenge?.sample_input ?? '15'}
               </pre>
             </div>
             <div>
-              <h3 className="font-bold text-slate-300 mb-1">Sample Output</h3>
-              <pre className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-emerald-300 font-mono text-[11px]">
-                {challenge.sample_output}
+              <h3 className="font-bold text-slate-400 text-[11px] mb-1 uppercase tracking-wider">Sample Output</h3>
+              <pre className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-emerald-300 font-mono text-[11px] whitespace-pre-wrap">
+                {challenge?.sample_output ?? '0b1111 0o17 0xf'}
               </pre>
             </div>
           </div>
@@ -535,13 +610,67 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
         {/* Right Column: Monaco Code Editor + Output Panel (7 cols) */}
         <div className="lg:col-span-7 flex flex-col rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-2xl">
           {/* Editor Header */}
-          <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs">
-            <span className="font-mono text-cyan-400 font-semibold">
-              solution.{preferences.selected_language === 'python' ? 'py' : preferences.selected_language === 'c' ? 'c' : preferences.selected_language === 'cpp' ? 'cpp' : 'java'}
-            </span>
-            <span className="text-slate-400 text-[11px] font-mono">
-              Safe Subprocess Isolation
-            </span>
+          <div className="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              {/* Language Switcher Tabs */}
+              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLanguage('python')}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+                    currentLang === 'python'
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>Python</span>
+                  <span className="text-[10px] text-slate-500 font-normal">(.py)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLanguage('c')}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+                    currentLang === 'c'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>C</span>
+                  <span className="text-[10px] text-slate-500 font-normal">(.c)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLanguage('cpp')}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+                    currentLang === 'cpp'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>C++</span>
+                  <span className="text-[10px] text-slate-500 font-normal">(.cpp)</span>
+                </button>
+              </div>
+
+              <span className="font-mono text-cyan-400 text-xs hidden sm:inline">
+                solution.{currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : currentLang === 'cpp' ? 'cpp' : 'java'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleResetCode}
+                className="px-2.5 py-1 rounded-lg border border-slate-800 bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1.5 transition-all"
+                title="Reset code to official passing starter solution"
+              >
+                <RotateCcw className="w-3 h-3 text-cyan-400" />
+                <span>Reset</span>
+              </button>
+              <span className="text-slate-400 text-[11px] font-mono hidden md:inline">
+                Isolated Sandbox Subprocess
+              </span>
+            </div>
           </div>
 
           {/* Section 85: Mobile Virtual Quick-Key Bar */}
@@ -563,7 +692,7 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
           <div className="h-[380px]" onPaste={handleEditorPaste}>
             <Editor
               height="100%"
-              language={getMonacoLanguage(preferences.selected_language)}
+              language={getMonacoLanguage(currentLang)}
               value={code}
               theme={monacoTheme}
               onChange={handleEditorChange}

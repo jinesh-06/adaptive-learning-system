@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
 
 export type CognitiveLoadLevel = 'LOW' | 'MEDIUM' | 'HIGH';
-export type ContentMode = 'CONCISE' | 'BALANCED' | 'SIMPLIFIED';
+export type ContentMode = 'STANDARD' | 'DETAILED' | 'SIMPLIFIED' | 'CONCISE' | 'BALANCED';
 
 interface CognitiveContextType {
   currentLoad: CognitiveLoadLevel;
@@ -26,7 +26,7 @@ const CognitiveContext = createContext<CognitiveContextType | undefined>(undefin
 export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentLoad, setCurrentLoad] = useState<CognitiveLoadLevel>('MEDIUM');
   const [confidence, setConfidence] = useState<number>(0.85);
-  const [contentMode, setContentMode] = useState<ContentMode>('BALANCED');
+  const [contentMode, setContentMode] = useState<ContentMode>('STANDARD');
   const [recommendedAction, setRecommendedAction] = useState<string>('CONTINUE');
   const [reason, setReason] = useState<string>('Steady baseline progression');
   const [contributingFactors, setContributingFactors] = useState<string[]>([
@@ -49,14 +49,16 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (feedback.contributing_factors) setContributingFactors(feedback.contributing_factors);
     if (feedback.unusual_completion?.is_unusual) setUnusualSignal(true);
 
-    const targetMode: ContentMode | undefined = feedback.content_mode;
+    const rawTargetMode: ContentMode | undefined = feedback.content_mode;
+    const targetMode: ContentMode | undefined =
+      rawTargetMode === 'BALANCED' ? 'STANDARD' : rawTargetMode === 'CONCISE' ? 'DETAILED' : rawTargetMode;
     const targetLoad: CognitiveLoadLevel | undefined = feedback.cognitive_level || feedback.cognitive_load;
     const adaptationText = feedback.suggested_adaptation || (
       targetLoad === 'HIGH'
-        ? 'Suggested Adaptation: Switch to Simplified mode with bite-sized micro-steps to reduce cognitive load.'
+        ? 'Suggested Adaptation: Switch to Simplified mode with bite-sized micro-steps based on recent learning signals.'
         : targetLoad === 'LOW'
-        ? 'Suggested Adaptation: Switch to Concise mode to accelerate through fundamentals into advanced material.'
-        : null
+        ? 'Suggested Adaptation: Switch to Detailed mode with deep architectural insights based on recent learning activity.'
+        : 'Suggested Adaptation: Standard explanation selected based on steady learning pace.'
     );
 
     if (adaptationText) {
@@ -67,15 +69,15 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (targetMode && targetMode !== contentMode) {
       setPendingAdaptation({
         targetMode,
-        reason: feedback.reason || 'Telemetry signals suggest an adapted pacing.',
+        reason: feedback.reason || 'Learning activity suggests an adapted explanation pace.',
         suggestedAdaptation: adaptationText || `Suggested Adaptation to ${targetMode} mode.`
       });
     } else if (targetLoad && !targetMode) {
-      const impliedMode: ContentMode = targetLoad === 'HIGH' ? 'SIMPLIFIED' : targetLoad === 'LOW' ? 'CONCISE' : 'BALANCED';
+      const impliedMode: ContentMode = targetLoad === 'HIGH' ? 'SIMPLIFIED' : targetLoad === 'LOW' ? 'DETAILED' : 'STANDARD';
       if (impliedMode !== contentMode) {
         setPendingAdaptation({
           targetMode: impliedMode,
-          reason: feedback.reason || 'Learning Signals indicate a shift in conceptual grasp.',
+          reason: feedback.reason || 'Recent interaction signals suggest adjusting explanation depth.',
           suggestedAdaptation: adaptationText || `Suggested Adaptation to ${impliedMode} mode.`
         });
       }
@@ -85,7 +87,7 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const verifyAdaptation = (accept: boolean) => {
     if (accept && pendingAdaptation) {
       setContentMode(pendingAdaptation.targetMode);
-      if (pendingAdaptation.targetMode === 'CONCISE') setCurrentLoad('LOW');
+      if (pendingAdaptation.targetMode === 'DETAILED' || pendingAdaptation.targetMode === 'CONCISE') setCurrentLoad('LOW');
       else if (pendingAdaptation.targetMode === 'SIMPLIFIED') setCurrentLoad('HIGH');
       else setCurrentLoad('MEDIUM');
     }
@@ -95,7 +97,7 @@ export const CognitiveProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const setContentModeManually = (mode: ContentMode) => {
     setContentMode(mode);
     setPendingAdaptation(null);
-    if (mode === 'CONCISE') setCurrentLoad('LOW');
+    if (mode === 'DETAILED' || mode === 'CONCISE') setCurrentLoad('LOW');
     else if (mode === 'SIMPLIFIED') setCurrentLoad('HIGH');
     else setCurrentLoad('MEDIUM');
   };

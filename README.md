@@ -1,315 +1,400 @@
-# 🧠 Cognitive Load Aware Adaptive Learning System
+# Cognitive Load-Aware Adaptive Learning System
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
-[![React 18](https://img.shields.io/badge/React-18.x-61DAFB.svg)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF.svg)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC.svg)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+An adaptive learning platform that personalizes programming instruction using learner activity signals, machine learning, retrieval-augmented generation (RAG), and generative AI. The system is designed to adjust lesson explanations, practice difficulty, and learning pace while keeping learners involved in the learning process.
 
-An intelligent, multi-agent educational platform that personalizes programming instruction in real time. By continuously assessing student cognitive load from behavioral signals and problem-solving telemetry, the system dynamically adapts curriculum pacing, lesson difficulty, in-editor AI tutor explanations, and practice challenges.
+> **Project status:** Integrated development project. Verify the current implementation and environment variables in the repository before deploying.
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [System Architecture](#-system-architecture)
-- [Core Subsystems](#-core-subsystems)
-  - [1. Machine Learning Cognitive Engine](#1-machine-learning-cognitive-engine-member-1)
-  - [2. RAG Knowledge & Retrieval System](#2-rag-knowledge--retrieval-system-member-2)
-  - [3. LLM Adaptive Explanation Engine](#3-llm-adaptive-explanation-engine-member-3)
-  - [4. Full-Stack Web Platform](#4-full-stack-web-platform-frontend--backend)
-- [Project Directory Structure](#-project-directory-structure)
-- [Tech Stack](#-tech-stack)
-- [Installation & Quickstart](#-installation--quickstart)
-  - [Prerequisites](#prerequisites)
-  - [1. Clone Repository](#1-clone-repository)
-  - [2. Environment Configuration](#2-environment-configuration)
-  - [3. Backend Installation & Startup](#3-backend-installation--startup)
-  - [4. Frontend Installation & Startup](#4-frontend-installation--startup)
-- [API Reference](#-api-reference)
-- [Testing & Verification](#-testing--verification)
-- [Git Branches & Team Structure](#-git-branches--team-structure)
-- [License](#-license)
-
----
-
-## 🌟 Overview
-
-Traditional computer science learning platforms deliver static, one-size-fits-all content. When students face complex topics (e.g., pointers in C, recursion in Python, or virtual functions in C++), cognitive overload leads to frustration and high drop-out rates.
-
-This **Adaptive Learning System** solves this through a closed-loop feedback pipeline:
-1. **Tracks Behavioral Signals**: Captures time spent, hesitation intervals, keystroke rhythms, quiz attempt accuracy, code backtracking, and syntax error patterns.
-2. **Predicts Cognitive Load**: Evaluates real-time signals using a trained Machine Learning model to classify mental state (`LOW`, `MEDIUM`, `HIGH`).
-3. **Retrieves Grounded Knowledge**: Pulls semantically matched, authoritative curriculum content from a 32-document RAG vector store.
-4. **Generates Adaptive AI Assistance**: Leverages Google Gemini with dynamic prompt structures tailored to the student's cognitive state (analogies for high load, deep architectural dives for low load).
-5. **Calibrates Difficulty**: Automatically adjusts Quiz Station questions and coding challenge starter code to keep the learner in their optimal zone of proximal development.
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [How It Works](#how-it-works)
+- [System Architecture](#system-architecture)
+- [Technology Stack](#technology-stack)
+- [Repository Structure](#repository-structure)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+  - [1. Clone the Repository](#1-clone-the-repository)
+  - [2. Configure Environment Variables](#2-configure-environment-variables)
+  - [3. Install Backend Dependencies](#3-install-backend-dependencies)
+  - [4. Start the Backend](#4-start-the-backend)
+  - [5. Install Frontend Dependencies](#5-install-frontend-dependencies)
+  - [6. Start the Frontend](#6-start-the-frontend)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Testing and Verification](#testing-and-verification)
+- [Git Branches](#git-branches)
+- [Security Notes](#security-notes)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## 🏗️ System Architecture
+## Overview
 
+Traditional learning platforms often provide the same material to every learner, regardless of their progress or difficulty with a topic. This project explores a feedback-driven approach to programming education.
+
+The platform uses learning signals—such as time spent, hesitation, quiz performance, code attempts, and backtracking—to estimate when a learner may benefit from a different explanation or level of challenge. It combines those signals with curriculum retrieval and AI-generated assistance to support a more responsive learning experience.
+
+The system is intended to support courses and topics in languages such as Python, C, C++, and Java. The available lessons and features depend on the current repository data and implementation.
+
+## Key Features
+
+- **Adaptive learning insights:** Uses learner interaction signals to estimate learning difficulty and inform possible adaptations.
+- **Machine learning component:** Includes a Random Forest-based classification pipeline for cognitive-load estimation.
+- **Retrieval-Augmented Generation (RAG):** Retrieves relevant curriculum material to ground AI assistance in learning content.
+- **AI tutor modes:** Supports explanation, simplification, examples, debugging help, hints, quizzes, revision, and advanced explanations.
+- **Interactive lessons and quizzes:** Provides structured learning content and knowledge checks.
+- **Code practice:** Includes an editor and code-execution workflow for supported exercises.
+- **Learner analytics:** Tracks progress and learning activity where supported by the current implementation.
+- **Fallback behavior:** Includes fallback paths for selected services or disconnected environments.
+
+## How It Works
+
+1. **Capture learning signals:** The application records supported interactions, such as time spent, quiz responses, code attempts, and backtracking.
+2. **Estimate learning load:** The machine learning service processes available signals and returns a predicted class, such as `LOW`, `MEDIUM`, or `HIGH`.
+3. **Retrieve relevant material:** The RAG subsystem searches curriculum documents for context related to the learner's question or lesson.
+4. **Generate assistance:** The LLM subsystem uses retrieved context and the selected tutor mode to generate an explanation or learning aid.
+5. **Support adaptation:** The application can present a suggested change in explanation or difficulty. Learners should remain able to review and control learning adaptations.
+
+Predictions are estimates based on available signals; they should not be treated as medical or psychological assessments.
+
+## System Architecture
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                     React Frontend                           │
+│ Dashboard • Lessons • Quizzes • Code Editor • AI Tutor       │
+└──────────────────────────────┬───────────────────────────────┘
+                               │ HTTP / REST
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    Backend API Server                        │
+│ Authentication • Curriculum • Quiz • Code • Telemetry        │
+│ Adaptive Insights • AI Tutor • Progress                       │
+└───────────────┬────────────────┬────────────────┬────────────┘
+                │                │                │
+                ▼                ▼                ▼
+       ┌────────────────┐ ┌──────────────┐ ┌─────────────────┐
+       │ ML Subsystem   │ │ RAG Subsystem│ │ LLM Subsystem   │
+       │ Random Forest  │ │ ChromaDB     │ │ Google Gemini   │
+       │ Load estimate  │ │ Retrieval    │ │ Tutor responses │
+       └────────────────┘ └──────────────┘ └─────────────────┘
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        React 18 Frontend                               │
-│  - Dashboard & Learning Stepper (Lesson ➔ Quiz ➔ Code Sandbox)         │
-│  - Monaco Code Editor (Python 3 execution, real-time stdout/stderr)    │
-│  - 8-Mode In-Lesson AI Tutor Sidebar & Cognitive Load Alert Banner     │
-└─────────────────────────────────┬──────────────────────────────────────┘
-                                  │ HTTP / REST APIs
-                                  ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                        FastAPI Backend Server                          │
-│                      (http://127.0.0.1:5000)                           │
-├──────────────────┬──────────────────┬──────────────────┬───────────────┤
-│  Auth & Users    │ Curriculum & Quiz│ Code Execution   │  Telemetry &  │
-│  (/api/auth)     │ (/api/topics)    │ (/api/code/run)  │  Adaptive API │
-└────────┬─────────┴────────┬─────────┴────────┬─────────┴───────┬───────┘
-         │                  │                  │                 │
-         ▼                  ▼                  ▼                 ▼
-┌──────────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│ Member 1: ML     │ │ Member 2: RAG │ │ Member 3: LLM │ │ Python 3      │
-│ Cognitive Load   │ │ ChromaDB &    │ │ Google Gemini │ │ Secure Run    │
-│ Classifier       │ │ MiniLM-L6-v2  │ │ 8 Tutor Modes │ │ Sandbox       │
-└──────────────────┘ └───────────────┘ └───────────────┘ └───────────────┘
-```
+
+The actual server framework, route names, and port configuration should be confirmed against the checked-out code and environment configuration.
+
+## Technology Stack
+
+| Area | Technologies |
+|---|---|
+| Frontend | React, TypeScript, Vite, Tailwind CSS |
+| UI and code editor | Monaco Editor, Lucide Icons |
+| Backend | Python, FastAPI, Uvicorn, Pydantic |
+| Machine learning | Scikit-learn, Random Forest, NumPy, Pandas, Joblib |
+| RAG | ChromaDB, Sentence Transformers |
+| Generative AI | Google Gemini SDK |
+| Code practice | Python execution workflow and browser-based fallback where configured |
+| Version control | Git and GitHub |
 
 ---
 
-## 🧩 Core Subsystems
+## Repository Structure
 
-### 1. Machine Learning Cognitive Engine (Member 1)
-- **Model**: Scikit-Learn Random Forest Classifier trained on student behavioral interaction datasets.
-- **Input Features**: Keystroke timing, hesitation time (seconds), idle intervals, quiz score accuracy, backtracking count, code execution attempts.
-- **Output Labels**: Cognitive Load classification (`LOW`, `MEDIUM`, `HIGH`) with confidence scoring.
-- **Inference Pipeline**: [backend/services/ml_service.py](file:///backend/services/ml_service.py) & [ml/cognitive_load.py](file:///ml/cognitive_load.py).
-
-### 2. RAG Knowledge & Retrieval System (Member 2)
-- **Knowledge Base**: 32 curated textbook chapters covering C, C++, Python, and Java (8 comprehensive topics per language).
-- **Embeddings**: SentenceTransformers `all-MiniLM-L6-v2` generating 384-dimensional dense semantic vectors.
-- **Vector Database**: Persistent ChromaDB vector collection (`programming_knowledge`) with metadata filtering by language, topic, and learner level.
-- **Implementation**: [rag/src/retriever.py](file:///rag/src/retriever.py) & [rag/src/indexer.py](file:///rag/src/indexer.py).
-
-### 3. LLM Adaptive Explanation Engine (Member 3)
-- **AI Model**: Google Gemini (`gemini-2.0-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`).
-- **8 Adaptive Tutor Modes**:
-  1. `EXPLAIN`: Deep conceptual architectural breakdowns.
-  2. `SIMPLIFY`: High-level real-world analogies (ideal for high cognitive load).
-  3. `EXAMPLE`: Focused, runnable Python 3 code demonstrations.
-  4. `DEBUG`: Bug diagnostics, common pitfalls, and error trace analysis.
-  5. `HINT`: Socratic clues that guide without giving away answers.
-  6. `QUIZ`: Formative concept validation questions.
-  7. `REVISE`: Executive bullet-point lesson summaries.
-  8. `ADVANCED`: Bytecode, memory models, and internal runtime mechanics.
-- **Implementation**: [backend/services/llm_service.py](file:///backend/services/llm_service.py) & [llm/adaptive_generator.py](file:///llm/adaptive_generator.py).
-
-### 4. Full-Stack Web Platform (Frontend & Backend)
-- **Frontend**: Single-Page Application (SPA) built with React 18, Vite, TypeScript, and Tailwind CSS.
-- **Interactive Monaco Editor**: Multi-tab code editor with syntax highlighting, input stream support, and instant execution output.
-- **Quiz Station**: Interactive MCQs with dynamic difficulty adjustment and complete question review breakdowns.
-- **Offline Fallback Engine**: In-browser execution (Pyodide) and mock state fallbacks ensuring zero disruptions if the network is disconnected.
-
----
-
-## 📁 Project Directory Structure
+The following is a high-level guide. Individual files and folders may vary by branch or project version.
 
 ```text
 adaptive-learning-system/
-├── backend/                  # FastAPI Application & Microservices
-│   ├── main.py               # Server entry point & CORS configuration
-│   ├── config.py             # App settings, environment vars, JWT secrets
-│   ├── routes/               # API route handlers
-│   │   ├── auth_routes.py    # Authentication, login, signup, preferences
-│   │   ├── curriculum_routes.py # Courses and topic structures
-│   │   ├── quiz_routes.py    # Quiz fetch & evaluation with review payloads
-│   │   ├── code_routes.py    # Secure Python 3 code execution sandbox
-│   │   ├── ai_routes.py      # In-lesson RAG AI Tutor endpoints
-│   │   ├── adaptive_routes.py# Real-time cognitive load evaluation
-│   │   ├── telemetry_routes.py # Interaction logging & behavioral signals
-│   │   └── stats_routes.py   # Learner analytics & cognitive trajectories
-│   ├── services/             # Core service integrations
-│   │   ├── ml_service.py     # Random Forest ML model connector
-│   │   ├── rag_service.py    # ChromaDB & semantic retrieval bridge
-│   │   ├── llm_service.py    # Gemini API & grounded prompt builder
-│   │   ├── curriculum_service.py # Courses, topics, quizzes, and exercises
-│   │   └── state_store.py    # In-memory and persistent state store
-│   ├── test_integration.py   # Full backend test suite
-│   └── test_verification.py  # End-to-end multi-module verification script
-├── ml/                       # Machine Learning Subsystem (Member 1)
-│   ├── cognitive_load.py     # Training pipeline & behavioral model
-│   ├── dataset/              # Student behavioral datasets
-│   └── models/               # Saved model artifacts (.pkl)
-├── rag/                      # RAG Subsystem (Member 2)
-│   ├── documents/            # 32 Textbook chapters (C, CPP, PYTHON, JAVA)
-│   ├── src/                  # Indexer, semantic chunker & retriever
-│   ├── chromadb_store/       # Persistent vector database files
-│   └── README.md             # Subsystem documentation
-├── llm/                      # LLM Adaptive Engine (Member 3)
-│   ├── adaptive_generator.py # Gemini generation pipeline
-│   ├── prompt_builder.py     # Cognitive-load-aware system prompts
-│   └── schemas.py            # Pydantic data schemas
-├── src/                      # Frontend Application (React + Vite + TS)
-│   ├── components/           # UI components (Monaco, Stepper, Banners)
-│   ├── context/              # Auth, Cognitive Load, and Theme contexts
-│   ├── pages/                # TopicLesson, QuizStation, Dashboard, Coding
-│   ├── services/             # API client & Mock fallback system
-│   └── data/                 # Platform curriculum definitions
-├── package.json              # Frontend scripts & dependencies
-├── requirements.txt          # Python dependencies
-├── .env.example              # Template configuration file
-└── README.md                 # Root documentation
+├── backend/
+│   ├── main.py                 # Backend entry point
+│   ├── config.py               # Configuration and environment settings
+│   ├── routes/                 # API route handlers
+│   ├── services/               # ML, RAG, LLM, curriculum, and state services
+│   └── test_*.py               # Backend tests and verification scripts
+├── ml/
+│   ├── cognitive_load.py       # ML training and inference logic
+│   ├── dataset/                # Training data
+│   └── models/                 # Saved model artifacts
+├── rag/
+│   ├── documents/              # Curriculum source documents
+│   ├── src/                    # Indexing and retrieval code
+│   └── README.md               # RAG subsystem documentation
+├── llm/
+│   ├── adaptive_generator.py   # AI response generation
+│   ├── prompt_builder.py       # Prompt construction
+│   └── schemas.py              # Data schemas
+├── src/
+│   ├── components/             # Reusable frontend components
+│   ├── context/                # Application contexts
+│   ├── pages/                  # Application pages
+│   ├── services/               # API clients and fallback logic
+│   └── data/                   # Frontend curriculum data
+├── package.json                # Frontend scripts and dependencies
+├── requirements.txt            # Python dependencies
+├── .env.example                # Environment variable template
+└── README.md
 ```
 
----
+## Prerequisites
 
-## 💻 Tech Stack
+Install the following before running the project:
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18, TypeScript 5, Vite 6, Tailwind CSS 3, Monaco Editor, Lucide Icons, Canvas Confetti |
-| **Backend** | Python 3.10+, FastAPI, Uvicorn, Pydantic v2, PyJWT |
-| **Machine Learning** | Scikit-Learn, Random Forest, NumPy, Pandas, Joblib |
-| **RAG & Vector Store** | ChromaDB, Sentence-Transformers (`all-MiniLM-L6-v2`), PyTorch, HuggingFace |
-| **Generative AI** | Google Gemini SDK (`google-genai`), Few-Shot Prompt Templates |
-| **Code Execution** | Python 3 native subprocess sandbox (safe AST inspection + timeout enforcement) |
+- Python 3.10 or later
+- Node.js 18 or later and npm
+- Git
+- A Google Gemini API key if you want to use Gemini-powered features
+
+Some machine-learning and embedding packages may download model files the first time they are used. An internet connection may be required for that initial setup.
 
 ---
 
-## 🚀 Installation & Quickstart
+## Getting Started
 
-### Prerequisites
-- **Python**: Version 3.10 or higher
-- **Node.js**: Version 18.x or higher (with `npm`)
-- **Git**
-- *(Optional)* Google Gemini API Key (a built-in grounded RAG fallback engine activates if unconfigured or quota is exceeded)
-
----
-
-### 1. Clone Repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/jinesh-06/adaptive-learning-system.git
 cd adaptive-learning-system
 ```
 
----
+### 2. Configure Environment Variables
 
-### 2. Environment Configuration
+Create a local `.env` file from the example:
 
-Copy the example environment configuration:
+**Windows PowerShell**
+
+```powershell
+Copy-Item .env.example .env
+```
+
+**macOS / Linux**
 
 ```bash
-# On Windows PowerShell
-Copy-Item .env.example .env
-
-# On Linux/macOS
 cp .env.example .env
 ```
 
-Ensure your `.env` contains:
-```env
-# Gemini API Key (Get from https://aistudio.google.com/)
-GEMINI_API_KEY=your_actual_gemini_api_key_here
+Open `.env` and set the values required by your local configuration. Do not commit the `.env` file or put real API keys in source code.
 
-# Backend Server Configuration
-BACKEND_HOST=127.0.0.1
-BACKEND_PORT=5000
-JWT_SECRET=cognitive-adaptive-secret-key-2026
+### 3. Install Backend Dependencies
 
-# Frontend Configuration
-VITE_API_URL=http://127.0.0.1:5000/api
+From the repository root, create and activate a virtual environment if desired.
+
+**Windows PowerShell**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 ```
 
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Start the Backend
+
+Use the backend command configured in your project. The repository documentation currently lists:
+
+```bash
+npm run server
+```
+
+Alternatively, if the Python entry point is configured for direct execution:
+
+```bash
+python backend/main.py
+```
+
+Check the startup logs for the actual host and port. If the API exposes interactive documentation, open:
+
+```text
+http://127.0.0.1:5000/docs
+```
+
+If this address does not load, check the backend logs and configuration for the correct port.
+
+### 5. Install Frontend Dependencies
+
+Open a second terminal in the repository root:
+
+```bash
+npm install
+```
+
+### 6. Start the Frontend
+
+```bash
+npm run dev
+```
+
+Open the local URL printed by Vite in the terminal. By default, Vite serves the frontend at:
+
+```text
+http://localhost:5173/
+```
+
+If Vite selects a different port, use the URL shown in the terminal.
+
 ---
 
-### 3. Backend Installation & Startup
+## Environment Variables
 
-1. **Install Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. **Start the FastAPI backend server**:
-   ```bash
-   npm run server
-   # Or directly:
-   python backend/main.py
-   ```
-   *The backend will be running at `http://127.0.0.1:5000` (Swagger docs at `http://127.0.0.1:5000/docs`).*
+Use `.env.example` as the source of truth for the variable names supported by the current codebase. A typical local configuration may include values similar to the following:
 
----
+```dotenv
+# Generative AI
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
 
-### 4. Frontend Installation & Startup
+# Backend
+BACKEND_HOST=127.0.0.1
+BACKEND_PORT=5000
+JWT_SECRET=replace_with_a_long_random_secret
 
-1. **Open a new terminal and install NPM dependencies**:
-   ```bash
-   npm install
-   ```
-2. **Start the Vite dev server**:
-   ```bash
-   npm run dev
-   ```
-3. Open your browser and navigate to:
-   ```text
-   http://localhost:3000/
-   ```
+# Frontend API base URL
+# Do not include /api here; the frontend adds it automatically.
+VITE_API_URL=http://localhost:5000
+```
+
+These are example names and development values. Confirm the exact variables consumed by the application before using them. Generate a unique, strong secret for `JWT_SECRET`; never use the example value in production.
 
 ---
 
-## 📡 API Reference
+## API Reference
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Authenticate learner and receive JWT token |
-| `GET` | `/api/courses` | List all available programming courses |
-| `GET` | `/api/topics/{id}` | Get lesson content, syntax, and section details |
-| `GET` | `/api/topics/{id}/quiz` | Retrieve topic quiz questions & difficulty tier |
-| `POST` | `/api/topics/{id}/quiz/submit` | Submit answers, evaluate ML cognitive load, return review breakdown |
-| `POST` | `/api/code/run` | Execute Python 3 code in sandbox with input test cases |
-| `POST` | `/api/ai/ask` | In-lesson RAG AI Tutor query across 8 pedagogical modes |
-| `POST` | `/api/adaptive/evaluate` | Evaluate behavioral telemetry and update cognitive state |
+The following routes are described by the project documentation. Confirm the current route definitions in `backend/routes/` before relying on them, as endpoints can change during development.
 
----
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/auth/login` | Authenticate a learner |
+| `GET` | `/api/courses` | List available courses |
+| `GET` | `/api/topics/{id}` | Retrieve lesson content |
+| `GET` | `/api/topics/{id}/quiz` | Retrieve quiz questions |
+| `POST` | `/api/topics/{id}/quiz/submit` | Submit quiz answers |
+| `POST` | `/api/code/run` | Run supported code exercises |
+| `POST` | `/api/ai/ask` | Ask the in-lesson AI tutor |
+| `POST` | `/api/adaptive/evaluate` | Evaluate available learning signals |
 
-## 🧪 Testing & Verification
+For a running FastAPI server, interactive API documentation is commonly available at `/docs` on the backend host and port.
 
-The repository includes comprehensive automated test suites covering all modules:
+## AI Tutor Modes
 
-### Run Full Integration Test Suite:
+The project documentation describes these tutor modes:
+
+| Mode | Purpose |
+|---|---|
+| `EXPLAIN` | Detailed conceptual explanations |
+| `SIMPLIFY` | Simpler explanations and analogies |
+| `EXAMPLE` | Focused code demonstrations |
+| `DEBUG` | Help understanding errors and debugging |
+| `HINT` | Guided clues without immediately giving the answer |
+| `QUIZ` | Questions to check understanding |
+| `REVISE` | Concise lesson revision |
+| `ADVANCED` | Deeper technical details |
+
+The modes and their exact behavior depend on the active LLM implementation and prompt configuration.
+
+## Testing and Verification
+
+Run the tests that are available in the current checkout.
+
+The project documentation lists these commands:
+
+**Integration verification**
+
 ```bash
 python backend/test_verification.py
 ```
-This script tests:
-1. **Python 3 Sandbox**: Validates clean execution, typing, and security guards.
-2. **RAG AI Tutor (8 Modes)**: Validates semantic retrieval across all 8 tutor modes.
-3. **Quiz Station Data Flow**: Verifies MCQ generation, score evaluation, and question review payloads.
 
-### Run Backend Unit Tests:
+**Backend integration tests**
+
 ```bash
 python backend/test_integration.py
 ```
 
-### Build Frontend Production Assets:
+**Frontend production build**
+
 ```bash
 npm run build
 ```
 
----
-
-## 🌿 Git Branches & Team Structure
-
-| Branch Name | Subsystem / Focus | Owner |
-| :--- | :--- | :--- |
-| **`main`** | Production integration combining ML, RAG, LLM, and Frontend | Team Lead |
-| **`feature/full-integration`** | Multi-service API bridges, contract alignment, and end-to-end tests | Integration |
-| **`frontend-backend`** | React UI, Monaco Editor, Tailwind CSS, and FastAPI routing | Full-Stack |
-| **`ml-development`** | Behavioral dataset, Random Forest Cognitive Load Model, inference API | Member 1 |
-| **`rag-development`** | 32 Curriculum documents, ChromaDB vector store, SentenceTransformers | Member 2 |
-| **`llm-development`** | Google Gemini prompt engineering, 8 tutor modes, and schema validation | Member 3 |
+A successful frontend build verifies compilation and bundling; it does not by itself confirm that every backend integration or user flow works. Test authentication, lessons, quizzes, AI responses, and code execution in the running application before deployment.
 
 ---
 
-## 📄 License
+## Git Branches
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+The repository has used the following branches for development:
+
+| Branch | Focus |
+|---|---|
+| `main` | Integrated project branch |
+| `feature/full-integration` | Integration work and cross-module alignment |
+| `frontend-backend` | Frontend and backend development |
+| `ml-development` | Machine-learning subsystem |
+| `rag-development` | Retrieval and curriculum knowledge base |
+| `llm-development` | Gemini integration and adaptive generation |
+
+Branch availability and ownership can change. Check the repository's current branch list before creating or merging work.
+
+## Security Notes
+
+- Keep `.env` out of Git. Commit `.env.example` with placeholders only.
+- Never publish API keys, passwords, tokens, or private credentials.
+- Use a strong, unique secret for authentication in any deployed environment.
+- Apply appropriate authentication, authorization, input validation, and execution limits to backend endpoints.
+- Treat learner telemetry as sensitive application data. Collect only what is needed and explain its use to learners.
+- Review the code-execution design and deployment isolation before exposing code execution to untrusted users.
+- Do not treat estimated cognitive-load classes as clinical or psychological diagnoses.
+
+## Troubleshooting
+
+### Frontend cannot reach the backend
+
+1. Confirm the backend is running.
+2. Check the API base URL in the frontend environment.
+3. Confirm that the backend CORS configuration allows the frontend origin.
+4. Review the browser console and backend logs for the failing route.
+
+### Gemini-powered responses are unavailable
+
+1. Confirm that `GEMINI_API_KEY` is set in the backend environment.
+2. Restart the backend after changing environment variables.
+3. Check the backend logs for authentication, quota, or model errors.
+4. Verify that the configured model is supported by the installed SDK and account.
+
+### Python package installation fails
+
+1. Confirm that the active Python version meets the project's requirements.
+2. Activate the intended virtual environment.
+3. Upgrade pip and retry the installation.
+4. Review package-specific installation notes for your operating system.
+
+### A documented endpoint returns 404
+
+The route may have changed or may not be registered in the current backend. Inspect the route modules and the running API documentation rather than assuming the README endpoint list is current.
+
+---
+
+## Contributing
+
+1. Create a feature branch from the appropriate base branch.
+2. Keep changes focused and follow the existing project structure.
+3. Run relevant tests and the frontend build before submitting changes.
+4. Update documentation when APIs, configuration, or setup steps change.
+5. Never include secrets or local environment files in commits.
+
+## License
+
+This repository does not currently include a `LICENSE` file in the checked-out project. If you plan to distribute or publish the project, add the appropriate open-source license before doing so.

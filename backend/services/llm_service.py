@@ -103,7 +103,8 @@ class LLMService:
             cognitive_load=cognitive_load,
             tutor_mode=tutor_mode,
             section_title=section_title,
-            section_content=section_content
+            section_content=section_content,
+            course=course
         )
 
         return {
@@ -184,16 +185,18 @@ class LLMService:
         cognitive_load: str,
         tutor_mode: Optional[str] = None,
         section_title: Optional[str] = None,
-        section_content: Optional[str] = None
+        section_content: Optional[str] = None,
+        course: Optional[str] = None
     ) -> str:
         """Construct grounded, lesson-specific explanation for all 8 modes from RAG chunks."""
         load = cognitive_load.upper()
         mode = (tutor_mode or "EXPLAIN").upper()
-        subject_heading = section_title or "Python 3 Fundamentals"
+        lang_name = (course or "Python 3").capitalize()
+        subject_heading = section_title or f"{lang_name} Fundamentals"
 
         clean_context = retrieved_context.replace("---", "").strip()
         chunks = [c.strip() for c in clean_context.split("\n\n") if c.strip() and not c.strip().startswith("[Source")]
-        primary_knowledge = chunks[0] if chunks else (section_content or "Python 3 standard execution and syntax.")
+        primary_knowledge = chunks[0] if chunks else (section_content or f"{lang_name} standard execution and syntax.")
         secondary_knowledge = chunks[1] if len(chunks) > 1 else ""
 
         if mode == "EXPLAIN":
@@ -203,8 +206,8 @@ class LLMService:
                     f"**Core Concept in Plain Terms:**\n"
                     f"{primary_knowledge[:280]}...\n\n"
                     f"**Step-by-Step Breakdown:**\n"
-                    f"1. Python 3 executes code using the reference CPython interpreter.\n"
-                    f"2. Every entity is represented as an object with an identity, type, and value.\n"
+                    f"1. {lang_name} executes code using its standard runtime/compiler.\n"
+                    f"2. Focus on core memory concepts for {lang_name}.\n"
                     f"3. Focus on one operation at a time to build confidence."
                 )
             elif load == "LOW":
@@ -223,39 +226,33 @@ class LLMService:
                     f"**Definition & Context:**\n"
                     f"{primary_knowledge[:350]}\n\n"
                     f"**Essential Principles:**\n"
-                    f"• In Python 3, variables hold references to objects in memory rather than raw memory addresses.\n"
-                    f"• Built-in fundamental types like `int`, `str`, and `tuple` are immutable.\n"
-                    f"• Use `id()` to inspect identity and `type()` to verify the runtime class."
+                    f"• In {lang_name}, variables hold values and references.\n"
+                    f"• Understand fundamental types and memory management.\n"
+                    f"• Best practices are required for optimal efficiency."
                 )
 
         elif mode == "SIMPLIFY":
             return (
                 f"### 🎈 Real-World Analogy: {subject_heading}\n\n"
-                f"Think of Python 3 variables like sticky address labels on shipping boxes:\n\n"
+                f"Think of {lang_name} variables like sticky address labels on shipping boxes:\n\n"
                 f"• The **box** in memory is the object itself (it holds the value and type).\n"
                 f"• The **label** is your variable name (like `x = 10`).\n"
                 f"• When you assign `y = x`, you aren't cloning the box; you're just sticking another label onto the exact same box!\n\n"
-                f"**Takeaway:** Python objects exist independently in memory, and your code simply manages names that point to them."
+                f"**Takeaway:** {lang_name} objects exist independently in memory, and your code simply manages names that point to them."
             )
 
         elif mode == "EXAMPLE":
             return (
-                f"### 💻 Python 3 Code Example: {subject_heading}\n\n"
+                f"### 💻 {lang_name} Code Example: {subject_heading}\n\n"
                 f"Here is a clean, runnable example demonstrating these fundamentals:\n\n"
-                f"```python\n"
-                f"# Exploring Python 3 Object Characteristics\n"
-                f"x = 100\n"
-                f"print('Value:', x)\n"
-                f"print('Type:', type(x).__name__)    # int\n"
-                f"print('Memory ID:', id(x))          # Unique object address\n"
-                f"\n"
-                f"# Demonstrating Immutability\n"
-                f"old_id = id(x)\n"
-                f"x = x + 1\n"
-                f"print('New Value:', x)              # 101\n"
-                f"print('Rebound to new object?', id(x) != old_id)  # True\n"
+                f"```{lang_name.lower()}\n"
+                f"// Exploring {lang_name} Object Characteristics\n"
+                f"int x = 100;\n"
+                f"// Print value\n"
+                f"// Demonstrating behavior\n"
+                f"x = x + 1;\n"
                 f"```\n\n"
-                f"**Explanation:** Modifying an immutable integer creates a brand-new object with a new address."
+                f"**Explanation:** Modifying variables updates values according to {lang_name} paradigms."
             )
 
         elif mode == "DEBUG":
@@ -285,44 +282,36 @@ class LLMService:
         elif mode == "QUIZ":
             return (
                 f"### ❓ Practice Quiz: {subject_heading}\n\n"
-                f"**Question:** What will be the output of the following Python 3 code?\n\n"
-                f"```python\n"
-                f"a = [1, 2, 3]\n"
-                f"b = a\n"
-                f"b.append(4)\n"
-                f"print(len(a))\n"
+                f"**Question:** What will be the output of the following {lang_name} code?\n\n"
+                f"```{lang_name.lower()}\n"
+                f"// Example array assignment\n"
                 f"```\n\n"
                 f"A) `3`\n"
                 f"B) `4`\n"
                 f"C) `TypeError`\n"
                 f"D) `None`\n\n"
-                f"**Answer:** **B) 4** — Because lists are mutable, `a` and `b` reference the same list object in memory."
+                f"**Answer:** **B) 4** — Because arrays/lists behavior affects how values are referenced."
             )
 
         elif mode == "REVISE":
             return (
                 f"### 📋 Key Takeaways Summary: {subject_heading}\n\n"
-                f"• **Standard Runtime:** Python 3 runs on the reference CPython interpreter with the Python Virtual Machine (PVM).\n"
-                f"• **Object Model:** Everything in Python 3 is an object with an ID, type, and value.\n"
-                f"• **Immutability:** Fundamental types (`int`, `float`, `bool`, `str`, `tuple`) cannot be changed in place.\n"
-                f"• **Variable Binding:** Identifiers are references bound to objects, not fixed memory cells."
+                f"• **Standard Runtime:** {lang_name} runs on its standard platform architecture.\n"
+                f"• **Object Model:** Values and memory are managed according to the language.\n"
+                f"• **Immutability:** Know which types can be changed in place.\n"
+                f"• **Variable Binding:** Identifiers are references bound to values or memory cells."
             )
 
         else:  # ADVANCED
             return (
                 f"### 🔬 Advanced Deep Dive: {subject_heading}\n\n"
-                f"**CPython Memory Management & Object Internals:**\n\n"
-                f"In CPython 3, every object is represented by the C struct `PyObject` containing:\n"
-                f"1. `ob_refcnt`: The reference counter for deterministic garbage collection.\n"
-                f"2. `ob_type`: Pointer to the object's type object (e.g. `&PyLong_Type`).\n\n"
-                f"**Small Integer Interning:**\n"
-                f"CPython pre-allocates an array of integer objects for values in the range `[-5, 256]`. Any variable assigned an integer in this range will point to the exact same memory address.\n\n"
+                f"**{lang_name} Memory Management & Internals:**\n\n"
+                f"In {lang_name}, memory management is critical and follows the language specification.\n"
+                f"**Memory allocation:**\n"
+                f"Understand heap vs stack memory and how variables are scoped and assigned.\n\n"
                 f"**Code Verification:**\n"
-                f"```python\n"
-                f"x = 256; y = 256\n"
-                f"print(x is y)  # True (shared interned instance)\n"
-                f"a = 257; b = 257\n"
-                f"print(a is b)  # False (allocated distinct heap objects)\n"
+                f"```{lang_name.lower()}\n"
+                f"// Check language memory specifics\n"
                 f"```"
             )
 

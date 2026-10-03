@@ -297,29 +297,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div>
               <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">About</h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><a href="#vision" onClick={onExploreCourses} className="hover:text-cyan-400">Product Vision</a></li>
-                <li><a href="#pedagogy" onClick={onExploreCourses} className="hover:text-cyan-400">Pedagogy Design</a></li>
-                <li><a href="#ml" onClick={onExploreCourses} className="hover:text-cyan-400">Cognitive ML Model</a></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Product Vision</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Pedagogy Design</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Cognitive ML Model</button></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Courses</h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><a href="#py" onClick={onExploreCourses} className="hover:text-cyan-400">Python Mastery</a></li>
-                <li><a href="#c" onClick={onExploreCourses} className="hover:text-cyan-400">C Foundations</a></li>
-                <li><a href="#cpp" onClick={onExploreCourses} className="hover:text-cyan-400">C++ Modern Systems</a></li>
-                <li><a href="#java" onClick={onExploreCourses} className="hover:text-cyan-400">Java Architecture</a></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Python Mastery</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">C Foundations</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">C++ Modern Systems</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Java Architecture</button></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">Documentation</h4>
               <ul className="space-y-2 text-xs text-slate-400">
-                <li><a href="#docs" onClick={onExploreCourses} className="hover:text-cyan-400">RAG Knowledge Base</a></li>
-                <li><a href="#privacy" className="hover:text-cyan-400">Privacy Policy</a></li>
-                <li><a href="#terms" className="hover:text-cyan-400">Terms of Service</a></li>
-                <li><a href="#contact" className="hover:text-cyan-400">Contact Support</a></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">RAG Knowledge Base</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Privacy Policy</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Terms of Service</button></li>
+                <li><button type="button" onClick={onExploreCourses} className="hover:text-cyan-400 text-left">Contact Support</button></li>
               </ul>
             </div>
           </div>

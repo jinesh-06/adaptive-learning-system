@@ -8,6 +8,7 @@ from backend.services.curriculum_service import curriculum_service
 from backend.services.ml_service import ml_service
 from backend.services.state_store import state_store
 from backend.routes.auth_routes import get_current_user_id
+from backend.routes.c_adv_routes import C_ADV_TOPIC_MAP
 
 router = APIRouter(tags=["quizzes"])
 
@@ -79,6 +80,26 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "passed": passed,
         "cognitive_load": ml_eval.get("cognitive_load")
     })
+
+    # Persist topic progress into SQLite user_progress table
+    course_id = (
+        "c-advanced-systems" if topic_id in C_ADV_TOPIC_MAP else
+        ("c-beg" if topic_id.startswith("top-c-") else
+         ("py-adv" if topic_id.startswith("top-py-adv-") else
+          ("py-int" if topic_id.startswith("top-py-int-") else
+           ("cpp-beg" if topic_id.startswith("top-cpp-") else
+            ("java-beg" if topic_id.startswith("top-java-") else "py-beg")))))
+    )
+    state_store.save_topic_progress(
+        user_id=user_id,
+        course_id=course_id,
+        topic_id=topic_id,
+        status="COMPLETED" if passed else "IN_PROGRESS",
+        quiz_score=percentage,
+        completion_pct=100.0 if passed else max(50.0, float(percentage)),
+        attempts_delta=1,
+        time_spent_delta=payload.time_spent or 0.0
+    )
 
     adaptive_feedback = {
         "cognitive_level": ml_eval.get("cognitive_level"),

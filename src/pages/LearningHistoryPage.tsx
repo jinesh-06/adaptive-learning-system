@@ -68,7 +68,7 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fadeIn">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div>
@@ -76,7 +76,7 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
             <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
               <History className="w-4 h-4" />
             </div>
-            <h1 className="text-xl font-bold text-white">Comprehensive Learning History</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Comprehensive Learning History</h1>
           </div>
           <p className="text-xs text-slate-400">
             Audit trail of your study sessions, assessments, cognitive states, and improvement trajectories.

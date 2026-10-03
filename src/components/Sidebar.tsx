@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { UserAvatar } from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive, CognitiveLoadLevel } from '../context/CognitiveContext';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
+import { C_INTERMEDIATE_TOPICS } from '../data/cIntermediateData';
+import { C_ADVANCED_TOPICS } from '../data/cAdvancedData';
 import {
   Brain,
   Home,
@@ -20,6 +23,7 @@ import {
   FolderGit2,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Sun,
   Moon,
   Monitor,
@@ -29,7 +33,9 @@ import {
   Zap,
   Flame,
   CheckCircle2,
-  GraduationCap
+  GraduationCap,
+  Layers,
+  Cpu
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -37,13 +43,16 @@ interface SidebarProps {
   setCurrentView: (view: string) => void;
   selectedTopicId: string;
   onSelectTopic: (topicId: string) => void;
-  openAuthModal: () => void;
+  openAuthModal?: () => void;
+  onOpenLogin?: () => void;
   openAiDrawer: () => void;
   openSearchModal?: () => void;
   openOnboardingModal?: () => void;
   openDemoModal?: () => void;
   isMobileOpen?: boolean;
   setIsMobileOpen?: (open: boolean) => void;
+  isDesktopOpen?: boolean;
+  setIsDesktopOpen?: (open: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -52,21 +61,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedTopicId,
   onSelectTopic,
   openAuthModal,
+  onOpenLogin,
   openAiDrawer,
   openSearchModal,
   openOnboardingModal,
   openDemoModal,
   isMobileOpen = false,
-  setIsMobileOpen
+  setIsMobileOpen,
+  isDesktopOpen = true,
+  setIsDesktopOpen
 }) => {
   const { user, preferences, updateLanguage, logout } = useAuth();
   const { currentLoad, confidence } = useCognitive();
   const { theme, setTheme, reducedMotion, toggleReducedMotion } = useTheme();
 
+  // Escape key closes mobile sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileOpen && setIsMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileOpen, setIsMobileOpen]);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [streakDays, setStreakDays] = useState<number>(3);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
-  const [activeTopicTitle, setActiveTopicTitle] = useState<string>('Loops and Iteration');
 
   useEffect(() => {
     api.getUserSnapshot().then(res => {
@@ -75,16 +97,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
     }).catch(() => {});
   }, [user]);
-
-  useEffect(() => {
-    if (selectedTopicId) {
-      api.getTopicDetail(selectedTopicId).then(data => {
-        if (data && data.title) {
-          setActiveTopicTitle(data.title);
-        }
-      }).catch(() => {});
-    }
-  }, [selectedTopicId]);
 
   const languages = [
     { id: 'python', label: 'Python', icon: '🐍', tag: 'Data & AI' },
@@ -100,27 +112,208 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'LOW':
         return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 aura-low';
       case 'HIGH':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30 aura-high';
+        return 'bg-rose-500/10 text-rose-400 border-rose-500/30 aura-high animate-pulse';
       default:
         return 'bg-amber-500/10 text-amber-400 border-amber-500/30 aura-medium';
     }
   };
 
-  const navItems = [
+  interface NavItem {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    dashboardView?: string;
+    topicId?: string;
+    matcher?: (topicId: string, currentView: string) => boolean;
+  }
+
+  // Language-specific track configurations for Python, C, C++, and Java
+  const languageTracksMap: Record<string, NavItem[]> = {
+    python: [
+      {
+        id: 'python-dashboard',
+        label: 'Python Fundamentals',
+        icon: GraduationCap,
+        dashboardView: 'python-dashboard',
+        topicId: 'top-py-fundamentals',
+        matcher: (tId, view) =>
+          view === 'python-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-') && !tId.startsWith('top-py-int-') && !tId.startsWith('top-py-adv-'))
+      },
+      {
+        id: 'python-intermediate-dashboard',
+        label: 'Intermediate Python & DSA',
+        icon: Layers,
+        dashboardView: 'python-intermediate-dashboard',
+        topicId: 'top-py-int-comprehensions',
+        matcher: (tId, view) =>
+          view === 'python-intermediate-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-int-'))
+      },
+      {
+        id: 'python-advanced-dashboard',
+        label: 'Advanced Python & Async',
+        icon: Cpu,
+        dashboardView: 'python-advanced-dashboard',
+        topicId: 'top-py-adv-args-kwargs',
+        matcher: (tId, view) =>
+          view === 'python-advanced-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-py-adv-'))
+      }
+    ],
+    c: [
+      {
+        id: 'c-foundations',
+        label: 'C Programming Foundations',
+        icon: GraduationCap,
+        dashboardView: 'c-dashboard',
+        topicId: 'top-c-intro',
+        matcher: (tId, view) =>
+          view === 'c-dashboard' ||
+          view === 'c-foundations' ||
+          view === 'c-foundations-dashboard' ||
+          view === 'c-beg' ||
+          (view === 'lesson' && tId.startsWith('top-c-') && !C_INTERMEDIATE_TOPICS.some(t => t.id === tId) && !C_ADVANCED_TOPICS.some(t => t.id === tId))
+      },
+      {
+        id: 'c-pointers',
+        label: 'C Pointers & Memory Management',
+        icon: Layers,
+        dashboardView: 'c-intermediate-dashboard',
+        topicId: 'top-c-pointers-intro',
+        matcher: (tId, view) =>
+          view === 'c-int' ||
+          view === 'c-intermediate-dashboard' ||
+          (view === 'lesson' && C_INTERMEDIATE_TOPICS.some(t => t.id === tId))
+      },
+      {
+        id: 'c-systems',
+        label: 'Advanced C Systems & Data Structures',
+        icon: Cpu,
+        dashboardView: 'c-advanced-systems-dashboard',
+        topicId: 'top-c-advanced-structures',
+        matcher: (tId, view) =>
+          view === 'c-adv' ||
+          view === 'c-advanced-dashboard' ||
+          view === 'c-advanced-systems-dashboard' ||
+          view === 'c-systems' ||
+          (view === 'lesson' && C_ADVANCED_TOPICS.some(t => t.id === tId))
+      }
+    ],
+    cpp: [
+      {
+        id: 'cpp-fundamentals',
+        label: 'C++ Modern Fundamentals',
+        icon: GraduationCap,
+        dashboardView: 'cpp-dashboard',
+        topicId: 'top-cpp-intro',
+        matcher: (tId, view) =>
+          view === 'cpp-dashboard' ||
+          view === 'cpp-fundamentals-dashboard' ||
+          view === 'cpp-beg' ||
+          (view === 'lesson' && tId.startsWith('top-cpp-') && !tId.startsWith('top-cpp-oop-'))
+      },
+      {
+        id: 'cpp-oop',
+        label: 'Object-Oriented C++',
+        icon: Layers,
+        dashboardView: 'cpp-oop-dashboard',
+        topicId: 'top-cpp-oop-intro',
+        matcher: (tId, view) =>
+          view === 'cpp-oop' ||
+          view === 'cpp-oop-dashboard' ||
+          view === 'cpp-int' ||
+          (view === 'lesson' && (tId.startsWith('top-cpp-oop-') || tId === 'top-cpp-oop'))
+      },
+      {
+        id: 'cpp-advanced',
+        label: 'Advanced C++ & STL Architecture',
+        icon: Cpu,
+        dashboardView: 'cpp-advanced-dashboard',
+        topicId: 'top-cpp-adv-generic-programming-intro',
+        matcher: (tId, view) =>
+          view === 'cpp-adv' ||
+          view === 'cpp-advanced-dashboard' ||
+          view === 'cpp-advanced' ||
+          (view === 'lesson' && (tId.startsWith('top-cpp-adv-') || tId === 'top-cpp-references-memory'))
+      }
+    ],
+    java: [
+      {
+        id: 'java-basics',
+        label: 'Java Core Architecture & Basics',
+        icon: GraduationCap,
+        dashboardView: 'java-dashboard',
+        topicId: 'top-java-intro',
+        matcher: (tId, view) =>
+          view === 'java-dashboard' ||
+          view === 'java-basics' ||
+          view === 'java-beg' ||
+          (view === 'lesson' && tId.startsWith('top-java-') && !tId.startsWith('top-java-oop-') && !tId.startsWith('top-java-adv-'))
+      },
+      {
+        id: 'java-oop',
+        label: 'Java Object-Oriented Design',
+        icon: Layers,
+        dashboardView: 'java-oop-dashboard',
+        topicId: 'top-java-oop-intro',
+        matcher: (tId, view) =>
+          view === 'java-oop' ||
+          view === 'java-oop-dashboard' ||
+          view === 'java-int' ||
+          (view === 'lesson' && tId.startsWith('top-java-oop-'))
+      },
+      {
+        id: 'java-advanced',
+        label: 'Advanced Java & Collections',
+        icon: Cpu,
+        dashboardView: 'java-adv-dashboard',
+        topicId: 'top-java-adv-01-collections-intro',
+        matcher: (tId, view) =>
+          view === 'java-adv' ||
+          view === 'java-advanced' ||
+          view === 'java-adv-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-java-adv-'))
+      }
+    ]
+  };
+
+  const currentLang = preferences.selected_language || 'python';
+  const currentLanguageTracks = languageTracksMap[currentLang] || languageTracksMap.python;
+
+  const navItems: NavItem[] = [
     { id: 'landing', label: 'Overview / Home', icon: Home },
     { id: 'catalog', label: 'Curriculum & Roadmaps', icon: BookOpen },
+    ...currentLanguageTracks,
     { id: 'diagnostic', label: 'Diagnostic Assessment', icon: Zap },
     { id: 'dashboard', label: 'Learner Dashboard', icon: BarChart3 },
     { id: 'bookmarks', label: 'Saved Bookmarks', icon: Bookmark },
     { id: 'notes', label: 'Personal Notes', icon: FileText },
     { id: 'history', label: 'Learning History', icon: History },
-    { id: 'projects', label: 'Project Hub', icon: FolderGit2 },
-    { id: 'admin', label: 'Admin Analytics', icon: ShieldCheck }
+    { id: 'projects', label: 'Project Hub', icon: FolderGit2 }
   ];
 
   const handleNavClick = (viewId: string) => {
     setCurrentView(viewId);
     if (setIsMobileOpen) setIsMobileOpen(false);
+  };
+
+  const handleNavItemClick = (item: NavItem) => {
+    if (item.dashboardView) {
+      setCurrentView(item.dashboardView);
+    } else if (item.topicId) {
+      onSelectTopic(item.topicId);
+    } else {
+      setCurrentView(item.id);
+    }
+    if (setIsMobileOpen) setIsMobileOpen(false);
+  };
+
+  const isItemActive = (item: NavItem) => {
+    if (item.matcher) {
+      return item.matcher(selectedTopicId, currentView);
+    }
+    return currentView === item.id;
   };
 
   return (
@@ -130,14 +323,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
           className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm lg:hidden animate-fade-in"
+          aria-hidden="true"
         />
       )}
 
+      {/* Floating Collapse / Expand Toggle Button for Desktop */}
+      <button
+        onClick={() => setIsDesktopOpen && setIsDesktopOpen(prev => !prev)}
+        aria-label={isDesktopOpen ? "Collapse curriculum sidebar" : "Expand curriculum sidebar"}
+        aria-expanded={isDesktopOpen}
+        title={isDesktopOpen ? "Collapse curriculum sidebar (Ctrl+B)" : "Expand curriculum sidebar (Ctrl+B)"}
+        className={`hidden lg:flex fixed top-20 z-50 items-center justify-center w-6 h-10 rounded-r-xl border border-l-0 border-slate-800 bg-slate-950/95 hover:bg-slate-900 text-slate-400 hover:text-cyan-400 shadow-xl transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none cursor-pointer ${
+          isDesktopOpen ? 'left-[260px]' : 'left-0'
+        }`}
+      >
+        {isDesktopOpen ? (
+          <ChevronLeft className="w-3.5 h-3.5 transition-transform hover:-translate-x-0.5" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-cyan-400 transition-transform hover:translate-x-0.5" />
+        )}
+      </button>
+
       {/* Vertical Sidebar */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-50 w-64 bg-slate-950 border-r border-slate-800/90 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        aria-label="Curriculum and navigation sidebar"
+        className={`fixed top-0 left-0 bottom-0 z-50 w-[260px] bg-slate-950 border-r border-slate-800/90 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${isDesktopOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'}`}
       >
         {/* TOP SECTION: Brand & Language & Search */}
         <div className="p-4 border-b border-slate-800/80 space-y-3 shrink-0">
@@ -199,7 +411,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     key={lang.id}
                     onClick={() => {
                       updateLanguage(lang.id);
+                      setCurrentView('landing');
                       setLanguageSelectorOpen(false);
+                      if (setIsMobileOpen) setIsMobileOpen(false);
                     }}
                     className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                       preferences.selected_language === lang.id
@@ -231,85 +445,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Search className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="text-[11px]">Search concepts...</span>
               </div>
-              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">{navigator.platform?.toLowerCase().includes('mac') ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
           )}
         </div>
 
         {/* MIDDLE SECTION: Navigation Menu Items */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-          {/* Group 1: 3-Stage Active Learning Flow */}
-          <div className="space-y-1.5">
-            <div className="px-2.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-              <span>Active Lesson Journey</span>
-              <span className="text-cyan-400">1-2-3 Flow</span>
-            </div>
-
-            {/* Current Lesson Badge */}
-            <div className="px-2.5 py-1 text-xs text-slate-300 font-medium truncate" title={activeTopicTitle}>
-              📖 {activeTopicTitle}
-            </div>
-
-            {/* Step 1: Learn Lesson */}
-            <button
-              onClick={() => handleNavClick('lesson')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'lesson'
-                  ? 'bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 shadow-sm shadow-cyan-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'lesson' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  1
-                </div>
-                <span>Learn Lesson</span>
-              </div>
-              <span className="text-[10px] font-mono text-cyan-400/80">Theory</span>
-            </button>
-
-            {/* Step 2: Practice Quiz */}
-            <button
-              onClick={() => handleNavClick('quiz')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'quiz'
-                  ? 'bg-purple-500/15 border border-purple-500/30 text-purple-300 shadow-sm shadow-purple-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'quiz' ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  2
-                </div>
-                <span>Practice Quiz</span>
-              </div>
-              <span className="text-[10px] font-mono text-purple-400/80">Test</span>
-            </button>
-
-            {/* Step 3: Coding Challenge */}
-            <button
-              onClick={() => handleNavClick('coding')}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                currentView === 'coding'
-                  ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 shadow-sm shadow-emerald-500/10'
-                  : 'text-slate-300 hover:bg-slate-900 hover:text-white'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
-                  currentView === 'coding' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  3
-                </div>
-                <span>Coding Challenge</span>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-400/80">Apply</span>
-            </button>
-          </div>
 
           {/* Group 2: Platform Navigation */}
           <div className="space-y-1">
@@ -319,14 +461,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {navItems.map(item => {
               const Icon = item.icon;
-              const isActive = currentView === item.id;
+              const isActive = isItemActive(item);
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  onClick={() => handleNavItemClick(item)}
+                  className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-slate-800/90 border border-slate-700 text-cyan-400 shadow-sm'
+                      ? 'bg-slate-800/90 border border-slate-700/80 text-cyan-400 shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-cyan-400'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
                   }`}
                 >
@@ -431,9 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-900 transition-colors group"
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs flex items-center justify-center shrink-0">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar user={user} size="sm" />
                     <div className="text-left truncate">
                       <div className="text-xs font-semibold text-white truncate leading-tight">{user.name}</div>
                       <div className="text-[10px] text-slate-400 font-mono truncate leading-tight capitalize">{preferences.current_level}</div>
@@ -462,7 +602,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             ) : (
               <button
-                onClick={openAuthModal}
+                onClick={() => {
+                  if (onOpenLogin) {
+                    onOpenLogin();
+                  } else if (openAuthModal) {
+                    openAuthModal();
+                  } else {
+                    setCurrentView('login');
+                  }
+                  if (setIsMobileOpen) setIsMobileOpen(false);
+                }}
                 className="w-full py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20"
               >
                 <User className="w-3.5 h-3.5" />

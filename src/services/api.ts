@@ -22,6 +22,13 @@ export interface UserInfo {
   name: string;
   email: string;
   role: string;
+  provider?: string;
+  avatar_url?: string;
+  uid?: string;
+  photoURL?: string;
+  emailVerified?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
 export interface UserPreferences {
@@ -37,6 +44,9 @@ function getAuthHeaders(): HeadersInit {
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
 }
+
+let cIntermediateCache: { data: any; timestamp: number } | null = null;
+let cIntermediateInFlight: Promise<any> | null = null;
 
 export const api = {
   // Auth
@@ -70,6 +80,40 @@ export const api = {
       token: 'mock_jwt_token',
       user: { id: 'user_1', name: payload.email.split('@')[0], email: payload.email, role: 'student' },
       preferences: { selected_language: 'python', current_level: 'beginner', preferred_mode: 'adaptive' }
+    };
+  },
+
+  oauthLogin: async (payload: { provider: 'github' | 'google'; email?: string; name?: string; avatar_url?: string }) => {
+    const data = await fetchJson(`${API_BASE}/auth/oauth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (data) return data;
+    const providerName = payload.provider === 'github' ? 'GitHub' : 'Google';
+    const email = payload.email || `${payload.provider}.learner@cognitive.edu`;
+    const name = payload.name || `${providerName} Developer`;
+    const mockUser = { id: `oauth_${payload.provider}_${Date.now()}`, name, email, role: 'student', provider: payload.provider };
+    localStorage.setItem('cognitive_token', `mock_oauth_${payload.provider}_token`);
+    return {
+      success: true,
+      token: `mock_oauth_${payload.provider}_token`,
+      user: mockUser,
+      preferences: { selected_language: 'python', current_level: 'beginner', preferred_mode: 'adaptive' }
+    };
+  },
+
+  forgotPassword: async (email: string) => {
+    const data = await fetchJson(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    if (data) return data;
+    return {
+      success: true,
+      message: `Password reset instructions and verification link sent to ${email}`,
+      reset_sent: true
     };
   },
 
@@ -134,10 +178,11 @@ export const api = {
   },
 
   // Code Sandbox
-  getTopicCodingChallenge: async (topicId: string) => {
-    const data = await fetchJson(`${API_BASE}/topics/${topicId}/coding`);
+  getTopicCodingChallenge: async (topicId: string, language?: string) => {
+    const langParam = language ? `?language=${encodeURIComponent(language)}` : '';
+    const data = await fetchJson(`${API_BASE}/topics/${topicId}/coding${langParam}`);
     if (data) return data;
-    return mockHandlers.getTopicCodingChallenge(topicId);
+    return mockHandlers.getTopicCodingChallenge(topicId, language);
   },
 
   runCode: async (code: string, language: string, customInput?: string) => {
@@ -480,16 +525,21 @@ export const api = {
     return mockHandlers.getDiagnosticQuestions(language);
   },
 
-  submitDiagnostic: async (language: string, answers: Record<string, number>, timeSpent: number = 60) => {
+  submitDiagnostic: async (
+    language: string,
+    answers: Record<string, number>,
+    timeSpent: number = 60,
+    observations?: Record<string, any>
+  ) => {
     try {
       const res = await fetch(`${API_BASE}/diagnostic/${encodeURIComponent(language)}/submit`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ answers, time_spent: timeSpent })
+        body: JSON.stringify({ answers, time_spent: timeSpent, observations })
       });
       if (res.ok) return await res.json();
     } catch {}
-    return mockHandlers.submitDiagnosticTest(language, answers, timeSpent);
+    return mockHandlers.submitDiagnosticTest(language, answers, timeSpent, observations);
   },
 
   submitDiagnosticTest: async (language: string, answers: Record<string, number>, timeSpent: number) => {
@@ -635,5 +685,648 @@ export const api = {
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getLearningHistory();
+  },
+
+  // C Programming Foundations Flow
+  getCFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/c/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCFundamentals();
+  },
+
+  updateCProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/c/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCProgress(payload);
+  },
+
+  // C++ Modern Fundamentals Flow
+  getCppFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCppFundamentals();
+  },
+
+  getCppTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCppTopic(topicId);
+  },
+
+  updateCppProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCppProgress(payload);
+  },
+
+  analyzeCppSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeCppSignals(payload);
+  },
+
+  // Object-Oriented C++ Flow
+  getCppOopDashboard: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-oop/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCppOopDashboard();
+  },
+
+  getCppOopTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-oop/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCppOopTopic(topicId);
+  },
+
+  updateCppOopProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-oop/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCppOopProgress(payload);
+  },
+
+  analyzeCppOopSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-oop/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeCppOopSignals(payload);
+  },
+
+  // Advanced C++ & STL Architecture Flow
+  getCppAdvDashboard: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-adv/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCppAdvDashboard();
+  },
+
+  getCppAdvTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-adv/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.topic || json;
+      }
+    } catch {}
+    return mockHandlers.getCppAdvTopic(topicId);
+  },
+
+  updateCppAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-adv/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCppAdvProgress(payload);
+  },
+
+  analyzeCppAdvSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/cpp-adv/analyze-signals`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeCppAdvSignals(payload);
+  },
+
+  // Java Core Architecture & Basics Flow
+  getJavaFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/java/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaFundamentals();
+  },
+
+  getJavaTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaTopic(topicId);
+  },
+
+  updateJavaProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateJavaProgress(payload);
+  },
+
+  analyzeJavaSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeJavaSignals(payload);
+  },
+
+  // Java Object-Oriented Design Flow
+  getJavaOopDashboard: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/java-oop/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaOopDashboard();
+  },
+
+  getJavaOopTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-oop/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.topic || json;
+      }
+    } catch {}
+    return mockHandlers.getJavaOopTopic(topicId);
+  },
+
+  updateJavaOopProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-oop/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateJavaOopProgress(payload);
+  },
+
+  analyzeJavaOopSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-oop/analyze-signals`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeJavaOopSignals(payload);
+  },
+
+  // Advanced Java & Collections Framework Flow
+  getJavaAdvDashboard: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/java-adv/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getJavaAdvDashboard();
+  },
+
+  getJavaAdvTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-adv/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.topic || json;
+      }
+    } catch {}
+    return mockHandlers.getJavaAdvTopic(topicId);
+  },
+
+  updateJavaAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-adv/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateJavaAdvProgress(payload);
+  },
+
+  analyzeJavaAdvSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/java-adv/analyze-signals`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeJavaAdvSignals(payload);
+  },
+
+  
+  // Advanced C Systems & Data Structures Flow
+  getCAdvDashboard: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/c-adv/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCAdvDashboard();
+  },
+
+  getCAdvTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/c-adv/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.topic || json;
+      }
+    } catch {}
+    return mockHandlers.getCAdvTopic(topicId);
+  },
+
+  updateCAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/c-adv/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCAdvProgress(payload);
+  },
+
+  analyzeCAdvSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/c-adv/analyze-signals`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzeCAdvSignals(payload);
+  },
+
+  getCAdvanced: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/c-adv/dashboard`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getCAdvDashboard();
+  },
+
+  getCIntermediate: async () => {
+    const now = Date.now();
+    if (cIntermediateCache && (now - cIntermediateCache.timestamp < 10000)) {
+      return cIntermediateCache.data;
+    }
+    if (cIntermediateInFlight) {
+      return cIntermediateInFlight;
+    }
+
+    cIntermediateInFlight = (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/curriculum/c-int/progress`, {
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.topics) {
+            cIntermediateCache = { data, timestamp: Date.now() };
+            return data;
+          }
+        }
+      } catch (e) {
+        console.warn('API getCIntermediate failed, falling back:', e);
+      } finally {
+        cIntermediateInFlight = null;
+      }
+      return mockHandlers.getCIntermediate();
+    })();
+
+    return cIntermediateInFlight;
+  },
+
+  updateCIntermediateProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    cIntermediateCache = null; // Invalidate cache on progress updates
+    try {
+      const res = await fetch(`${API_BASE}/curriculum/c-int/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateCIntermediateProgress ? mockHandlers.updateCIntermediateProgress(payload) : null;
+  },
+
+  // Python Fundamentals Adaptive Flow
+  getPythonFundamentals: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/fundamentals`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonFundamentals();
+  },
+
+  // Intermediate Python & Data Structures Flow
+  getPythonIntermediate: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/intermediate`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonIntermediate();
+  },
+
+  // Advanced Python, OOP & Async Flow
+  getPythonAdvanced: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/python/advanced`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonAdvanced();
+  },
+
+  getPythonTopic: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/topic/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getPythonTopic(topicId);
+  },
+
+  updatePythonProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/progress`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzePythonSignals: async (payload: {
+    topic_id: string;
+    time_spent_seconds?: number;
+    quiz_accuracy?: number;
+    incorrect_attempts?: number;
+    code_errors?: number;
+    hints_requested?: number;
+    solution_revealed?: boolean;
+    revisits_count?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adaptation/analyze`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  generateAdaptedLesson: async (payload: {
+    topic_id: string;
+    strategy?: string;
+    signals?: any;
+    force_refresh?: boolean;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adaptation/generate`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.generateAdaptedLesson(payload);
+  },
+
+  getAdaptedLesson: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/python/adapted/${topicId}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getAdaptedLesson(topicId);
   }
 };
+

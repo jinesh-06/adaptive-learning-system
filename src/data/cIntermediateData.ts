@@ -1,0 +1,1353 @@
+import { CommonMistake, PracticeChallenge, TopicQuizQuestion } from './pythonFundamentalsData';
+
+export interface CTopic {
+  id: string;
+  number: number;
+  numberDisplay: string;
+  moduleId?: string;
+  moduleTitle?: string;
+  title: string;
+  slug: string;
+  language: 'c';
+  shortDescription: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced Project' | string;
+  estimatedMinutes: number;
+  prerequisiteId: string | null;
+
+  learningObjectives: string[];
+  conceptExplanation: string;
+  simpleExample: {
+    code: string;
+    explanation: string;
+  };
+  syntax: string;
+  codeExample: string;
+  expectedOutput: string;
+  stepByStep: string[];
+  commonMistakes: CommonMistake[];
+  realWorldExample: {
+    scenario: string;
+    code: string;
+    explanation: string;
+  };
+  practice: PracticeChallenge;
+  quiz: TopicQuizQuestion[];
+  codingChallenge?: any;
+  summary: string[];
+}
+
+export interface CModule {
+  id: string;
+  number: number;
+  numberDisplay: string;
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  topics: CTopic[];
+}
+
+export const C_INTERMEDIATE_TOPICS: CTopic[] = [
+  {
+    id: 'top-c-pointers-intro',
+    number: 1,
+    numberDisplay: '01',
+    moduleId: 'mod-c-int-1',
+    moduleTitle: 'Module 1: Pointer Fundamentals',
+    title: 'Introduction to Pointers',
+    slug: 'introduction-to-pointers',
+    language: 'c',
+    shortDescription: 'Master the concepts of Introduction to Pointers in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'null',
+    
+    learningObjectives: [
+      'Understand Introduction to Pointers',
+      'Apply Introduction to Pointers in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Introduction to Pointers. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Introduction to Pointers.',
+      hint: 'Think about  Introduction to Pointers',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointers-intro',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Introduction to Pointers',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Introduction to Pointers.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Introduction to Pointers is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-pointer-declaration',
+    number: 2,
+    numberDisplay: '02',
+    moduleId: 'mod-c-int-1',
+    moduleTitle: 'Module 1: Pointer Fundamentals',
+    title: 'Pointer Declaration and Initialization',
+    slug: 'pointer-declaration-and-initialization',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointer Declaration and Initialization in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointers-intro',
+    
+    learningObjectives: [
+      'Understand Pointer Declaration and Initialization',
+      'Apply Pointer Declaration and Initialization in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointer Declaration and Initialization. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointer Declaration and Initialization.',
+      hint: 'Think about  Pointer Declaration and Initialization',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointer-declaration',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointer Declaration and Initialization',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointer Declaration and Initialization.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointer Declaration and Initialization is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-pointer-arithmetic',
+    number: 3,
+    numberDisplay: '03',
+    moduleId: 'mod-c-int-1',
+    moduleTitle: 'Module 1: Pointer Fundamentals',
+    title: 'Pointer Arithmetic',
+    slug: 'pointer-arithmetic',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointer Arithmetic in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointer-declaration',
+    
+    learningObjectives: [
+      'Understand Pointer Arithmetic',
+      'Apply Pointer Arithmetic in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointer Arithmetic. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointer Arithmetic.',
+      hint: 'Think about  Pointer Arithmetic',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointer-arithmetic',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointer Arithmetic',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointer Arithmetic.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointer Arithmetic is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-pointer-functions',
+    number: 4,
+    numberDisplay: '04',
+    moduleId: 'mod-c-int-1',
+    moduleTitle: 'Module 1: Pointer Fundamentals',
+    title: 'Pointers and Functions',
+    slug: 'pointers-and-functions',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointers and Functions in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointer-arithmetic',
+    
+    learningObjectives: [
+      'Understand Pointers and Functions',
+      'Apply Pointers and Functions in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointers and Functions. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointers and Functions.',
+      hint: 'Think about  Pointers and Functions',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointer-functions',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointers and Functions',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointers and Functions.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointers and Functions is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-pointer-arrays',
+    number: 5,
+    numberDisplay: '05',
+    moduleId: 'mod-c-int-2',
+    moduleTitle: 'Module 2: Arrays, Strings, and Pointers',
+    title: 'Pointers and Arrays',
+    slug: 'pointers-and-arrays',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointers and Arrays in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointer-functions',
+    
+    learningObjectives: [
+      'Understand Pointers and Arrays',
+      'Apply Pointers and Arrays in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointers and Arrays. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointers and Arrays.',
+      hint: 'Think about  Pointers and Arrays',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointer-arrays',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointers and Arrays',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointers and Arrays.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointers and Arrays is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-pointer-strings',
+    number: 6,
+    numberDisplay: '06',
+    moduleId: 'mod-c-int-2',
+    moduleTitle: 'Module 2: Arrays, Strings, and Pointers',
+    title: 'Pointers and Strings',
+    slug: 'pointers-and-strings',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointers and Strings in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointer-arrays',
+    
+    learningObjectives: [
+      'Understand Pointers and Strings',
+      'Apply Pointers and Strings in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointers and Strings. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointers and Strings.',
+      hint: 'Think about  Pointers and Strings',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-pointer-strings',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointers and Strings',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointers and Strings.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointers and Strings is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-array-pointers',
+    number: 7,
+    numberDisplay: '07',
+    moduleId: 'mod-c-int-2',
+    moduleTitle: 'Module 2: Arrays, Strings, and Pointers',
+    title: 'Array of Pointers',
+    slug: 'array-of-pointers',
+    language: 'c',
+    shortDescription: 'Master the concepts of Array of Pointers in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-pointer-strings',
+    
+    learningObjectives: [
+      'Understand Array of Pointers',
+      'Apply Array of Pointers in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Array of Pointers. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Array of Pointers.',
+      hint: 'Think about  Array of Pointers',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-array-pointers',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Array of Pointers',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Array of Pointers.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Array of Pointers is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-double-pointers',
+    number: 8,
+    numberDisplay: '08',
+    moduleId: 'mod-c-int-2',
+    moduleTitle: 'Module 2: Arrays, Strings, and Pointers',
+    title: 'Pointer to Pointer',
+    slug: 'pointer-to-pointer',
+    language: 'c',
+    shortDescription: 'Master the concepts of Pointer to Pointer in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-array-pointers',
+    
+    learningObjectives: [
+      'Understand Pointer to Pointer',
+      'Apply Pointer to Pointer in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Pointer to Pointer. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Pointer to Pointer.',
+      hint: 'Think about  Pointer to Pointer',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-double-pointers',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Pointer to Pointer',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Pointer to Pointer.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Pointer to Pointer is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-void-pointers',
+    number: 9,
+    numberDisplay: '09',
+    moduleId: 'mod-c-int-3',
+    moduleTitle: 'Module 3: Advanced Pointer Concepts',
+    title: 'Void Pointers',
+    slug: 'void-pointers',
+    language: 'c',
+    shortDescription: 'Master the concepts of Void Pointers in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-double-pointers',
+    
+    learningObjectives: [
+      'Understand Void Pointers',
+      'Apply Void Pointers in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Void Pointers. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Void Pointers.',
+      hint: 'Think about  Void Pointers',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-void-pointers',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Void Pointers',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Void Pointers.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Void Pointers is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-invalid-pointers',
+    number: 10,
+    numberDisplay: '10',
+    moduleId: 'mod-c-int-3',
+    moduleTitle: 'Module 3: Advanced Pointer Concepts',
+    title: 'Null, Wild, and Dangling Pointers',
+    slug: 'null-wild-and-dangling-pointers',
+    language: 'c',
+    shortDescription: 'Master the concepts of Null, Wild, and Dangling Pointers in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-void-pointers',
+    
+    learningObjectives: [
+      'Understand Null, Wild, and Dangling Pointers',
+      'Apply Null, Wild, and Dangling Pointers in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Null, Wild, and Dangling Pointers. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Null, Wild, and Dangling Pointers.',
+      hint: 'Think about  Null, Wild, and Dangling Pointers',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-invalid-pointers',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Null, Wild, and Dangling Pointers',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Null, Wild, and Dangling Pointers.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Null, Wild, and Dangling Pointers is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-function-pointers',
+    number: 11,
+    numberDisplay: '11',
+    moduleId: 'mod-c-int-3',
+    moduleTitle: 'Module 3: Advanced Pointer Concepts',
+    title: 'Function Pointers',
+    slug: 'function-pointers',
+    language: 'c',
+    shortDescription: 'Master the concepts of Function Pointers in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-invalid-pointers',
+    
+    learningObjectives: [
+      'Understand Function Pointers',
+      'Apply Function Pointers in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Function Pointers. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Function Pointers.',
+      hint: 'Think about  Function Pointers',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-function-pointers',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Function Pointers',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Function Pointers.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Function Pointers is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-dynamic-intro',
+    number: 12,
+    numberDisplay: '12',
+    moduleId: 'mod-c-int-4',
+    moduleTitle: 'Module 4: Dynamic Memory Management',
+    title: 'Introduction to Dynamic Memory Allocation',
+    slug: 'introduction-to-dynamic-memory-allocation',
+    language: 'c',
+    shortDescription: 'Master the concepts of Introduction to Dynamic Memory Allocation in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-function-pointers',
+    
+    learningObjectives: [
+      'Understand Introduction to Dynamic Memory Allocation',
+      'Apply Introduction to Dynamic Memory Allocation in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Introduction to Dynamic Memory Allocation. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Introduction to Dynamic Memory Allocation.',
+      hint: 'Think about  Introduction to Dynamic Memory Allocation',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-dynamic-intro',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Introduction to Dynamic Memory Allocation',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Introduction to Dynamic Memory Allocation.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Introduction to Dynamic Memory Allocation is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-malloc-calloc',
+    number: 13,
+    numberDisplay: '13',
+    moduleId: 'mod-c-int-4',
+    moduleTitle: 'Module 4: Dynamic Memory Management',
+    title: 'malloc() and calloc()',
+    slug: 'malloc-and-calloc',
+    language: 'c',
+    shortDescription: 'Master the concepts of malloc() and calloc() in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-dynamic-intro',
+    
+    learningObjectives: [
+      'Understand malloc() and calloc()',
+      'Apply malloc() and calloc() in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers malloc() and calloc(). Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate malloc() and calloc().',
+      hint: 'Think about  malloc() and calloc()',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-malloc-calloc',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: malloc() and calloc()',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating malloc() and calloc().',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'malloc() and calloc() is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-realloc',
+    number: 14,
+    numberDisplay: '14',
+    moduleId: 'mod-c-int-4',
+    moduleTitle: 'Module 4: Dynamic Memory Management',
+    title: 'realloc()',
+    slug: 'realloc',
+    language: 'c',
+    shortDescription: 'Master the concepts of realloc() in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-malloc-calloc',
+    
+    learningObjectives: [
+      'Understand realloc()',
+      'Apply realloc() in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers realloc(). Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate realloc().',
+      hint: 'Think about  realloc()',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-realloc',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: realloc()',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating realloc().',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'realloc() is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-free-memory-leaks',
+    number: 15,
+    numberDisplay: '15',
+    moduleId: 'mod-c-int-4',
+    moduleTitle: 'Module 4: Dynamic Memory Management',
+    title: 'free() and Memory Leaks',
+    slug: 'free-and-memory-leaks',
+    language: 'c',
+    shortDescription: 'Master the concepts of free() and Memory Leaks in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-realloc',
+    
+    learningObjectives: [
+      'Understand free() and Memory Leaks',
+      'Apply free() and Memory Leaks in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers free() and Memory Leaks. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate free() and Memory Leaks.',
+      hint: 'Think about  free() and Memory Leaks',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-free-memory-leaks',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: free() and Memory Leaks',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating free() and Memory Leaks.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'free() and Memory Leaks is a fundamental concept.'
+    ]
+  },
+  {
+    id: 'top-c-dynamic-project',
+    number: 16,
+    numberDisplay: '16',
+    moduleId: 'mod-c-int-4',
+    moduleTitle: 'Module 4: Dynamic Memory Management',
+    title: 'Final Mini Project – Dynamic Student Record Manager',
+    slug: 'final-mini-project-–-dynamic-student-record-manager',
+    language: 'c',
+    shortDescription: 'Master the concepts of Final Mini Project – Dynamic Student Record Manager in C.',
+    difficulty: 'Intermediate',
+    estimatedMinutes: 45,
+    prerequisiteId: 'top-c-free-memory-leaks',
+    
+    learningObjectives: [
+      'Understand Final Mini Project – Dynamic Student Record Manager',
+      'Apply Final Mini Project – Dynamic Student Record Manager in real scenarios',
+      'Identify common pitfalls'
+    ],
+    conceptExplanation: 'This topic covers Final Mini Project – Dynamic Student Record Manager. Pointers are variables that store memory addresses.',
+    simpleExample: {
+      code: 'int x = 10;\nint *p = &x;\nprintf("%d", *p);',
+      explanation: 'We declare a variable and a pointer that points to its address.'
+    },
+    syntax: 'int *ptr = &var;',
+    codeExample: '#include <stdio.h>\n\nint main() {\n    int val = 42;\n    int *ptr = &val;\n    printf("Value: %d\\n", *ptr);\n    return 0;\n}',
+    expectedOutput: 'Value: 42',
+    stepByStep: [
+      'Declare the variable.',
+      'Declare the pointer and assign the address.',
+      'Dereference the pointer to print.'
+    ],
+    commonMistakes: [
+      {
+        mistake: 'Uninitialized pointers',
+        explanation: 'Accessing an uninitialized pointer leads to undefined behavior.',
+        correction: 'Always initialize pointers, even to NULL.'
+      }
+    ],
+    realWorldExample: {
+      scenario: 'Dynamic Memory Allocation',
+      code: 'int *arr = malloc(10 * sizeof(int));',
+      explanation: 'Pointers are essential for dynamic memory.'
+    },
+    practice: {
+      prompt: 'Write a small program to demonstrate Final Mini Project – Dynamic Student Record Manager.',
+      hint: 'Think about  Final Mini Project – Dynamic Student Record Manager',
+      starterCode: '#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}',
+      expectedOutputMatcher: '.*',
+      solution: '// Implementation goes here'
+    },
+    quiz: [
+      {
+        id: 'q1-top-c-dynamic-project',
+        question: 'What is a pointer?',
+        options: [
+          'A variable that stores a memory address',
+          'A standard data type like int',
+          'A built-in C function',
+          'None of the above'
+        ],
+        correctIndex: 0,
+        explanation: 'Pointers hold memory addresses.'
+      }
+    ],
+    codingChallenge: {
+      title: 'Challenge: Final Mini Project – Dynamic Student Record Manager',
+      difficulty: 'Medium',
+      problem_statement: 'Implement a function demonstrating Final Mini Project – Dynamic Student Record Manager.',
+      starter_code: '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      test_cases: [
+        { input: '', expected_output: '', is_hidden: false }
+      ]
+    },
+    summary: [
+      'Pointers provide direct memory access.',
+      'Final Mini Project – Dynamic Student Record Manager is a fundamental concept.'
+    ]
+  },
+];
+
+export const C_INTERMEDIATE_MODULES: CModule[] = [
+  {
+    id: 'mod-c-int-1',
+    number: 1,
+    numberDisplay: '01',
+    title: 'Module 1: Pointer Fundamentals',
+    description: 'Mastering the foundation of pointers in C.',
+    estimatedMinutes: 180,
+    topics: C_INTERMEDIATE_TOPICS.filter(t => t.moduleId === 'mod-c-int-1')
+  },
+  {
+    id: 'mod-c-int-2',
+    number: 2,
+    numberDisplay: '02',
+    title: 'Module 2: Arrays, Strings, and Pointers',
+    description: 'Understanding pointer interaction with arrays and strings.',
+    estimatedMinutes: 180,
+    topics: C_INTERMEDIATE_TOPICS.filter(t => t.moduleId === 'mod-c-int-2')
+  },
+  {
+    id: 'mod-c-int-3',
+    number: 3,
+    numberDisplay: '03',
+    title: 'Module 3: Advanced Pointer Concepts',
+    description: 'Void pointers, double pointers, and safety.',
+    estimatedMinutes: 135,
+    topics: C_INTERMEDIATE_TOPICS.filter(t => t.moduleId === 'mod-c-int-3')
+  },
+  {
+    id: 'mod-c-int-4',
+    number: 4,
+    numberDisplay: '04',
+    title: 'Module 4: Dynamic Memory Management',
+    description: 'Allocating and freeing memory dynamically in C.',
+    estimatedMinutes: 225,
+    topics: C_INTERMEDIATE_TOPICS.filter(t => t.moduleId === 'mod-c-int-4')
+  },
+];
