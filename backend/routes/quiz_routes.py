@@ -8,6 +8,7 @@ from backend.services.curriculum_service import curriculum_service
 from backend.services.ml_service import ml_service
 from backend.services.state_store import state_store
 from backend.routes.auth_routes import get_current_user_id
+from backend.routes.c_adv_routes import C_ADV_TOPIC_MAP
 
 router = APIRouter(tags=["quizzes"])
 
@@ -82,11 +83,12 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
 
     # Persist topic progress into SQLite user_progress table
     course_id = (
-        "c-beg" if topic_id.startswith("top-c-") else
-        ("py-adv" if topic_id.startswith("top-py-adv-") else
-         ("py-int" if topic_id.startswith("top-py-int-") else
-          ("cpp-beg" if topic_id.startswith("top-cpp-") else
-           ("java-beg" if topic_id.startswith("top-java-") else "py-beg"))))
+        "c-advanced-systems" if topic_id in C_ADV_TOPIC_MAP else
+        ("c-beg" if topic_id.startswith("top-c-") else
+         ("py-adv" if topic_id.startswith("top-py-adv-") else
+          ("py-int" if topic_id.startswith("top-py-int-") else
+           ("cpp-beg" if topic_id.startswith("top-cpp-") else
+            ("java-beg" if topic_id.startswith("top-java-") else "py-beg")))))
     )
     state_store.save_topic_progress(
         user_id=user_id,

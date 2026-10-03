@@ -204,11 +204,11 @@
       "order_index": 2
     },
     {
-      "id": "c-adv",
+      "id": "c-advanced-systems",
       "language": "c",
       "level": "advanced",
       "title": "Advanced C Systems & Data Structures",
-      "description": "Structures, unions, file I/O, linked data structures, and the preprocessor.",
+      "description": "Master structures, unions, file handling, linked lists, stacks, queues, trees, searching, sorting, and low-level systems programming through practical C implementations.",
       "order_index": 3
     },
     {
@@ -368,6 +368,30 @@
       "course_id": "py-adv",
       "title": "Stage 7: Object-Oriented Programming (Classes & Objects)",
       "order_index": 7
+    },
+    {
+      "id": "mod-c-adv-structures",
+      "course_id": "c-advanced-systems",
+      "title": "Module 1: Structures and Data Organization",
+      "order_index": 1
+    },
+    {
+      "id": "mod-c-adv-files",
+      "course_id": "c-advanced-systems",
+      "title": "Module 2: File Handling and Preprocessor",
+      "order_index": 2
+    },
+    {
+      "id": "mod-c-adv-data-structures",
+      "course_id": "c-advanced-systems",
+      "title": "Module 3: Core Data Structures",
+      "order_index": 3
+    },
+    {
+      "id": "mod-c-adv-algorithms-systems",
+      "course_id": "c-advanced-systems",
+      "title": "Module 4: Algorithms and Systems Programming",
+      "order_index": 4
     }
   ],
   "topics": [
@@ -378,9 +402,9 @@
       "order_index": 1,
       "learning_objective": "Understand Python 3 architecture, standard CPython runtime, 14 built-in datatypes, object identity (id/type), and immutability.",
       "content_standard": "Python was created by Guido Van Rossum in 1989 and released in 1991. It is high-level, interpreted, and dynamically typed. All fundamental types (int, float, complex, bool, str) are immutable objects in memory.",
-      "content_low": "### ⚡ Fast-Track Summary\n- 11 features: simple, freeware, platform-independent (PVM), interpreted, dynamically typed, extensible, embedded, rich library.\n- Runtime: CPython 3 (standard reference), PyPy 3 (JIT speed), MicroPython (embedded).\n- 14 types: int, float, complex, bool, str, bytes, bytearray, range, list, tuple, set, frozenset, dict, None.\n- Immutability: fundamental objects cannot be modified in place; `id(x)` reflects memory location; `is` checks address, `==` checks value.",
-      "content_medium": "### 📘 Standard Guide\nPython handles memory automatically via PVM. Identifiers cannot start with digits. Only 3 of 33 keywords are capitalized: `True`, `False`, `None`.\nBase conversions: `bin()`, `oct()`, `hex()`. Fundamental types are immutable: modifying a variable rebinds it to a new object.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **High-Level**: You don't worry about low-level memory allocation or pointers.\n2. **Dynamic Typing**: Write `x = 10` (integer) or `x = \"Hello\"` (string); Python determines types automatically.\n3. **Analogy**: Variables are sticky labels on boxes, not the boxes themselves!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- 11 features: simple, freeware, platform-independent (PVM), interpreted, dynamically typed, extensible, embedded, rich library.\n- Runtime: CPython 3 (standard reference), PyPy 3 (JIT speed), MicroPython (embedded).\n- 14 types: int, float, complex, bool, str, bytes, bytearray, range, list, tuple, set, frozenset, dict, None.\n- Immutability: fundamental objects cannot be modified in place; `id(x)` reflects memory location; `is` checks address, `==` checks value.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nPython handles memory automatically via PVM. Identifiers cannot start with digits. Only 3 of 33 keywords are capitalized: `True`, `False`, `None`.\nBase conversions: `bin()`, `oct()`, `hex()`. Fundamental types are immutable: modifying a variable rebinds it to a new object.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **High-Level**: You don't worry about low-level memory allocation or pointers.\n2. **Dynamic Typing**: Write `x = 10` (integer) or `x = \"Hello\"` (string); Python determines types automatically.\n3. **Analogy**: Variables are sticky labels on boxes, not the boxes themselves!",
       "syntax": "# Base conversion\na = 15\nprint(bin(a)) # 0b1111\nprint(hex(a)) # 0xf\n\n# Identity vs Equality\nx = 256; y = 256\nprint(x is y) # True (object interning)",
       "examples": "# Check memory address and type\na = 10\nprint(type(a), id(a))\na = a + 1\nprint(type(a), id(a)) # New memory address created!",
       "common_mistakes": "1. Using reserved words as variable names (e.g. `def = 44` causes SyntaxError).\n2. Expecting immutable objects to change in-place without assignment.",
@@ -429,9 +453,9 @@
       "order_index": 2,
       "learning_objective": "Master arithmetic, floor division, bitwise operations, ternary operators, single-line multiple inputs, and formatted print output.",
       "content_standard": "Python supports 7 arithmetic operators including floor division `//` and exponent `**`. In Python 3, `input()` returns string data. Use `[int(x) for x in input().split()]` to read space-separated values.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Division `/` always returns float; `//` returns integer floor if both operands are int, or float floor if either is float.\n- Bitwise `~x = -(x + 1)` (two's complement).\n- Ternary: `val = a if cond else b` (supports nesting).\n- `print(*args, sep=\" \", end=\"\\n\")`.\n- Format: `f\"{val:.2f}\"` or `\"{0} {1}\".format(a, b)`.",
-      "content_medium": "### 📘 Standard Guide\n1. Single line multiple inputs: `a, b = [int(x) for x in input().split()]`.\n2. String repetition `*` requires integer count: `'hello' * 3`.\n3. `print()` parameters: `sep=\",\"` alters argument delimiter; `end=\" \"` prevents newline.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **Floor Division**: `10 // 3` gives 3 (chops off decimals).\n2. **Ternary Operator**: `result = \"Pass\" if score >= 50 else \"Fail\"` reads like an English sentence!\n3. **Input Tokenization**: `.split()` cuts a long input string into separate words.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Division `/` always returns float; `//` returns integer floor if both operands are int, or float floor if either is float.\n- Bitwise `~x = -(x + 1)` (two's complement).\n- Ternary: `val = a if cond else b` (supports nesting).\n- `print(*args, sep=\" \", end=\"\\n\")`.\n- Format: `f\"{val:.2f}\"` or `\"{0} {1}\".format(a, b)`.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Single line multiple inputs: `a, b = [int(x) for x in input().split()]`.\n2. String repetition `*` requires integer count: `'hello' * 3`.\n3. `print()` parameters: `sep=\",\"` alters argument delimiter; `end=\" \"` prevents newline.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **Floor Division**: `10 // 3` gives 3 (chops off decimals).\n2. **Ternary Operator**: `result = \"Pass\" if score >= 50 else \"Fail\"` reads like an English sentence!\n3. **Input Tokenization**: `.split()` cuts a long input string into separate words.",
       "syntax": "# Reading multiple integers\nx, y = [int(n) for n in input(\"Enter 2 numbers: \").split()]\n\n# Formatted output\nprint(\"x={}, y={}\".format(x, y))\nprint(x, y, sep=\"::\", end=\"\\n\")",
       "examples": "# Nested ternary for min of 3 numbers\na, b, c = 10, 20, 5\nmin_val = a if a < b and a < c else b if b < c else c\nprint(\"Minimum:\", min_val)",
       "common_mistakes": "1. Multiplying two strings (`\"a\" * \"b\"` raises TypeError).\n2. Division by zero (`x // 0` raises ZeroDivisionError).",
@@ -480,9 +504,9 @@
       "order_index": 1,
       "learning_objective": "Master if-elif-else branching, indentation syntax, transfer statements (break, continue, pass), and variable deletion with del vs None.",
       "content_standard": "In Python, flow control statements determine execution paths. Python uses colons and 4-space indentation instead of braces. Transfer statements include break, continue, pass, and del.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Indentation-based block syntax; no `switch` or `goto`.\n- `pass` is syntactic no-op; `del x` unbinds name; `x = None` retains name.\n- Short-circuit boolean evaluation: `x and y`, `x or y`.",
-      "content_medium": "### 📘 Standard Guide\n1. Use `if-elif-else` for multi-condition branching.\n2. `pass` acts as a placeholder for unfinished functions or empty blocks.\n3. `del x` deletes the variable from memory; calling `x` afterwards raises `NameError`.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **Branching**: Like a fork in the road. If condition is True, turn left; else turn right.\n2. **Pass**: Like an \"Under Construction\" sign—lets Python drive by smoothly without crashing!\n3. **Del vs None**: `del x` throws away the box and label; `x = None` puts an empty note in the box.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Indentation-based block syntax; no `switch` or `goto`.\n- `pass` is syntactic no-op; `del x` unbinds name; `x = None` retains name.\n- Short-circuit boolean evaluation: `x and y`, `x or y`.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Use `if-elif-else` for multi-condition branching.\n2. `pass` acts as a placeholder for unfinished functions or empty blocks.\n3. `del x` deletes the variable from memory; calling `x` afterwards raises `NameError`.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **Branching**: Like a fork in the road. If condition is True, turn left; else turn right.\n2. **Pass**: Like an \"Under Construction\" sign\u2014lets Python drive by smoothly without crashing!\n3. **Del vs None**: `del x` throws away the box and label; `x = None` puts an empty note in the box.",
       "syntax": "if condition1:\n    # block 1\nelif condition2:\n    # block 2\nelse:\n    # fallback block\n\n# Placeholder\nif is_admin:\n    pass\n\n# Deletion\nx = 100\ndel x",
       "examples": "# Grade evaluator\nscore = 85\nif score >= 90:\n    print(\"Grade: A\")\nelif score >= 80:\n    print(\"Grade: B\")\nelse:\n    print(\"Grade: C\")",
       "common_mistakes": "1. Inconsistent indentation mixing tabs and spaces.\n2. Confusing `del x` (removes variable) with `x = None` (keeps variable with None value).",
@@ -532,9 +556,9 @@
       "order_index": 2,
       "learning_objective": "Master for and while loops, iteration over ranges and sequences, loop else clauses, and geometric pattern printing techniques.",
       "content_standard": "In Python, loops provide repetition without code duplication. `for item in sequence:` iterates over iterables, while `while condition:` continues until the boolean condition evaluates to False.",
-      "content_low": "### ⚡ Fast-Track Summary\n- `for i in range(n)`: O(1) space lazy sequence generation.\n- List comprehensions preferred over imperative loops when mapping/filtering.\n- `break` exits immediately; `continue` skips to next step; `else:` triggers only on non-break completion.",
-      "content_medium": "### 📘 Standard Guide\nPython supports two primary loops:\n1. **For Loop**: Best when the count or sequence is known in advance.\n2. **While Loop**: Best when looping depends on dynamic runtime conditions.\nRemember: `range(1, 5)` yields values `1, 2, 3, 4`.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nLet's take this slowly! A loop is like an automated counting machine.\n\n1. **Start small**: `for i in range(3): print(i)` will print 0, then 1, then 2.\n2. **Analogy**: Imagine checking off items on a grocery checklist one by one.\n3. **Notice**: Stop value is never included. `range(0, 5)` stops before 5!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- `for i in range(n)`: O(1) space lazy sequence generation.\n- List comprehensions preferred over imperative loops when mapping/filtering.\n- `break` exits immediately; `continue` skips to next step; `else:` triggers only on non-break completion.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nPython supports two primary loops:\n1. **For Loop**: Best when the count or sequence is known in advance.\n2. **While Loop**: Best when looping depends on dynamic runtime conditions.\nRemember: `range(1, 5)` yields values `1, 2, 3, 4`.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nLet's take this slowly! A loop is like an automated counting machine.\n\n1. **Start small**: `for i in range(3): print(i)` will print 0, then 1, then 2.\n2. **Analogy**: Imagine checking off items on a grocery checklist one by one.\n3. **Notice**: Stop value is never included. `range(0, 5)` stops before 5!",
       "syntax": "for item in iterable:\n    # execute block\n\nwhile condition:\n    # execute block\n    # ensure condition progresses toward False!",
       "examples": "# Example 1: Right-angled number triangle\nn = 4\nfor i in range(1, n + 1):\n    print(\" \".join([str(i)] * i))\n\n# Example 2: While loop with countdown\ncount = 3\nwhile count > 0:\n    print(count)\n    count -= 1\nprint(\"Blast off!\")",
       "common_mistakes": "1. Infinite while loops due to missing update statements.\n2. Off-by-one errors with range(start, stop).\n3. Modifying a collection while actively looping over it.",
@@ -590,9 +614,9 @@
       "order_index": 1,
       "learning_objective": "Master positive/negative string slicing, substring searching (find vs index), character validation methods, and string algorithms.",
       "content_standard": "Strings are immutable sequences of characters supporting forward (positive) and backward (negative) indexing. Slicing with step `s[begin:end:step]` allows stride selection and full reversal with `s[::-1]`.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Slicing: `s[begin:end:step]`. Default begin=0, end=len, step=1. Negative step reverses.\n- Searching: `s.find()` returns -1 on failure; `s.index()` raises ValueError.\n- Methods: `strip()`, `split()`, `rsplit()`, `join()`, `replace()`.\n- Checks: `isalnum()`, `isalpha()`, `isdigit()`, `islower()`, `isupper()`, `isspace()`.",
-      "content_medium": "### 📘 Standard Guide\n1. Slicing never raises IndexError: `s[3:1000]` returns up to string end.\n2. Reversal idiom: `reversed_s = s[::-1]`.\n3. Replace: `s.replace(\"old\", \"new\")` creates a new string without mutating original.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **Indexing**: First letter is `s[0]`, last letter is `s[-1]`.\n2. **Slicing**: Like cutting slices of a loaf of bread: `s[1:4]` takes slice from index 1 up to 3.\n3. **Reverse**: `s[::-1]` flips the entire word backwards instantly!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Slicing: `s[begin:end:step]`. Default begin=0, end=len, step=1. Negative step reverses.\n- Searching: `s.find()` returns -1 on failure; `s.index()` raises ValueError.\n- Methods: `strip()`, `split()`, `rsplit()`, `join()`, `replace()`.\n- Checks: `isalnum()`, `isalpha()`, `isdigit()`, `islower()`, `isupper()`, `isspace()`.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Slicing never raises IndexError: `s[3:1000]` returns up to string end.\n2. Reversal idiom: `reversed_s = s[::-1]`.\n3. Replace: `s.replace(\"old\", \"new\")` creates a new string without mutating original.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **Indexing**: First letter is `s[0]`, last letter is `s[-1]`.\n2. **Slicing**: Like cutting slices of a loaf of bread: `s[1:4]` takes slice from index 1 up to 3.\n3. **Reverse**: `s[::-1]` flips the entire word backwards instantly!",
       "syntax": "s = \"karthikeya\"\nprint(s[0])    # 'k'\nprint(s[-1])   # 'a'\nprint(s[2:7])  # 'rthik'\nprint(s[::-1]) # reverse",
       "examples": "# Alternate string merge\ns1 = \"karthi\"\ns2 = \"sahasra\"\nmerged = []\ni, j = 0, 0\nwhile i < len(s1) or j < len(s2):\n    if i < len(s1): merged.append(s1[i]); i += 1\n    if j < len(s2): merged.append(s2[j]); j += 1\nprint(\"Merged:\", \"\".join(merged))",
       "common_mistakes": "1. Attempting in-place modification: `s[0] = \"A\"` raises TypeError.\n2. Using `s.index()` without try-except when substring may not exist.",
@@ -630,9 +654,9 @@
       "order_index": 1,
       "learning_objective": "Master list operations (append, insert, extend, pop, remove, sort), aliasing vs cloning ([:], copy()), 2D nested matrices, and list comprehensions.",
       "content_standard": "Lists are mutable ordered collections supporting dynamic resizing. Aliasing (`b = a`) shares references, whereas cloning (`b = a[:]` or `a.copy()`) creates independent copies. List comprehensions provide concise filtering and transformation.",
-      "content_low": "### ⚡ Fast-Track Summary\n- `append(x)` (single item) vs `extend(it)` (unpacks iterable) vs `insert(i, x)`.\n- Aliasing shares memory pointer; `copy()` or `[:]` clones shallowly; `copy.deepcopy()` for nested lists.\n- List comprehensions `[f(x) for x in seq if cond]` are byte-code optimized.",
-      "content_medium": "### 📘 Standard Guide\n1. Mutability: `lst[0] = 99` changes list in place.\n2. Removing: `remove(val)` deletes first occurrence (raises ValueError if absent); `pop()` deletes and returns last element.\n3. 2D grids: `matrix[r][c]` accesses row and column.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **List**: A numbered shopping list. You can cross items out, add items to the bottom, or reorder them.\n2. **Aliasing**: Giving a second key to the same house. If someone changes the sofa, both key-holders see it!\n3. **Cloning**: Building an identical house. Changes inside do not affect the other.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- `append(x)` (single item) vs `extend(it)` (unpacks iterable) vs `insert(i, x)`.\n- Aliasing shares memory pointer; `copy()` or `[:]` clones shallowly; `copy.deepcopy()` for nested lists.\n- List comprehensions `[f(x) for x in seq if cond]` are byte-code optimized.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Mutability: `lst[0] = 99` changes list in place.\n2. Removing: `remove(val)` deletes first occurrence (raises ValueError if absent); `pop()` deletes and returns last element.\n3. 2D grids: `matrix[r][c]` accesses row and column.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **List**: A numbered shopping list. You can cross items out, add items to the bottom, or reorder them.\n2. **Aliasing**: Giving a second key to the same house. If someone changes the sofa, both key-holders see it!\n3. **Cloning**: Building an identical house. Changes inside do not affect the other.",
       "syntax": "# Methods\nnums = [1, 2, 3]\nnums.append(4)\nnums.extend([5, 6])\n\n# Cloning\nclone = nums[:]\n\n# 2D Matrix & Comprehension\nmatrix = [[1, 2], [3, 4]]\nsquares = [x**2 for x in range(1, 6) if x % 2 != 0]",
       "examples": "# Matrix Transpose\nmatrix = [[1, 2, 3], [4, 5, 6]]\ntransposed = [[row[i] for row in matrix] for i in range(len(matrix[0]))]\nprint(\"Transposed:\", transposed)",
       "common_mistakes": "1. Modifying aliased lists assuming they are independent copies.\n2. Calling `sort()` and expecting a return value (`lst.sort()` returns None!).",
@@ -681,9 +705,9 @@
       "order_index": 1,
       "learning_objective": "Understand tuple immutability, packing/unpacking, set uniqueness, discard vs remove, and mathematical set operations.",
       "content_standard": "Tuples are immutable ordered sequences (`(10, 20)`). Sets are mutable, unordered collections of unique elements (`{10, 20}`). Sets eliminate duplicates and support union, intersection, and difference.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Tuples: read-only lists, memory-efficient, single-item tuple requires comma `(10,)`.\n- Sets: hash-table backed, O(1) membership `in`, unordered, unindexed.\n- Set operations: `|` (union), `&` (intersection), `-` (difference), `^` (symmetric difference).\n- `s.discard(x)` does not crash if x missing; `s.remove(x)` raises KeyError.",
-      "content_medium": "### 📘 Standard Guide\n1. Use tuples when data is fixed (e.g. coordinates, database rows).\n2. Use sets when duplicates must be eliminated.\n3. Empty set requires `set()`; `{}` creates an empty dictionary.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n- **Tuple**: An engraved stone tablet. You cannot add or erase words.\n- **Set**: A guest list with a strict doorman. If a name is already on the list, duplicate entries are thrown away.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Tuples: read-only lists, memory-efficient, single-item tuple requires comma `(10,)`.\n- Sets: hash-table backed, O(1) membership `in`, unordered, unindexed.\n- Set operations: `|` (union), `&` (intersection), `-` (difference), `^` (symmetric difference).\n- `s.discard(x)` does not crash if x missing; `s.remove(x)` raises KeyError.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Use tuples when data is fixed (e.g. coordinates, database rows).\n2. Use sets when duplicates must be eliminated.\n3. Empty set requires `set()`; `{}` creates an empty dictionary.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n- **Tuple**: An engraved stone tablet. You cannot add or erase words.\n- **Set**: A guest list with a strict doorman. If a name is already on the list, duplicate entries are thrown away.",
       "syntax": "# Tuples\nt = (10, 20, 30)\na, b, c = t # unpacking\n\n# Sets\ns = {10, 20, 30, 20}\nprint(s) # {10, 20, 30}",
       "examples": "# Set operations\nA = {1, 2, 3, 4}\nB = {3, 4, 5, 6}\nprint(\"Union:\", A | B)\nprint(\"Intersection:\", A & B)\nprint(\"Difference:\", A - B)",
       "common_mistakes": "1. Creating single-element tuple without comma: `t = (10)` is an int, not a tuple! Must be `t = (10,)`.\n2. Attempting indexing on a set (`s[0]` raises TypeError).",
@@ -721,9 +745,9 @@
       "order_index": 2,
       "learning_objective": "Understand key-value mappings, immutable key constraints, dict methods (get, pop, items, setdefault), frequency counters, and dictionary comprehensions.",
       "content_standard": "Dictionaries store key-value associations backed by hash tables with O(1) average lookup. Keys must be hashable and unique. Use `get(k, default)` to avoid KeyError.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Keys must be immutable (str, int, tuple). Values can be any type.\n- `.setdefault(k, d)` returns existing value or sets default.\n- Dict comprehensions: `{k: v for k, v in ...}`.\n- In Python 3.7+, insertion order is guaranteed preserved.",
-      "content_medium": "### 📘 Standard Guide\n1. Access with `d.get(key, fallback)` to avoid KeyError crashes.\n2. Frequency counting pattern: `freq[ch] = freq.get(ch, 0) + 1`.\n3. Iterate pairs with `for k, v in d.items():`.\n4. Keys must be hashable: lists cannot be keys, but tuples can.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n1. **Dictionary**: Like a real dictionary or phone book. You look up a word (key) to get its definition (value).\n2. **Safe Lookup**: Asking \"Does room 101 have a key?\" instead of blindly opening the door.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Keys must be immutable (str, int, tuple). Values can be any type.\n- `.setdefault(k, d)` returns existing value or sets default.\n- Dict comprehensions: `{k: v for k, v in ...}`.\n- In Python 3.7+, insertion order is guaranteed preserved.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Access with `d.get(key, fallback)` to avoid KeyError crashes.\n2. Frequency counting pattern: `freq[ch] = freq.get(ch, 0) + 1`.\n3. Iterate pairs with `for k, v in d.items():`.\n4. Keys must be hashable: lists cannot be keys, but tuples can.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n1. **Dictionary**: Like a real dictionary or phone book. You look up a word (key) to get its definition (value).\n2. **Safe Lookup**: Asking \"Does room 101 have a key?\" instead of blindly opening the door.",
       "syntax": "d = {\"apple\": 5, \"banana\": 3}\nprint(d.get(\"orange\", 0)) # Safe fallback 0\nd[\"orange\"] = 7\nfor k, v in d.items():\n    print(f\"{k}: {v}\")",
       "examples": "# Frequency count of words\ntext = \"hello world hello python\"\nfreq = {}\nfor word in text.split():\n    freq[word] = freq.get(word, 0) + 1\nprint(freq)",
       "common_mistakes": "1. Using a mutable list as a dictionary key (`d[[1, 2]] = \"val\"` raises TypeError: unhashable type).\n2. Using `d[k]` when k might not exist instead of `d.get(k)`.",
@@ -772,9 +796,9 @@
       "order_index": 1,
       "learning_objective": "Define modular functions, understand positional vs keyword parameters, default arguments, *args/**kwargs, and the LEGB variable scope rule.",
       "content_standard": "Functions encapsulate reusable logic using `def func_name(args):`. Python functions are first-class citizens and can be passed as arguments or returned from other functions.",
-      "content_low": "### ⚡ Fast-Track Summary\n- First-class citizen functions with `*args` (tuple) and `**kwargs` (dict) unpacking.\n- Closure and lexical scoping (LEGB rule: Local, Enclosing, Global, Built-in).\n- Avoid mutable default arguments (`def f(x=[])`).",
-      "content_medium": "### 📘 Standard Guide\nDefine functions using `def`. Return values using `return`. Scope determines where a variable is accessible: local variables inside a function cannot be seen outside unless declared `global`.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nA function is like a kitchen recipe or a mini-calculator:\n1. You give it ingredients (parameters).\n2. It follows steps inside its body.\n3. It serves you the final dish (return value).",
+      "content_low": "### \u26a1 Fast-Track Summary\n- First-class citizen functions with `*args` (tuple) and `**kwargs` (dict) unpacking.\n- Closure and lexical scoping (LEGB rule: Local, Enclosing, Global, Built-in).\n- Avoid mutable default arguments (`def f(x=[])`).",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nDefine functions using `def`. Return values using `return`. Scope determines where a variable is accessible: local variables inside a function cannot be seen outside unless declared `global`.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nA function is like a kitchen recipe or a mini-calculator:\n1. You give it ingredients (parameters).\n2. It follows steps inside its body.\n3. It serves you the final dish (return value).",
       "syntax": "def function_name(param1, *args, param2=default_val, **kwargs):\n    \"\"\"Docstring explanation.\"\"\"\n    result = param1 + param2\n    return result",
       "examples": "def greet(name, title=\"Learner\"):\n    return f\"Welcome, {title} {name}!\"\n\nprint(greet(\"Ada\", \"Dr.\"))\nprint(greet(\"Alan\"))",
       "common_mistakes": "1. Forgetting the `return` keyword (functions default to returning `None`).\n2. Defining mutable defaults like `def add(val, lst=[]):` which persist across calls.",
@@ -812,9 +836,9 @@
       "order_index": 2,
       "learning_objective": "Understand base cases, recursive decomposition, call stacks, and recursive function execution in Python.",
       "content_standard": "Recursion occurs when a function calls itself directly or indirectly to solve a smaller instance of the same problem. Every recursive function requires at least one base case to terminate execution.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Base case: Halting condition preventing stack overflow (RecursionError).\n- Python recursion depth limit: default 1000 frames (`sys.getrecursionlimit()`).\n- Tail call optimization (TCO) is NOT supported in CPython; prefer memoization (`functools.lru_cache`) for recursive algorithms.",
-      "content_medium": "### 📘 Standard Guide\nA recursive function has two key elements:\n1. **Base Case**: The simplest scenario that returns immediately without calling the function again.\n2. **Recursive Step**: Calling the function with inputs closer to the base case.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nImagine Russian nesting dolls (Matryoshka):\n1. To open doll #5, you open doll #4, then #3, then #2, then #1.\n2. Doll #1 is the tiniest solid doll (the **Base Case**).\n3. Once you reach the center, you put them all back together! That is exactly how the computer's call stack works.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Base case: Halting condition preventing stack overflow (RecursionError).\n- Python recursion depth limit: default 1000 frames (`sys.getrecursionlimit()`).\n- Tail call optimization (TCO) is NOT supported in CPython; prefer memoization (`functools.lru_cache`) for recursive algorithms.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nA recursive function has two key elements:\n1. **Base Case**: The simplest scenario that returns immediately without calling the function again.\n2. **Recursive Step**: Calling the function with inputs closer to the base case.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nImagine Russian nesting dolls (Matryoshka):\n1. To open doll #5, you open doll #4, then #3, then #2, then #1.\n2. Doll #1 is the tiniest solid doll (the **Base Case**).\n3. Once you reach the center, you put them all back together! That is exactly how the computer's call stack works.",
       "syntax": "def recursive_func(n):\n    if n <= 1: # Base case\n        return 1\n    return n * recursive_func(n - 1) # Recursive step",
       "examples": "# Example 1: Factorial\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n\nprint(\"5! =\", factorial(5)) # 120",
       "common_mistakes": "1. Forgetting the base case, leading to RecursionError: maximum recursion depth exceeded.\n2. Failing to shrink the input argument towards the base case on each call.",
@@ -852,9 +876,9 @@
       "order_index": 3,
       "learning_objective": "Understand module aliasing, reloading, random/math functions, and regular expression pattern matching with `re` module.",
       "content_standard": "Modules group reusable Python code. `re` provides pattern matching via compile, search, match, and finditer with character classes and quantifiers for validation.",
-      "content_low": "### ⚡ Fast-Track Summary\n- `import module as alias` for aliasing; `from importlib import reload` to reload dynamic changes.\n- `random`: `randint(a, b)` (inclusive int), `uniform(a, b)` (float), `choice(seq)`.\n- Regex: `re.fullmatch()` validates entire string; `re.findall()` extracts all occurrences.\n- Classes: `\\d` (digit), `\\w` (word char), `\\s` (space). Anchors: `^` (start), `$` (end).",
-      "content_medium": "### 📘 Standard Guide\n1. Modules avoid code duplication.\n2. `random.randint(100000, 999999)` generates a 6-digit OTP.\n3. Regex: `re.fullmatch(r\"[6-9]\\d{9}\", phone)` validates a 10-digit Indian phone number.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\n- A **Module** is a toolbox you import with one command.\n- **Regular Expressions** are like specialized search filters. Instead of checking every character manually, you specify a pattern like \"starts with 7, 8, or 9 and has 10 digits\"!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- `import module as alias` for aliasing; `from importlib import reload` to reload dynamic changes.\n- `random`: `randint(a, b)` (inclusive int), `uniform(a, b)` (float), `choice(seq)`.\n- Regex: `re.fullmatch()` validates entire string; `re.findall()` extracts all occurrences.\n- Classes: `\\d` (digit), `\\w` (word char), `\\s` (space). Anchors: `^` (start), `$` (end).",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. Modules avoid code duplication.\n2. `random.randint(100000, 999999)` generates a 6-digit OTP.\n3. Regex: `re.fullmatch(r\"[6-9]\\d{9}\", phone)` validates a 10-digit Indian phone number.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\n- A **Module** is a toolbox you import with one command.\n- **Regular Expressions** are like specialized search filters. Instead of checking every character manually, you specify a pattern like \"starts with 7, 8, or 9 and has 10 digits\"!",
       "syntax": "import re\npattern = r\"[6-9]\\d{9}\"\nis_valid = bool(re.fullmatch(pattern, \"9885768283\"))\nprint(\"Valid phone?\", is_valid)",
       "examples": "# Generate random 6-digit OTP\nfrom random import randint\notp = \"\".join(str(randint(0, 9)) for _ in range(6))\nprint(\"Generated OTP:\", otp)",
       "common_mistakes": "1. Using `re.match()` instead of `re.fullmatch()` for phone/email validation, allowing trailing garbage characters.\n2. Forgetting that `re.search()` stops at the first match.",
@@ -892,9 +916,9 @@
       "order_index": 3,
       "learning_objective": "Understand pointers, memory addresses (& operator), dereferencing (* operator), and pointer arithmetic in C.",
       "content_standard": "In C, memory is a linear array of byte addresses. A pointer variable stores an address in memory. The `&` operator gets the address; the `*` operator accesses the value at that address.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Pointers store 64-bit/32-bit hardware memory addresses.\n- Pointer arithmetic scales automatically by `sizeof(T)`: `ptr + 1` advances by `sizeof(*ptr)` bytes.\n- Avoid undefined behavior: never dereference NULL, uninitialized, or freed pointers.",
-      "content_medium": "### 📘 Standard Guide\n1. `int *p = &x;` stores address of x into p.\n2. `*p = 50;` changes x to 50.\n3. Pointers allow functions to modify caller variables via pass-by-reference simulation.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nDon't panic! Pointers are just street addresses:\n- `x` is your friend living in house #42.\n- `&x` is writing down the note: \"House #42\".\n- `p = &x` means `p` holds the note.\n- `*p` means visiting house #42 to see or change what is inside.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Pointers store 64-bit/32-bit hardware memory addresses.\n- Pointer arithmetic scales automatically by `sizeof(T)`: `ptr + 1` advances by `sizeof(*ptr)` bytes.\n- Avoid undefined behavior: never dereference NULL, uninitialized, or freed pointers.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. `int *p = &x;` stores address of x into p.\n2. `*p = 50;` changes x to 50.\n3. Pointers allow functions to modify caller variables via pass-by-reference simulation.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nDon't panic! Pointers are just street addresses:\n- `x` is your friend living in house #42.\n- `&x` is writing down the note: \"House #42\".\n- `p = &x` means `p` holds the note.\n- `*p` means visiting house #42 to see or change what is inside.",
       "syntax": "int value = 42;\nint *ptr = &value; // ptr stores address\n*ptr = 99;         // dereference: updates value to 99",
       "examples": "#include <stdio.h>\n\nvoid swap(int *a, int *b) {\n    int temp = *a;\n    *a = *b;\n    *b = temp;\n}\n\nint main() {\n    int x = 10, y = 20;\n    swap(&x, &y);\n    printf(\"x=%d, y=%d\\n\", x, y);\n    return 0;\n}",
       "common_mistakes": "1. Dereferencing uninitialized pointers (`int *p; *p = 10;` causes crash).\n2. Confusing `*` in variable declaration with `*` dereference in expressions.",
@@ -931,9 +955,9 @@
       "order_index": 4,
       "learning_objective": "Allocate heap memory dynamically with malloc/calloc, avoid memory leaks with free(), and handle allocation failures.",
       "content_standard": "Stack memory has a fixed size and lifetime tied to function execution. Dynamic memory allocation (`malloc`, `calloc`, `realloc`, `free`) requests memory from the system heap at runtime.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Heap allocation managed via `malloc(size_t)`. Always pair with `free(ptr)`.\n- Check for `NULL` to guard against Out-Of-Memory (OOM) conditions.\n- Use Valgrind/ASan to detect heap leaks and buffer overflows.",
-      "content_medium": "### 📘 Standard Guide\n1. `int *arr = malloc(n * sizeof(int));`\n2. Always verify `if (arr == NULL)` before writing.\n3. Always call `free(arr); arr = NULL;` when finished.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nStack memory is like a small desk: it is fast, but you cannot change its size while working. The Heap is like a storage warehouse: you ask for as much space as you need with `malloc`, but you must remember to return the keys with `free`!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Heap allocation managed via `malloc(size_t)`. Always pair with `free(ptr)`.\n- Check for `NULL` to guard against Out-Of-Memory (OOM) conditions.\n- Use Valgrind/ASan to detect heap leaks and buffer overflows.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\n1. `int *arr = malloc(n * sizeof(int));`\n2. Always verify `if (arr == NULL)` before writing.\n3. Always call `free(arr); arr = NULL;` when finished.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nStack memory is like a small desk: it is fast, but you cannot change its size while working. The Heap is like a storage warehouse: you ask for as much space as you need with `malloc`, but you must remember to return the keys with `free`!",
       "syntax": "int *ptr = (int *)malloc(10 * sizeof(int));\nif (ptr == NULL) { /* handle error */ }\nfree(ptr);\nptr = NULL;",
       "examples": "#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n    int *arr = malloc(5 * sizeof(int));\n    if (!arr) return 1;\n    for(int i=0; i<5; i++) arr[i] = i * 10;\n    free(arr);\n    return 0;\n}",
       "common_mistakes": "1. Forgetting to free allocated memory, causing cumulative leaks.\n2. Double-freeing memory.",
@@ -963,9 +987,9 @@
       "order_index": 1,
       "learning_objective": "Construct C++ classes with private/public encapsulation, constructors, member functions, and object instantiation.",
       "content_standard": "Classes in C++ define user-defined types combining data members and methods. Access specifiers (public, private, protected) enforce encapsulation and protect class invariants.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Enforces encapsulation and RAII (Resource Acquisition Is Initialization).\n- Prefer member initializer lists in constructors to prevent default construction overhead.\n- Follow the Rule of Five: destructor, copy constructor, copy assignment, move constructor, move assignment.",
-      "content_medium": "### 📘 Standard Guide\nDeclare fields `private` and provide `public` methods (getters/setters/actions). Constructors initialize objects automatically upon instantiation.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nThink of a Class like a blueprint for an automobile:\n1. The blueprint defines what a car has (speed, fuel) and what it does (drive, brake).\n2. An Object is the real car manufactured from that blueprint.\n3. `private` prevents unauthorized passengers from tampering with the engine while running!",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Enforces encapsulation and RAII (Resource Acquisition Is Initialization).\n- Prefer member initializer lists in constructors to prevent default construction overhead.\n- Follow the Rule of Five: destructor, copy constructor, copy assignment, move constructor, move assignment.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nDeclare fields `private` and provide `public` methods (getters/setters/actions). Constructors initialize objects automatically upon instantiation.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nThink of a Class like a blueprint for an automobile:\n1. The blueprint defines what a car has (speed, fuel) and what it does (drive, brake).\n2. An Object is the real car manufactured from that blueprint.\n3. `private` prevents unauthorized passengers from tampering with the engine while running!",
       "syntax": "class BankAccount {\nprivate:\n    double balance;\npublic:\n    BankAccount(double initial_bal) : balance(initial_bal) {}\n    void deposit(double amount) { balance += amount; }\n    double getBalance() const { return balance; }\n};",
       "examples": "#include <iostream>\n\nclass Counter {\nprivate:\n    int count;\npublic:\n    Counter() : count(0) {}\n    void increment() { count++; }\n    int get() const { return count; }\n};\n\nint main() {\n    Counter c;\n    c.increment();\n    std::cout << \"Count: \" << c.get() << std::endl;\n    return 0;\n}",
       "common_mistakes": "1. Forgetting the closing semicolon `;` after the class definition body.\n2. Exposing internal mutable pointers/references from private state.",
@@ -993,9 +1017,9 @@
       "order_index": 1,
       "learning_objective": "Understand Java class hierarchies, method overriding, `extends` keyword, and polymorphic behavior.",
       "content_standard": "In Java, all non-primitive types derive from `java.lang.Object`. Inheritance allows derived classes to inherit state and behavior from a superclass using the `extends` keyword.",
-      "content_low": "### ⚡ Fast-Track Summary\n- Single inheritance for classes; multiple inheritance via interfaces.\n- Dynamic method dispatch via bytecode `invokevirtual`.\n- Always decorate overridden methods with `@Override` for compile-time signature verification.",
-      "content_medium": "### 📘 Standard Guide\nSuperclasses define common behavior. Subclasses use `extends SuperClass` to inherit or override methods using `@Override`. Call superclass constructors with `super()`.",
-      "content_high": "### 🌱 Step-by-Step Breakdown\nInheritance is like family traits:\n1. A Parent Class (`Animal`) knows how to breathe and sleep.\n2. A Child Class (`Dog`) inherits breathing and sleeping automatically, but adds its own special ability: barking!\n3. This saves you from having to rewrite code over and over.",
+      "content_low": "### \u26a1 Fast-Track Summary\n- Single inheritance for classes; multiple inheritance via interfaces.\n- Dynamic method dispatch via bytecode `invokevirtual`.\n- Always decorate overridden methods with `@Override` for compile-time signature verification.",
+      "content_medium": "### \ud83d\udcd8 Standard Guide\nSuperclasses define common behavior. Subclasses use `extends SuperClass` to inherit or override methods using `@Override`. Call superclass constructors with `super()`.",
+      "content_high": "### \ud83c\udf31 Step-by-Step Breakdown\nInheritance is like family traits:\n1. A Parent Class (`Animal`) knows how to breathe and sleep.\n2. A Child Class (`Dog`) inherits breathing and sleeping automatically, but adds its own special ability: barking!\n3. This saves you from having to rewrite code over and over.",
       "syntax": "class Animal {\n    void speak() {\n        System.out.println(\"Animal sound\");\n    }\n}\n\nclass Dog extends Animal {\n    @Override\n    void speak() {\n        System.out.println(\"Woof!\");\n    }\n}",
       "examples": "public class Main {\n    public static void main(String[] args) {\n        Animal myPet = new Dog();\n        myPet.speak(); // Prints \"Woof!\" via polymorphism\n    }\n}",
       "common_mistakes": "1. Forgetting that Java does NOT allow multiple class inheritance (`class C extends A, B` is illegal).\n2. Omitting `@Override` annotation.",
@@ -1505,6 +1529,134 @@
         }
       ],
       "content_path": "rag/documents/JAVA/top-java-methods-arrays.txt"
+    },
+    {
+      "id": "top-c-advanced-structures",
+      "module_id": "mod-c-adv-structures",
+      "title": "Structures in C",
+      "slug": "structures-in-c",
+      "order_index": 1,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-structure-pointers",
+      "module_id": "mod-c-adv-structures",
+      "title": "Pointers to Structures",
+      "slug": "pointers-to-structures",
+      "order_index": 2,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-unions-enums",
+      "module_id": "mod-c-adv-structures",
+      "title": "Unions and Enumerations",
+      "slug": "unions-and-enumerations",
+      "order_index": 3,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-typedef-bitfields",
+      "module_id": "mod-c-adv-structures",
+      "title": "Typedef and Bit Fields",
+      "slug": "typedef-and-bit-fields",
+      "order_index": 4,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-file-fundamentals",
+      "module_id": "mod-c-adv-files",
+      "title": "File Handling Fundamentals",
+      "slug": "file-handling-fundamentals",
+      "order_index": 5,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-file-operations",
+      "module_id": "mod-c-adv-files",
+      "title": "File Operations and Random Access",
+      "slug": "file-operations-and-random-access",
+      "order_index": 6,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-preprocessor",
+      "module_id": "mod-c-adv-files",
+      "title": "Preprocessor Directives and Header Files",
+      "slug": "preprocessor-directives-and-header-files",
+      "order_index": 7,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-data-structures-intro",
+      "module_id": "mod-c-adv-data-structures",
+      "title": "Introduction to Data Structures",
+      "slug": "introduction-to-data-structures",
+      "order_index": 8,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-singly-linked-list",
+      "module_id": "mod-c-adv-data-structures",
+      "title": "Singly Linked Lists",
+      "slug": "singly-linked-lists",
+      "order_index": 9,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-doubly-circular-list",
+      "module_id": "mod-c-adv-data-structures",
+      "title": "Doubly and Circular Linked Lists",
+      "slug": "doubly-and-circular-linked-lists",
+      "order_index": 10,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-stacks-queues",
+      "module_id": "mod-c-adv-data-structures",
+      "title": "Stacks and Queues",
+      "slug": "stacks-and-queues",
+      "order_index": 11,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-trees-bst",
+      "module_id": "mod-c-adv-data-structures",
+      "title": "Trees and Binary Search Trees",
+      "slug": "trees-and-binary-search-trees",
+      "order_index": 12,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-searching",
+      "module_id": "mod-c-adv-algorithms-systems",
+      "title": "Searching Algorithms",
+      "slug": "searching-algorithms",
+      "order_index": 13,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-sorting",
+      "module_id": "mod-c-adv-algorithms-systems",
+      "title": "Sorting Algorithms",
+      "slug": "sorting-algorithms",
+      "order_index": 14,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-command-line-modular",
+      "module_id": "mod-c-adv-algorithms-systems",
+      "title": "Command-Line Arguments and Modular Programming",
+      "slug": "command-line-arguments-and-modular-programming",
+      "order_index": 15,
+      "difficulty": "advanced"
+    },
+    {
+      "id": "top-c-library-project",
+      "module_id": "mod-c-adv-algorithms-systems",
+      "title": "Final Mini Project \u2013 Library Management System",
+      "slug": "library-management-system-project",
+      "order_index": 16,
+      "difficulty": "advanced project"
     }
   ],
   "mcq_questions": [
@@ -7963,7 +8115,7 @@
       "code": "FIRST_CODE",
       "title": "First Code Solved",
       "description": "Complete your first automated coding challenge!",
-      "badge_icon": "💻",
+      "badge_icon": "\ud83d\udcbb",
       "category": "code"
     },
     {
@@ -7971,7 +8123,7 @@
       "code": "FIRST_TOPIC",
       "title": "Topic Mastered",
       "description": "Complete your first full programming topic!",
-      "badge_icon": "🌱",
+      "badge_icon": "\ud83c\udf31",
       "category": "mastery"
     },
     {
@@ -7979,7 +8131,7 @@
       "code": "QUIZ_MASTER",
       "title": "Quiz Master",
       "description": "Score 90% or higher on an assessment quiz!",
-      "badge_icon": "🎯",
+      "badge_icon": "\ud83c\udfaf",
       "category": "quiz"
     },
     {
@@ -7987,7 +8139,7 @@
       "code": "DEBUGGER",
       "title": "Debugging Pro",
       "description": "Successfully fix and pass a failed coding test suite!",
-      "badge_icon": "🛠️",
+      "badge_icon": "\ud83d\udee0\ufe0f",
       "category": "code"
     },
     {
@@ -7995,7 +8147,7 @@
       "code": "SEVEN_DAY_LEARNER",
       "title": "7-Day Learner",
       "description": "Maintain consistent learning activity across days!",
-      "badge_icon": "🔥",
+      "badge_icon": "\ud83d\udd25",
       "category": "streak"
     },
     {
@@ -8003,7 +8155,7 @@
       "code": "PYTHON_APPRENTICE",
       "title": "Python Apprentice",
       "description": "Complete fundamental Python loop and function lessons!",
-      "badge_icon": "🐍",
+      "badge_icon": "\ud83d\udc0d",
       "category": "mastery"
     }
   ],

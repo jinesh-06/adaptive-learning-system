@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { UserAvatar } from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive, CognitiveLoadLevel } from '../context/CognitiveContext';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
+import { C_INTERMEDIATE_TOPICS } from '../data/cIntermediateData';
+import { C_ADVANCED_TOPICS } from '../data/cAdvancedData';
 import {
   Brain,
   Home,
@@ -40,7 +43,8 @@ interface SidebarProps {
   setCurrentView: (view: string) => void;
   selectedTopicId: string;
   onSelectTopic: (topicId: string) => void;
-  openAuthModal: () => void;
+  openAuthModal?: () => void;
+  onOpenLogin?: () => void;
   openAiDrawer: () => void;
   openSearchModal?: () => void;
   openOnboardingModal?: () => void;
@@ -57,6 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedTopicId,
   onSelectTopic,
   openAuthModal,
+  onOpenLogin,
   openAiDrawer,
   openSearchModal,
   openOnboardingModal,
@@ -168,30 +173,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           view === 'c-foundations' ||
           view === 'c-foundations-dashboard' ||
           view === 'c-beg' ||
-          (view === 'lesson' && tId.startsWith('top-c-'))
+          (view === 'lesson' && tId.startsWith('top-c-') && !C_INTERMEDIATE_TOPICS.some(t => t.id === tId) && !C_ADVANCED_TOPICS.some(t => t.id === tId))
       },
       {
         id: 'c-pointers',
         label: 'C Pointers & Memory Management',
         icon: Layers,
-        topicId: 'top-c-pointers',
+        dashboardView: 'c-intermediate-dashboard',
+        topicId: 'top-c-pointers-intro',
         matcher: (tId, view) =>
           view === 'c-int' ||
-          (view === 'lesson' && [
-            'top-c-pointers',
-            'top-c-dynamic-memory',
-            'top-c-arrays',
-            'top-c-strings'
-          ].includes(tId))
+          view === 'c-intermediate-dashboard' ||
+          (view === 'lesson' && C_INTERMEDIATE_TOPICS.some(t => t.id === tId))
       },
       {
         id: 'c-systems',
-        label: 'Advanced C Systems & Capstone',
+        label: 'Advanced C Systems & Data Structures',
         icon: Cpu,
-        topicId: 'top-c-structures',
+        dashboardView: 'c-advanced-systems-dashboard',
+        topicId: 'top-c-advanced-structures',
         matcher: (tId, view) =>
           view === 'c-adv' ||
-          (view === 'lesson' && ['top-c-structures', 'top-c-files', 'top-c-preprocessor', 'top-c-project'].includes(tId))
+          view === 'c-advanced-dashboard' ||
+          view === 'c-advanced-systems-dashboard' ||
+          view === 'c-systems' ||
+          (view === 'lesson' && C_ADVANCED_TOPICS.some(t => t.id === tId))
       }
     ],
     cpp: [
@@ -199,31 +205,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
         id: 'cpp-fundamentals',
         label: 'C++ Modern Fundamentals',
         icon: GraduationCap,
-        topicId: 'top-cpp-fundamentals',
+        dashboardView: 'cpp-dashboard',
+        topicId: 'top-cpp-intro',
         matcher: (tId, view) =>
+          view === 'cpp-dashboard' ||
+          view === 'cpp-fundamentals-dashboard' ||
           view === 'cpp-beg' ||
-          (view === 'lesson' && [
-            'top-cpp-fundamentals',
-            'top-cpp-control-functions'
-          ].includes(tId))
+          (view === 'lesson' && tId.startsWith('top-cpp-') && !tId.startsWith('top-cpp-oop-'))
       },
       {
         id: 'cpp-oop',
         label: 'Object-Oriented C++',
         icon: Layers,
-        topicId: 'top-cpp-oop',
+        dashboardView: 'cpp-oop-dashboard',
+        topicId: 'top-cpp-oop-intro',
         matcher: (tId, view) =>
+          view === 'cpp-oop' ||
+          view === 'cpp-oop-dashboard' ||
           view === 'cpp-int' ||
-          (view === 'lesson' && tId === 'top-cpp-oop')
+          (view === 'lesson' && (tId.startsWith('top-cpp-oop-') || tId === 'top-cpp-oop'))
       },
       {
         id: 'cpp-advanced',
         label: 'Advanced C++ & STL Architecture',
         icon: Cpu,
-        topicId: 'top-cpp-references-memory',
+        dashboardView: 'cpp-advanced-dashboard',
+        topicId: 'top-cpp-adv-generic-programming-intro',
         matcher: (tId, view) =>
           view === 'cpp-adv' ||
-          (view === 'lesson' && tId === 'top-cpp-references-memory')
+          view === 'cpp-advanced-dashboard' ||
+          view === 'cpp-advanced' ||
+          (view === 'lesson' && (tId.startsWith('top-cpp-adv-') || tId === 'top-cpp-references-memory'))
       }
     ],
     java: [
@@ -237,49 +249,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           view === 'java-dashboard' ||
           view === 'java-basics' ||
           view === 'java-beg' ||
-          (view === 'lesson' && tId.startsWith('top-java-') && !tId.startsWith('top-java-variables') && !tId.startsWith('top-java-methods'))
+          (view === 'lesson' && tId.startsWith('top-java-') && !tId.startsWith('top-java-oop-') && !tId.startsWith('top-java-adv-'))
       },
       {
         id: 'java-oop',
-        label: 'Fundamentals & Control Flow',
+        label: 'Java Object-Oriented Design',
         icon: Layers,
-        dashboardView: 'java-dashboard',
-        topicId: 'top-java-variables-constants',
+        dashboardView: 'java-oop-dashboard',
+        topicId: 'top-java-oop-intro',
         matcher: (tId, view) =>
-          view === 'lesson' && [
-            'top-java-variables-constants',
-            'top-java-primitive-types',
-            'top-java-reference-types',
-            'top-java-type-casting',
-            'top-java-operators',
-            'top-java-user-input-scanner',
-            'top-java-conditionals',
-            'top-java-for-loop',
-            'top-java-while-loops',
-            'top-java-loop-control',
-            'top-java-mod2-problems'
-          ].includes(tId)
+          view === 'java-oop' ||
+          view === 'java-oop-dashboard' ||
+          view === 'java-int' ||
+          (view === 'lesson' && tId.startsWith('top-java-oop-'))
       },
       {
         id: 'java-advanced',
-        label: 'Methods, Arrays & Capstone',
+        label: 'Advanced Java & Collections',
         icon: Cpu,
-        dashboardView: 'java-dashboard',
-        topicId: 'top-java-methods-intro',
+        dashboardView: 'java-adv-dashboard',
+        topicId: 'top-java-adv-01-collections-intro',
         matcher: (tId, view) =>
-          view === 'lesson' && [
-            'top-java-methods-intro',
-            'top-java-method-parameters',
-            'top-java-method-overloading',
-            'top-java-pass-by-value',
-            'top-java-arrays-intro',
-            'top-java-array-operations',
-            'top-java-search-sort',
-            'top-java-multidimensional-arrays',
-            'top-java-strings',
-            'top-java-problem-solving',
-            'top-java-final-project'
-          ].includes(tId)
+          view === 'java-adv' ||
+          view === 'java-advanced' ||
+          view === 'java-adv-dashboard' ||
+          (view === 'lesson' && tId.startsWith('top-java-adv-'))
       }
     ]
   };
@@ -296,8 +290,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'bookmarks', label: 'Saved Bookmarks', icon: Bookmark },
     { id: 'notes', label: 'Personal Notes', icon: FileText },
     { id: 'history', label: 'Learning History', icon: History },
-    { id: 'projects', label: 'Project Hub', icon: FolderGit2 },
-    { id: 'admin', label: 'Admin Analytics', icon: ShieldCheck }
+    { id: 'projects', label: 'Project Hub', icon: FolderGit2 }
   ];
 
   const handleNavClick = (viewId: string) => {
@@ -580,9 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-900 transition-colors group"
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 text-slate-950 font-bold text-xs flex items-center justify-center shrink-0">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar user={user} size="sm" />
                     <div className="text-left truncate">
                       <div className="text-xs font-semibold text-white truncate leading-tight">{user.name}</div>
                       <div className="text-[10px] text-slate-400 font-mono truncate leading-tight capitalize">{preferences.current_level}</div>
@@ -611,7 +602,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             ) : (
               <button
-                onClick={openAuthModal}
+                onClick={() => {
+                  if (onOpenLogin) {
+                    onOpenLogin();
+                  } else if (openAuthModal) {
+                    openAuthModal();
+                  } else {
+                    setCurrentView('login');
+                  }
+                  if (setIsMobileOpen) setIsMobileOpen(false);
+                }}
                 className="w-full py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20"
               >
                 <User className="w-3.5 h-3.5" />

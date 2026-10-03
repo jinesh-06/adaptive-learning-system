@@ -12,6 +12,7 @@ from backend.services.code_executor import code_executor
 from backend.services.ml_service import ml_service
 from backend.services.state_store import state_store
 from backend.routes.auth_routes import get_current_user_id
+from backend.routes.c_adv_routes import C_ADV_TOPIC_MAP
 
 router = APIRouter(tags=["coding"])
 
@@ -85,13 +86,28 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
     })
 
     # Persist topic progress into SQLite user_progress table
-    course_id = (
-        "c-beg" if payload.topicId.startswith("top-c-") else
-        ("py-adv" if payload.topicId.startswith("top-py-adv-") else
-         ("py-int" if payload.topicId.startswith("top-py-int-") else
-          ("cpp-beg" if payload.topicId.startswith("top-cpp-") else
-           ("java-beg" if payload.topicId.startswith("top-java-") else "py-beg"))))
-    )
+    if payload.topicId in C_ADV_TOPIC_MAP:
+        course_id = "c-advanced-systems"
+    elif payload.topicId.startswith("top-java-adv-"):
+        course_id = "java-adv"
+    elif payload.topicId.startswith("top-java-oop-"):
+        course_id = "java-oop"
+    elif payload.topicId.startswith("top-cpp-adv-"):
+        course_id = "cpp-adv"
+    elif payload.topicId.startswith("top-cpp-oop-"):
+        course_id = "cpp-int"
+    elif payload.topicId.startswith("top-c-"):
+        course_id = "c-beg"
+    elif payload.topicId.startswith("top-py-adv-"):
+        course_id = "py-adv"
+    elif payload.topicId.startswith("top-py-int-"):
+        course_id = "py-int"
+    elif payload.topicId.startswith("top-cpp-"):
+        course_id = "cpp-beg"
+    elif payload.topicId.startswith("top-java-"):
+        course_id = "java-beg"
+    else:
+        course_id = "py-beg"
     if is_overall_pass:
         state_store.save_topic_progress(
             user_id=user_id,

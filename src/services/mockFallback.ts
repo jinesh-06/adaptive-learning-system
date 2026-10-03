@@ -11,8 +11,14 @@ import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
 import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
 import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
 import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
-import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
-import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
+import { C_INTERMEDIATE_TOPICS, C_INTERMEDIATE_MODULES } from '../data/cIntermediateData';
+import { CPP_FUNDAMENTALS_TOPICS, CPP_MODULES } from '../data/cppFundamentalsData';
+import { CPP_OOP_TOPICS } from '../data/cppOopData';
+import { CPP_ADVANCED_TOPICS, CPP_ADVANCED_MODULES } from '../data/cppAdvancedData';
+import { JAVA_FUNDAMENTALS_TOPICS, JAVA_MODULES } from '../data/javaFundamentalsData';
+import { JAVA_OOP_TOPICS, JAVA_OOP_MODULES } from '../data/javaOopData';
+import { JAVA_ADV_TOPICS, JAVA_ADV_MODULES } from '../data/javaAdvData';
+import { C_ADVANCED_TOPICS, C_ADVANCED_MODULES } from '../data/cAdvancedData';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
   window.location.hostname.includes('github.io') ||
@@ -48,6 +54,89 @@ export const mockProjects: any[] = platformData.projects || [];
 
 // Populate courses dynamically from platformData with structured modules and topics
 export const mockCourses: any[] = (platformData.courses || []).map((c: any) => {
+  if (c.id === 'c-advanced-systems') {
+    return {
+      id: c.id,
+      language: c.language,
+      level: c.level,
+      title: 'Advanced C Systems & Data Structures',
+      description: 'Master structures, unions, file handling, linked lists, stacks, queues, trees, searching, sorting, and low-level systems programming through practical C implementations.',
+      modules: C_ADVANCED_MODULES.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.number,
+        topics: m.topics.map((t, idx) => ({
+          id: t.id,
+          title: t.title,
+          level: 'advanced',
+          status: idx === 0 && m.number === 1 ? 'COMPLETED' : idx === 1 && m.number === 1 ? 'IN_PROGRESS' : 'NOT_STARTED'
+        }))
+      }))
+    };
+  }
+  
+  if (c.id === 'c-int') {
+    return {
+      id: c.id,
+      language: c.language,
+      level: c.level,
+      title: 'C Pointers & Memory Management',
+      description: 'Master pointers, memory addresses, pointer arithmetic, arrays, strings, dynamic memory allocation, and memory management techniques in C.',
+      modules: C_INTERMEDIATE_MODULES.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.number,
+        topics: m.topics.map((t, idx) => ({
+          id: t.id,
+          title: t.title,
+          level: 'intermediate',
+          status: idx === 0 && m.number === 1 ? 'COMPLETED' : idx === 1 && m.number === 1 ? 'IN_PROGRESS' : 'NOT_STARTED'
+        }))
+      }))
+    };
+  }
+  if (c.id === 'cpp-beg') {
+    return {
+      id: c.id,
+      language: c.language,
+      level: c.level,
+      title: 'C++ Modern Fundamentals',
+      description: 'Learn modern C++ programming from the ground up through structured lessons, interactive examples, hands-on coding exercises, quizzes, and adaptive explanations.',
+      modules: CPP_MODULES.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.number,
+        topics: m.topics.map((t, idx) => ({
+          id: t.id,
+          title: t.title,
+          level: 'beginner',
+          status: idx === 0 && m.number === 1 ? 'COMPLETED' : idx === 1 && m.number === 1 ? 'IN_PROGRESS' : 'NOT_STARTED'
+        }))
+      }))
+    };
+  }
+
+  if (c.id === 'java-beg') {
+    return {
+      id: c.id,
+      language: c.language,
+      level: c.level,
+      title: 'Java Core Architecture & Basics',
+      description: 'Explore the complete Java developer blueprint from JVM internals, JDK setup, and bytecode execution to control flow, method design, and array manipulation.',
+      modules: JAVA_MODULES.map((m) => ({
+        id: m.id,
+        title: m.title,
+        order: m.number,
+        topics: m.topics.map((t, idx) => ({
+          id: t.id,
+          title: t.title,
+          level: 'beginner',
+          status: idx === 0 && m.number === 1 ? 'COMPLETED' : idx === 1 && m.number === 1 ? 'IN_PROGRESS' : 'NOT_STARTED'
+        }))
+      }))
+    };
+  }
+
   const cModules = (platformData.modules || [])
     .filter((m: any) => m.course_id === c.id)
     .sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
@@ -1103,6 +1192,87 @@ PYTHON_FUNDAMENTALS_TOPICS.forEach((pyTopic) => {
 });
 
 // Populate all C Fundamentals curriculum topics into mock details, quizzes, and coding challenges
+
+C_INTERMEDIATE_TOPICS.forEach((cTopic) => {
+  mockTopicDetails[cTopic.id] = {
+    id: cTopic.id,
+    title: cTopic.title,
+    description: cTopic.shortDescription,
+    module_title: cTopic.moduleTitle,
+    estimated_minutes: cTopic.estimatedMinutes,
+    prerequisites: cTopic.prerequisiteId ? [cTopic.prerequisiteId] : [],
+    next_topic_id: null,
+    sections: [
+      {
+        id: `${cTopic.id}-sec-1`,
+        title: `1. Core Concepts & Theory`,
+        order_index: 1,
+        content: `${cTopic.conceptExplanation}\n\n**Syntax:**\n\`\`\`c\n${cTopic.syntax}\n\`\`\``,
+        code_snippet: cTopic.simpleExample.code,
+        pitfalls: cTopic.simpleExample.explanation,
+        mini_check: cTopic.quiz[0] ? {
+          question: cTopic.quiz[0].question,
+          options: cTopic.quiz[0].options,
+          correct_index: cTopic.quiz[0].correctIndex,
+          explanation: cTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${cTopic.id}-sec-2`,
+        title: `2. Syntax & Memory Architecture`,
+        order_index: 2,
+        content: cTopic.stepByStep.join('\n\n'),
+        code_snippet: cTopic.codeExample,
+        pitfalls: cTopic.commonMistakes[0]?.explanation || 'Review pointer arithmetic and memory boundaries carefully.',
+        mini_check: cTopic.quiz[1] ? {
+          question: cTopic.quiz[1].question,
+          options: cTopic.quiz[1].options,
+          correct_index: cTopic.quiz[1].correctIndex,
+          explanation: cTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${cTopic.id}-sec-3`,
+        title: `3. Real-World Systems Application`,
+        order_index: 3,
+        content: `${cTopic.realWorldExample.scenario}\n\n${cTopic.realWorldExample.explanation}`,
+        code_snippet: cTopic.realWorldExample.code,
+        pitfalls: 'Ensure standard boundary checks and avoid undefined behavior.',
+        mini_check: cTopic.quiz[2] ? {
+          question: cTopic.quiz[2].question,
+          options: cTopic.quiz[2].options,
+          correct_index: cTopic.quiz[2].correctIndex,
+          explanation: cTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[cTopic.id] = cTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[cTopic.id] = {
+    id: `code-${cTopic.id}`,
+    topic_id: cTopic.id,
+    language: 'c',
+    title: `${cTopic.title} Practice Challenge`,
+    difficulty: cTopic.difficulty.toLowerCase(),
+    problem_statement: cTopic.practice.prompt,
+    starter_code: cTopic.practice.starterCode,
+    test_cases: [
+      { input: '', expected_output: '', is_hidden: false }
+    ],
+    hints: ['Review pointer memory concepts.']
+  };
+});
+
 C_FUNDAMENTALS_TOPICS.forEach((cTopic) => {
   mockTopicDetails[cTopic.id] = {
     id: cTopic.id,
@@ -1313,6 +1483,210 @@ CPP_FUNDAMENTALS_TOPICS.forEach((cppTopic) => {
   };
 });
 
+// Populate all Object-Oriented C++ curriculum topics into mock details, quizzes, and coding challenges
+CPP_OOP_TOPICS.forEach((cppOopTopic) => {
+  mockTopicDetails[cppOopTopic.id] = {
+    id: cppOopTopic.id,
+    course_id: 'cpp-int',
+    language: 'cpp',
+    level: cppOopTopic.difficulty.toLowerCase(),
+    title: cppOopTopic.title,
+    prerequisites: cppOopTopic.prerequisiteId ? [cppOopTopic.prerequisiteId] : [],
+    content_standard: cppOopTopic.conceptExplanation,
+    syntax: cppOopTopic.syntax,
+    learningObjectives: cppOopTopic.learningObjectives,
+    conceptExplanation: cppOopTopic.conceptExplanation,
+    simpleExample: cppOopTopic.simpleExample,
+    codeExample: cppOopTopic.codeExample,
+    expectedOutput: cppOopTopic.expectedOutput,
+    stepByStep: cppOopTopic.stepByStep,
+    commonMistakes: cppOopTopic.commonMistakes,
+    realWorldExample: cppOopTopic.realWorldExample,
+    practice: cppOopTopic.practice,
+    quiz: cppOopTopic.quiz,
+    summary: cppOopTopic.summary,
+    common_mistakes: cppOopTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${cppOopTopic.id}-sec-1`,
+        title: `1. Core Architectural Principle: ${cppOopTopic.title}`,
+        order_index: 1,
+        content: cppOopTopic.conceptExplanation,
+        code_snippet: cppOopTopic.simpleExample.code,
+        pitfalls: cppOopTopic.simpleExample.explanation,
+        mini_check: cppOopTopic.quiz[0] ? {
+          question: cppOopTopic.quiz[0].question,
+          options: cppOopTopic.quiz[0].options,
+          correct_index: cppOopTopic.quiz[0].correctIndex,
+          explanation: cppOopTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${cppOopTopic.id}-sec-2`,
+        title: `2. Object Design & Memory Execution Walkthrough`,
+        order_index: 2,
+        content: cppOopTopic.stepByStep.join('\n\n'),
+        code_snippet: cppOopTopic.codeExample,
+        pitfalls: cppOopTopic.commonMistakes[0]?.explanation || 'Prevent object slicing, resource leaks, and dangling pointers.',
+        mini_check: cppOopTopic.quiz[1] ? {
+          question: cppOopTopic.quiz[1].question,
+          options: cppOopTopic.quiz[1].options,
+          correct_index: cppOopTopic.quiz[1].correctIndex,
+          explanation: cppOopTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${cppOopTopic.id}-sec-3`,
+        title: `3. Production Real-World Application`,
+        order_index: 3,
+        content: `${cppOopTopic.realWorldExample.scenario}\n\n${cppOopTopic.realWorldExample.explanation}`,
+        code_snippet: cppOopTopic.realWorldExample.code,
+        pitfalls: 'Manage object lifecycles and ownership boundaries cleanly.',
+        mini_check: cppOopTopic.quiz[2] ? {
+          question: cppOopTopic.quiz[2].question,
+          options: cppOopTopic.quiz[2].options,
+          correct_index: cppOopTopic.quiz[2].correctIndex,
+          explanation: cppOopTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[cppOopTopic.id] = cppOopTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[cppOopTopic.id] = {
+    id: `code-${cppOopTopic.id}`,
+    topic_id: cppOopTopic.id,
+    language: 'cpp',
+    title: `${cppOopTopic.title} Practical Challenge`,
+    difficulty: cppOopTopic.difficulty.toLowerCase(),
+    problem_statement: cppOopTopic.practice.prompt,
+    input_format: 'Standard C++ console input stream.',
+    output_format: 'Expected class output and state confirmation.',
+    constraints: 'Standard C++17/20 intermediate limits.',
+    starter_code: {
+      cpp: cppOopTopic.practice.starterCode,
+      python: cppOopTopic.practice.starterCode
+    },
+    test_cases: [
+      {
+        input: '',
+        expected_output: cppOopTopic.practice.expectedOutputMatcher
+      }
+    ]
+  };
+});
+
+// Populate all Advanced C++ & STL Architecture curriculum topics into mock details, quizzes, and coding challenges
+CPP_ADVANCED_TOPICS.forEach((cppAdvTopic) => {
+  mockTopicDetails[cppAdvTopic.id] = {
+    id: cppAdvTopic.id,
+    course_id: 'cpp-adv',
+    language: 'cpp',
+    level: cppAdvTopic.difficulty.toLowerCase(),
+    title: cppAdvTopic.title,
+    prerequisites: cppAdvTopic.prerequisiteId ? [cppAdvTopic.prerequisiteId] : [],
+    content_standard: cppAdvTopic.conceptExplanation,
+    syntax: cppAdvTopic.syntax,
+    learningObjectives: cppAdvTopic.learningObjectives,
+    conceptExplanation: cppAdvTopic.conceptExplanation,
+    simpleExample: cppAdvTopic.simpleExample,
+    codeExample: cppAdvTopic.codeExample,
+    expectedOutput: cppAdvTopic.expectedOutput,
+    stepByStep: cppAdvTopic.stepByStep,
+    commonMistakes: cppAdvTopic.commonMistakes,
+    realWorldExample: cppAdvTopic.realWorldExample,
+    practice: cppAdvTopic.practice,
+    quiz: cppAdvTopic.quiz,
+    summary: cppAdvTopic.summary,
+    common_mistakes: cppAdvTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${cppAdvTopic.id}-sec-1`,
+        title: `1. Core Architectural Principle: ${cppAdvTopic.title}`,
+        order_index: 1,
+        content: cppAdvTopic.conceptExplanation,
+        code_snippet: cppAdvTopic.simpleExample.code,
+        pitfalls: cppAdvTopic.simpleExample.explanation,
+        mini_check: cppAdvTopic.quiz[0] ? {
+          question: cppAdvTopic.quiz[0].question,
+          options: cppAdvTopic.quiz[0].options,
+          correct_index: cppAdvTopic.quiz[0].correctIndex,
+          explanation: cppAdvTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${cppAdvTopic.id}-sec-2`,
+        title: `2. Generic Implementation & Memory Walkthrough`,
+        order_index: 2,
+        content: cppAdvTopic.stepByStep.join('\n\n'),
+        code_snippet: cppAdvTopic.codeExample,
+        pitfalls: cppAdvTopic.commonMistakes[0]?.explanation || 'Prevent memory leaks, dangling pointers, and invalid iterator access.',
+        mini_check: cppAdvTopic.quiz[1] ? {
+          question: cppAdvTopic.quiz[1].question,
+          options: cppAdvTopic.quiz[1].options,
+          correct_index: cppAdvTopic.quiz[1].correctIndex,
+          explanation: cppAdvTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${cppAdvTopic.id}-sec-3`,
+        title: `3. Production Real-World Application`,
+        order_index: 3,
+        content: `${cppAdvTopic.realWorldExample.scenario}\n\n${cppAdvTopic.realWorldExample.explanation}`,
+        code_snippet: cppAdvTopic.realWorldExample.code,
+        pitfalls: 'Manage container lifecycles and ownership boundaries cleanly.',
+        mini_check: cppAdvTopic.quiz[2] ? {
+          question: cppAdvTopic.quiz[2].question,
+          options: cppAdvTopic.quiz[2].options,
+          correct_index: cppAdvTopic.quiz[2].correctIndex,
+          explanation: cppAdvTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[cppAdvTopic.id] = cppAdvTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'hard',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[cppAdvTopic.id] = {
+    id: `code-${cppAdvTopic.id}`,
+    topic_id: cppAdvTopic.id,
+    language: 'cpp',
+    title: `${cppAdvTopic.title} Practical Challenge`,
+    difficulty: cppAdvTopic.difficulty.toLowerCase(),
+    problem_statement: cppAdvTopic.codingChallenge?.problem_statement || (cppAdvTopic.practice as any).description || (cppAdvTopic.practice as any).prompt || 'Solve the programming challenge.',
+    input_format: cppAdvTopic.codingChallenge?.input_format || 'Standard C++ console input stream.',
+    output_format: cppAdvTopic.codingChallenge?.output_format || 'Standard console output stream.',
+    constraints: cppAdvTopic.codingChallenge?.constraints || 'Standard C++17/20 limits.',
+    starter_code: {
+      cpp: cppAdvTopic.codingChallenge?.starter_code || (cppAdvTopic.practice as any).starter_code || (cppAdvTopic.practice as any).starterCode || '// Write your C++ solution here\n',
+      python: cppAdvTopic.codingChallenge?.starter_code || (cppAdvTopic.practice as any).starter_code || (cppAdvTopic.practice as any).starterCode || '# Write your solution here\n'
+    },
+    test_cases: cppAdvTopic.codingChallenge?.test_cases || [
+      {
+        input: '',
+        expected_output: cppAdvTopic.codingChallenge?.expected_output || ''
+      }
+    ]
+  };
+});
+
 // Populate all Java Fundamentals curriculum topics into mock details, quizzes, and coding challenges
 JAVA_FUNDAMENTALS_TOPICS.forEach((javaTopic) => {
   mockTopicDetails[javaTopic.id] = {
@@ -1413,6 +1787,305 @@ JAVA_FUNDAMENTALS_TOPICS.forEach((javaTopic) => {
       }
     ]
   };
+});
+
+// Populate all Java Object-Oriented Design curriculum topics into mock details, quizzes, and coding challenges
+JAVA_OOP_TOPICS.forEach((oopTopic) => {
+  mockTopicDetails[oopTopic.id] = {
+    id: oopTopic.id,
+    course_id: 'java-oop',
+    language: 'java',
+    level: oopTopic.difficulty.toLowerCase(),
+    title: oopTopic.title,
+    prerequisites: oopTopic.prerequisiteId ? [oopTopic.prerequisiteId] : [],
+    content_standard: oopTopic.conceptExplanation,
+    syntax: oopTopic.syntax,
+    learningObjectives: oopTopic.learningObjectives,
+    conceptExplanation: oopTopic.conceptExplanation,
+    simpleExample: oopTopic.simpleExample,
+    codeExample: oopTopic.codeExample,
+    expectedOutput: oopTopic.expectedOutput,
+    stepByStep: oopTopic.stepByStep,
+    commonMistakes: oopTopic.commonMistakes,
+    realWorldExample: oopTopic.realWorldExample,
+    practice: oopTopic.practice,
+    quiz: oopTopic.quiz,
+    summary: oopTopic.summary,
+    common_mistakes: oopTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${oopTopic.id}-sec-1`,
+        title: `1. Concept: ${oopTopic.title}`,
+        order_index: 1,
+        content: oopTopic.conceptExplanation,
+        code_snippet: oopTopic.simpleExample.code,
+        pitfalls: oopTopic.simpleExample.explanation,
+        mini_check: oopTopic.quiz[0] ? {
+          question: oopTopic.quiz[0].question,
+          options: oopTopic.quiz[0].options,
+          correct_index: oopTopic.quiz[0].correctIndex,
+          explanation: oopTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${oopTopic.id}-sec-2`,
+        title: `2. JVM Architecture & OOP Execution`,
+        order_index: 2,
+        content: oopTopic.stepByStep.join('\n\n'),
+        code_snippet: oopTopic.codeExample,
+        pitfalls: oopTopic.commonMistakes[0]?.explanation || 'Prevent NullPointerExceptions and strict type mismatches.',
+        mini_check: oopTopic.quiz[1] ? {
+          question: oopTopic.quiz[1].question,
+          options: oopTopic.quiz[1].options,
+          correct_index: oopTopic.quiz[1].correctIndex,
+          explanation: oopTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${oopTopic.id}-sec-3`,
+        title: `3. Enterprise Java OOP Application`,
+        order_index: 3,
+        content: `${oopTopic.realWorldExample.scenario}\n\n${oopTopic.realWorldExample.explanation}`,
+        code_snippet: oopTopic.realWorldExample.code,
+        pitfalls: 'Ensure strict encapsulation and contract adherence.',
+        mini_check: oopTopic.quiz[2] ? {
+          question: oopTopic.quiz[2].question,
+          options: oopTopic.quiz[2].options,
+          correct_index: oopTopic.quiz[2].correctIndex,
+          explanation: oopTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[oopTopic.id] = oopTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'medium',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[oopTopic.id] = {
+    id: `code-${oopTopic.id}`,
+    topic_id: oopTopic.id,
+    language: 'java',
+    title: oopTopic.codingChallenge?.title || `${oopTopic.title} Practice Challenge`,
+    difficulty: oopTopic.difficulty.toLowerCase(),
+    problem_statement: oopTopic.codingChallenge?.problem_statement || oopTopic.practice.prompt,
+    input_format: oopTopic.codingChallenge?.input_format || 'Standard Java System.in / Scanner input.',
+    output_format: oopTopic.codingChallenge?.output_format || 'Clean console output.',
+    constraints: oopTopic.codingChallenge?.constraints || 'Standard JVM execution limits.',
+    starter_code: {
+      java: oopTopic.codingChallenge?.starter_code || oopTopic.practice.starterCode,
+      python: oopTopic.codingChallenge?.starter_code || oopTopic.practice.starterCode
+    },
+    test_cases: oopTopic.codingChallenge?.test_cases && oopTopic.codingChallenge.test_cases.length > 0
+      ? oopTopic.codingChallenge.test_cases.map((tc: any) => ({
+          input: tc.input || '',
+          expected_output: tc.expected || tc.expected_output || ''
+        }))
+      : [
+          {
+            input: '',
+            expected_output: oopTopic.codingChallenge?.expected_output || oopTopic.practice.expectedOutputMatcher || ''
+          }
+        ]
+  };
+});
+
+// Populate all Advanced Java & Collections Framework curriculum topics into mock details, quizzes, and coding challenges
+JAVA_ADV_TOPICS.forEach((advTopic) => {
+  mockTopicDetails[advTopic.id] = {
+    id: advTopic.id,
+    course_id: 'java-adv',
+    language: 'java',
+    level: advTopic.difficulty.toLowerCase(),
+    title: advTopic.title,
+    prerequisites: advTopic.prerequisiteId ? [advTopic.prerequisiteId] : [],
+    content_standard: advTopic.conceptExplanation,
+    syntax: advTopic.syntax,
+    learningObjectives: advTopic.learningObjectives,
+    conceptExplanation: advTopic.conceptExplanation,
+    simpleExample: advTopic.simpleExample,
+    codeExample: advTopic.codeExample,
+    expectedOutput: advTopic.expectedOutput,
+    stepByStep: advTopic.stepByStep,
+    commonMistakes: advTopic.commonMistakes,
+    realWorldExample: advTopic.realWorldExample,
+    practice: advTopic.practice,
+    quiz: advTopic.quiz,
+    summary: advTopic.summary,
+    common_mistakes: advTopic.commonMistakes.map(m => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: [
+      {
+        id: `${advTopic.id}-sec-1`,
+        title: `1. Core Concept: ${advTopic.title}`,
+        order_index: 1,
+        content: advTopic.conceptExplanation,
+        code_snippet: advTopic.simpleExample.code,
+        pitfalls: advTopic.simpleExample.explanation,
+        mini_check: advTopic.quiz[0] ? {
+          question: advTopic.quiz[0].question,
+          options: advTopic.quiz[0].options,
+          correct_index: advTopic.quiz[0].correctIndex,
+          explanation: advTopic.quiz[0].explanation
+        } : undefined
+      },
+      {
+        id: `${advTopic.id}-sec-2`,
+        title: `2. Architecture & Concurrency / Memory Workflow`,
+        order_index: 2,
+        content: advTopic.stepByStep.join('\n\n'),
+        code_snippet: advTopic.codeExample,
+        pitfalls: advTopic.commonMistakes[0]?.explanation || 'Prevent concurrency deadlocks and memory retention bugs.',
+        mini_check: advTopic.quiz[1] ? {
+          question: advTopic.quiz[1].question,
+          options: advTopic.quiz[1].options,
+          correct_index: advTopic.quiz[1].correctIndex,
+          explanation: advTopic.quiz[1].explanation
+        } : undefined
+      },
+      {
+        id: `${advTopic.id}-sec-3`,
+        title: `3. Production Java Enterprise Application`,
+        order_index: 3,
+        content: `${advTopic.realWorldExample.scenario}\n\n${advTopic.realWorldExample.explanation}`,
+        code_snippet: advTopic.realWorldExample.code,
+        pitfalls: 'Ensure thread safety, bounded memory usage, and exception safety.',
+        mini_check: advTopic.quiz[2] ? {
+          question: advTopic.quiz[2].question,
+          options: advTopic.quiz[2].options,
+          correct_index: advTopic.quiz[2].correctIndex,
+          explanation: advTopic.quiz[2].explanation
+        } : undefined
+      }
+    ]
+  };
+
+  mockQuizzes[advTopic.id] = advTopic.quiz.map((q) => ({
+    id: q.id,
+    question: q.question,
+    code_snippet: q.codeSnippet,
+    options: q.options,
+    correct_index: q.correctIndex,
+    difficulty: q.difficulty || 'hard',
+    explanation: q.explanation
+  }));
+
+  mockCodingChallenges[advTopic.id] = {
+    id: `code-${advTopic.id}`,
+    topic_id: advTopic.id,
+    language: 'java',
+    title: advTopic.codingChallenge?.title || `${advTopic.title} Practice Challenge`,
+    difficulty: advTopic.difficulty.toLowerCase(),
+    problem_statement: advTopic.codingChallenge?.problem_statement || advTopic.practice.prompt,
+    input_format: advTopic.codingChallenge?.input_format || 'Standard Java System.in / Scanner input.',
+    output_format: advTopic.codingChallenge?.output_format || 'Clean console output.',
+    constraints: advTopic.codingChallenge?.constraints || 'Java 17+ JVM execution limits.',
+    starter_code: {
+      java: advTopic.codingChallenge?.starter_code || advTopic.practice.starterCode,
+      python: advTopic.codingChallenge?.starter_code || advTopic.practice.starterCode
+    },
+    test_cases: advTopic.codingChallenge?.test_cases && advTopic.codingChallenge.test_cases.length > 0
+      ? advTopic.codingChallenge.test_cases.map((tc: any) => ({
+          input: tc.input || '',
+          expected_output: tc.expected || tc.expected_output || ''
+        }))
+      : [
+          {
+            input: '',
+            expected_output: advTopic.codingChallenge?.expected_output || advTopic.practice.expectedOutputMatcher || ''
+          }
+        ]
+  };
+});
+
+// Populate all Advanced C Systems & Data Structures curriculum topics into mock details, quizzes, and coding challenges
+C_ADVANCED_TOPICS.forEach((cAdvTopic: any) => {
+  mockTopicDetails[cAdvTopic.id] = {
+    id: cAdvTopic.id,
+    course_id: 'c-advanced-systems',
+    language: 'c',
+    level: (cAdvTopic.difficulty || 'advanced').toLowerCase(),
+    title: cAdvTopic.title,
+    prerequisites: cAdvTopic.prerequisiteId ? [cAdvTopic.prerequisiteId] : [],
+    content_standard: cAdvTopic.conceptExplanation || cAdvTopic.content_standard,
+    content_detailed: cAdvTopic.content_detailed || cAdvTopic.conceptExplanation,
+    content_simplified: cAdvTopic.content_simplified || cAdvTopic.conceptExplanation,
+    syntax: cAdvTopic.syntax,
+    learningObjectives: cAdvTopic.learningObjectives,
+    conceptExplanation: cAdvTopic.conceptExplanation,
+    visualModel: cAdvTopic.visualModel,
+    codeExample: cAdvTopic.codeExample,
+    expectedOutput: cAdvTopic.expectedOutput,
+    lineByLineExplanation: cAdvTopic.lineByLineExplanation,
+    dryRun: cAdvTopic.dryRun,
+    keyTakeaways: cAdvTopic.keyTakeaways,
+    commonMistakes: cAdvTopic.commonMistakes,
+    realWorldApplications: cAdvTopic.realWorldApplications,
+    tryYourself: cAdvTopic.tryYourself,
+    quiz: cAdvTopic.quiz,
+    codingChallenge: cAdvTopic.codingChallenge,
+    lessonSummary: cAdvTopic.lessonSummary,
+    summary: cAdvTopic.lessonSummary,
+    common_mistakes: (cAdvTopic.commonMistakes || []).map((m: any) => `${m.mistake}: ${m.correction}. ${m.explanation}`).join('\n\n'),
+    sections: cAdvTopic.sections || [
+      {
+        id: `${cAdvTopic.id}-sec-1`,
+        title: `1. Conceptual Foundations: ${cAdvTopic.title}`,
+        order_index: 1,
+        content: cAdvTopic.conceptExplanation,
+        code_snippet: cAdvTopic.syntax,
+        pitfalls: cAdvTopic.commonMistakes?.[0]?.explanation || 'Understand pointer safety and allocation lifecycles.'
+      },
+      {
+        id: `${cAdvTopic.id}-sec-2`,
+        title: `2. Concrete Systems Implementation`,
+        order_index: 2,
+        content: cAdvTopic.lineByLineExplanation?.join('\n\n') || cAdvTopic.dryRun || '',
+        code_snippet: cAdvTopic.codeExample,
+        pitfalls: cAdvTopic.commonMistakes?.[1]?.explanation || 'Avoid memory leaks and dangling references.'
+      }
+    ]
+  };
+
+  if (cAdvTopic.quiz) {
+    mockQuizzes[cAdvTopic.id] = cAdvTopic.quiz.map((q: any) => ({
+      id: q.id,
+      question: q.question,
+      code_snippet: q.codeSnippet || undefined,
+      options: q.options,
+      correct_index: q.correctIndex,
+      correctIndex: q.correctIndex,
+      difficulty: q.difficulty || 'hard',
+      explanation: q.explanation
+    }));
+  }
+
+  if (cAdvTopic.codingChallenge) {
+    const cc = cAdvTopic.codingChallenge;
+    mockCodingChallenges[cAdvTopic.id] = {
+      id: `code-${cAdvTopic.id}`,
+      topic_id: cAdvTopic.id,
+      language: 'c',
+      title: cc.title || `${cAdvTopic.title} Systems Challenge`,
+      difficulty: (cAdvTopic.difficulty || 'advanced').toLowerCase(),
+      problem_statement: cc.problem_statement || `Implement the low-level C solution for ${cAdvTopic.title}.`,
+      input_format: cc.input_format || 'Standard C stdin input stream.',
+      output_format: cc.output_format || 'Standard console stdout output.',
+      constraints: cc.constraints || 'GCC C11 / C99 standard compliant execution.',
+      starter_code: cc.starter_code || '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+      starter_codes: {
+        c: cc.starter_code || '#include <stdio.h>\n\nint main() {\n    return 0;\n}',
+        python: '# C solution only'
+      },
+      test_cases: cc.test_cases || [],
+      solution: cc.solution_code || cc.starter_code || ''
+    };
+  }
 });
 
 // Populate all Python Intermediate curriculum topics into mock details, quizzes, and coding challenges
@@ -2192,19 +2865,21 @@ export const mockHandlers = {
   },
 
   askAiAssistant: async (payload: any) => {
-    const topic = payload.topic || 'Programming';
+    const topic = payload.section_title || payload.topic || 'Programming';
     const mode = payload.tutor_mode || 'EXPLAIN';
     const load = payload.cognitive_load || 'MEDIUM';
+    const lang = payload.language || 'python';
+    const langName = lang.toUpperCase();
 
     const answers: Record<string, string> = {
       SIMPLIFY: `### 🌱 Simplified Analogy: ${topic}\n\nThink of a **Function** like a **Vending Machine**: you put in money and select a code (arguments/parameters), the machine processes your request internally (execution logic), and it dispenses your drink (return value).\n\nYou don't need to know the gears inside the vending machine to get your soda—just like callers don't need to know internal variables to use the function!`,
-      DEBUG: `### 🛠️ Common Bug Diagnostic: ${topic}\n\n1. **Mutable Default Arguments**: Never write \`def fn(item, lst=[])\`. Use \`lst=None\` and initialize inside.\n2. **Off-By-One Errors**: Remember \`range(a, b)\` stops before \`b\`.\n3. **Shadowing Variables**: Keep parameter names distinct from outer globals.`,
-      EXPLAIN: `### 💡 Architectural Deep Dive: ${topic}\n\nIn Python, code is executed within stack frames. When a function executes, its local symbol table handles scope resolution following the **LEGB rule** (Local, Enclosing, Global, Built-in).`
+      DEBUG: `### 🛠️ Common Bug Diagnostic: ${topic}\n\n1. **Mutable Default Arguments**: Be careful with default arguments.\n2. **Off-By-One Errors**: Remember index bounds and loop conditions.\n3. **Shadowing Variables**: Keep parameter names distinct from outer globals.`,
+      EXPLAIN: `### 💡 Architectural Deep Dive: ${topic}\n\nIn ${langName}, code execution depends on the platform and runtime. When a function executes, its local symbol table handles scope resolution.`
     };
 
     return {
       answer: answers[mode] || answers.EXPLAIN,
-      sources: [`Knowledge Base: python/${topic.toLowerCase().replace(/\s+/g, '_')}.json`],
+      sources: [`Knowledge Base: ${lang}/${topic.toLowerCase().replace(/\s+/g, '_')}.json`],
       cognitive_mode_applied: load
     };
   },
@@ -2677,6 +3352,104 @@ export const mockHandlers = {
     };
   },
 
+  getCIntermediate: async () => {
+    const storedProgress = getStoredArray('cog_c_int_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    const adaptedLessons = getStoredArray('cog_c_int_adapted', []);
+    const adaptedMap: Record<string, any> = {};
+    adaptedLessons.forEach((a: any) => {
+      adaptedMap[a.topic_id] = a;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = C_INTERMEDIATE_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = C_INTERMEDIATE_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[C_INTERMEDIATE_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      const hasAdapted = !!adaptedMap[topic.id];
+      if (hasAdapted && status !== 'COMPLETED') {
+        status = 'ADAPTATION_AVAILABLE';
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: hasAdapted
+      };
+    });
+
+    const totalTopics = C_INTERMEDIATE_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: 'C Pointers & Memory Management',
+      subtitle: 'Master pointers, memory addresses, pointer arithmetic, arrays, strings, dynamic memory allocation, and memory management techniques in C.',
+      total_modules: 4,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 4,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      topics: topicsOutput
+    };
+  },
+
   getPythonIntermediate: async () => {
     const storedProgress = getStoredArray('cog_python_int_progress', []);
     const progressMap: Record<string, any> = {};
@@ -2893,7 +3666,10 @@ export const mockHandlers = {
     attempts_delta?: number;
     time_spent_delta?: number;
   }) => {
-    const storageKey = payload.topic_id.startsWith('top-c-')
+    const storageKey = C_INTERMEDIATE_TOPICS.some(t => t.id === payload.topic_id)
+      ? 'cog_c_int_progress'
+      : payload.topic_id.startsWith('top-c-')
+
       ? 'cog_c_progress'
       : payload.topic_id.startsWith('top-java-')
       ? 'cog_java_progress'
@@ -2933,6 +3709,433 @@ export const mockHandlers = {
     time_spent_delta?: number;
   }) => {
     return mockHandlers.updatePythonProgress(payload);
+  },
+
+  getCppFundamentals: async () => {
+    const storedProgress = getStoredArray('cog_cpp_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = CPP_FUNDAMENTALS_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = CPP_FUNDAMENTALS_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[CPP_FUNDAMENTALS_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: false
+      };
+    });
+
+    const totalTopics = CPP_FUNDAMENTALS_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + t.estimatedMinutes, 0);
+
+    return {
+      title: 'C++ Modern Fundamentals',
+      subtitle: 'Learn modern C++ programming from the ground up through structured lessons, interactive examples, hands-on coding exercises, quizzes, and adaptive explanations.',
+      total_modules: 3,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      topics: topicsOutput
+    };
+  },
+
+  getCppTopic: async (topicId: string) => {
+    const topic = CPP_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) || CPP_FUNDAMENTALS_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateCppProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_cpp_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_cpp_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeCppSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  getCppOopDashboard: async () => {
+    const storedProgress = getStoredArray('cog_cpp_oop_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = CPP_OOP_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    const topicsOutput = CPP_OOP_TOPICS.map((topic, idx) => {
+      const prog = progressMap[topic.id] || {};
+      let status = prog.status || 'NOT_STARTED';
+      const compPct = Number(prog.completion_pct || 0);
+      const quizScore = prog.quiz_score;
+
+      if (status === 'COMPLETED' || compPct >= 95) {
+        status = 'COMPLETED';
+        completedCount++;
+        if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+      } else if (status === 'IN_PROGRESS' || compPct > 0) {
+        status = 'IN_PROGRESS';
+        if (!firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      } else {
+        if (idx === 0) {
+          status = 'NOT_STARTED';
+        } else {
+          const prevProg = progressMap[CPP_OOP_TOPICS[idx - 1].id] || {};
+          if (prevProg.status === 'COMPLETED' || prevProg.completion_pct >= 95) {
+            status = 'NOT_STARTED';
+          } else {
+            status = 'LOCKED';
+          }
+        }
+        if (status !== 'LOCKED' && !firstIncompleteFound) {
+          currentTopicId = topic.id;
+          firstIncompleteFound = true;
+        }
+      }
+
+      return {
+        id: topic.id,
+        number: topic.number,
+        numberDisplay: topic.numberDisplay,
+        moduleId: topic.moduleId,
+        moduleTitle: topic.moduleTitle,
+        title: topic.title,
+        slug: topic.slug,
+        difficulty: topic.difficulty,
+        estimatedMinutes: topic.estimatedMinutes,
+        desc: topic.shortDescription,
+        status,
+        completion_percentage: compPct,
+        quiz_score: quizScore,
+        attempts: prog.attempts || 0,
+        time_spent_seconds: prog.time_spent_seconds || 0,
+        has_adapted_lesson: false
+      };
+    });
+
+    const totalTopics = CPP_OOP_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = topicsOutput
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((sum, t) => sum + (t.estimatedMinutes || 35), 0);
+
+    const allDone = completedCount === totalTopics && totalTopics > 0;
+
+    return {
+      title: 'Object-Oriented C++',
+      subtitle: 'Master object-oriented programming in C++ by learning how to design reusable, modular, and maintainable software with classes, inheritance, polymorphism, and memory management.',
+      language: 'cpp',
+      level: 'Intermediate',
+      total_modules: 1,
+      completed_modules: allDone ? 1 : 0,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      total_duration_hours: 10,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      topics: topicsOutput
+    };
+  },
+
+  getCppOopTopic: async (topicId: string) => {
+    const topic = CPP_OOP_TOPICS.find(t => t.id === topicId) || CPP_OOP_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateCppOopProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_cpp_oop_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_cpp_oop_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeCppOopSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  getCppAdvDashboard: async () => {
+    const storedProgress = getStoredArray('cog_cpp_adv_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = CPP_ADVANCED_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    let prevModuleCompleted = true; // Module 01 unlocked by default
+    const allProcessedTopics: any[] = [];
+    const moduleStats: any[] = [];
+
+    CPP_ADVANCED_MODULES.forEach((mod) => {
+      let modCompletedCount = 0;
+      const isModUnlocked = prevModuleCompleted;
+      const modProcessedTopics: any[] = [];
+
+      mod.topics.forEach((topic, tIdx) => {
+        const prog = progressMap[topic.id] || {};
+        let status = prog.status || 'NOT_STARTED';
+        const compPct = Number(prog.completion_pct || 0);
+        const quizScore = prog.quiz_score;
+
+        if (status === 'COMPLETED' || compPct >= 95) {
+          status = 'COMPLETED';
+          completedCount++;
+          modCompletedCount++;
+          if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+        } else if (status === 'IN_PROGRESS' || compPct > 0) {
+          status = 'IN_PROGRESS';
+          if (!firstIncompleteFound && isModUnlocked) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        } else {
+          if (!isModUnlocked) {
+            status = 'LOCKED';
+          } else {
+            if (tIdx === 0) {
+              status = 'NOT_STARTED';
+            } else {
+              const prevProg = modProcessedTopics[tIdx - 1];
+              if (prevProg && (prevProg.status === 'COMPLETED' || prevProg.status === 'IN_PROGRESS')) {
+                status = 'NOT_STARTED';
+              } else {
+                status = 'LOCKED';
+              }
+            }
+          }
+
+          if (status !== 'LOCKED' && !firstIncompleteFound) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        }
+
+        const processed = {
+          ...topic,
+          desc: topic.shortDescription,
+          status,
+          completion_percentage: compPct,
+          quiz_score: quizScore,
+          attempts: prog.attempts || 0,
+          time_spent_seconds: prog.time_spent_seconds || 0,
+          has_adapted_lesson: false
+        };
+
+        modProcessedTopics.push(processed);
+        allProcessedTopics.push(processed);
+      });
+
+      const modTotal = mod.topics.length;
+      const modPct = modTotal > 0 ? Math.round((modCompletedCount / modTotal) * 100) : 0;
+      const isModDone = modCompletedCount === modTotal && modTotal > 0;
+
+      moduleStats.push({
+        id: mod.id,
+        number: mod.number,
+        numberDisplay: mod.numberDisplay,
+        title: mod.title,
+        description: mod.description,
+        estimatedMinutes: mod.estimatedMinutes,
+        topicsCount: modTotal,
+        completedTopics: modCompletedCount,
+        completionPercentage: modPct,
+        isLocked: !isModUnlocked,
+        isCompleted: isModDone,
+        topics: modProcessedTopics
+      });
+
+      prevModuleCompleted = isModDone;
+    });
+
+    const totalTopics = CPP_ADVANCED_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = allProcessedTopics
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((sum, t) => sum + (t.estimatedMinutes || 25), 0);
+
+    const completedModulesCount = moduleStats.filter(m => m.isCompleted).length;
+
+    return {
+      title: 'Advanced C++ & STL Architecture',
+      subtitle: 'Master modern C++ programming through generic programming, Standard Template Library containers, iterators, algorithms, lambda expressions, and smart pointers. Develop efficient, reusable, and memory-safe applications using modern C++ techniques.',
+      language: 'cpp',
+      level: 'Advanced',
+      difficulty: 'Advanced',
+      total_modules: CPP_ADVANCED_MODULES.length,
+      completed_modules: completedModulesCount,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      total_duration_hours: 14,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      modules: moduleStats,
+      topics: allProcessedTopics
+    };
+  },
+
+  getCppAdvTopic: async (topicId: string) => {
+    const topic = CPP_ADVANCED_TOPICS.find(t => t.id === topicId) || CPP_ADVANCED_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateCppAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_cpp_adv_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_cpp_adv_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeCppAdvSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
   },
 
   getJavaFundamentals: async () => {
@@ -3042,6 +4245,558 @@ export const mockHandlers = {
   },
 
   analyzeJavaSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  getJavaOopDashboard: async () => {
+    const storedProgress = getStoredArray('cog_java_oop_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = JAVA_OOP_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    // Prerequisite sequential unlocking across modules
+    let prevModuleCompleted = true;
+
+    const moduleStats = JAVA_OOP_MODULES.map((mod) => {
+      let modCompletedCount = 0;
+      const isModuleUnlocked = prevModuleCompleted;
+
+      const modProcessedTopics = mod.topics.map((topic, tIdx) => {
+        const prog = progressMap[topic.id] || {};
+        let status = prog.status || 'NOT_STARTED';
+        const compPct = Number(prog.completion_pct || 0);
+        const quizScore = prog.quiz_score;
+
+        if (status === 'COMPLETED' || compPct >= 95) {
+          status = 'COMPLETED';
+          completedCount++;
+          modCompletedCount++;
+          if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+        } else if (status === 'IN_PROGRESS' || compPct > 0) {
+          status = 'IN_PROGRESS';
+          if (!firstIncompleteFound && isModuleUnlocked) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        } else {
+          if (!isModuleUnlocked) {
+            status = 'LOCKED';
+          } else {
+            if (tIdx === 0) {
+              status = 'NOT_STARTED';
+            } else {
+              const prevTopic = mod.topics[tIdx - 1];
+              const prevProg = progressMap[prevTopic.id] || {};
+              if (prevProg.status === 'COMPLETED' || (prevProg.completion_pct || 0) >= 95) {
+                status = 'NOT_STARTED';
+              } else {
+                status = 'LOCKED';
+              }
+            }
+          }
+          if (status !== 'LOCKED' && !firstIncompleteFound) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        }
+
+        return {
+          id: topic.id,
+          number: topic.number,
+          numberDisplay: topic.numberDisplay,
+          moduleId: topic.moduleId,
+          moduleTitle: topic.moduleTitle,
+          title: topic.title,
+          slug: topic.slug,
+          difficulty: topic.difficulty,
+          estimatedMinutes: topic.estimatedMinutes,
+          desc: topic.shortDescription,
+          status,
+          completion_percentage: compPct,
+          quiz_score: quizScore,
+          attempts: prog.attempts || 0,
+          time_spent_seconds: prog.time_spent_seconds || 0,
+          has_adapted_lesson: false
+        };
+      });
+
+      const modTotal = mod.topics.length;
+      const modPct = modTotal > 0 ? Math.round((modCompletedCount / modTotal) * 100) : 0;
+      const isModDone = modCompletedCount === modTotal && modTotal > 0;
+
+      prevModuleCompleted = isModDone;
+
+      return {
+        id: mod.id,
+        number: mod.number,
+        numberDisplay: mod.numberDisplay,
+        title: mod.title,
+        level: mod.level,
+        duration: mod.duration,
+        estimatedMinutes: mod.estimatedMinutes,
+        description: mod.description,
+        topicsCount: modTotal,
+        completedTopics: modCompletedCount,
+        completionPercentage: modPct,
+        isLocked: !isModuleUnlocked,
+        is_locked: !isModuleUnlocked,
+        isCompleted: isModDone,
+        is_completed: isModDone,
+        topics: modProcessedTopics
+      };
+    });
+
+    const allProcessedTopics = moduleStats.flatMap(m => m.topics);
+    const totalTopics = JAVA_OOP_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = allProcessedTopics
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + (t.estimatedMinutes || 20), 0);
+
+    const completedModulesCount = moduleStats.filter(m => m.isCompleted).length;
+
+    return {
+      title: 'Java Object-Oriented Design',
+      subtitle: 'Master object-oriented programming in Java by learning classes, objects, constructors, encapsulation, inheritance, polymorphism, abstraction, interfaces, and object-oriented design principles. Build reusable, maintainable, and scalable applications using real-world Java programming techniques.',
+      language: 'java',
+      level: 'Intermediate',
+      difficulty: 'Intermediate',
+      total_modules: JAVA_OOP_MODULES.length,
+      completed_modules: completedModulesCount,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 4,
+      estimated_remaining_minutes: remainingMinutes,
+      total_duration_hours: 10,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      modules: moduleStats,
+      topics: allProcessedTopics
+    };
+  },
+
+  getJavaOopTopic: async (topicId: string) => {
+    const topic = JAVA_OOP_TOPICS.find(t => t.id === topicId) || JAVA_OOP_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateJavaOopProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_java_oop_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_java_oop_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeJavaOopSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  getCAdvDashboard: async () => {
+    const storedProgress = getStoredArray('cog_c_adv_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = C_ADVANCED_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    let prevModuleCompleted = true;
+
+    const moduleStats = C_ADVANCED_MODULES.map((mod) => {
+      let modCompletedCount = 0;
+      const isModuleUnlocked = prevModuleCompleted;
+
+      const modProcessedTopics = mod.topics.map((topic, tIdx) => {
+        const prog = progressMap[topic.id] || {};
+        let status = prog.status || 'NOT_STARTED';
+        const compPct = Number(prog.completion_pct || 0);
+        const quizScore = prog.quiz_score;
+
+        if (status === 'COMPLETED' || compPct >= 95) {
+          status = 'COMPLETED';
+          completedCount++;
+          modCompletedCount++;
+          if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+        } else if (status === 'IN_PROGRESS' || compPct > 0) {
+          status = 'IN_PROGRESS';
+          if (!firstIncompleteFound && isModuleUnlocked) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        } else {
+          if (!isModuleUnlocked) {
+            status = 'LOCKED';
+          } else {
+            if (tIdx === 0) {
+              status = 'NOT_STARTED';
+            } else {
+              const prevTopic = mod.topics[tIdx - 1];
+              const prevProg = progressMap[prevTopic.id] || {};
+              if (prevProg.status === 'COMPLETED' || (prevProg.completion_pct || 0) >= 95) {
+                status = 'NOT_STARTED';
+              } else {
+                status = 'LOCKED';
+              }
+            }
+          }
+          if (status !== 'LOCKED' && !firstIncompleteFound) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        }
+
+        return {
+          id: topic.id,
+          number: topic.number,
+          numberDisplay: topic.numberDisplay,
+          moduleId: topic.moduleId,
+          moduleTitle: topic.moduleTitle,
+          title: topic.title,
+          slug: topic.slug,
+          difficulty: topic.difficulty,
+          estimatedMinutes: topic.estimatedMinutes,
+          desc: topic.shortDescription,
+          status,
+          completion_percentage: compPct,
+          quiz_score: quizScore,
+          attempts: prog.attempts || 0,
+          time_spent_seconds: prog.time_spent_seconds || 0,
+          has_adapted_lesson: false
+        };
+      });
+
+      const modTotal = mod.topics.length;
+      const modPct = modTotal > 0 ? Math.round((modCompletedCount / modTotal) * 100) : 0;
+      const isModDone = modCompletedCount === modTotal && modTotal > 0;
+
+      prevModuleCompleted = isModDone;
+
+      return {
+        id: mod.id,
+        number: mod.number,
+        numberDisplay: mod.numberDisplay,
+        title: mod.title,
+        level: mod.level,
+        duration: `${mod.estimatedHours} Hours`,
+        estimatedMinutes: mod.estimatedMinutes,
+        description: mod.description,
+        topicsCount: modTotal,
+        completedTopics: modCompletedCount,
+        completionPercentage: modPct,
+        isLocked: !isModuleUnlocked,
+        is_locked: !isModuleUnlocked,
+        isCompleted: isModDone,
+        is_completed: isModDone,
+        topics: modProcessedTopics
+      };
+    });
+
+    const allProcessedTopics = moduleStats.flatMap(m => m.topics);
+    const totalTopics = C_ADVANCED_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = allProcessedTopics
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
+
+    const completedModulesCount = moduleStats.filter(m => m.isCompleted).length;
+
+    return {
+      title: 'Advanced C Systems & Data Structures',
+      subtitle: 'Master structures, unions, file handling, linked lists, stacks, queues, trees, searching, sorting, and low-level systems programming through practical C implementations.',
+      language: 'c',
+      level: 'Advanced',
+      difficulty: 'Advanced',
+      total_modules: C_ADVANCED_MODULES.length,
+      completed_modules: completedModulesCount,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      total_duration_hours: 14,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      modules: moduleStats,
+      topics: allProcessedTopics
+    };
+  },
+
+  getCAdvTopic: async (topicId: string) => {
+    const topic = C_ADVANCED_TOPICS.find(t => t.id === topicId) || C_ADVANCED_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateCAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_c_adv_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_c_adv_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  updateCIntermediateProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_c_int_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_c_int_progress', current);
+    return { success: true, progress: updated };
+  },
+
+  analyzeCAdvSignals: async (payload: any) => {
+    return mockHandlers.analyzePythonSignals(payload);
+  },
+
+  getJavaAdvDashboard: async () => {
+    const storedProgress = getStoredArray('cog_java_adv_progress', []);
+    const progressMap: Record<string, any> = {};
+    storedProgress.forEach((p: any) => {
+      progressMap[p.topic_id] = p;
+    });
+
+    let completedCount = 0;
+    let quizCompletedCount = 0;
+    let currentTopicId = JAVA_ADV_TOPICS[0].id;
+    let firstIncompleteFound = false;
+
+    // Prerequisite sequential unlocking across modules
+    let prevModuleCompleted = true;
+
+    const moduleStats = JAVA_ADV_MODULES.map((mod) => {
+      let modCompletedCount = 0;
+      const isModuleUnlocked = prevModuleCompleted;
+
+      const modProcessedTopics = mod.topics.map((topic, tIdx) => {
+        const prog = progressMap[topic.id] || {};
+        let status = prog.status || 'NOT_STARTED';
+        const compPct = Number(prog.completion_pct || 0);
+        const quizScore = prog.quiz_score;
+
+        if (status === 'COMPLETED' || compPct >= 95) {
+          status = 'COMPLETED';
+          completedCount++;
+          modCompletedCount++;
+          if (quizScore !== undefined && quizScore > 0) quizCompletedCount++;
+        } else if (status === 'IN_PROGRESS' || compPct > 0) {
+          status = 'IN_PROGRESS';
+          if (!firstIncompleteFound && isModuleUnlocked) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        } else {
+          if (!isModuleUnlocked) {
+            status = 'LOCKED';
+          } else {
+            if (tIdx === 0) {
+              status = 'NOT_STARTED';
+            } else {
+              const prevTopic = mod.topics[tIdx - 1];
+              const prevProg = progressMap[prevTopic.id] || {};
+              if (prevProg.status === 'COMPLETED' || (prevProg.completion_pct || 0) >= 95) {
+                status = 'NOT_STARTED';
+              } else {
+                status = 'LOCKED';
+              }
+            }
+          }
+          if (status !== 'LOCKED' && !firstIncompleteFound) {
+            currentTopicId = topic.id;
+            firstIncompleteFound = true;
+          }
+        }
+
+        return {
+          id: topic.id,
+          number: topic.number,
+          numberDisplay: topic.numberDisplay,
+          moduleId: topic.moduleId,
+          moduleTitle: topic.moduleTitle,
+          title: topic.title,
+          slug: topic.slug,
+          difficulty: topic.difficulty,
+          estimatedMinutes: topic.estimatedMinutes,
+          desc: topic.shortDescription,
+          status,
+          completion_percentage: compPct,
+          quiz_score: quizScore,
+          attempts: prog.attempts || 0,
+          time_spent_seconds: prog.time_spent_seconds || 0,
+          has_adapted_lesson: false
+        };
+      });
+
+      const modTotal = mod.topics.length;
+      const modPct = modTotal > 0 ? Math.round((modCompletedCount / modTotal) * 100) : 0;
+      const isModDone = modCompletedCount === modTotal && modTotal > 0;
+
+      prevModuleCompleted = isModDone;
+
+      return {
+        id: mod.id,
+        number: mod.number,
+        numberDisplay: mod.numberDisplay,
+        title: mod.title,
+        level: mod.level,
+        duration: mod.duration,
+        estimatedMinutes: mod.estimatedMinutes,
+        description: mod.description,
+        topicsCount: modTotal,
+        completedTopics: modCompletedCount,
+        completionPercentage: modPct,
+        isLocked: !isModuleUnlocked,
+        is_locked: !isModuleUnlocked,
+        isCompleted: isModDone,
+        is_completed: isModDone,
+        topics: modProcessedTopics
+      };
+    });
+
+    const allProcessedTopics = moduleStats.flatMap(m => m.topics);
+    const totalTopics = JAVA_ADV_TOPICS.length;
+    const overallProgress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0;
+    const remainingMinutes = allProcessedTopics
+      .filter(t => t.status !== 'COMPLETED')
+      .reduce((acc, t) => acc + (t.estimatedMinutes || 25), 0);
+
+    const completedModulesCount = moduleStats.filter(m => m.isCompleted).length;
+
+    return {
+      title: 'Advanced Java & Collections Framework',
+      subtitle: 'Master advanced Java programming concepts, including the Collections Framework, generics, functional programming, streams, lambda expressions, concurrency, multithreading, and modern Java features.',
+      language: 'java',
+      level: 'Advanced',
+      difficulty: 'Advanced',
+      total_modules: JAVA_ADV_MODULES.length,
+      completed_modules: completedModulesCount,
+      total_topics: totalTopics,
+      completed_topics: completedCount,
+      quizzes_completed: quizCompletedCount,
+      overall_progress: overallProgress,
+      current_topic_id: currentTopicId,
+      streak_days: 5,
+      estimated_remaining_minutes: remainingMinutes,
+      total_duration_hours: 14,
+      learning_signals_status: 'Cognitive Engine Calibrated & Active',
+      modules: moduleStats,
+      topics: allProcessedTopics
+    };
+  },
+
+  getJavaAdvTopic: async (topicId: string) => {
+    const topic = JAVA_ADV_TOPICS.find(t => t.id === topicId) || JAVA_ADV_TOPICS[0];
+    return {
+      success: true,
+      topic
+    };
+  },
+
+  updateJavaAdvProgress: async (payload: {
+    topic_id: string;
+    status?: string;
+    completion_pct?: number;
+    quiz_score?: number;
+    attempts_delta?: number;
+    time_spent_delta?: number;
+  }) => {
+    const current = getStoredArray('cog_java_adv_progress', []);
+    const idx = current.findIndex((p: any) => p.topic_id === payload.topic_id);
+    const existing = idx >= 0 ? current[idx] : { topic_id: payload.topic_id, attempts: 0, time_spent_seconds: 0 };
+    const updated = {
+      ...existing,
+      status: payload.status || existing.status || 'IN_PROGRESS',
+      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (existing.completion_pct || 0),
+      quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : existing.quiz_score,
+      attempts: (existing.attempts || 0) + (payload.attempts_delta || 0),
+      time_spent_seconds: (existing.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+    };
+    if (idx >= 0) {
+      current[idx] = updated;
+    } else {
+      current.push(updated);
+    }
+    setStoredArray('cog_java_adv_progress', current);
+    return mockHandlers.updatePythonProgress(payload);
+  },
+
+  analyzeJavaAdvSignals: async (payload: any) => {
     return mockHandlers.analyzePythonSignals(payload);
   },
 

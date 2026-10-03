@@ -161,7 +161,25 @@ class CodeExecutor:
 
     @staticmethod
     def validate_c_code(code: str) -> Optional[str]:
-        """Validate C code syntax with compiler or structure analysis."""
+        """Validate C/C++ code syntax with compiler or structure analysis."""
+        # 0. Check if code is C++
+        is_cpp = ("<iostream>" in code or "std::" in code or "cout" in code or "namespace std" in code or "<vector>" in code or "<string>" in code)
+        if is_cpp:
+            open_b = code.count('{')
+            close_b = code.count('}')
+            if open_b != close_b:
+                return f"Compiler Error: Unmatched curly braces ({open_b} '{{' vs {close_b} '}}')"
+
+            open_p = code.count('(')
+            close_p = code.count(')')
+            if open_p != close_p:
+                return f"Compiler Error: Unmatched parentheses ({open_p} '(' vs {close_p} ')')"
+
+            if "main" not in code:
+                return "Compiler Error: Expected function 'main' in C++ program."
+
+            return None
+
         # 1. Check Clang if available
         if os.path.exists(CLANG_NDK_BIN) and os.path.exists(CLANG_NDK_SYSROOT):
             import tempfile
@@ -236,13 +254,45 @@ class CodeExecutor:
             if '//' in stripped:
                 stripped = stripped.split('//', 1)[0].strip()
 
-            if stripped.startswith('#'):
+            if stripped.startswith('#') or stripped.startswith('using namespace std'):
                 continue
 
             if stripped:
                 clean_lines.append(stripped)
 
         full_code = " ".join(clean_lines)
+
+        full_code = re.sub(r'using\s+namespace\s+std\s*;', '', full_code)
+
+        # Handle std::cout << a << b << endl;
+        def replace_cout(m):
+            stream_content = m.group(1).strip()
+            parts = stream_content.split('<<')
+            print_args = []
+            for p in parts:
+                p = p.strip()
+                if not p:
+                    continue
+                if p in ('endl', 'std::endl'):
+                    print_args.append('"\\n"')
+                elif p.startswith('"') and p.endswith('"'):
+                    print_args.append(p)
+                else:
+                    print_args.append(f"str({p})")
+            if print_args:
+                return f"_c_printf({' + '.join(print_args)});"
+            return "_c_printf('\\n');"
+
+        full_code = re.sub(r'(?:std::)?cout\s*<<\s*([^;]+);', replace_cout, full_code)
+
+        # Handle std::cin >> a >> b;
+        def replace_cin(m):
+            stream_content = m.group(1).strip()
+            vars = [v.strip() for v in stream_content.split('>>') if v.strip()]
+            assigns = [f"{v} = _read_token()" for v in vars]
+            return "; ".join(assigns) + ";"
+
+        full_code = re.sub(r'(?:std::)?cin\s*>>\s*([^;]+);', replace_cin, full_code)
 
         full_code = re.sub(r'\bprintf\s*\(', '_c_printf(', full_code)
 
@@ -376,6 +426,10 @@ class CodeExecutor:
         )
 
         # 7. Struct instantiation and pointer access
+        # struct Employee emp = { ... }; -> emp = Employee(...)
+        full_code = re.sub(r'\bstruct\s+([a-zA-Z_]\w*)\s+([a-zA-Z_]\w*)\s*=\s*\{\s*(.*?)\s*\};', r'\2 = \1(\3);', full_code)
+        # struct Employee emp; -> emp = Employee();
+        full_code = re.sub(r'\bstruct\s+([a-zA-Z_]\w*)\s+([a-zA-Z_]\w*)\s*;', r'\2 = \1();', full_code)
         # BankAccount acc = { initial }; -> acc = BankAccount(initial);
         full_code = re.sub(r'\b([A-Z]\w*)\s+([a-zA-Z_]\w*)\s*=\s*\{\s*(.*?)\s*\};', r'\2 = \1(\3);', full_code)
         # BankAccount acc; -> acc = BankAccount();
@@ -384,6 +438,8 @@ class CodeExecutor:
         full_code = full_code.replace('->', '.')
         # Strip & from function call arguments (e.g. deposit(&acc, val) -> deposit(acc, val))
         full_code = re.sub(r'(?<=[,\(])\s*&([a-zA-Z_]\w*)', r' \1', full_code)
+        # Strip C float literal suffix (e.g. 65000.00f -> 65000.00, 0.85f -> 0.85) without affecting format strings
+        full_code = re.sub(r'\b([0-9]+\.[0-9]+)[fF]\b', r'\1', full_code)
 
 
         tokens = []
@@ -426,6 +482,9 @@ class CodeExecutor:
         indent = 0
         py_lines = [C_RUNTIME_PREAMBLE] + struct_classes
         loop_step_stack = []
+        class_names = set()
+        class_members = {}
+        current_class = None
 
         def pad(s):
             return ("    " * indent) + s
@@ -439,21 +498,119 @@ class CodeExecutor:
                     _, step_code = loop_step_stack.pop()
                     py_lines.append(pad(step_code))
                 indent = max(0, indent - 1)
+                if indent == 0:
+                    current_class = None
                 continue
             elif p == ';':
                 continue
 
+            clean_p = p.strip()
+            clean_p = re.sub(r'^(?:public|private|protected)\s*:\s*', '', clean_p).strip()
+            clean_p = re.sub(r'\b(?:virtual|override|final|inline|explicit)\b', '', clean_p).strip()
+            clean_p = re.sub(r'\s+const$', '', clean_p).strip()
+            clean_p = clean_p.replace('->', '.')
 
-            # Function headers: int main(), int solve(), void func(...)
-            fn_match = re.match(r'^(?:(?:int|void|float|double|char|long|bool|auto)\s+)+([a-zA-Z_]\w*)\s*\((.*?)\)', p)
+            if clean_p in ('public:', 'private:', 'protected:', ''):
+                continue
+
+            # C++ Class / Struct Definition: class Student : public Person
+            cls_m = re.match(r'^(?:class|struct)\s+([a-zA-Z_]\w*)(?:\s*:\s*(?:public|private|protected)\s+([a-zA-Z_]\w*))?$', clean_p)
+            if cls_m:
+                cname = cls_m.group(1)
+                bname = cls_m.group(2)
+                class_names.add(cname)
+                current_class = cname
+                if cname not in class_members:
+                    class_members[cname] = set()
+                base_str = f"({bname})" if bname else ""
+                py_lines.append(pad(f"class {cname}{base_str}:"))
+                continue
+
+            # Constructor: Student() : name("Unknown"), age(0) {}
+            ctor_m = re.match(r'^([a-zA-Z_]\w*)\s*\((.*?)\)(?:\s*:\s*(.*))?$', clean_p)
+            if current_class and ctor_m and ctor_m.group(1) == current_class:
+                params = ctor_m.group(2)
+                init_list = ctor_m.group(3)
+                p_names = ['self']
+                for item in params.split(','):
+                    item = item.strip()
+                    if item:
+                        words = item.replace('&', ' ').replace('*', ' ').split()
+                        if words:
+                            p_names.append(words[-1])
+                py_lines.append(pad(f"def __init__({', '.join(p_names)}):"))
+                if init_list:
+                    inits = re.findall(r'([a-zA-Z_]\w*)\s*\((.*?)\)', init_list)
+                    for member, val in inits:
+                        py_lines.append(pad(f"    self.{member} = {val}"))
+                continue
+
+            # Destructor: ~Student()
+            if current_class and clean_p.startswith('~'):
+                py_lines.append(pad("def __del__(self): pass"))
+                continue
+
+            # Bare variable declaration in class: string name; int age;
+            if current_class and re.match(r'^(?:(?:int|void|float|double|char|long|bool|string)\s+)+([a-zA-Z_]\w*)$', clean_p):
+                var_m = re.match(r'^(?:(?:int|void|float|double|char|long|bool|string)\s+)+([a-zA-Z_]\w*)$', clean_p)
+                v = var_m.group(1)
+                class_members[current_class].add(v)
+                py_lines.append(pad(f"{v} = None"))
+                continue
+
+            # In class methods (indent >= 2), replace member variable references with self.<var>
+            if current_class and indent >= 2 and class_members.get(current_class):
+                for m in class_members[current_class]:
+                    clean_p = re.sub(r'(?<!\.)\b' + re.escape(m) + r'\b', f'self.{m}', clean_p)
+
+            # Object instantiation: Student s1; or Student s1("Jinesh", 19);
+            inst_m = re.match(r'^([a-zA-Z_]\w*)\s*\*?\s*([a-zA-Z_]\w*)\s*(?:=\s*new\s+[a-zA-Z_]\w*\s*)?(?:\((.*?)\))?$', clean_p)
+            if inst_m and inst_m.group(1) in class_names:
+                cname = inst_m.group(1)
+                vname = inst_m.group(2)
+                args = inst_m.group(3) or ""
+                py_lines.append(pad(f"{vname} = {cname}({args})"))
+                continue
+
+            # Method invocation: s1.display()
+            call_m = re.match(r'^([a-zA-Z_]\w*\.[a-zA-Z_]\w*)\s*\((.*?)\)$', clean_p)
+            if call_m:
+                py_lines.append(pad(f"{clean_p}"))
+                continue
+
+            # Member assignment: s1.name = "Jinesh" or this.age = 19
+            assign_m = re.match(r'^([a-zA-Z_]\w*\.[a-zA-Z_]\w*)\s*=\s*(.*)$', clean_p)
+            if assign_m:
+                target = assign_m.group(1)
+                if target.startswith('this.'):
+                    target = 'self.' + target[5:]
+                py_lines.append(pad(f"{target} = {assign_m.group(2)}"))
+                continue
+
+            # delete obj;
+            if clean_p.startswith('delete '):
+                continue
+
+            # printf / cout output call
+            if clean_p.startswith('_c_printf('):
+                py_lines.append(pad(clean_p))
+                continue
+
+            # return statement
+            if clean_p.startswith('return ') or clean_p == 'return':
+                py_lines.append(pad(clean_p))
+                continue
+
+            # Function/method headers: int main(), void display(), etc.
+            fn_match = re.match(r'^(?:(?:int|void|float|double|char|long|bool|auto|string)\s+)+([a-zA-Z_]\w*)\s*\((.*?)\)', clean_p)
             if fn_match:
                 fn_name = fn_match.group(1)
                 fn_params = fn_match.group(2)
-                param_names = []
+                param_names = ['self'] if current_class else []
                 for item in fn_params.split(','):
                     item = item.strip()
                     if item and item != 'void':
-                        words = item.replace('*', ' ').split()
+                        words = item.replace('*', ' ').replace('&', ' ').split()
                         if words:
                             param_names.append(words[-1])
                 py_lines.append(pad(f"def {fn_name}({', '.join(param_names)}):"))

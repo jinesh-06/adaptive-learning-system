@@ -73,6 +73,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({
         language: preferences.selected_language,
         level: preferences.current_level,
         topic: activeTopicId || 'loops',
+        section_title: currentTopicTitle,
         cognitive_load: currentLoad
       });
 

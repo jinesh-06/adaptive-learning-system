@@ -1,0 +1,5286 @@
+import { CommonMistake, PracticeChallenge, TopicQuizQuestion } from './pythonFundamentalsData';
+
+export interface JavaOopTopic {
+  id: string;
+  number: number;
+  numberDisplay: string;
+  moduleId: string;
+  moduleTitle: string;
+  title: string;
+  slug: string;
+  language: 'java';
+  shortDescription: string;
+  difficulty: string;
+  estimatedMinutes: number;
+  prerequisiteId: string | null;
+
+  learningObjectives: string[];
+  conceptExplanation: string;
+  visualDiagram?: string;
+  simpleExample: {
+    code: string;
+    explanation: string;
+  };
+  syntax: string;
+  codeExample: string;
+  expectedOutput: string;
+  stepByStep: string[];
+  commonMistakes: CommonMistake[];
+  realWorldExample: {
+    scenario: string;
+    code: string;
+    explanation: string;
+  };
+  practice: PracticeChallenge;
+  quiz: TopicQuizQuestion[];
+  codingChallenge?: {
+    title?: string;
+    difficulty?: string;
+    problem_statement?: string;
+    input_format?: string;
+    output_format?: string;
+    constraints?: string;
+    starter_code?: string;
+    expected_output?: string;
+    test_cases?: any[];
+    [key: string]: any;
+  };
+  summary: string[];
+}
+
+export interface JavaOopModule {
+  id: string;
+  number: number;
+  numberDisplay: string;
+  title: string;
+  level: string;
+  duration: string;
+  description: string;
+  estimatedMinutes: number;
+  topicCount: number;
+  topics: JavaOopTopic[];
+}
+
+// Authoritative 37-Topic Curriculum for Java Object-Oriented Design
+export const JAVA_OOP_TOPICS: JavaOopTopic[] = [
+  {
+    "id": "top-java-oop-intro",
+    "number": 1,
+    "numberDisplay": "01",
+    "moduleId": "mod-java-oop-01",
+    "moduleTitle": "MODULE 01: Introduction to Object-Oriented Programming",
+    "title": "Introduction to OOP",
+    "slug": "intro-to-oop",
+    "language": "java",
+    "shortDescription": "Understand the foundations of OOP, procedural vs. object-oriented programming, and the four fundamental pillars.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": null,
+    "learningObjectives": [
+      "Differentiate between procedural and object-oriented programming paradigms",
+      "Identify the architectural advantages and industry use cases of OOP in Java",
+      "Understand the core four pillars: Encapsulation, Inheritance, Polymorphism, and Abstraction",
+      "Recognize how Java structures enterprise software around domain models"
+    ],
+    "conceptExplanation": "Object-Oriented Programming (OOP) is a software design paradigm that structures code around objects rather than actions, and data rather than pure procedural logic. In traditional procedural programming (such as C), programs consist of global data structures manipulated by standalone functions. As codebases grow, procedural systems become brittle because any function can mutate global state without access control.\n\nJava is strictly object-oriented: every executable instruction and state variable resides inside a class. OOP solves procedural brittleness by bundling state (fields) and behavior (methods) together into cohesive units. The paradigm rests on Four Pillars:\n1. Encapsulation: Bundling data and behavior while restricting direct external access to mutable state.\n2. Inheritance: Enabling new classes to acquire properties and behaviors of existing classes to foster reusability.\n3. Polymorphism: Allowing entities to take on multiple forms through interfaces and dynamic method dispatch.\n4. Abstraction: Concealing internal operational complexity behind simplified public interfaces.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     PARADIGM ARCHITECTURAL SHIFT                        |\n+-------------------------------------------------------------------------+\n| PROCEDURAL (C style):                                                   |\n|   [Global Data] <---> FunctionA() <---> FunctionB() <---> FunctionC()   |\n|   * Unprotected state, high coupling, difficult testing.               |\n+-------------------------------------------------------------------------+\n| OBJECT-ORIENTED (Java):                                                 |\n|   +-----------------------+       +-----------------------+             |\n|   | Student Object        |       | Course Object         |             |\n|   | - id, name, gpa       | ----> | - courseCode, title   |             |\n|   | + enroll(), grade()   |       | + addStudent()        |             |\n|   +-----------------------+       +-----------------------+             |\n|   * Encapsulated state, modular boundaries, extensible contracts.       |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Standard Java Class Definition blueprint\npublic class EntityName {\n    // 1. Encapsulated State (Fields)\n    private String identifier;\n\n    // 2. Behavioral Methods\n    public void performAction() {\n        // Domain logic\n    }\n}",
+    "simpleExample": {
+      "code": "public class VehicleDemo {\n    static class Car {\n        String brand;\n        int speed;\n\n        void accelerate(int delta) {\n            speed += delta;\n            System.out.println(brand + \" speed is now: \" + speed + \" km/h\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Car car1 = new Car();\n        car1.brand = \"Tesla\";\n        car1.accelerate(50);\n    }\n}",
+      "explanation": "A Car class bundles brand and speed state with the accelerate method. Instantiating it produces an independent object."
+    },
+    "codeExample": "public class ParadigmComparison {\n    // Domain object encapsulating account state & operations\n    static class Account {\n        private final String accountNumber;\n        private double balance;\n\n        public Account(String accNo, double initialBalance) {\n            this.accountNumber = accNo;\n            this.balance = Math.max(0.0, initialBalance);\n        }\n\n        public void deposit(double amount) {\n            if (amount > 0) {\n                this.balance += amount;\n                System.out.println(\"Deposited $\" + amount + \", Balance: $\" + this.balance);\n            }\n        }\n\n        public double getBalance() {\n            return this.balance;\n        }\n    }\n\n    public static void main(String[] args) {\n        Account acc = new Account(\"ACC-9821\", 500.0);\n        acc.deposit(250.0);\n        System.out.println(\"Final verified balance: $\" + acc.getBalance());\n    }\n}",
+    "expectedOutput": "Deposited $250.0, Balance: $750.0\nFinal verified balance: $750.0",
+    "stepByStep": [
+      "JVM loads ParadigmComparison class and creates execution frame for main.",
+      "Account constructor runs, establishing private fields in heap memory.",
+      "deposit() validates incoming transfer amount before updating internal state.",
+      "Controlled getter provides read access to caller without exposing mutable pointer."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Writing all business logic inside static helper methods with global variables.",
+        "correction": "Model stateful entities as instantiable domain classes with instance methods.",
+        "explanation": "Static procedures bypass polymorphism and concurrency-safe object encapsulation."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Banking Transaction Processing Engine",
+      "code": "public class BankingSystem {\n    static class Transaction {\n        String id;\n        double amount;\n        boolean execute() { return true; }\n    }\n}",
+      "explanation": "Enterprise payment gateways represent each charge as an immutable Transaction entity with lifecycle methods."
+    },
+    "practice": {
+      "prompt": "Create a Student class containing name, registerNumber, and marks. Create two student objects and display their details.",
+      "starterCode": "public class StudentExercise {\n    static class Student {\n        // Declare fields: name, regNo, marks\n        // Add display() method\n    }\n\n    public static void main(String[] args) {\n        // Instantiate two students and invoke display()\n    }\n}",
+      "expectedOutputMatcher": "RegNo",
+      "hint": "Declare fields inside Student class, initialize them with object dot notation or constructor, and print them.",
+      "solution": "public class StudentExercise {\n    static class Student {\n        String name;\n        String regNo;\n        double marks;\n\n        void display() {\n            System.out.println(\"RegNo: \" + regNo + \" | Name: \" + name + \" | Marks: \" + marks);\n        }\n    }\n\n    public static void main(String[] args) {\n        Student s1 = new Student();\n        s1.name = \"Alice\"; s1.regNo = \"CS101\"; s1.marks = 92.5;\n        s1.display();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-intro-1",
+        "question": "Which of the following is NOT one of the four primary pillars of Object-Oriented Programming?",
+        "options": [
+          "Encapsulation",
+          "Polymorphism",
+          "Compilation",
+          "Abstraction"
+        ],
+        "correctIndex": 2,
+        "explanation": "The four pillars of OOP are Encapsulation, Abstraction, Inheritance, and Polymorphism. Compilation is a build process."
+      },
+      {
+        "id": "quiz-java-oop-intro-2",
+        "question": "What is the primary drawback of procedural programming that OOP addresses?",
+        "options": [
+          "Procedural code cannot execute loops",
+          "Global state can be arbitrarily modified by any function, leading to tight coupling",
+          "Procedural programming requires more memory than OOP",
+          "Java does not support procedural constructs"
+        ],
+        "correctIndex": 1,
+        "explanation": "Procedural programming separates data from procedures, making state changes hard to track and maintain across large projects."
+      },
+      {
+        "id": "quiz-java-oop-intro-3",
+        "question": "In Java, what does an object represent?",
+        "options": [
+          "A primitive integer data type",
+          "An instance of a class containing state and behavior",
+          "A compiler warning",
+          "A static package definition"
+        ],
+        "correctIndex": 1,
+        "explanation": "An object is a concrete, runtime instance of a class allocated in heap memory."
+      },
+      {
+        "id": "quiz-java-oop-intro-4",
+        "question": "Which pillar bundles fields and methods together while restricting direct access to internal state?",
+        "options": [
+          "Inheritance",
+          "Encapsulation",
+          "Dynamic Binding",
+          "Type Inference"
+        ],
+        "correctIndex": 1,
+        "explanation": "Encapsulation binds data and behavioral logic together and shields internal variables from direct external mutation."
+      },
+      {
+        "id": "quiz-java-oop-intro-5",
+        "question": "Where are Java objects stored during application execution?",
+        "options": [
+          "Stack Memory",
+          "Heap Memory",
+          "Method Area (Metaspace)",
+          "CPU Registers"
+        ],
+        "correctIndex": 1,
+        "explanation": "In Java, all objects created with the new keyword reside in Heap Memory, while references live on the call stack."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Build a Domain Model for a Smart Thermostat",
+      "difficulty": "Intermediate",
+      "problem_statement": "Design a SmartThermostat class with location (String), currentTemp (double), and targetTemp (double). Provide methods to adjustTarget(double newTarget) and printStatus().",
+      "input_format": "Initial temperatures and adjustments via method calls.",
+      "output_format": "Formatted status string displaying location and current vs target temperature.",
+      "starter_code": "public class ThermostatChallenge {\n    static class SmartThermostat {\n        // Complete class definition\n    }\n\n    public static void main(String[] args) {\n        // Test your thermostat\n    }\n}",
+      "expected_output": "Living Room: Current=21.5C, Target=24.0C",
+      "test_cases": [
+        {
+          "input": "Living Room 21.5 24.0",
+          "expected_output": "Living Room: Current=21.5C, Target=24.0C"
+        }
+      ]
+    },
+    "summary": [
+      "OOP groups state and behavior into cohesive, reusable software units called classes.",
+      "The four pillars (Encapsulation, Abstraction, Inheritance, Polymorphism) deliver modularity and scalability.",
+      "Objects reside in Heap memory, whereas references are maintained on the thread Call Stack.",
+      "Design clean domain classes to maintain invariants and prevent brittle global state."
+    ]
+  },
+  {
+    "id": "top-java-oop-classes-objects",
+    "number": 2,
+    "numberDisplay": "02",
+    "moduleId": "mod-java-oop-01",
+    "moduleTitle": "MODULE 01: Introduction to Object-Oriented Programming",
+    "title": "Classes and Objects",
+    "slug": "classes-and-objects",
+    "language": "java",
+    "shortDescription": "Master class blueprints, object instantiation using the new operator, reference variables, and memory allocation.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-intro",
+    "learningObjectives": [
+      "Define classes as user-defined reference types and blueprints",
+      "Instantiate multiple independent objects using the new keyword",
+      "Understand JVM stack vs heap allocation for object references and payloads",
+      "Inspect object state changes across independent instances"
+    ],
+    "conceptExplanation": "A Class is a blueprint or template that defines the structure (fields) and capabilities (methods) of a user-defined type. It does not occupy runtime memory for state until instantiated.\n\nAn Object is a concrete runtime realization of a class. The statement `Car c = new Car();` performs three distinct actions:\n1. Declaration: Allocates a reference variable `c` on the thread's stack.\n2. Instantiation & Allocation: `new` allocates memory for the Car's instance variables in the JVM Heap.\n3. Initialization: Invokes the constructor to set default or specified initial values and returns the memory address reference.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     JVM MEMORY LAYOUT: STACK VS HEAP                    |\n+-------------------------------------------------------------------------+\n| CALL STACK                               HEAP MEMORY                    |\n| +--------------------+                   +----------------------------+ |\n| | main() Frame       |                   | Object 1 (0x100A)          | |\n| |   c1 (ref: 0x100A) | ----------------> | brand: \"Honda\"             | |\n| |                    |                   | year:  2022                | |\n| |   c2 (ref: 0x200B) | ------+           +----------------------------+ |\n| +--------------------+       |           | Object 2 (0x200B)          | |\n|                              +---------> | brand: \"Toyota\"            | |\n|                                          | year:  2024                | |\n|                                          +----------------------------+ |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Class Blueprint declaration\nclass Book {\n    String title;\n    double price;\n}\n\n// Instantiation syntax\nBook b1 = new Book();\nb1.title = \"Effective Java\";",
+    "simpleExample": {
+      "code": "public class ClassObjectDemo {\n    static class Point {\n        int x;\n        int y;\n    }\n\n    public static void main(String[] args) {\n        Point p1 = new Point();\n        Point p2 = new Point();\n        p1.x = 10; p1.y = 20;\n        p2.x = 50; p2.y = 60;\n        System.out.println(\"P1: (\" + p1.x + \",\" + p1.y + \")\");\n        System.out.println(\"P2: (\" + p2.x + \",\" + p2.y + \")\");\n    }\n}",
+      "explanation": "p1 and p2 hold distinct references to independent Point objects in heap memory. Modifying p1 does not alter p2."
+    },
+    "codeExample": "public class BookStoreApp {\n    static class Book {\n        String isbn;\n        String title;\n        double price;\n\n        void applyDiscount(double percent) {\n            this.price -= (this.price * (percent / 100.0));\n        }\n\n        void printDetails() {\n            System.out.println(title + \" (\" + isbn + \") -> $\" + String.format(\"%.2f\", price));\n        }\n    }\n\n    public static void main(String[] args) {\n        Book bookA = new Book();\n        bookA.isbn = \"978-0134685991\";\n        bookA.title = \"Effective Java\";\n        bookA.price = 55.00;\n\n        Book bookB = new Book();\n        bookB.isbn = \"978-0596009205\";\n        bookB.title = \"Head First Design Patterns\";\n        bookB.price = 48.00;\n\n        bookA.applyDiscount(10.0);\n        bookA.printDetails();\n        bookB.printDetails();\n    }\n}",
+    "expectedOutput": "Effective Java (978-0134685991) -> $49.50\nHead First Design Patterns (978-0596009205) -> $48.00",
+    "stepByStep": [
+      "Two distinct Book instances are allocated on the Heap with unique references.",
+      "bookA.applyDiscount modifies solely the price field of the bookA instance.",
+      "bookB maintains its original price without cross-instance side effects."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Thinking `Book b1 = b2;` creates a deep copy of the object.",
+        "correction": "Recognize that assignment copies the memory reference pointer, not the heap object itself.",
+        "explanation": "After `b1 = b2`, both references point to the exact same heap memory location."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "E-Commerce User Session Management",
+      "code": "public class SessionStore {\n    static class UserSession {\n        String sessionId;\n        long loginTimestamp;\n    }\n}",
+      "explanation": "Web servers instantiate an individual UserSession object for each concurrent logged-in client."
+    },
+    "practice": {
+      "prompt": "Create an Employee class with id, name, and department. Instantiate 2 employees and print their information.",
+      "starterCode": "public class EmployeePractice {\n    static class Employee {\n        int id;\n        String name;\n        String department;\n    }\n\n    public static void main(String[] args) {\n        // Instantiate and print 2 employee objects\n    }\n}",
+      "expectedOutputMatcher": "Employee",
+      "hint": "Use new Employee(), set fields with dot notation, and print with System.out.println.",
+      "solution": "public class EmployeePractice {\n    static class Employee {\n        int id;\n        String name;\n        String department;\n        void printInfo() {\n            System.out.println(\"Employee \" + id + \": \" + name + \" [\" + department + \"]\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Employee e1 = new Employee();\n        e1.id = 101; e1.name = \"Carlos\"; e1.department = \"Engineering\";\n        e1.printInfo();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-classes-1",
+        "question": "What happens when `Car c1 = new Car();` executes in Java?",
+        "options": [
+          "A reference c1 is created on the stack, and a Car object is allocated in heap memory",
+          "Car is compiled into native machine code on disk",
+          "A static Car is added to the permanent generation",
+          "c1 is saved directly into the database"
+        ],
+        "correctIndex": 0,
+        "explanation": "Reference variables live on the stack and store the memory address of the allocated heap object."
+      },
+      {
+        "id": "quiz-java-oop-classes-2",
+        "question": "If `Point p1 = new Point(); Point p2 = p1;`, what happens if you mutate `p2.x = 99`?",
+        "options": [
+          "Only p2.x becomes 99; p1.x remains unchanged",
+          "Both p1.x and p2.x reflect 99 because both reference the same object",
+          "A NullPointerException is thrown",
+          "p2 creates an isolated clone of p1"
+        ],
+        "correctIndex": 1,
+        "explanation": "In Java, assigning reference variables copies the reference address, so p1 and p2 alias the same object."
+      },
+      {
+        "id": "quiz-java-oop-classes-3",
+        "question": "What is the default value of an uninitialized instance variable of type `String` inside a newly created object?",
+        "options": [
+          "\"\"",
+          "null",
+          "undefined",
+          "0"
+        ],
+        "correctIndex": 1,
+        "explanation": "All uninitialized object reference fields in Java default to `null`."
+      },
+      {
+        "id": "quiz-java-oop-classes-4",
+        "question": "Can multiple independent objects be instantiated from a single class definition?",
+        "options": [
+          "No, only one object per class is permitted",
+          "Yes, an unlimited number of objects can be instantiated subject to heap memory",
+          "Only if the class is marked static",
+          "Only if the class implements Serializable"
+        ],
+        "correctIndex": 1,
+        "explanation": "A class is a reusable blueprint from which arbitrarily many instances can be allocated."
+      },
+      {
+        "id": "quiz-java-oop-classes-5",
+        "question": "Which operator is responsible for allocating memory dynamically on the Java heap?",
+        "options": [
+          "malloc",
+          "alloc",
+          "new",
+          "create"
+        ],
+        "correctIndex": 2,
+        "explanation": "Java uses the `new` operator to dynamically allocate memory on the heap and invoke the constructor."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Inventory Item Tracker",
+      "difficulty": "Intermediate",
+      "problem_statement": "Define an Item class with sku (String), quantity (int), and unitPrice (double). Implement calculateTotalValue() and a main method that computes total stock value for 2 items.",
+      "input_format": "Item parameters initialized in code.",
+      "output_format": "Formatted total inventory valuation string.",
+      "starter_code": "public class InventoryChallenge {\n    static class Item {\n        // Complete Item class\n    }\n\n    public static void main(String[] args) {\n        // Instantiate items and calculate total\n    }\n}",
+      "expected_output": "Total Valuation: $350.00",
+      "test_cases": [
+        {
+          "input": "Item1: 10 * 20.0, Item2: 5 * 30.0",
+          "expected_output": "Total Valuation: $350.00"
+        }
+      ]
+    },
+    "summary": [
+      "A Class is a blueprint; an Object is an active instance allocated in Heap memory.",
+      "Reference assignment (`a = b`) creates an alias to the same heap object, not a clone.",
+      "Instance variables hold object-specific state; methods execute behavior upon that state.",
+      "Uninitialized instance fields receive default values (`0`, `false`, `null`)."
+    ]
+  },
+  {
+    "id": "top-java-oop-instance-variables-methods",
+    "number": 3,
+    "numberDisplay": "03",
+    "moduleId": "mod-java-oop-01",
+    "moduleTitle": "MODULE 01: Introduction to Object-Oriented Programming",
+    "title": "Instance Variables and Methods",
+    "slug": "instance-variables-methods",
+    "language": "java",
+    "shortDescription": "Distinguish instance variables from local variables, master member invocation, and understand object references.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-classes-objects",
+    "learningObjectives": [
+      "Contrast lifecycle and scoping differences between local and instance variables",
+      "Invoke instance methods using object reference variables",
+      "Understand how the implicit this reference links methods to the target instance",
+      "Manage object state transformations through dedicated instance methods"
+    ],
+    "conceptExplanation": "Variables in Java fall into distinct categories based on scope and lifecycle:\n1. Instance Variables (Fields): Declared inside a class but outside methods. They belong to a specific object instance, are created on the Heap when the object is instantiated, and persist until the object is garbage-collected.\n2. Local Variables: Declared inside a method, constructor, or block. They are created on the Stack when execution enters the block and destroyed immediately upon block exit. Local variables do NOT receive default values and must be initialized before use.\n\nInstance Methods operate on the instance variables of the calling object via the implicit `this` reference.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                 LIFECYCLE: INSTANCE VS LOCAL VARIABLES                  |\n+-------------------------------------------------------------------------+\n| Class Person {                                                          |\n|     String name; // INSTANCE VARIABLE: Lives in Heap inside Person      |\n|                                                                         |\n|     void celebrateBirthday(int yearsToAdd) {                            |\n|         int futureAge = 30 + yearsToAdd; // LOCAL VAR: Lives on Stack   |\n|     } // futureAge destroyed when celebrateBirthday() returns           |\n| }                                                                       |\n+-------------------------------------------------------------------------+",
+    "syntax": "class Circle {\n    // Instance Variable (Heap)\n    double radius;\n\n    // Instance Method\n    double calculateArea() {\n        double pi = 3.14159; // Local Variable (Stack)\n        return pi * radius * radius;\n    }\n}",
+    "simpleExample": {
+      "code": "public class CounterDemo {\n    static class Clicker {\n        int count; // instance var, defaults to 0\n\n        void click() {\n            int step = 1; // local var\n            count += step;\n        }\n    }\n\n    public static void main(String[] args) {\n        Clicker c = new Clicker();\n        c.click();\n        c.click();\n        System.out.println(\"Total clicks: \" + c.count);\n    }\n}",
+      "explanation": "count persists across multiple click() method calls because it lives in the Clicker instance on the Heap."
+    },
+    "codeExample": "public class VariableScopeDemo {\n    static class BankCustomer {\n        String customerName;\n        double accountBalance;\n\n        void transfer(BankCustomer recipient, double amount) {\n            // amount is local to transfer method call\n            if (this.accountBalance >= amount) {\n                this.accountBalance -= amount;\n                recipient.accountBalance += amount;\n                System.out.println(\"Transferred $\" + amount + \" from \" + this.customerName + \" to \" + recipient.customerName);\n            }\n        }\n    }\n\n    public static void main(String[] args) {\n        BankCustomer c1 = new BankCustomer();\n        c1.customerName = \"Elena\";\n        c1.accountBalance = 1000.0;\n\n        BankCustomer c2 = new BankCustomer();\n        c2.customerName = \"Marcus\";\n        c2.accountBalance = 250.0;\n\n        c1.transfer(c2, 300.0);\n        System.out.println(c1.customerName + \" Balance: $\" + c1.accountBalance);\n        System.out.println(c2.customerName + \" Balance: $\" + c2.accountBalance);\n    }\n}",
+    "expectedOutput": "Transferred $300.0 from Elena to Marcus\nElena Balance: $700.0\nMarcus Balance: $550.0",
+    "stepByStep": [
+      "c1 and c2 are allocated in Heap memory with distinct accountBalance values.",
+      "transfer method uses `this` (c1) and recipient (c2) reference arguments to alter balances.",
+      "amount exists only during execution of the stack frame and is popped on return."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using a local variable without initializing it with a value.",
+        "correction": "Always initialize local variables before reading from them.",
+        "explanation": "Java compiler flags uninitialized local variable access as compile-time error: 'variable might not have been initialized'."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Order Processing Checkout Pipeline",
+      "code": "public class CheckoutService {\n    static class Order {\n        String orderId;\n        double subtotal;\n        double calculateTotal(double taxRate) {\n            double tax = subtotal * taxRate;\n            return subtotal + tax;\n        }\n    }\n}",
+      "explanation": "subtotal is an instance field stored with the order; taxRate and tax are ephemeral local variables."
+    },
+    "practice": {
+      "prompt": "Create a Rectangle class with width and height instance variables and calculateArea() and calculatePerimeter() instance methods.",
+      "starterCode": "public class RectangleDemo {\n    static class Rectangle {\n        // Complete Rectangle class\n    }\n\n    public static void main(String[] args) {\n        // Test rectangle calculations\n    }\n}",
+      "expectedOutputMatcher": "Area",
+      "hint": "Area is width * height; perimeter is 2 * (width + height).",
+      "solution": "public class RectangleDemo {\n    static class Rectangle {\n        double width;\n        double height;\n        double calculateArea() { return width * height; }\n        double calculatePerimeter() { return 2 * (width + height); }\n    }\n\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle();\n        r.width = 5.0; r.height = 4.0;\n        System.out.println(\"Area: \" + r.calculateArea());\n        System.out.println(\"Perimeter: \" + r.calculatePerimeter());\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-methods-1",
+        "question": "What is the key difference between local variables and instance variables in Java?",
+        "options": [
+          "Local variables are stored in the Heap; instance variables live on the Stack",
+          "Instance variables receive default initial values, whereas local variables must be explicitly initialized",
+          "Local variables can have access modifiers like private and public",
+          "Instance variables cease to exist once a method finishes executing"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java automatically initializes instance fields to default values (0, null, false), but local variables must be initialized before read access."
+      },
+      {
+        "id": "quiz-java-oop-methods-2",
+        "question": "Which keyword represents the reference to the current object executing an instance method?",
+        "options": [
+          "self",
+          "base",
+          "this",
+          "super"
+        ],
+        "correctIndex": 2,
+        "explanation": "In Java, `this` refers to the current invoking instance."
+      },
+      {
+        "id": "quiz-java-oop-methods-3",
+        "question": "Can access modifiers (public, private, protected) be applied to local variables inside a method?",
+        "options": [
+          "Yes, private can be used for sensitive variables",
+          "No, only final or no modifier is permitted on local variables",
+          "Yes, all four access modifiers are valid on local variables",
+          "Only in static methods"
+        ],
+        "correctIndex": 1,
+        "explanation": "Local variables exist only within their method block; access modifiers are not applicable (only `final` is valid)."
+      },
+      {
+        "id": "quiz-java-oop-methods-4",
+        "question": "Where are instance variables allocated in memory?",
+        "options": [
+          "On the Call Stack",
+          "Inside CPU L1 Cache",
+          "Within the object payload on the Heap",
+          "In the Classloader Metaspace"
+        ],
+        "correctIndex": 2,
+        "explanation": "Instance variables reside inside the object's allocated memory block on the JVM Heap."
+      },
+      {
+        "id": "quiz-java-oop-methods-5",
+        "question": "What happens if a local variable has the same name as an instance variable?",
+        "options": [
+          "Compiler throws DuplicateVariableException",
+          "The local variable shadows the instance variable; `this.var` must be used to access the instance field",
+          "The instance variable is permanently overwritten",
+          "Both variables are merged into a composite array"
+        ],
+        "correctIndex": 1,
+        "explanation": "This is known as variable shadowing. The local variable takes precedence in scope unless qualified with `this.`."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Vehicle Fleet Fuel Efficiency Calculator",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a Vehicle class with make (String), totalMiles (double), and gallonsConsumed (double). Implement calculateMPG() and hasHigherEfficiencyThan(Vehicle other).",
+      "input_format": "Fleet vehicle parameters initialized in code.",
+      "output_format": "Efficiency comparisons and MPG calculations.",
+      "starter_code": "public class VehicleChallenge {\n    static class Vehicle {\n        // Complete vehicle implementation\n    }\n\n    public static void main(String[] args) {\n        // Compare two vehicles\n    }\n}",
+      "expected_output": "Vehicle A: 32.5 MPG, Vehicle B: 24.0 MPG",
+      "test_cases": [
+        {
+          "input": "Car1: 325mi / 10gal, Car2: 240mi / 10gal",
+          "expected_output": "Vehicle A: 32.5 MPG, Vehicle B: 24.0 MPG"
+        }
+      ]
+    },
+    "summary": [
+      "Instance variables define persistent object state on the Heap.",
+      "Local variables exist temporarily on the Stack for the duration of a method frame.",
+      "Instance methods use the implicit `this` reference to inspect and mutate caller state.",
+      "Variable shadowing occurs when a local variable shares a name with an instance field."
+    ]
+  },
+  {
+    "id": "top-java-oop-constructors-intro",
+    "number": 4,
+    "numberDisplay": "04",
+    "moduleId": "mod-java-oop-02",
+    "moduleTitle": "MODULE 02: Constructors and Object Initialization",
+    "title": "Introduction to Constructors",
+    "slug": "constructors-intro",
+    "language": "java",
+    "shortDescription": "Understand constructor naming rules, default constructors, differences from methods, and object initialization mechanics.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-instance-variables-methods",
+    "learningObjectives": [
+      "Explain the role of constructors in establishing valid object state",
+      "Differentiate constructors from standard methods (no return type, class name matching)",
+      "Understand the compiler-synthesized default no-arg constructor",
+      "Recognize when default constructors are and are not provided"
+    ],
+    "conceptExplanation": "A Constructor in Java is a special block of code called when an instance of an object is created with `new`. Its primary purpose is to initialize instance variables to valid starting values and perform necessary setup.\n\nKey Rules for Constructors:\n1. Name Match: A constructor MUST have the exact same name as the enclosing class (case-sensitive).\n2. No Return Type: Constructors do NOT have a return type, not even `void`. If you add `void`, Java treats it as a regular method.\n3. Default Constructor: If you declare NO constructors in your class, the Java compiler automatically synthesizes a public, no-argument default constructor that calls `super()`. However, the moment you declare ANY constructor (such as parameterized), the compiler withdraws the automatic default constructor.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     CONSTRUCTOR INVOCATION FLOW                         |\n+-------------------------------------------------------------------------+\n| Statement: BankAccount acc = new BankAccount();                         |\n|                                                                         |\n| 1. 'new' allocates raw memory block on Heap for BankAccount             |\n| 2. All fields initialized to binary zeros (0, 0.0, false, null)         |\n| 3. BankAccount() constructor executes -> sets custom initial values     |\n| 4. Heap reference address (e.g., 0x4A2) returned to 'acc' variable      |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Device {\n    String serialNumber;\n\n    // Constructor: No return type, name matches class\n    public Device() {\n        this.serialNumber = \"GEN-\" + System.currentTimeMillis();\n    }\n}",
+    "simpleExample": {
+      "code": "public class ConstructorDemo {\n    static class Box {\n        int width;\n        int height;\n\n        // Explicit no-argument constructor\n        public Box() {\n            width = 10;\n            height = 10;\n            System.out.println(\"Default 10x10 Box initialized\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Box b = new Box();\n        System.out.println(\"Dimensions: \" + b.width + \"x\" + b.height);\n    }\n}",
+      "explanation": "Calling `new Box()` triggers the Box constructor, which initializes width and height to 10."
+    },
+    "codeExample": "public class DefaultConstructorRules {\n    static class ExplicitOnly {\n        String name;\n\n        // Parameterized constructor declared\n        public ExplicitOnly(String name) {\n            this.name = name;\n        }\n    }\n\n    public static void main(String[] args) {\n        ExplicitOnly obj = new ExplicitOnly(\"ProductionNode\");\n        System.out.println(\"Constructed node: \" + obj.name);\n        // Note: 'new ExplicitOnly()' will fail compilation because\n        // the compiler withdrew the default no-arg constructor!\n    }\n}",
+    "expectedOutput": "Constructed node: ProductionNode",
+    "stepByStep": [
+      "ExplicitOnly declares a single constructor accepting a String parameter.",
+      "Java compiler suppresses generation of the implicit zero-argument constructor.",
+      "new ExplicitOnly(\"ProductionNode\") executes cleanly.",
+      "Instantiating without arguments would produce compile error: constructor ExplicitOnly() is undefined."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Adding `void` to a constructor definition, e.g. `public void Car() {}`.",
+        "correction": "Omit `void` and any return type completely from constructor signatures.",
+        "explanation": "If `void` is present, the compiler treats it as a regular method named `Car`, not a constructor."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Database Connection Pool Initializer",
+      "code": "public class ConnectionPool {\n    int poolSize;\n    public ConnectionPool() {\n        this.poolSize = 10; // Sensible default\n    }\n}",
+      "explanation": "Default constructors establish production-safe connection timeouts, thread limits, and pool sizes."
+    },
+    "practice": {
+      "prompt": "Create a CoffeeCup class with an explicit no-argument constructor that sets capacity to 250 (ml) and type to 'Espresso'.",
+      "starterCode": "public class CoffeeExercise {\n    static class CoffeeCup {\n        int capacity;\n        String type;\n        // Add constructor here\n    }\n    public static void main(String[] args) {\n        // Instantiate and print\n    }\n}",
+      "expectedOutputMatcher": "250",
+      "hint": "Write public CoffeeCup() { capacity = 250; type = \"Espresso\"; }.",
+      "solution": "public class CoffeeExercise {\n    static class CoffeeCup {\n        int capacity;\n        String type;\n        public CoffeeCup() {\n            this.capacity = 250;\n            this.type = \"Espresso\";\n        }\n    }\n    public static void main(String[] args) {\n        CoffeeCup cup = new CoffeeCup();\n        System.out.println(cup.type + \" capacity: \" + cup.capacity + \"ml\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-const-1",
+        "question": "When does the Java compiler generate a default no-argument constructor for a class?",
+        "options": [
+          "Always, for every class without exception",
+          "Only when NO constructors of any kind are explicitly declared in the class",
+          "Only when the class is declared public",
+          "Only when the class implements an interface"
+        ],
+        "correctIndex": 1,
+        "explanation": "If any explicit constructor is defined by the developer, the compiler will NOT generate a default no-arg constructor."
+      },
+      {
+        "id": "quiz-java-oop-const-2",
+        "question": "What is the return type of a Java constructor?",
+        "options": [
+          "void",
+          "Object",
+          "int",
+          "Constructors have no return type"
+        ],
+        "correctIndex": 3,
+        "explanation": "Constructors have no return type. Specifying any return type (even void) converts the declaration into a regular method."
+      },
+      {
+        "id": "quiz-java-oop-const-3",
+        "question": "What happens if you write `public void Account() {}` in a class named `Account`?",
+        "options": [
+          "It defines a valid constructor",
+          "It causes a compilation error",
+          "It defines a regular instance method named Account, not a constructor",
+          "It converts Account into an abstract class"
+        ],
+        "correctIndex": 2,
+        "explanation": "Because it includes `void`, Java parses it as a standard instance method with the same name as the class."
+      },
+      {
+        "id": "quiz-java-oop-const-4",
+        "question": "Can a constructor be declared with the `private` access modifier?",
+        "options": [
+          "No, constructors must always be public",
+          "Yes, private constructors prevent external instantiation (used in Singleton patterns and utility classes)",
+          "Only in abstract classes",
+          "Only if the class is inside an anonymous package"
+        ],
+        "correctIndex": 1,
+        "explanation": "Private constructors prevent callers from instantiating the class directly, which is foundational to Singletons."
+      },
+      {
+        "id": "quiz-java-oop-const-5",
+        "question": "Which keyword triggers constructor execution during runtime?",
+        "options": [
+          "init",
+          "new",
+          "create",
+          "construct"
+        ],
+        "correctIndex": 1,
+        "explanation": "The `new` keyword allocates heap memory and invokes the constructor matching the parameter list."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Configurable System Service Initializer",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a SystemService class with serviceName (String), maxThreads (int), and enabled (boolean). Implement a no-arg constructor that initializes serviceName to 'AuthService', maxThreads to 16, and enabled to true.",
+      "input_format": "No input needed, verify default initialization.",
+      "output_format": "Formatted service configuration string.",
+      "starter_code": "public class ServiceChallenge {\n    static class SystemService {\n        // Complete constructor\n    }\n    public static void main(String[] args) {\n        // Test service\n    }\n}",
+      "expected_output": "Service: AuthService, Threads: 16, Enabled: true",
+      "test_cases": [
+        {
+          "input": "default",
+          "expected_output": "Service: AuthService, Threads: 16, Enabled: true"
+        }
+      ]
+    },
+    "summary": [
+      "Constructors initialize object state upon heap allocation.",
+      "Constructors share the class name and have NO return type.",
+      "The compiler synthesizes a default no-argument constructor ONLY if zero constructors are defined.",
+      "Private constructors prevent external instantiation."
+    ]
+  },
+  {
+    "id": "top-java-oop-parameterized-constructors",
+    "number": 5,
+    "numberDisplay": "05",
+    "moduleId": "mod-java-oop-02",
+    "moduleTitle": "MODULE 02: Constructors and Object Initialization",
+    "title": "Parameterized Constructors",
+    "slug": "parameterized-constructors",
+    "language": "java",
+    "shortDescription": "Pass arguments during instantiation, initialize custom state, and master constructor overloading in Java.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-constructors-intro",
+    "learningObjectives": [
+      "Define parameterized constructors to enforce required initialization arguments",
+      "Overload constructors with varying signatures and data types",
+      "Prevent objects from entering invalid states upon creation",
+      "Use this keyword to resolve parameter and field shadowing"
+    ],
+    "conceptExplanation": "A Parameterized Constructor is a constructor that accepts arguments, allowing callers to supply custom initial state when instantiating an object (`new Employee(101, \"Sarah\", 85000.0)`). This prevents objects from existing in partially initialized or invalid states.\n\nConstructor Overloading allows a class to have multiple constructors with differing parameter lists (different number of arguments, different data types, or different argument order). Java selects the appropriate constructor at compile time based on the invocation signature.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     CONSTRUCTOR OVERLOADING DISPATCH                    |\n+-------------------------------------------------------------------------+\n| Class User:                                                             |\n|   User()                           --> Sets defaults: \"Guest\", 0        |\n|   User(String username)            --> Sets username, balance: 0        |\n|   User(String username, double b)  --> Sets username, custom balance    |\n|                                                                         |\n| Caller: new User(\"Alex\", 150.0) -> Dispatches to 3rd constructor        |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Product {\n    private String id;\n    private double price;\n\n    // Overloaded Constructor 1: ID only\n    public Product(String id) {\n        this.id = id;\n        this.price = 0.0;\n    }\n\n    // Overloaded Constructor 2: ID and Price\n    public Product(String id, double price) {\n        this.id = id;\n        this.price = price;\n    }\n}",
+    "simpleExample": {
+      "code": "public class ParameterizedDemo {\n    static class Coordinate {\n        int x, y;\n\n        Coordinate(int x, int y) {\n            this.x = x;\n            this.y = y;\n        }\n    }\n\n    public static void main(String[] args) {\n        Coordinate c = new Coordinate(45, 90);\n        System.out.println(\"Point: (\" + c.x + \",\" + c.y + \")\");\n    }\n}",
+      "explanation": "Passing 45 and 90 directly into new Coordinate initializes x and y immediately upon allocation."
+    },
+    "codeExample": "public class BankAccountCreation {\n    static class Account {\n        String holder;\n        String accountNumber;\n        double balance;\n\n        // Constructor 1: Basic account with default $0.00\n        public Account(String holder, String accountNumber) {\n            this.holder = holder;\n            this.accountNumber = accountNumber;\n            this.balance = 0.0;\n        }\n\n        // Constructor 2: Account with opening deposit\n        public Account(String holder, String accountNumber, double initialDeposit) {\n            this.holder = holder;\n            this.accountNumber = accountNumber;\n            this.balance = Math.max(0.0, initialDeposit);\n        }\n\n        void display() {\n            System.out.println(holder + \" [\" + accountNumber + \"] -> Balance: $\" + balance);\n        }\n    }\n\n    public static void main(String[] args) {\n        Account a1 = new Account(\"Maya Patel\", \"AC-1001\");\n        Account a2 = new Account(\"Liam Scott\", \"AC-1002\", 1250.75);\n        a1.display();\n        a2.display();\n    }\n}",
+    "expectedOutput": "Maya Patel [AC-1001] -> Balance: $0.0\nLiam Scott [AC-1002] -> Balance: $1250.75",
+    "stepByStep": [
+      "a1 matches the two-parameter (String, String) constructor; balance defaults to 0.0.",
+      "a2 matches the three-parameter constructor; balance is set to 1250.75.",
+      "Both instances achieve fully validated initialization."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Attempting to overload constructors by changing only parameter names rather than types or counts.",
+        "correction": "Ensure parameter types, counts, or sequence differ between overloaded signatures.",
+        "explanation": "The compiler differentiates overloads strictly by type signature, not parameter variable identifiers."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "HTTP Request Builder Configuration",
+      "code": "public class HttpRequestConfig {\n    String url;\n    int timeoutMs;\n    public HttpRequestConfig(String url) { this.url = url; this.timeoutMs = 5000; }\n    public HttpRequestConfig(String url, int timeout) { this.url = url; this.timeoutMs = timeout; }\n}",
+      "explanation": "Allows fast default setup while granting advanced clients control over timeouts and headers."
+    },
+    "practice": {
+      "prompt": "Create a Laptop class with brand, ramGb, and price. Provide a 2-arg constructor (brand, ramGb) and a 3-arg constructor (brand, ramGb, price).",
+      "starterCode": "public class LaptopPractice {\n    static class Laptop {\n        // Complete Laptop class with overloaded constructors\n    }\n    public static void main(String[] args) {\n        // Test both constructors\n    }\n}",
+      "expectedOutputMatcher": "RAM",
+      "hint": "Check that the 2-arg constructor assigns a default price like 500.0.",
+      "solution": "public class LaptopPractice {\n    static class Laptop {\n        String brand;\n        int ramGb;\n        double price;\n        Laptop(String brand, int ramGb) {\n            this.brand = brand; this.ramGb = ramGb; this.price = 500.0;\n        }\n        Laptop(String brand, int ramGb, double price) {\n            this.brand = brand; this.ramGb = ramGb; this.price = price;\n        }\n    }\n    public static void main(String[] args) {\n        Laptop l1 = new Laptop(\"Dell\", 16, 899.99);\n        System.out.println(l1.brand + \" RAM: \" + l1.ramGb + \"GB $\" + l1.price);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-param-1",
+        "question": "What is constructor overloading in Java?",
+        "options": [
+          "Writing a constructor in a subclass with the same name as the parent class",
+          "Defining multiple constructors in the same class with different parameter lists",
+          "Allocating more heap memory than allowed by the JVM",
+          "Making a constructor static"
+        ],
+        "correctIndex": 1,
+        "explanation": "Constructor overloading occurs when a class contains multiple constructors with distinct parameter signatures."
+      },
+      {
+        "id": "quiz-java-oop-param-2",
+        "question": "How does the Java compiler differentiate between overloaded constructors?",
+        "options": [
+          "By parameter names in the definition",
+          "By the return type",
+          "By the number, data types, and order of parameters",
+          "By the access modifier"
+        ],
+        "correctIndex": 2,
+        "explanation": "Overload resolution inspects the argument types, count, and order passed at the invocation site."
+      },
+      {
+        "id": "quiz-java-oop-param-3",
+        "question": "If a class defines `public Person(String name) {}`, can you instantiate it with `new Person()`?",
+        "options": [
+          "Yes, Java always supplies a default constructor",
+          "No, because defining a parameterized constructor suppresses the automatic default constructor",
+          "Only if you call Person.init() first",
+          "Yes, but name will be set to null"
+        ],
+        "correctIndex": 1,
+        "explanation": "Once any constructor is explicitly declared, Java does not generate a default no-argument constructor."
+      },
+      {
+        "id": "quiz-java-oop-param-4",
+        "question": "Why is the `this` keyword used inside `this.name = name;`?",
+        "options": [
+          "To allocate new heap memory",
+          "To distinguish the instance variable `this.name` from the incoming parameter `name`",
+          "To prevent garbage collection",
+          "To make the field private"
+        ],
+        "correctIndex": 1,
+        "explanation": "`this.name` refers to the instance field, resolving shadowing caused by parameter `name`."
+      },
+      {
+        "id": "quiz-java-oop-param-5",
+        "question": "Can two constructors in the same class have identical parameter types in the exact same order?",
+        "options": [
+          "Yes, if their parameter names differ",
+          "No, the compiler will report a duplicate constructor error",
+          "Yes, if one is public and the other is protected",
+          "Only if one is marked synchronized"
+        ],
+        "correctIndex": 1,
+        "explanation": "Parameter names do not participate in type signatures; identical type lists constitute a duplicate constructor error."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Flexible Book Order Constructor Suite",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a BookOrder class with orderId, bookTitle, quantity, and expeditedShipping. Support constructors: 1) orderId, bookTitle (defaults: qty=1, expedited=false), and 2) orderId, bookTitle, quantity, expeditedShipping.",
+      "input_format": "Constructor arguments for various order types.",
+      "output_format": "Formatted order summary.",
+      "starter_code": "public class OrderChallenge {\n    static class BookOrder {\n        // Implement constructors\n    }\n    public static void main(String[] args) {\n        // Test orders\n    }\n}",
+      "expected_output": "Order ORD-1: Clean Code x1 (Expedited: false)",
+      "test_cases": [
+        {
+          "input": "ORD-1, Clean Code",
+          "expected_output": "Order ORD-1: Clean Code x1 (Expedited: false)"
+        }
+      ]
+    },
+    "summary": [
+      "Parameterized constructors allow callers to supply necessary initial state at creation time.",
+      "Constructor overloading provides multiple creation strategies for diverse use cases.",
+      "Defining parameterized constructors suppresses the automatic default constructor.",
+      "Use `this.field = param` to cleanly handle parameter variable shadowing."
+    ]
+  },
+  {
+    "id": "top-java-oop-constructor-chaining",
+    "number": 6,
+    "numberDisplay": "06",
+    "moduleId": "mod-java-oop-02",
+    "moduleTitle": "MODULE 02: Constructors and Object Initialization",
+    "title": "Constructor Chaining",
+    "slug": "constructor-chaining",
+    "language": "java",
+    "shortDescription": "Eliminate redundant initialization logic using this() within the same class and understand execution rules.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-parameterized-constructors",
+    "learningObjectives": [
+      "Use the this() syntax to delegate object construction to sibling constructors",
+      "Understand why this() must be the very first statement in a constructor body",
+      "Prevent recursive constructor invocation compile errors",
+      "Centralize validation and initialization logic in a master constructor"
+    ],
+    "conceptExplanation": "Constructor Chaining is the practice of calling one constructor from another within the same class (or across inheritance hierarchies). In Java, calling another constructor in the same class is done via `this(arguments)`.\n\nCritical Rules for `this()`:\n1. First Statement Rule: `this()` MUST be the very first executable statement in the constructor body. You cannot execute preparatory logic before delegating.\n2. No Recursive Loops: Constructor calls cannot be circular (Constructor A calling B, and B calling A). The compiler detects and forbids recursive constructor invocation.\n3. Mutually Exclusive with `super()`: A constructor cannot contain both `this()` and `super()`, because both require being the first statement.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     CONSTRUCTOR CHAINING DELEGATION                     |\n+-------------------------------------------------------------------------+\n| User()                    User(name)                  User(name, email) |\n|   |                         |                            [Master]       |\n|   +--> this(\"Guest\")        +--> this(name, \"none\")         |           |\n|           |                            |                    v           |\n|           +----------------------------+----------> Validates & Sets    |\n|                                                     Fields in Memory    |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Member {\n    private String name;\n    private int tier;\n\n    public Member() {\n        this(\"Unknown\", 1); // Delegating to sibling constructor\n    }\n\n    public Member(String name, int tier) {\n        this.name = name;\n        this.tier = tier;\n    }\n}",
+    "simpleExample": {
+      "code": "public class ChainingDemo {\n    static class Dimensions {\n        int length, width, height;\n\n        // Cube constructor delegates to general 3D constructor\n        Dimensions(int side) {\n            this(side, side, side);\n        }\n\n        Dimensions(int length, int width, int height) {\n            this.length = length;\n            this.width = width;\n            this.height = height;\n        }\n    }\n\n    public static void main(String[] args) {\n        Dimensions cube = new Dimensions(5);\n        System.out.println(\"Volume: \" + (cube.length * cube.width * cube.height));\n    }\n}",
+      "explanation": "new Dimensions(5) invokes the 1-arg constructor, which immediately delegates to the 3-arg constructor using this(5, 5, 5)."
+    },
+    "codeExample": "public class CleanConstructorChaining {\n    static class BankCustomer {\n        String id;\n        String name;\n        String tier;\n        double creditLimit;\n\n        // 1. Minimum details constructor\n        public BankCustomer(String id, String name) {\n            this(id, name, \"STANDARD\", 1000.0);\n        }\n\n        // 2. Custom tier constructor\n        public BankCustomer(String id, String name, String tier) {\n            this(id, name, tier, tier.equals(\"VIP\") ? 10000.0 : 2500.0);\n        }\n\n        // 3. Master constructor: Centralized validation and assignment\n        public BankCustomer(String id, String name, String tier, double creditLimit) {\n            this.id = id;\n            this.name = name;\n            this.tier = tier;\n            this.creditLimit = creditLimit;\n        }\n\n        void printProfile() {\n            System.out.println(id + \" | \" + name + \" | Tier: \" + tier + \" | Limit: $\" + creditLimit);\n        }\n    }\n\n    public static void main(String[] args) {\n        BankCustomer c1 = new BankCustomer(\"C-01\", \"Jordan\");\n        BankCustomer c2 = new BankCustomer(\"C-02\", \"Valerie\", \"VIP\");\n        c1.printProfile();\n        c2.printProfile();\n    }\n}",
+    "expectedOutput": "C-01 | Jordan | Tier: STANDARD | Limit: $1000.0\nC-02 | Valerie | Tier: VIP | Limit: $10000.0",
+    "stepByStep": [
+      "c1 invokes the 2-argument constructor, which delegates to the 4-argument master constructor.",
+      "c2 invokes the 3-argument constructor, which computes VIP limit and delegates to master.",
+      "Initialization logic is strictly centralized, preventing code duplication."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Placing statements before `this()`, e.g., `System.out.println(\"init\"); this(10);`.",
+        "correction": "Ensure `this(...)` is the very first statement inside the constructor block.",
+        "explanation": "Java specifications strictly require constructor delegation to occur before any other bytecode execution."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Spring Framework Bean Configuration",
+      "code": "public class DataSourceConfig {\n    String host;\n    int port;\n    public DataSourceConfig() { this(\"localhost\", 5432); }\n    public DataSourceConfig(String host, int port) { this.host = host; this.port = port; }\n}",
+      "explanation": "Enterprise frameworks provide no-arg configuration beans that chain into full-parameter production factories."
+    },
+    "practice": {
+      "prompt": "Create an Account class with accountNumber, holderName, and balance. Chain a 2-arg constructor (accountNumber, holderName) to a 3-arg constructor with a default balance of 100.0.",
+      "starterCode": "public class ChainingPractice {\n    static class Account {\n        // Implement using this()\n    }\n    public static void main(String[] args) {\n        // Test chaining\n    }\n}",
+      "expectedOutputMatcher": "100.0",
+      "hint": "In Account(num, name), call this(num, name, 100.0) as the first statement.",
+      "solution": "public class ChainingPractice {\n    static class Account {\n        String num, name;\n        double balance;\n        Account(String num, String name) {\n            this(num, name, 100.0);\n        }\n        Account(String num, String name, double balance) {\n            this.num = num; this.name = name; this.balance = balance;\n        }\n    }\n    public static void main(String[] args) {\n        Account a = new Account(\"AC99\", \"Dan\");\n        System.out.println(a.name + \" balance: $\" + a.balance);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-chain-1",
+        "question": "Where must `this(...)` be placed inside a constructor body when chaining?",
+        "options": [
+          "Anywhere before the return statement",
+          "It must be the very first statement in the constructor",
+          "Immediately after field assignments",
+          "In a finally block"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java language specifications mandate that constructor calls (`this()` or `super()`) must be the very first line of a constructor."
+      },
+      {
+        "id": "quiz-java-oop-chain-2",
+        "question": "What occurs if Constructor A calls `this()` to Constructor B, and Constructor B calls `this()` to Constructor A?",
+        "options": [
+          "Infinite loop at runtime until StackOverflowError",
+          "Compile-time error: recursive constructor invocation",
+          "JVM automatically breaks the cycle after 1 iteration",
+          "A warning is logged, but the code compiles"
+        ],
+        "correctIndex": 1,
+        "explanation": "The Java compiler detects cyclic constructor calls at compile time and rejects the code."
+      },
+      {
+        "id": "quiz-java-oop-chain-3",
+        "question": "Can a constructor contain both `this()` and `super()` in the same body?",
+        "options": [
+          "Yes, if this() comes first and super() comes second",
+          "No, because both require being the first statement",
+          "Yes, if placed inside an if-else block",
+          "Only in abstract classes"
+        ],
+        "correctIndex": 1,
+        "explanation": "Both `this()` and `super()` must be the first statement, making them mutually exclusive in any single constructor."
+      },
+      {
+        "id": "quiz-java-oop-chain-4",
+        "question": "What is the primary architectural benefit of constructor chaining?",
+        "options": [
+          "It increases heap memory allocation speed",
+          "It centralizes initialization and validation logic in a single master constructor (DRY principle)",
+          "It allows changing final fields multiple times",
+          "It bypasses garbage collection"
+        ],
+        "correctIndex": 1,
+        "explanation": "Chaining avoids duplicate validation and assignment code, adhering to Don't Repeat Yourself (DRY)."
+      },
+      {
+        "id": "quiz-java-oop-chain-5",
+        "question": "Can you pass an instance variable as an argument to `this(...)` inside a constructor?",
+        "options": [
+          "Yes, instance variables are accessible at all times",
+          "No, `this` is not fully initialized before the constructor call finishes, so instance members cannot be referenced in arguments to this()",
+          "Only if the variable is marked volatile",
+          "Only if the instance variable is an integer"
+        ],
+        "correctIndex": 1,
+        "explanation": "Cannot refer to an instance field or method while explicitly invoking a constructor because the instance is not yet formed."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Clean Server Node Chaining Architecture",
+      "difficulty": "Intermediate",
+      "problem_statement": "Implement ServerNode with hostname, port, and sslEnabled. Provide 3 chained constructors: 1) hostname only (default port 8080, ssl=false), 2) hostname and port (default ssl=false), and 3) master constructor (hostname, port, ssl).",
+      "input_format": "Node parameters.",
+      "output_format": "Formatted server URI.",
+      "starter_code": "public class ServerChallenge {\n    static class ServerNode {\n        // Implement chained constructors\n    }\n    public static void main(String[] args) {\n        // Test chaining\n    }\n}",
+      "expected_output": "http://api.internal:8080",
+      "test_cases": [
+        {
+          "input": "api.internal",
+          "expected_output": "http://api.internal:8080"
+        }
+      ]
+    },
+    "summary": [
+      "Use `this(...)` to delegate to sibling constructors in the same class.",
+      "`this(...)` must always be the first statement in the constructor body.",
+      "Prevents code duplication by routing all paths through a centralized master constructor.",
+      "Recursive constructor calls are caught and prohibited at compile time."
+    ]
+  },
+  {
+    "id": "top-java-oop-initialization-blocks",
+    "number": 7,
+    "numberDisplay": "07",
+    "moduleId": "mod-java-oop-02",
+    "moduleTitle": "MODULE 02: Constructors and Object Initialization",
+    "title": "Initialization Blocks",
+    "slug": "initialization-blocks",
+    "language": "java",
+    "shortDescription": "Master instance and static initialization blocks, understand class loading triggers, and trace execution sequence.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-constructor-chaining",
+    "learningObjectives": [
+      "Distinguish between static initialization blocks and instance initialization blocks",
+      "Understand when the JVM executes static blocks (class loading time) vs instance blocks (object creation)",
+      "Trace the exact execution order across static blocks, instance blocks, and constructors",
+      "Apply static blocks for complex static resource loading (drivers, configuration caches)"
+    ],
+    "conceptExplanation": "Java provides Initialization Blocks to execute setup code without placing it directly in constructors:\n\n1. Static Initialization Block: Declared with `static { ... }`. Executed ONCE when the class is loaded into memory by the JVM (before any object is created or static method is invoked). Used to initialize static caches, load native libraries, or configure DB drivers.\n\n2. Instance Initialization Block: Declared with `{ ... }` outside any method. Executed EVERY TIME an object is instantiated, immediately BEFORE the constructor body executes. Code in an instance block is copied into every constructor by the compiler, making it ideal for sharing code across all constructors regardless of which one is called.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     EXECUTION CHRONOLOGY MATRIX                         |\n+-------------------------------------------------------------------------+\n| Phase 1: CLASS LOADING (Once per JVM lifespan)                          |\n|   [1] Static Variables initialized to default values                   |\n|   [2] Static Initialization Blocks execute in textual order            |\n+-------------------------------------------------------------------------+\n| Phase 2: INSTANTIATION (Every `new ClassName()` execution)              |\n|   [3] Heap memory allocated; instance fields get default values        |\n|   [4] Instance variable initializers & Instance Blocks execute         |\n|   [5] Constructor body executes                                        |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Demo {\n    // Static block (Class loading time)\n    static {\n        System.out.println(\"Static block executed\");\n    }\n\n    // Instance block (Object creation time)\n    {\n        System.out.println(\"Instance block executed\");\n    }\n\n    public Demo() {\n        System.out.println(\"Constructor executed\");\n    }\n}",
+    "simpleExample": {
+      "code": "public class InitBlockDemo {\n    static class Widget {\n        static int staticCounter;\n        int widgetId;\n\n        static {\n            staticCounter = 1000;\n            System.out.println(\"1. Static init block\");\n        }\n\n        {\n            widgetId = ++staticCounter;\n            System.out.println(\"2. Instance init block\");\n        }\n\n        Widget() {\n            System.out.println(\"3. Constructor\");\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"-- Creating Widget 1 --\");\n        new Widget();\n        System.out.println(\"-- Creating Widget 2 --\");\n        new Widget();\n    }\n}",
+      "explanation": "Static block runs only once when Widget is first referenced. Instance block and constructor execute for every new Widget."
+    },
+    "codeExample": "import java.util.HashMap;\nimport java.util.Map;\n\npublic class ComplexStaticInit {\n    static class CurrencyConverter {\n        private static final Map<String, Double> EXCHANGE_RATES = new HashMap<>();\n\n        // Static initialization block for complex pre-population\n        static {\n            EXCHANGE_RATES.put(\"EUR\", 1.08);\n            EXCHANGE_RATES.put(\"GBP\", 1.26);\n            EXCHANGE_RATES.put(\"JPY\", 0.0067);\n            System.out.println(\"Exchange rates loaded successfully: \" + EXCHANGE_RATES.size() + \" currencies\");\n        }\n\n        public static double convertToUSD(double amount, String currency) {\n            return amount * EXCHANGE_RATES.getOrDefault(currency, 1.0);\n        }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Converting 100 EUR to USD: $\" + CurrencyConverter.convertToUSD(100.0, \"EUR\"));\n    }\n}",
+    "expectedOutput": "Exchange rates loaded successfully: 3 currencies\nConverting 100 EUR to USD: $108.0",
+    "stepByStep": [
+      "JVM loads CurrencyConverter class into memory when CurrencyConverter.convertToUSD is called.",
+      "Static initialization block runs immediately, safely populating immutable exchange rates.",
+      "convertToUSD calculates conversion using populated static map."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Referencing instance variables (`this.x`) inside a static initialization block.",
+        "correction": "Only reference static variables and static methods inside static blocks.",
+        "explanation": "Static blocks execute when the class is loaded, before any object instances exist in heap memory."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "JDBC Driver Registration & System Properties",
+      "code": "public class DatabaseDriver {\n    static {\n        try { Class.forName(\"org.postgresql.Driver\"); } catch (Exception e) {}\n    }\n}",
+      "explanation": "Standard JDBC drivers register themselves with DriverManager inside their static initialization blocks."
+    },
+    "practice": {
+      "prompt": "Create a class AuditLog with a static block that initializes logFilePath to '/var/log/audit.log', and an instance block that generates a unique eventId.",
+      "starterCode": "public class AuditPractice {\n    static class AuditLog {\n        static String logFilePath;\n        long eventId;\n        // Add static and instance blocks\n    }\n    public static void main(String[] args) {\n        // Test AuditLog\n    }\n}",
+      "expectedOutputMatcher": "/var/log/audit.log",
+      "hint": "Use static { logFilePath = \"/var/log/audit.log\"; } and { eventId = System.currentTimeMillis(); }.",
+      "solution": "public class AuditPractice {\n    static class AuditLog {\n        static String logFilePath;\n        long eventId;\n        static {\n            logFilePath = \"/var/log/audit.log\";\n        }\n        {\n            eventId = 5001;\n        }\n    }\n    public static void main(String[] args) {\n        AuditLog log = new AuditLog();\n        System.out.println(AuditLog.logFilePath + \" Event: \" + log.eventId);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-init-1",
+        "question": "How many times does a `static` initialization block execute?",
+        "options": [
+          "Every time an object is instantiated",
+          "Exactly once, when the class is loaded by the JVM",
+          "Whenever garbage collection occurs",
+          "Once per active thread"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static blocks execute exactly once during class initialization when the classloader first loads the class."
+      },
+      {
+        "id": "quiz-java-oop-init-2",
+        "question": "In what order do initializers and constructors execute when creating an object?",
+        "options": [
+          "Constructor -> Instance Block -> Static Block",
+          "Static Block (if first load) -> Instance Block -> Constructor",
+          "Constructor -> Static Block -> Instance Block",
+          "Instance Block -> Constructor -> Static Block"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static blocks run upon class loading, followed by instance blocks, and finally the constructor body."
+      },
+      {
+        "id": "quiz-java-oop-init-3",
+        "question": "Can you access the `this` reference inside a static initialization block?",
+        "options": [
+          "Yes, it points to the Metaspace class object",
+          "No, static context has no current instance (`this` does not exist)",
+          "Only if the method is synchronized",
+          "Only if the class is public"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static members belong to the class as a whole, not an instance, so `this` is illegal in static contexts."
+      },
+      {
+        "id": "quiz-java-oop-init-4",
+        "question": "What is the primary use case for an instance initialization block?",
+        "options": [
+          "To initialize static final constants",
+          "To execute common initialization code shared across all constructors in a class",
+          "To override parent class methods",
+          "To create thread pools"
+        ],
+        "correctIndex": 1,
+        "explanation": "Instance blocks run regardless of which constructor is invoked, making them ideal for shared setup."
+      },
+      {
+        "id": "quiz-java-oop-init-5",
+        "question": "If multiple static blocks exist in a class, in what order do they execute?",
+        "options": [
+          "Random order",
+          "In the textual order they appear from top to bottom in the source code",
+          "Reverse order",
+          "Alphabetical order based on variable names"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java executes multiple initialization blocks sequentially in top-to-bottom textual order."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Application Metrics Collector",
+      "difficulty": "Intermediate",
+      "problem_statement": "Implement MetricsCollector with a static block that initializes static startTimeMillis, and an instance block that assigns a sequential instanceNumber to each new collector instance.",
+      "input_format": "Creation of two collector instances.",
+      "output_format": "Instance numbers printed sequentially.",
+      "starter_code": "public class MetricsChallenge {\n    static class MetricsCollector {\n        // Implement static and instance blocks\n    }\n    public static void main(String[] args) {\n        // Test instances\n    }\n}",
+      "expected_output": "Collector #1, Collector #2",
+      "test_cases": [
+        {
+          "input": "create 2",
+          "expected_output": "Collector #1, Collector #2"
+        }
+      ]
+    },
+    "summary": [
+      "Static initialization blocks execute once upon class loading for static data preparation.",
+      "Instance initialization blocks execute before constructor bodies on each instantiation.",
+      "Execution order: Static blocks -> Instance initializers -> Constructor body.",
+      "Never attempt to access instance state (`this`) from inside a static block."
+    ]
+  },
+  {
+    "id": "top-java-oop-object-lifecycle",
+    "number": 8,
+    "numberDisplay": "08",
+    "moduleId": "mod-java-oop-02",
+    "moduleTitle": "MODULE 02: Constructors and Object Initialization",
+    "title": "Object Initialization Lifecycle",
+    "slug": "object-lifecycle",
+    "language": "java",
+    "shortDescription": "Understand memory allocation, field initialization, garbage collection eligibility, and the complete Java object lifecycle.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-initialization-blocks",
+    "learningObjectives": [
+      "Trace the end-to-end lifecycle of a Java object from class loading to garbage collection",
+      "Understand how heap memory is zeroed out before constructor evaluation",
+      "Identify when an object becomes eligible for Garbage Collection (GC)",
+      "Recognize memory leak hazards in managed runtime environments"
+    ],
+    "conceptExplanation": "The lifecycle of a Java object spans distinct stages governed by the JVM:\n\n1. Class Loading & Initialization: If the class is not yet loaded, the JVM ClassLoader loads bytecode, verifies it, allocates static storage in Metaspace, and executes static initialization blocks.\n2. Memory Allocation: The `new` operator calculates payload size and allocates zeroed-out memory on the JVM Heap.\n3. Default Value Assignment: All primitive fields receive zeros (`0`, `false`, `0.0`); reference fields receive `null`.\n4. Explicit Initialization & Instance Blocks: Fields with initial values (e.g. `int age = 18;`) and instance blocks run.\n5. Constructor Body Execution: The constructor instructions execute, completing object creation.\n6. In Use: Active references on threads access the object.\n7. Unreachable (GC Eligible): When all references to the object are reassigned, set to null, or go out of scope, the object becomes unreachable and eligible for garbage collection reclamation.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     OBJECT LIFECYCLE STATE MACHINE                      |\n+-------------------------------------------------------------------------+\n| [Class Loaded] -> [Memory Allocated on Heap] -> [Defaults Zeroed]       |\n|                        |                                                |\n|                        v                                                |\n| [Instance Blocks & Field Inits] -> [Constructor Runs] -> [Active In Use]|\n|                                                               |         |\n| [Reclaimed by GC] <--- [Unreachable (No references)] <--------+         |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Object becomes eligible for GC when dereferenced\nCustomer c = new Customer(\"Alice\"); // Allocated & Active\nc = null; // Unreachable: Eligible for GC reclamation",
+    "simpleExample": {
+      "code": "public class LifecycleDemo {\n    static class Resource {\n        String id;\n        Resource(String id) { this.id = id; }\n    }\n\n    public static void main(String[] args) {\n        Resource r1 = new Resource(\"R-1\"); // Created\n        r1 = new Resource(\"R-2\"); // Original R-1 is now unreachable!\n        System.out.println(\"Active resource: \" + r1.id);\n    }\n}",
+      "explanation": "Reassigning r1 to a new Resource leaves the first Resource instance orphaned in the heap, eligible for Garbage Collection."
+    },
+    "codeExample": "public class GarbageCollectionEligibility {\n    static class HeavyPayload {\n        int id;\n        byte[] data = new byte[1024]; // 1KB\n\n        HeavyPayload(int id) {\n            this.id = id;\n        }\n    }\n\n    static HeavyPayload createScoped() {\n        HeavyPayload temp = new HeavyPayload(99); // Scope-bound\n        return temp; // Escapes method scope via return\n    }\n\n    public static void main(String[] args) {\n        HeavyPayload p1 = new HeavyPayload(1);\n        HeavyPayload p2 = new HeavyPayload(2);\n\n        // 1. Reassignment\n        p1 = p2; // Original payload 1 is now unreachable\n\n        // 2. Nulling reference\n        HeavyPayload p3 = createScoped();\n        p3 = null; // Payload 99 is now unreachable\n\n        System.out.println(\"P2 Active: ID \" + p2.id);\n    }\n}",
+    "expectedOutput": "P2 Active: ID 2",
+    "stepByStep": [
+      "Payload 1 is orphaned when p1 is overwritten with p2's reference address.",
+      "Payload 99 escapes method stack via return, but is immediately orphaned when p3 is nulled.",
+      "The JVM Garbage Collector periodically sweeps unreachable objects from Young and Old generations."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Relying on System.gc() to guarantee immediate memory reclamation.",
+        "correction": "Treat System.gc() as merely a hint to the JVM; design software to nullify unused references naturally.",
+        "explanation": "The JVM specification explicitly states that System.gc() does not guarantee the collector will run immediately."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Session Cache Eviction & Memory Leaks",
+      "code": "public class SessionCache {\n    static void evict(String key) {\n        // Removing reference from Map allows GC to reclaim memory\n    }\n}",
+      "explanation": "Static HashMaps that retain object references indefinitely prevent GC, causing severe enterprise OutOfMemoryErrors."
+    },
+    "practice": {
+      "prompt": "Write a snippet that instantiates two Account objects, assigns one reference to the other, and explains which object becomes eligible for GC.",
+      "starterCode": "public class GcPractice {\n    static class Account {\n        String id;\n        Account(String id) { this.id = id; }\n    }\n    public static void main(String[] args) {\n        // Reassign reference and print active account\n    }\n}",
+      "expectedOutputMatcher": "Account",
+      "hint": "Set a1 = a2; now the first object has zero references.",
+      "solution": "public class GcPractice {\n    static class Account {\n        String id;\n        Account(String id) { this.id = id; }\n    }\n    public static void main(String[] args) {\n        Account a1 = new Account(\"A1\");\n        Account a2 = new Account(\"A2\");\n        a1 = a2;\n        System.out.println(\"Active Account: \" + a1.id);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-life-1",
+        "question": "When does a Java object become eligible for Garbage Collection?",
+        "options": [
+          "Immediately when its constructor finishes",
+          "When it is no longer reachable by any live thread or active reference",
+          "Only when the operating system shuts down",
+          "When the developer explicitly calls free()"
+        ],
+        "correctIndex": 1,
+        "explanation": "An object is eligible for garbage collection as soon as no live references in stack frames or static roots can reach it."
+      },
+      {
+        "id": "quiz-java-oop-life-2",
+        "question": "What is the initial state of heap memory allocated for an object before constructor code runs?",
+        "options": [
+          "Random garbage data",
+          "Zeroed out (numeric fields 0/0.0, booleans false, references null)",
+          "Filled with 0xFF byte markers",
+          "Pre-populated with mock strings"
+        ],
+        "correctIndex": 1,
+        "explanation": "The JVM zeroes out allocated heap space so fields are guaranteed default values before any custom code executes."
+      },
+      {
+        "id": "quiz-java-oop-life-3",
+        "question": "What does calling `System.gc()` do in standard Java?",
+        "options": [
+          "Forces synchronous immediate deallocation of all objects",
+          "Suggests to the JVM that garbage collection might be desirable, but execution is not guaranteed",
+          "Throws an UnsupportedOperationException",
+          "Resets the JVM heap size"
+        ],
+        "correctIndex": 1,
+        "explanation": "System.gc() requests garbage collection, but the JVM may ignore or postpone the request."
+      },
+      {
+        "id": "quiz-java-oop-life-4",
+        "question": "Which of the following can cause an unintended memory leak in Java?",
+        "options": [
+          "Creating short-lived local variables inside methods",
+          "Retaining references to unused objects inside static collections (e.g. static List or Map)",
+          "Using constructor chaining",
+          "Declaring multiple constructors"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static collections live for the entire life of the classloader; objects stored in them remain reachable and cannot be garbage collected."
+      },
+      {
+        "id": "quiz-java-oop-life-5",
+        "question": "Which area of JVM memory holds loaded class metadata, bytecodes, and static variables?",
+        "options": [
+          "Thread Stack",
+          "Young Generation Heap",
+          "Metaspace (formerly PermGen)",
+          "Native Register"
+        ],
+        "correctIndex": 2,
+        "explanation": "Metaspace (native memory since Java 8) stores class metadata, static structures, and constant pools."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Resource Token Manager with Explicit Dereferencing",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a TokenBucket class with tokenId and active status. Implement invalidate() which sets active=false and nulls internal buffers to facilitate GC.",
+      "input_format": "Token parameters.",
+      "output_format": "Token status string.",
+      "starter_code": "public class TokenChallenge {\n    static class TokenBucket {\n        // Implement TokenBucket\n    }\n    public static void main(String[] args) {\n        // Test token invalidation\n    }\n}",
+      "expected_output": "Token TK-101 Invalidated",
+      "test_cases": [
+        {
+          "input": "TK-101",
+          "expected_output": "Token TK-101 Invalidated"
+        }
+      ]
+    },
+    "summary": [
+      "Object lifecycle: Loading -> Allocation -> Zeroing -> Instance Inits -> Constructor -> In Use -> Unreachable -> GC.",
+      "An object becomes GC-eligible when no active references point to it.",
+      "Avoid static collection leaks by clearing unused object references.",
+      "The JVM automatically manages memory reclamation via generational garbage collection."
+    ]
+  },
+  {
+    "id": "top-java-oop-encapsulation-intro",
+    "number": 9,
+    "numberDisplay": "09",
+    "moduleId": "mod-java-oop-03",
+    "moduleTitle": "MODULE 03: Encapsulation and Access Modifiers",
+    "title": "Introduction to Encapsulation",
+    "slug": "encapsulation-intro",
+    "language": "java",
+    "shortDescription": "Protect object state and enforce data integrity using encapsulation, data hiding, and controlled boundaries.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-object-lifecycle",
+    "learningObjectives": [
+      "Define encapsulation as the bundling of data with methods operating on that data",
+      "Understand data hiding and why direct public mutable fields violate software architecture",
+      "Contrast encapsulation (information hiding) with abstraction (complexity hiding)",
+      "Design cohesive domain entities with guarded state"
+    ],
+    "conceptExplanation": "Encapsulation is one of the four foundational pillars of OOP. It refers to two intertwined concepts:\n1. Bundling: Gathering data fields and the methods that operate on them into a single cohesive unit (a class).\n2. Data Hiding (Access Restriction): Restricting direct access to internal components of an object. Fields are marked `private`, and access is mediated strictly through well-defined public methods.\n\nWhy is Encapsulation essential?\nWithout encapsulation, external code can freely tamper with fields (e.g. setting an Account's `balance = -99999` or a Person's `age = -5`). Encapsulation prevents corrupt states by ensuring that all state changes pass through validation logic.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     ENCAPSULATED OBJECT CAPSULE                         |\n+-------------------------------------------------------------------------+\n|                           PUBLIC INTERFACE                              |\n|   deposit()         getBalance()          withdraw()                    |\n|        |                 |                    |                         |\n|        v                 v                    v                         |\n|   +-------------------------------------------------------------+       |\n|   | [VALIDATION LAYER: amount > 0, balance >= amount]           |       |\n|   |   +-----------------------------------------------------+   |       |\n|   |   | PROTECTED INTERNAL STATE (private)                  |   |       |\n|   |   |   private double balance;                           |   |       |\n|   |   |   private String accountNumber;                     |   |       |\n|   |   +-----------------------------------------------------+   |       |\n|   +-------------------------------------------------------------+       |\n| External callers CANNOT directly touch internal state!                  |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class SecureVault {\n    // 1. Private fields (Data Hiding)\n    private double balance;\n\n    // 2. Public operations enforcing business rules\n    public void deposit(double amount) {\n        if (amount > 0) {\n            this.balance += amount;\n        }\n    }\n}",
+    "simpleExample": {
+      "code": "public class EncapsulationDemo {\n    static class UserProfile {\n        private int age;\n\n        public void setAge(int age) {\n            if (age >= 0 && age <= 130) {\n                this.age = age;\n            } else {\n                System.out.println(\"Invalid age: \" + age);\n            }\n        }\n\n        public int getAge() {\n            return this.age;\n        }\n    }\n\n    public static void main(String[] args) {\n        UserProfile u = new UserProfile();\n        u.setAge(25);\n        u.setAge(-10); // Rejected by validation!\n        System.out.println(\"Verified Age: \" + u.getAge());\n    }\n}",
+      "explanation": "Because age is private, callers cannot assign negative numbers directly. setAge protects data integrity."
+    },
+    "codeExample": "public class BankAccountEncapsulation {\n    static class BankAccount {\n        private final String accountNumber;\n        private double balance;\n\n        public BankAccount(String accNo, double initialBalance) {\n            this.accountNumber = accNo;\n            this.balance = Math.max(0.0, initialBalance);\n        }\n\n        public boolean withdraw(double amount) {\n            if (amount > 0 && amount <= this.balance) {\n                this.balance -= amount;\n                System.out.println(\"Withdrawal of $\" + amount + \" approved\");\n                return true;\n            }\n            System.out.println(\"Withdrawal of $\" + amount + \" declined: insufficient funds\");\n            return false;\n        }\n\n        public double getBalance() {\n            return this.balance;\n        }\n    }\n\n    public static void main(String[] args) {\n        BankAccount acc = new BankAccount(\"BA-500\", 300.0);\n        acc.withdraw(100.0);\n        acc.withdraw(500.0); // Safely rejected!\n        System.out.println(\"Remaining balance: $\" + acc.getBalance());\n    }\n}",
+    "expectedOutput": "Withdrawal of $100.0 approved\nWithdrawal of $500.0 declined: insufficient funds\nRemaining balance: $200.0",
+    "stepByStep": [
+      "balance is marked private, completely blocking direct field access like acc.balance = -999.",
+      "The withdraw() method inspects balance and requested amount before mutating state.",
+      "getBalance() grants safe read access without exposing the mutable field directly."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Declaring fields as `public` to avoid writing methods.",
+        "correction": "Declare fields `private` and provide getters/setters only when necessary.",
+        "explanation": "Public fields destroy maintainability; any external class can corrupt state and break invariants."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Payment Processing Token Vault",
+      "code": "public class CreditCardVault {\n    private String hashedPan;\n    public boolean verifyLastFour(String l4) { return true; }\n}",
+      "explanation": "PCI-DSS security compliance mandates that raw card numbers remain private and encrypted inside the vault."
+    },
+    "practice": {
+      "prompt": "Create a TemperatureSensor class with private double celsius. In setCelsius, only accept values between -50.0 and 150.0.",
+      "starterCode": "public class SensorDemo {\n    static class TemperatureSensor {\n        // Implement encapsulated sensor\n    }\n    public static void main(String[] args) {\n        // Test sensor\n    }\n}",
+      "expectedOutputMatcher": "Temp",
+      "hint": "Use if (c >= -50.0 && c <= 150.0) this.celsius = c;.",
+      "solution": "public class SensorDemo {\n    static class TemperatureSensor {\n        private double celsius;\n        public void setCelsius(double c) {\n            if (c >= -50.0 && c <= 150.0) this.celsius = c;\n        }\n        public double getCelsius() { return this.celsius; }\n    }\n    public static void main(String[] args) {\n        TemperatureSensor s = new TemperatureSensor();\n        s.setCelsius(24.5);\n        System.out.println(\"Temp: \" + s.getCelsius() + \"C\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-encap-1",
+        "question": "What is the primary objective of encapsulation in object-oriented design?",
+        "options": [
+          "To speed up Java compiler execution times",
+          "To hide internal object state and protect invariants from unauthorized modification",
+          "To allow multiple classes to share global variables",
+          "To avoid creating constructors"
+        ],
+        "correctIndex": 1,
+        "explanation": "Encapsulation safeguards internal data by preventing arbitrary external mutations and validating modifications."
+      },
+      {
+        "id": "quiz-java-oop-encap-2",
+        "question": "How do you achieve data hiding in a Java class?",
+        "options": [
+          "By marking methods static",
+          "By declaring fields `private` and exposing public getter/setter access points",
+          "By using the final keyword on the class",
+          "By making the class abstract"
+        ],
+        "correctIndex": 1,
+        "explanation": "Private fields combined with public accessor and mutator methods form standard data hiding."
+      },
+      {
+        "id": "quiz-java-oop-encap-3",
+        "question": "How does Encapsulation differ from Abstraction?",
+        "options": [
+          "Encapsulation is for variables; Abstraction is for loops",
+          "Encapsulation focuses on information hiding (binding data and protecting state); Abstraction focuses on complexity hiding (showing what an entity does, not how)",
+          "Encapsulation requires interfaces; Abstraction requires arrays",
+          "They are identical terms in Java"
+        ],
+        "correctIndex": 1,
+        "explanation": "Encapsulation hides data and restricts access; Abstraction conceals implementation details behind high-level interfaces."
+      },
+      {
+        "id": "quiz-java-oop-encap-4",
+        "question": "What risk arises when class fields are declared `public`?",
+        "options": [
+          "Any client code can assign corrupt, invalid, or dangerous values directly to fields",
+          "The JVM refuses to allocate memory",
+          "The class cannot be imported into other packages",
+          "Garbage collection is disabled"
+        ],
+        "correctIndex": 0,
+        "explanation": "Public fields allow unrestricted modification, completely bypassing validation and business logic."
+      },
+      {
+        "id": "quiz-java-oop-encap-5",
+        "question": "Can an encapsulated class be made read-only for external callers?",
+        "options": [
+          "No, every private field must have both a getter and a setter",
+          "Yes, by providing public getters while omitting setter methods",
+          "Only by using C++ pointers",
+          "Only by declaring fields transient"
+        ],
+        "correctIndex": 1,
+        "explanation": "Omitting setter methods creates read-only properties that cannot be mutated once initialized."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Build a Secure Password Locker",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a PasswordLocker class with private String masterPassword and private int failedAttempts. In setPassword, require password length >= 8. In verifyPassword, increment failedAttempts on mismatch and lock when failedAttempts >= 3.",
+      "input_format": "Password modification and verification calls.",
+      "output_format": "Locker security status.",
+      "starter_code": "public class LockerChallenge {\n    static class PasswordLocker {\n        // Complete encapsulated locker\n    }\n    public static void main(String[] args) {\n        // Test locker\n    }\n}",
+      "expected_output": "Access: GRANTED",
+      "test_cases": [
+        {
+          "input": "SecurePass123",
+          "expected_output": "Access: GRANTED"
+        }
+      ]
+    },
+    "summary": [
+      "Encapsulation bundles data with behavior and restricts direct access to internal fields.",
+      "Private fields prevent clients from bypassing validation and corrupting state.",
+      "Read-only properties are easily achieved by providing getters while omitting setters.",
+      "Encapsulation is information hiding; Abstraction is complexity hiding."
+    ]
+  },
+  {
+    "id": "top-java-oop-access-modifiers",
+    "number": 10,
+    "numberDisplay": "10",
+    "moduleId": "mod-java-oop-03",
+    "moduleTitle": "MODULE 03: Encapsulation and Access Modifiers",
+    "title": "Access Modifiers",
+    "slug": "access-modifiers",
+    "language": "java",
+    "shortDescription": "Master private, default, protected, and public accessibility across classes, packages, and subclasses.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-encapsulation-intro",
+    "learningObjectives": [
+      "Compare the four Java access levels: private, default (package-private), protected, and public",
+      "Understand visibility rules across classes, packages, and inheritance hierarchies",
+      "Select appropriate access levels to minimize API surface area (Principle of Least Privilege)",
+      "Recognize top-level class modifier constraints (only public or default allowed)"
+    ],
+    "conceptExplanation": "Java provides four access levels governed by three explicit keywords and one default:\n\n1. `private`: Accessible ONLY within the exact same class. Invisible to subclasses and other classes in the package.\n2. Default (Package-Private, no keyword): Accessible by any class within the SAME package. Invisible outside the package.\n3. `protected`: Accessible within the same package PLUS by subclasses in DIFFERENT packages (via inheritance).\n4. `public`: Accessible from ANY class in ANY package across the application module.\n\nRule of Thumb: Always follow the Principle of Least Privilege: start with `private`, expand to `protected` or package-private only when explicitly required for extension, and expose as `public` only the intended API contract.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     ACCESS MODIFIER VISIBILITY MATRIX                   |\n+-------------------------------------------------------------------------+\n| Modifier   | Same Class | Same Package | Subclass (diff pkg) | World    |\n+------------+------------+--------------+---------------------+----------+\n| private    |    YES     |      NO      |         NO          |    NO    |\n| default    |    YES     |     YES      |         NO          |    NO    |\n| protected  |    YES     |     YES      |        YES          |    NO    |\n| public     |    YES     |     YES      |        YES          |   YES    |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class AccessDemo {\n    private int privateVar;      // Same class only\n    int defaultVar;              // Same package only\n    protected int protectedVar;  // Same package + Subclasses\n    public int publicVar;        // Everywhere\n}",
+    "simpleExample": {
+      "code": "public class AccessLevelDemo {\n    static class Base {\n        private int secret = 42;\n        public int visible = 100;\n\n        public int getSecret() {\n            return secret; // Legal: inside same class\n        }\n    }\n\n    public static void main(String[] args) {\n        Base b = new Base();\n        System.out.println(\"Public: \" + b.visible);\n        System.out.println(\"Via Getter: \" + b.getSecret());\n        // b.secret would cause compile error: secret has private access\n    }\n}",
+      "explanation": "secret is inaccessible via direct dot notation from outside Base, but accessible through its public getter."
+    },
+    "codeExample": "public class PackageVisibilityDemo {\n    public static class Repository {\n        private String dbPassword = \"RootPass!23\";\n        protected String connectionUrl = \"jdbc:postgresql://db.corp:5432/core\";\n        public String databaseName = \"core_db\";\n\n        // Protected method available to subclasses or package services\n        protected boolean ping() {\n            return true;\n        }\n    }\n\n    static class AnalyticsSubclass extends Repository {\n        void inspect() {\n            // connectionUrl is protected -> accessible to subclass!\n            System.out.println(\"Connecting to: \" + connectionUrl);\n            System.out.println(\"Status: \" + (ping() ? \"OK\" : \"FAIL\"));\n        }\n    }\n\n    public static void main(String[] args) {\n        AnalyticsSubclass sub = new AnalyticsSubclass();\n        sub.inspect();\n    }\n}",
+    "expectedOutput": "Connecting to: jdbc:postgresql://db.corp:5432/core\nStatus: OK",
+    "stepByStep": [
+      "Repository marks sensitive password private, connectionUrl protected, and databaseName public.",
+      "AnalyticsSubclass inherits and accesses protected members cleanly.",
+      "Attempting to read dbPassword inside AnalyticsSubclass fails compilation."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Believing `protected` is less accessible than default package-private.",
+        "correction": "Remember that `protected` is strictly MORE accessible than default, because it grants access to subclasses in other packages.",
+        "explanation": "Accessibility hierarchy: private < default < protected < public."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise SDK Framework Design",
+      "code": "package com.sdk.core;\npublic abstract class BaseService {\n    protected void logTelemetry(String msg) { /* Subclass hook */ }\n}",
+      "explanation": "SDKs mark customization hooks `protected` so client subclasses can extend behavior without polluting public APIs."
+    },
+    "practice": {
+      "prompt": "Create a UserAccount class with private balance, protected accountType, and public username. Demonstrate subclass access to protected and public fields.",
+      "starterCode": "public class AccessPractice {\n    static class UserAccount {\n        // Declare fields\n    }\n    static class PremiumAccount extends UserAccount {\n        // Access inherited members\n    }\n    public static void main(String[] args) {\n        // Test access\n    }\n}",
+      "expectedOutputMatcher": "Account",
+      "hint": "In PremiumAccount, you can access this.accountType and this.username, but NOT this.balance directly.",
+      "solution": "public class AccessPractice {\n    static class UserAccount {\n        private double balance = 100.0;\n        protected String accountType = \"Standard\";\n        public String username = \"User1\";\n    }\n    static class PremiumAccount extends UserAccount {\n        void display() {\n            System.out.println(username + \" Type: \" + accountType);\n        }\n    }\n    public static void main(String[] args) {\n        PremiumAccount p = new PremiumAccount();\n        p.display();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-mod-1",
+        "question": "Which access modifier restricts access exclusively to code inside the same class?",
+        "options": [
+          "default",
+          "protected",
+          "private",
+          "transient"
+        ],
+        "correctIndex": 2,
+        "explanation": "`private` is the most restrictive modifier, allowing visibility only within the defining class."
+      },
+      {
+        "id": "quiz-java-oop-mod-2",
+        "question": "If no access modifier keyword is written before a field or method, what access level does it have?",
+        "options": [
+          "public",
+          "protected",
+          "Package-private (default)",
+          "private"
+        ],
+        "correctIndex": 2,
+        "explanation": "Omitting access modifiers assigns default (package-private) visibility: visible anywhere in the same package."
+      },
+      {
+        "id": "quiz-java-oop-mod-3",
+        "question": "How does `protected` differ from default (package-private) access?",
+        "options": [
+          "Protected is accessible anywhere in the universe",
+          "Protected allows access to subclasses located in different packages, whereas default does not",
+          "Protected can only be applied to static variables",
+          "There is no difference"
+        ],
+        "correctIndex": 1,
+        "explanation": "`protected` grants package access PLUS access to subclasses outside the package through inheritance."
+      },
+      {
+        "id": "quiz-java-oop-mod-4",
+        "question": "What access modifiers are permitted for top-level classes in Java?",
+        "options": [
+          "private, protected, default, and public",
+          "Only `public` and package-private (`default`)",
+          "Only `private`",
+          "Any modifier including volatile"
+        ],
+        "correctIndex": 1,
+        "explanation": "Top-level classes can only be `public` or package-private (no modifier). Only inner/nested classes can be private or protected."
+      },
+      {
+        "id": "quiz-java-oop-mod-5",
+        "question": "What is the Principle of Least Privilege in object-oriented design?",
+        "options": [
+          "Make all variables public to ensure highest performance",
+          "Grant the minimum necessary visibility required for an entity to perform its function",
+          "Always use default access instead of private",
+          "Avoid using packages"
+        ],
+        "correctIndex": 1,
+        "explanation": "Least Privilege minimizes software coupling and security risks by keeping visibility as narrow as possible."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Secure Hardware Device Controller",
+      "difficulty": "Intermediate",
+      "problem_statement": "Implement DeviceController with private firmwareKey, protected busId, and public modelName. Create SubsystemDevice that accesses modelName and busId to generate a device status report.",
+      "input_format": "Device specifications.",
+      "output_format": "Device status string.",
+      "starter_code": "public class DeviceChallenge {\n    static class DeviceController {\n        // Complete base controller\n    }\n    static class SubsystemDevice extends DeviceController {\n        // Complete subclass\n    }\n    public static void main(String[] args) {\n        // Test subsystem\n    }\n}",
+      "expected_output": "Device Model-X on Bus 0x1A: ONLINE",
+      "test_cases": [
+        {
+          "input": "Model-X, 0x1A",
+          "expected_output": "Device Model-X on Bus 0x1A: ONLINE"
+        }
+      ]
+    },
+    "summary": [
+      "Access levels in order of increasing visibility: private -> default -> protected -> public.",
+      "private: same class only.",
+      "default: same package.",
+      "protected: same package + subclasses in other packages.",
+      "public: everywhere across all packages.",
+      "Follow the Principle of Least Privilege: start private and expose only required APIs."
+    ]
+  },
+  {
+    "id": "top-java-oop-getters-setters",
+    "number": 11,
+    "numberDisplay": "11",
+    "moduleId": "mod-java-oop-03",
+    "moduleTitle": "MODULE 03: Encapsulation and Access Modifiers",
+    "title": "Getters and Setters",
+    "slug": "getters-setters",
+    "language": "java",
+    "shortDescription": "Control field modification, perform input validation, create read-only properties, and avoid unnecessary mutators.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-access-modifiers",
+    "learningObjectives": [
+      "Follow JavaBeans conventions for getter and setter method naming",
+      "Embed validation and sanity checking inside mutator methods",
+      "Create read-only, write-only, and calculated virtual properties",
+      "Avoid boilerplate anti-patterns of generating mindless setters for all fields"
+    ],
+    "conceptExplanation": "Accessor (Getter) and Mutator (Setter) methods are public methods used to read and write private field values.\n\nJavaBeans Naming Conventions:\n- For field `name`: `public String getName()` and `public void setName(String name)`\n- For boolean field `active`: `public boolean isActive()` and `public void setActive(boolean active)`\n\nArchitectural Value of Getters/Setters:\n1. Input Validation: Setters can reject null values, negative amounts, or out-of-range strings.\n2. Virtual/Calculated Properties: A getter can return a computed value (e.g. `getFullName()`) without storing a redundant field.\n3. Immutability: Omitting setters produces read-only immutable properties.\n4. Defensive Copying: Getters for mutable objects (like `Date` or `List`) can return defensive copies to prevent callers from mutating internal state.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     MUTATION DEFENSE PIPELINE                           |\n+-------------------------------------------------------------------------+\n| Client: setDiscountPercent(150.0)                                       |\n|                               |                                         |\n|                               v                                         |\n| [Validation Check: percent >= 0.0 && percent <= 100.0]                  |\n|       |                                     |                           |\n|       v (Pass)                              v (Fail: 150.0 > 100.0)     |\n| Assign: this.discount = 150.0       Throw IllegalArgumentException      |\n|                                     * Object State Protected! *         |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Product {\n    private double price;\n\n    public double getPrice() {\n        return price;\n    }\n\n    public void setPrice(double price) {\n        if (price >= 0.0) {\n            this.price = price;\n        }\n    }\n}",
+    "simpleExample": {
+      "code": "public class GetterSetterDemo {\n    static class Person {\n        private String firstName;\n        private String lastName;\n\n        public String getFirstName() { return firstName; }\n        public void setFirstName(String fn) { this.firstName = fn; }\n        public String getLastName() { return lastName; }\n        public void setLastName(String ln) { this.lastName = ln; }\n\n        // Virtual property (computed on the fly)\n        public String getFullName() {\n            return firstName + \" \" + lastName;\n        }\n    }\n\n    public static void main(String[] args) {\n        Person p = new Person();\n        p.setFirstName(\"Grace\");\n        p.setLastName(\"Hopper\");\n        System.out.println(\"Full Name: \" + p.getFullName());\n    }\n}",
+      "explanation": "getFullName() computes the full name dynamically without storing a redundant third field in memory."
+    },
+    "codeExample": "public class DefensiveCopyingDemo {\n    static class BankTransaction {\n        private final String txId;\n        private double amount;\n        private boolean settled;\n\n        public BankTransaction(String id, double amount) {\n            this.txId = id;\n            setAmount(amount);\n        }\n\n        // Read-only property: No setter for txId\n        public String getTxId() {\n            return txId;\n        }\n\n        public double getAmount() {\n            return amount;\n        }\n\n        public void setAmount(double amount) {\n            if (settled) {\n                throw new IllegalStateException(\"Cannot modify settled transaction\");\n            }\n            if (amount <= 0) {\n                throw new IllegalArgumentException(\"Amount must be positive\");\n            }\n            this.amount = amount;\n        }\n\n        public boolean isSettled() { return settled; }\n        public void markSettled() { this.settled = true; }\n    }\n\n    public static void main(String[] args) {\n        BankTransaction tx = new BankTransaction(\"TX-99\", 450.0);\n        tx.setAmount(500.0); // Valid\n        tx.markSettled();\n        System.out.println(tx.getTxId() + \" Amount: $\" + tx.getAmount() + \" Settled: \" + tx.isSettled());\n    }\n}",
+    "expectedOutput": "TX-99 Amount: $500.0 Settled: true",
+    "stepByStep": [
+      "txId is strictly read-only because it lacks a public mutator method.",
+      "setAmount enforces business rules: must be positive and transaction must not be settled.",
+      "isSettled follows standard boolean accessor naming conventions."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Auto-generating getters and setters for every single field without considering business rules.",
+        "correction": "Only expose setters when state mutation is explicitly permitted by business requirements.",
+        "explanation": "Mindless setters degrade your class to a struct of public variables, destroying encapsulation."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "JPA / Hibernate Entity Mappings",
+      "code": "public class CustomerEntity {\n    private Long id;\n    public Long getId() { return id; }\n    // ID is generated by database sequence -> NO setter provided!\n}",
+      "explanation": "Database primary keys are protected by omitting public setters, preventing external tampering."
+    },
+    "practice": {
+      "prompt": "Create an EmployeeSalary class with private double baseSalary. Add getBaseSalary() and setBaseSalary(double s) that only accepts salaries >= 30000.0.",
+      "starterCode": "public class SalaryPractice {\n    static class EmployeeSalary {\n        // Implement getters and setters\n    }\n    public static void main(String[] args) {\n        // Test salary validation\n    }\n}",
+      "expectedOutputMatcher": "Salary",
+      "hint": "Check if (s >= 30000.0) this.baseSalary = s;.",
+      "solution": "public class SalaryPractice {\n    static class EmployeeSalary {\n        private double baseSalary = 30000.0;\n        public double getBaseSalary() { return baseSalary; }\n        public void setBaseSalary(double s) {\n            if (s >= 30000.0) this.baseSalary = s;\n        }\n    }\n    public static void main(String[] args) {\n        EmployeeSalary emp = new EmployeeSalary();\n        emp.setBaseSalary(55000.0);\n        System.out.println(\"Salary: $\" + emp.getBaseSalary());\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-getset-1",
+        "question": "What is the standard JavaBeans getter naming convention for a boolean field named `active`?",
+        "options": [
+          "getActive()",
+          "isActive()",
+          "checkActive()",
+          "booleanActive()"
+        ],
+        "correctIndex": 1,
+        "explanation": "JavaBeans convention prescribes `is<PropertyName>()` for primitive boolean getter methods."
+      },
+      {
+        "id": "quiz-java-oop-getset-2",
+        "question": "How can you make a field completely read-only to external callers?",
+        "options": [
+          "Declare the field public and write no comments",
+          "Declare the field private, provide a public getter, and omit the setter method",
+          "Add an empty setter method that does nothing",
+          "Make the field transient"
+        ],
+        "correctIndex": 1,
+        "explanation": "A private field with a getter and no setter cannot be modified from outside the class."
+      },
+      {
+        "id": "quiz-java-oop-getset-3",
+        "question": "What is a 'virtual' or 'computed' property in Java?",
+        "options": [
+          "A property loaded from a cloud server",
+          "A getter method that calculates and returns a value on the fly without a dedicated backing field",
+          "A variable declared inside a virtual thread",
+          "An abstract getter"
+        ],
+        "correctIndex": 1,
+        "explanation": "Methods like `getFullName()` compute results from other fields without allocating extra storage."
+      },
+      {
+        "id": "quiz-java-oop-getset-4",
+        "question": "What is defensive copying in getters?",
+        "options": [
+          "Making two copies of the bytecode on disk",
+          "Returning a new clone/copy of a mutable internal object (like a Date or List) so the caller cannot modify the original internal state",
+          "Password protecting getter methods",
+          "Catching exceptions in getters"
+        ],
+        "correctIndex": 1,
+        "explanation": "Defensive copying prevents external code from mutating internal mutable objects via returned references."
+      },
+      {
+        "id": "quiz-java-oop-getset-5",
+        "question": "Why is blindly generating getters and setters for all private fields considered an anti-pattern?",
+        "options": [
+          "It consumes extra CPU cycles during compilation",
+          "It effectively makes every field public, destroying encapsulation and invariant validation",
+          "It causes memory leaks in the heap",
+          "Java does not support more than 10 getters per class"
+        ],
+        "correctIndex": 1,
+        "explanation": "Exposing setters without business justification breaks encapsulation and allows external code to mutate state arbitrarily."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Account Balance Guard with Event Auditing",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a BankLedger class with private double balance. Implement setBalance(double b) which refuses negative amounts and logs whenever a balance adjustment exceeds $10,000.",
+      "input_format": "Balance updates.",
+      "output_format": "Audit log strings.",
+      "starter_code": "public class LedgerChallenge {\n    static class BankLedger {\n        // Complete BankLedger\n    }\n    public static void main(String[] args) {\n        // Test ledger updates\n    }\n}",
+      "expected_output": "AUDIT: Large transaction detected ($15000.0), Balance: $15000.0",
+      "test_cases": [
+        {
+          "input": "15000.0",
+          "expected_output": "AUDIT: Large transaction detected ($15000.0), Balance: $15000.0"
+        }
+      ]
+    },
+    "summary": [
+      "Getters provide read access; Setters enforce validated mutation.",
+      "Use `is<Property>()` convention for primitive booleans.",
+      "Read-only properties are created by omitting setter mutators.",
+      "Never generate mindless setters without validating business invariants."
+    ]
+  },
+  {
+    "id": "top-java-oop-this-keyword",
+    "number": 12,
+    "numberDisplay": "12",
+    "moduleId": "mod-java-oop-03",
+    "moduleTitle": "MODULE 03: Encapsulation and Access Modifiers",
+    "title": "The this Keyword",
+    "slug": "this-keyword",
+    "language": "java",
+    "shortDescription": "Master the this reference: resolving variable shadowing, constructor chaining, invoking instance methods, and method chaining.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-getters-setters",
+    "learningObjectives": [
+      "Understand that this is a reference variable pointing to the current executing object instance",
+      "Disambiguate field names from shadowed method parameter names",
+      "Perform method chaining by returning this (Builder pattern foundation)",
+      "Pass this as an argument in event registration and callbacks"
+    ],
+    "conceptExplanation": "In Java, `this` is a reference variable that refers directly to the current object whose method or constructor is being invoked.\n\nFour Primary Uses of `this`:\n1. Disambiguating Shadowed Fields: When a method or constructor parameter has the same name as an instance variable, `this.fieldName` explicitly identifies the instance variable.\n2. Constructor Chaining: `this(args)` delegates to an overloaded constructor in the same class (must be the first line).\n3. Returning Current Object for Method Chaining: Returning `return this;` allows callers to chain methods fluently (`user.setName(\"A\").setAge(20).setEmail(\"e@c.com\")`), foundational to the Builder pattern.\n4. Passing Current Instance: Passing `this` as an argument into other methods or event listeners (`eventManager.register(this)`).",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     METHOD CHAINING VIA 'return this;'                  |\n+-------------------------------------------------------------------------+\n| QueryBuilder q = new QueryBuilder();                                    |\n| q.select(\"name\").from(\"users\").where(\"active = true\");                    |\n|                                                                         |\n| select(\"name\")  ---> Mutates state -> returns (0x99B)                   |\n|                          |                                              |\n|                          v                                              |\n| from(\"users\")    ---> Mutates state -> returns (0x99B)                  |\n|                          |                                              |\n|                          v                                              |\n| where(\"active\")  ---> Mutates state -> returns (0x99B)                  |\n| * All operations operate seamlessly on the exact same instance! *       |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class FluentBuilder {\n    private String text;\n\n    public FluentBuilder append(String s) {\n        this.text = (this.text == null ? \"\" : this.text) + s;\n        return this; // Enables method chaining\n    }\n}",
+    "simpleExample": {
+      "code": "public class ThisDemo {\n    static class Point {\n        int x, y;\n\n        Point setCoordinates(int x, int y) {\n            this.x = x; // Disambiguation\n            this.y = y;\n            return this; // Return current object\n        }\n    }\n\n    public static void main(String[] args) {\n        Point p = new Point();\n        p.setCoordinates(10, 20);\n        System.out.println(\"Coordinates: \" + p.x + \",\" + p.y);\n    }\n}",
+      "explanation": "this.x distinguishes the instance field from the incoming x parameter. Returning this allows fluent chaining."
+    },
+    "codeExample": "public class FluentApiDemo {\n    static class UserQueryBuilder {\n        private String table;\n        private String columns = \"*\";\n        private String filter = \"1=1\";\n\n        public UserQueryBuilder select(String cols) {\n            this.columns = cols;\n            return this;\n        }\n\n        public UserQueryBuilder from(String table) {\n            this.table = table;\n            return this;\n        }\n\n        public UserQueryBuilder where(String condition) {\n            this.filter = condition;\n            return this;\n        }\n\n        public String buildSql() {\n            return \"SELECT \" + columns + \" FROM \" + table + \" WHERE \" + filter + \";\";\n        }\n    }\n\n    public static void main(String[] args) {\n        String query = new UserQueryBuilder()\n            .select(\"id, username, email\")\n            .from(\"customer_accounts\")\n            .where(\"status = 'ACTIVE'\")\n            .buildSql();\n        System.out.println(query);\n    }\n}",
+    "expectedOutput": "SELECT id, username, email FROM customer_accounts WHERE status = 'ACTIVE';",
+    "stepByStep": [
+      "UserQueryBuilder methods mutate local fields and return `this`.",
+      "Caller chains select(), from(), and where() cleanly in a single readable fluent expression.",
+      "buildSql() consolidates encapsulated state into final query output."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using `this` inside a `static` method.",
+        "correction": "Do not reference `this` in static methods.",
+        "explanation": "Static methods belong to the class, not an object instance; `this` has no meaning in static context."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "StringBuilder and Stream API Fluent Chaining",
+      "code": "StringBuilder sb = new StringBuilder();\nsb.append(\"Hello\").append(\" \").append(\"World\");",
+      "explanation": "StringBuilder.append returns `this`, allowing rapid chaining of append calls."
+    },
+    "practice": {
+      "prompt": "Create a CarBuilder class with brand and horsepower. Implement withBrand and withHorsepower methods returning this, and a build() method.",
+      "starterCode": "public class BuilderPractice {\n    static class CarBuilder {\n        // Implement fluent builder\n    }\n    public static void main(String[] args) {\n        // Test fluent chaining\n    }\n}",
+      "expectedOutputMatcher": "HP",
+      "hint": "In each setter method, assign the field and return this;.",
+      "solution": "public class BuilderPractice {\n    static class CarBuilder {\n        String brand;\n        int hp;\n        CarBuilder withBrand(String b) { this.brand = b; return this; }\n        CarBuilder withHorsepower(int hp) { this.hp = hp; return this; }\n        String build() { return brand + \" with \" + hp + \" HP\"; }\n    }\n    public static void main(String[] args) {\n        String car = new CarBuilder().withBrand(\"Audi\").withHorsepower(350).build();\n        System.out.println(car);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-this-1",
+        "question": "What does the `this` keyword refer to in an instance method?",
+        "options": [
+          "The JVM classloader",
+          "The current executing object instance",
+          "The superclass of the current class",
+          "The static Metaspace frame"
+        ],
+        "correctIndex": 1,
+        "explanation": "`this` always points to the current object instance executing the method."
+      },
+      {
+        "id": "quiz-java-oop-this-2",
+        "question": "Can the `this` keyword be used inside a static method?",
+        "options": [
+          "Yes, at all times",
+          "No, because static methods have no instance context",
+          "Only if the method returns an integer",
+          "Only in multithreaded programs"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static methods are associated with the class, not an object instance; using `this` produces a compile-time error."
+      },
+      {
+        "id": "quiz-java-oop-this-3",
+        "question": "How does `return this;` enable method chaining (fluent interfaces)?",
+        "options": [
+          "It tells the garbage collector to skip this method",
+          "It returns the reference to the current object, allowing the caller to immediately call another method on it",
+          "It converts the class into an interface",
+          "It executes the method asynchronously"
+        ],
+        "correctIndex": 1,
+        "explanation": "Returning `this` passes the same object reference back to the caller, enabling continuous chained method calls."
+      },
+      {
+        "id": "quiz-java-oop-this-4",
+        "question": "What is variable shadowing in Java methods?",
+        "options": [
+          "When a local variable or parameter has the exact same name as an instance variable",
+          "When an object is overwritten in heap memory",
+          "When a method name conflicts with a package name",
+          "When a variable is made private"
+        ],
+        "correctIndex": 0,
+        "explanation": "Variable shadowing occurs when local names eclipse field names within scope; `this.field` resolves the ambiguity."
+      },
+      {
+        "id": "quiz-java-oop-this-5",
+        "question": "Can `this` be passed as an argument to another method?",
+        "options": [
+          "No, `this` is a protected keyword that cannot appear in argument lists",
+          "Yes, e.g. `service.register(this);` passes the current object instance to an external method",
+          "Only in native methods",
+          "Only if the target method is marked synchronized"
+        ],
+        "correctIndex": 1,
+        "explanation": "Passing `this` provides external handlers with a reference back to the current object."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Fluent Email Notification Composer",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create an EmailComposer class with to, subject, and body fields. Implement fluent methods setTo(String), setSubject(String), setBody(String) returning this, and send() which returns a formatted dispatch message.",
+      "input_format": "Email composition chain.",
+      "output_format": "Dispatched email string.",
+      "starter_code": "public class EmailChallenge {\n    static class EmailComposer {\n        // Implement fluent email composer\n    }\n    public static void main(String[] args) {\n        // Test fluent email composer\n    }\n}",
+      "expected_output": "Email sent to: admin@corp.com | Subject: Alert",
+      "test_cases": [
+        {
+          "input": "admin@corp.com, Alert",
+          "expected_output": "Email sent to: admin@corp.com | Subject: Alert"
+        }
+      ]
+    },
+    "summary": [
+      "`this` refers to the current object instance executing the method.",
+      "Resolves variable shadowing (`this.field = param`).",
+      "Enables fluent method chaining when methods return `this`.",
+      "Cannot be used in static methods or static blocks."
+    ]
+  },
+  {
+    "id": "top-java-oop-object-invariants",
+    "number": 13,
+    "numberDisplay": "13",
+    "moduleId": "mod-java-oop-03",
+    "moduleTitle": "MODULE 03: Encapsulation and Access Modifiers",
+    "title": "Maintaining Object Invariants",
+    "slug": "maintaining-object-invariants",
+    "language": "java",
+    "shortDescription": "Enforce business rules, validate domain constraints, prevent invalid states, and build robust encapsulated classes.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-this-keyword",
+    "learningObjectives": [
+      "Define class invariants as business rules that must remain true throughout an object's lifetime",
+      "Enforce invariants uniformly across constructors and mutators",
+      "Use fail-fast exception handling (IllegalArgumentException, IllegalStateException)",
+      "Design defensive, tamper-proof enterprise domain entities"
+    ],
+    "conceptExplanation": "A Class Invariant is a condition or rule that must always hold true for any valid instance of a class. For example, in a `DateRange` class, the invariant is `startDate <= endDate`. In an `Account` class, `balance >= overdraftLimit`.\n\nGuarding Invariants requires three architectural protections:\n1. Private Fields: Fields must be private so no external entity can mutate them without checks.\n2. Constructor Validation: Constructors must validate arguments before assigning them to fields. An invalid object should never be born!\n3. Mutator Validation: Every public setter or behavioral method must re-verify invariants before committing state changes. If a proposed change would violate the invariant, the method must reject it (typically throwing an exception) without corrupting existing state.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     CLASS INVARIANT DEFENSE SHIELD                      |\n+-------------------------------------------------------------------------+\n| Invariant: startDate <= endDate                                         |\n|                                                                         |\n| Attempt: new DateRange(2025-10-10, 2025-01-01)                          |\n|                    |                                                    |\n|                    v                                                    |\n|        [Is start <= end ? NO]                                           |\n|                    |                                                    |\n|                    v                                                    |\n|   THROW IllegalArgumentException!                                       |\n|   * Result: Corrupted object is NEVER created in memory! *              |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class DateRange {\n    private final LocalDate start;\n    private final LocalDate end;\n\n    public DateRange(LocalDate start, LocalDate end) {\n        if (start == null || end == null || start.isAfter(end)) {\n            throw new IllegalArgumentException(\"Invalid date range invariant\");\n        }\n        this.start = start;\n        this.end = end;\n    }\n}",
+    "simpleExample": {
+      "code": "public class InvariantDemo {\n    static class Percentage {\n        private double value;\n\n        public Percentage(double value) {\n            setValue(value);\n        }\n\n        public void setValue(double value) {\n            if (value < 0.0 || value > 100.0) {\n                throw new IllegalArgumentException(\"Percentage must be in [0, 100]\");\n            }\n            this.value = value;\n        }\n\n        public double getValue() { return value; }\n    }\n\n    public static void main(String[] args) {\n        Percentage p = new Percentage(85.5);\n        System.out.println(\"Valid percentage: \" + p.getValue() + \"%\");\n    }\n}",
+      "explanation": "Percentage guarantees at all times that its value field is between 0 and 100, rejecting invalid inputs immediately."
+    },
+    "codeExample": "public class RobustAccountInvariant {\n    static class CheckingAccount {\n        private final String accountId;\n        private double balance;\n        private final double maxOverdraft;\n\n        public CheckingAccount(String accountId, double initialDeposit, double maxOverdraft) {\n            if (accountId == null || accountId.trim().isEmpty()) {\n                throw new IllegalArgumentException(\"Account ID cannot be blank\");\n            }\n            if (maxOverdraft < 0) {\n                throw new IllegalArgumentException(\"Overdraft limit cannot be negative\");\n            }\n            this.accountId = accountId;\n            this.maxOverdraft = maxOverdraft;\n            this.balance = initialDeposit;\n            assertInvariant();\n        }\n\n        public void withdraw(double amount) {\n            if (amount <= 0) throw new IllegalArgumentException(\"Withdrawal must be positive\");\n            if (this.balance - amount < -this.maxOverdraft) {\n                throw new IllegalStateException(\"Transaction exceeds permitted overdraft limit\");\n            }\n            this.balance -= amount;\n            assertInvariant();\n            System.out.println(\"Withdrew $\" + amount + \", Balance is now: $\" + this.balance);\n        }\n\n        private void assertInvariant() {\n            if (this.balance < -this.maxOverdraft) {\n                throw new IllegalStateException(\"CRITICAL: Account invariant violated!\");\n            }\n        }\n    }\n\n    public static void main(String[] args) {\n        CheckingAccount acc = new CheckingAccount(\"CHK-881\", 200.0, 100.0);\n        acc.withdraw(250.0); // Leaves balance at -50.0 (within 100 overdraft)\n    }\n}",
+    "expectedOutput": "Withdrew $250.0, Balance is now: $-50.0",
+    "stepByStep": [
+      "Constructor validates preconditions: accountId is not empty and overdraft is positive.",
+      "assertInvariant verifies balance never breaches allowed overdraft boundaries.",
+      "Any attempt to withdraw beyond limit is caught before mutating balance."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Catching validation errors and silently setting invalid inputs to 0 or arbitrary numbers.",
+        "correction": "Fail fast: throw an IllegalArgumentException to notify the caller of bad data.",
+        "explanation": "Silently substituting default values masks bugs and causes hard-to-detect accounting discrepancies."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Aviation Flight Altitude Controller",
+      "code": "public class FlightTelemetry {\n    private int altitudeFeet;\n    public void setAltitude(int alt) {\n        if (alt < 0 || alt > 85000) throw new IllegalArgumentException(\"Altitude out of aerodynamic bounds\");\n        this.altitudeFeet = alt;\n    }\n}",
+      "explanation": "Avionics software enforces physical reality invariants to prevent catastrophic navigation failure."
+    },
+    "practice": {
+      "prompt": "Create an AgeBracket class with private minAge and maxAge. Enforce the invariant minAge >= 0 and minAge <= maxAge in the constructor.",
+      "starterCode": "public class InvariantPractice {\n    static class AgeBracket {\n        // Complete class with invariant validation\n    }\n    public static void main(String[] args) {\n        // Test valid bracket\n    }\n}",
+      "expectedOutputMatcher": "Bracket",
+      "hint": "In constructor: if (min < 0 || min > max) throw new IllegalArgumentException();.",
+      "solution": "public class InvariantPractice {\n    static class AgeBracket {\n        private int minAge, maxAge;\n        public AgeBracket(int min, int max) {\n            if (min < 0 || min > max) throw new IllegalArgumentException(\"Invalid age bounds\");\n            this.minAge = min; this.maxAge = max;\n        }\n        public String toString() { return \"Bracket: [\" + minAge + \" - \" + maxAge + \"]\"; }\n    }\n    public static void main(String[] args) {\n        AgeBracket b = new AgeBracket(18, 65);\n        System.out.println(b);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-inv-1",
+        "question": "What is an object invariant in software design?",
+        "options": [
+          "A variable that cannot be read",
+          "A fundamental business rule or condition that must always remain true for any valid instance of a class",
+          "A class that cannot be inherited",
+          "A method that has no parameters"
+        ],
+        "correctIndex": 1,
+        "explanation": "An invariant is an assertion about object state that must be true from construction through every state transition."
+      },
+      {
+        "id": "quiz-java-oop-inv-2",
+        "question": "Where should invariant validation checks be implemented?",
+        "options": [
+          "Only inside the main() method",
+          "Inside constructors and all public mutator methods that alter relevant fields",
+          "Only in toString()",
+          "In the garbage collector"
+        ],
+        "correctIndex": 1,
+        "explanation": "Constructors prevent invalid objects from being born; mutators prevent existing objects from becoming corrupt."
+      },
+      {
+        "id": "quiz-java-oop-inv-3",
+        "question": "What is the recommended Java exception to throw when a method caller passes an argument violating an invariant?",
+        "options": [
+          "NullPointerException",
+          "IllegalArgumentException",
+          "ClassCastException",
+          "OutOfMemoryError"
+        ],
+        "correctIndex": 1,
+        "explanation": "`IllegalArgumentException` is standard for notifying callers that an argument violated range or formatting constraints."
+      },
+      {
+        "id": "quiz-java-oop-inv-4",
+        "question": "What does the 'fail-fast' principle advocate when handling invalid state?",
+        "options": [
+          "Silently ignore bad data and continue execution",
+          "Immediately halt execution and signal an exception rather than continuing with corrupted data",
+          "Reboot the computer",
+          "Save corrupted state to disk"
+        ],
+        "correctIndex": 1,
+        "explanation": "Failing fast surfaces bugs at the exact point of error rather than allowing bad data to propagate into silent corruption."
+      },
+      {
+        "id": "quiz-java-oop-inv-5",
+        "question": "Why are private fields mandatory for maintaining class invariants?",
+        "options": [
+          "To speed up execution",
+          "Because if fields are public, external callers can bypass validation and mutate fields directly into invalid states",
+          "Because Java does not permit constructors in public classes",
+          "To prevent classes from being compiled"
+        ],
+        "correctIndex": 1,
+        "explanation": "Public fields allow callers to bypass mutator validation, destroying any invariant guarantees."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Fraction Class Invariant Enforcer",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a Fraction class with private numerator and denominator. Enforce the mathematical invariant that denominator != 0 (throw IllegalArgumentException if 0). Implement a simplify() method and getFractionString().",
+      "input_format": "Numerator and denominator values.",
+      "output_format": "Simplified fraction string.",
+      "starter_code": "public class FractionChallenge {\n    static class Fraction {\n        // Complete Fraction\n    }\n    public static void main(String[] args) {\n        // Test fraction\n    }\n}",
+      "expected_output": "Fraction: 1/2",
+      "test_cases": [
+        {
+          "input": "4, 8",
+          "expected_output": "Fraction: 1/2"
+        }
+      ]
+    },
+    "summary": [
+      "Invariants are essential business rules that must remain true for the life of an object.",
+      "Constructors guard the door: an invalid object should never be instantiated.",
+      "Mutators enforce rules on every state change; reject invalid mutations immediately (fail-fast).",
+      "Encapsulation is the primary mechanism for defending object invariants."
+    ]
+  },
+  {
+    "id": "top-java-oop-inheritance-intro",
+    "number": 14,
+    "numberDisplay": "14",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "Introduction to Inheritance",
+    "slug": "inheritance-intro",
+    "language": "java",
+    "shortDescription": "Reuse existing class behavior, model IS-A relationships, and establish parent-child class hierarchies using extends.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-object-invariants",
+    "learningObjectives": [
+      "Explain the core concept of inheritance in object-oriented programming",
+      "Identify the IS-A relationship between subclasses and superclasses",
+      "Use the extends keyword to derive specialized child classes from existing base classes",
+      "Understand member inheritance rules (what is and is not inherited)"
+    ],
+    "conceptExplanation": "Inheritance is a fundamental OOP mechanism where one class (called the Subclass, Child, or Derived class) inherits fields and methods from another class (called the Superclass, Parent, or Base class) using the `extends` keyword.\n\nThe IS-A Relationship:\nInheritance models an 'is-a' relationship. For example, a `Dog` IS-A `Animal`, a `CheckingAccount` IS-A `Account`, and a `Manager` IS-A `Employee`.\n\nWhat is inherited?\n- A subclass inherits all `public` and `protected` fields and methods of its parent.\n- Package-private (default) members are inherited ONLY if the subclass resides in the same package.\n- `private` members are NOT inherited directly (though inherited public methods can interact with them).\n- Constructors are NOT inherited, but a subclass constructor ALWAYS invokes a superclass constructor.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     INHERITANCE CLASS HIERARCHY                         |\n+-------------------------------------------------------------------------+\n|                     +-----------------------------+                     |\n|                     | Superclass: Vehicle         |                     |\n|                     | - brand, maxSpeed           |                     |\n|                     | + startEngine(), stop()     |                     |\n|                     +-----------------------------+                     |\n|                                    ^                                    |\n|                                    | extends (IS-A)                     |\n|             +----------------------+----------------------+             |\n|             |                                             |             |\n| +-----------------------------+             +-------------------------+ |\n| | Subclass: Car               |             | Subclass: ElectricCar   | |\n| | - numDoors, fuelLevel       |             | - batteryCapacityKwh    | |\n| | + openTrunk()               |             | + recharge()            | |\n| +-----------------------------+             +-------------------------+ |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Superclass\npublic class Animal {\n    public void eat() {\n        System.out.println(\"This animal eats food.\");\n    }\n}\n\n// Subclass\npublic class Dog extends Animal {\n    public void bark() {\n        System.out.println(\"Woof!\");\n    }\n}",
+    "simpleExample": {
+      "code": "public class InheritanceBasicDemo {\n    static class Animal {\n        String species = \"General Animal\";\n        void eat() {\n            System.out.println(\"Animal is eating\");\n        }\n    }\n\n    static class Dog extends Animal {\n        void bark() {\n            System.out.println(\"Dog barks: Woof woof!\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Dog d = new Dog();\n        d.eat(); // Inherited method from Animal!\n        d.bark(); // Subclass specific method\n        System.out.println(\"Species: \" + d.species);\n    }\n}",
+      "explanation": "Dog inherits species and eat() from Animal without needing to redefine them, demonstrating code reuse."
+    },
+    "codeExample": "public class EmployeeHierarchyDemo {\n    static class Employee {\n        protected String id;\n        protected String name;\n        protected double baseSalary;\n\n        public Employee(String id, String name, double baseSalary) {\n            this.id = id;\n            this.name = name;\n            this.baseSalary = baseSalary;\n        }\n\n        public double calculatePay() {\n            return this.baseSalary;\n        }\n    }\n\n    static class Manager extends Employee {\n        private double bonus;\n\n        public Manager(String id, String name, double baseSalary, double bonus) {\n            super(id, name, baseSalary);\n            this.bonus = bonus;\n        }\n\n        @Override\n        public double calculatePay() {\n            return this.baseSalary + this.bonus;\n        }\n    }\n\n    public static void main(String[] args) {\n        Employee dev = new Employee(\"E-101\", \"Raj\", 60000.0);\n        Manager mgr = new Manager(\"M-201\", \"Jessica\", 80000.0, 15000.0);\n\n        System.out.println(dev.name + \" Pay: $\" + dev.calculatePay());\n        System.out.println(mgr.name + \" Pay: $\" + mgr.calculatePay());\n    }\n}",
+    "expectedOutput": "Raj Pay: $60000.0\nJessica Pay: $95000.0",
+    "stepByStep": [
+      "Manager inherits id, name, and baseSalary from Employee.",
+      "Manager's constructor delegates common field setup to super(id, name, baseSalary).",
+      "Manager overrides calculatePay() to incorporate executive bonus."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using inheritance when an entity merely has another component (e.g. `Car extends Engine`).",
+        "correction": "Use inheritance strictly for IS-A relationships (`Car extends Vehicle`). Use composition for HAS-A (`Car has an Engine`).",
+        "explanation": "A Car is NOT an Engine; a Car HAS an Engine. Inappropriate inheritance creates unmanageable architectures."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Java GUI Swing & JavaFX Component Trees",
+      "code": "// In Java Swing: JButton IS-A JComponent IS-A Container IS-A Component\npublic class CustomButton extends javax.swing.JButton {\n    // Inherits paint, click listeners, bounding boxes\n}",
+      "explanation": "UI toolkits model widgets via deep inheritance hierarchies sharing common render and event pipelines."
+    },
+    "practice": {
+      "prompt": "Create a Person base class with name and email, and a Student subclass extending Person that adds studentId. Print full details.",
+      "starterCode": "public class StudentPractice {\n    static class Person {\n        // Base person\n    }\n    static class Student extends Person {\n        // Subclass student\n    }\n    public static void main(String[] args) {\n        // Test student\n    }\n}",
+      "expectedOutputMatcher": "Student",
+      "hint": "In Student constructor, assign name, email, and studentId, then print them.",
+      "solution": "public class StudentPractice {\n    static class Person {\n        String name = \"Alex\";\n        String email = \"alex@edu.com\";\n    }\n    static class Student extends Person {\n        String studentId = \"ST-900\";\n        void display() {\n            System.out.println(\"Student: \" + name + \" (\" + studentId + \")\");\n        }\n    }\n    public static void main(String[] args) {\n        Student s = new Student();\n        s.display();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-inh-1",
+        "question": "Which keyword is used in Java to derive a subclass from a superclass?",
+        "options": [
+          "inherits",
+          "extends",
+          "implements",
+          "derives"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java uses `extends` for class inheritance and `implements` for interface implementation."
+      },
+      {
+        "id": "quiz-java-oop-inh-2",
+        "question": "Which conceptual relationship does class inheritance represent?",
+        "options": [
+          "HAS-A relationship",
+          "IS-A relationship",
+          "USES-A relationship",
+          "BELONGS-TO relationship"
+        ],
+        "correctIndex": 1,
+        "explanation": "Inheritance models an IS-A relationship (e.g. Dog IS-A Animal)."
+      },
+      {
+        "id": "quiz-java-oop-inh-3",
+        "question": "Are private members of a superclass inherited by its subclass in Java?",
+        "options": [
+          "Yes, they are directly accessible in the subclass",
+          "No, private members are not directly accessible by the subclass (only via inherited public/protected methods)",
+          "Only if the subclass is in the same package",
+          "Only if the subclass is marked static"
+        ],
+        "correctIndex": 1,
+        "explanation": "Private fields are encapsulated within the superclass and cannot be directly named or accessed in the subclass."
+      },
+      {
+        "id": "quiz-java-oop-inh-4",
+        "question": "Are constructors inherited by subclasses in Java?",
+        "options": [
+          "Yes, all constructors are inherited like normal methods",
+          "No, constructors are not inherited; subclasses must define their own constructors or rely on compiler defaults",
+          "Only the default constructor is inherited",
+          "Only constructors marked public are inherited"
+        ],
+        "correctIndex": 1,
+        "explanation": "Constructors are not members and are not inherited; each subclass defines its own constructors which call `super()`."
+      },
+      {
+        "id": "quiz-java-oop-inh-5",
+        "question": "What is the ultimate root superclass of all classes in Java?",
+        "options": [
+          "java.lang.System",
+          "java.lang.Class",
+          "java.lang.Object",
+          "java.lang.Root"
+        ],
+        "correctIndex": 2,
+        "explanation": "In Java, every single class implicitly extends `java.lang.Object` as the root of the class hierarchy."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Build a University Academic Hierarchy",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a Course base class with courseCode and title. Create OnlineCourse extending Course with platformName and recordedLectureCount. Implement a getCourseSummary() method.",
+      "input_format": "Course specifications.",
+      "output_format": "Course summary string.",
+      "starter_code": "public class CourseChallenge {\n    static class Course {\n        // Base course\n    }\n    static class OnlineCourse extends Course {\n        // Subclass\n    }\n    public static void main(String[] args) {\n        // Test course hierarchy\n    }\n}",
+      "expected_output": "CS101: Intro to Java on Coursera (36 lectures)",
+      "test_cases": [
+        {
+          "input": "CS101, Intro to Java, Coursera, 36",
+          "expected_output": "CS101: Intro to Java on Coursera (36 lectures)"
+        }
+      ]
+    },
+    "summary": [
+      "Use `extends` to establish an IS-A parent-child inheritance relationship.",
+      "Subclasses inherit public and protected members from their superclass.",
+      "Constructors and private fields are not inherited.",
+      "`java.lang.Object` is the root ancestor of all classes in Java."
+    ]
+  },
+  {
+    "id": "top-java-oop-inheritance-types",
+    "number": 15,
+    "numberDisplay": "15",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "Types of Inheritance",
+    "slug": "types-of-inheritance",
+    "language": "java",
+    "shortDescription": "Explore single, multilevel, and hierarchical inheritance, and understand why Java disallows multiple inheritance of classes.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-inheritance-intro",
+    "learningObjectives": [
+      "Distinguish Single, Multilevel, and Hierarchical inheritance structures in Java",
+      "Understand the Deadly Diamond of Death problem and why Java prohibits multiple class inheritance",
+      "Learn how Java safely achieves multiple inheritance of type and behavior through interfaces",
+      "Design clean, maintainable inheritance trees without excessive depth"
+    ],
+    "conceptExplanation": "Java supports three primary forms of class inheritance:\n1. Single Inheritance: A child class extends exactly one direct parent class (`B extends A`).\n2. Multilevel Inheritance: A class extends a child class, creating a chain (`C extends B`, where `B extends A`).\n3. Hierarchical Inheritance: Multiple distinct child classes extend the same parent class (`B extends A` and `C extends A`).\n\nWhy doesn't Java support Multiple Class Inheritance (`class C extends A, B`)?\nTo prevent the Diamond Problem! Suppose Class A defines `void execute()`, and both B and C override it with different logic. If D extends both B and C, calling `d.execute()` creates fatal ambiguity: which version should run? To keep language semantics unambiguous and avoid complex pointer mechanics (like C++ virtual tables), Java strictly restricts classes to a single superclass. Multiple inheritance of behavior is supported safely via Interfaces.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     THE DEADLY DIAMOND OF DEATH                         |\n+-------------------------------------------------------------------------+\n|                                  Class A                                |\n|                              +-------------+                            |\n|                              | execute()   |                            |\n|                              +-------------+                            |\n|                                 /       \\                               |\n|                                /         \\                              |\n|                     Class B   /           \\   Class C                   |\n|               +-------------+               +-------------+             |\n|               | execute()   |               | execute()   |             |\n|               +-------------+               +-------------+             |\n|                                \\         /                              |\n|                   Class D       \\       /                               |\n|            extends B, C (ILLEGAL)v     v                                |\n|                          WHICH execute() RUNS?                          |\n|                 * JAVA FORBIDS THIS FOR CLASSES! *                      |\n+-------------------------------------------------------------------------+",
+    "syntax": "// 1. Single Inheritance\nclass B extends A {}\n\n// 2. Multilevel Inheritance\nclass C extends B {} // C -> B -> A\n\n// 3. Hierarchical Inheritance\nclass X extends A {}\nclass Y extends A {}",
+    "simpleExample": {
+      "code": "public class MultilevelDemo {\n    static class LivingOrganism {\n        void breathe() { System.out.println(\"Consuming oxygen\"); }\n    }\n\n    static class Animal extends LivingOrganism {\n        void move() { System.out.println(\"Moving through environment\"); }\n    }\n\n    static class GoldenRetriever extends Animal {\n        void fetch() { System.out.println(\"Fetching tennis ball\"); }\n    }\n\n    public static void main(String[] args) {\n        GoldenRetriever dog = new GoldenRetriever();\n        dog.breathe(); // From LivingOrganism\n        dog.move();    // From Animal\n        dog.fetch();   // From GoldenRetriever\n    }\n}",
+      "explanation": "GoldenRetriever inherits all methods across the entire multilevel chain (LivingOrganism -> Animal -> GoldenRetriever)."
+    },
+    "codeExample": "public class HierarchicalDemo {\n    static class Account {\n        String accNo;\n        double balance;\n        Account(String no, double b) { this.accNo = no; this.balance = b; }\n    }\n\n    static class SavingsAccount extends Account {\n        double interestRate = 0.04;\n        SavingsAccount(String no, double b) { super(no, b); }\n    }\n\n    static class CheckingAccount extends Account {\n        double fee = 10.0;\n        CheckingAccount(String no, double b) { super(no, b); }\n    }\n\n    public static void main(String[] args) {\n        SavingsAccount sa = new SavingsAccount(\"SA-01\", 5000.0);\n        CheckingAccount ca = new CheckingAccount(\"CA-02\", 1200.0);\n        System.out.println(\"Savings: \" + sa.accNo + \" rate: \" + sa.interestRate);\n        System.out.println(\"Checking: \" + ca.accNo + \" fee: $\" + ca.fee);\n    }\n}",
+    "expectedOutput": "Savings: SA-01 rate: 0.04\nChecking: CA-02 fee: $10.0",
+    "stepByStep": [
+      "SavingsAccount and CheckingAccount both independently extend Account (Hierarchical).",
+      "Both child classes inherit common fields (accNo, balance) while maintaining specialized fields.",
+      "Code reuse is achieved without diamond conflicts."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Writing `class SmartPhone extends Phone, Computer`.",
+        "correction": "Extend one class and implement interfaces for secondary capabilities (`class SmartPhone extends Phone implements Computable`).",
+        "explanation": "Java compiler immediately flags multiple class extension with compile error: '{ expected'."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Java Collections Framework Class Hierarchy",
+      "code": "// AbstractCollection -> AbstractList -> ArrayList\n// Hierarchical: LinkedList and Vector also extend AbstractList",
+      "explanation": "The standard JDK collection architecture is a canonical example of clean multilevel and hierarchical inheritance."
+    },
+    "practice": {
+      "prompt": "Create a multilevel hierarchy: Device -> Computer -> Laptop. Add a powerOn() method in Device and test invoking it from a Laptop instance.",
+      "starterCode": "public class DeviceHierarchy {\n    static class Device {}\n    static class Computer extends Device {}\n    static class Laptop extends Computer {}\n    public static void main(String[] args) {\n        // Test multilevel inheritance\n    }\n}",
+      "expectedOutputMatcher": "Power",
+      "hint": "Put void powerOn() { System.out.println(\"Power on\"); } in Device.",
+      "solution": "public class DeviceHierarchy {\n    static class Device {\n        void powerOn() { System.out.println(\"Device Power ON\"); }\n    }\n    static class Computer extends Device {}\n    static class Laptop extends Computer {}\n    public static void main(String[] args) {\n        Laptop l = new Laptop();\n        l.powerOn();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-types-1",
+        "question": "Does Java support multiple inheritance of classes (e.g. `class C extends A, B`)?",
+        "options": [
+          "Yes, with the `multiple` keyword",
+          "No, Java does not support multiple class inheritance to prevent the Diamond Problem",
+          "Only in the default package",
+          "Only if both parent classes are abstract"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java disallows multiple inheritance of classes to prevent ambiguity in state and method dispatch."
+      },
+      {
+        "id": "quiz-java-oop-types-2",
+        "question": "What is multilevel inheritance in Java?",
+        "options": [
+          "A class implementing five interfaces",
+          "A hierarchy where a child class extends a parent class that itself extends another class (chain)",
+          "A class with multiple constructors",
+          "An abstract class with no methods"
+        ],
+        "correctIndex": 1,
+        "explanation": "Multilevel inheritance forms an ancestral chain: Class C extends B, and B extends A."
+      },
+      {
+        "id": "quiz-java-oop-types-3",
+        "question": "What is hierarchical inheritance?",
+        "options": [
+          "Multiple unrelated classes extending different parents",
+          "Multiple distinct subclasses extending the same common superclass",
+          "A class inheriting from an enum",
+          "A class containing static nested classes"
+        ],
+        "correctIndex": 1,
+        "explanation": "Hierarchical inheritance occurs when two or more child classes share the same direct parent class."
+      },
+      {
+        "id": "quiz-java-oop-types-4",
+        "question": "How does Java enable a class to acquire multiple type contracts without the Diamond Problem of state?",
+        "options": [
+          "Through Multiple Interfaces",
+          "Through global variables",
+          "Through package nesting",
+          "Through native JNI pointers"
+        ],
+        "correctIndex": 0,
+        "explanation": "Java allows a class to implement multiple interfaces (`implements A, B, C`), ensuring type polymorphism without ambiguous class state."
+      },
+      {
+        "id": "quiz-java-oop-types-5",
+        "question": "What is the Diamond Problem?",
+        "options": [
+          "A memory allocation deadlock in the JVM heap",
+          "Ambiguity arising when a subclass inherits two conflicting implementations of the same method from two parent classes",
+          "A sorting algorithm bottleneck",
+          "An encryption algorithm limitation"
+        ],
+        "correctIndex": 1,
+        "explanation": "The Diamond Problem occurs when two parent classes inherit from a common ancestor and override the same method, creating ambiguity for a common child."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Three-Tier Vehicle Telemetry System",
+      "difficulty": "Intermediate",
+      "problem_statement": "Implement a 3-tier multilevel hierarchy: 1) Machine (has serialNumber), 2) GroundVehicle (has wheelCount), and 3) Truck (has cargoCapacityTons). Provide a getTelemetry() method combining all three layers.",
+      "input_format": "Machine, vehicle, and truck specifications.",
+      "output_format": "Combined telemetry string.",
+      "starter_code": "public class TelemetryChallenge {\n    static class Machine {}\n    static class GroundVehicle extends Machine {}\n    static class Truck extends GroundVehicle {}\n    public static void main(String[] args) {\n        // Test multilevel hierarchy\n    }\n}",
+      "expected_output": "Truck SN-998 | Wheels: 18 | Cargo: 25.0 Tons",
+      "test_cases": [
+        {
+          "input": "SN-998, 18, 25.0",
+          "expected_output": "Truck SN-998 | Wheels: 18 | Cargo: 25.0 Tons"
+        }
+      ]
+    },
+    "summary": [
+      "Java supports Single, Multilevel, and Hierarchical class inheritance.",
+      "Multiple class inheritance is prohibited to avoid the Diamond Problem of state and method ambiguity.",
+      "Multiple contracts are achieved safely through interfaces.",
+      "Keep inheritance hierarchies shallow (2-3 levels) to avoid brittle coupling."
+    ]
+  },
+  {
+    "id": "top-java-oop-super-keyword",
+    "number": 16,
+    "numberDisplay": "16",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "The super Keyword",
+    "slug": "super-keyword",
+    "language": "java",
+    "shortDescription": "Invoke superclass constructors, access hidden parent variables, call overridden parent methods, and trace execution order.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-inheritance-types",
+    "learningObjectives": [
+      "Use super() to delegate constructor initialization to the direct superclass",
+      "Understand why super() must be the very first statement in a subclass constructor",
+      "Access hidden parent variables and call overridden superclass methods using super.method()",
+      "Trace top-down constructor execution order from Object down to the concrete subclass"
+    ],
+    "conceptExplanation": "In Java, `super` is a reference keyword used by a subclass to refer directly to its immediate superclass.\n\nThree Primary Usages of `super`:\n1. Invoking Superclass Constructors: `super(arguments)` invokes a constructor in the parent class. It MUST be the first statement in the subclass constructor. If neither `super(...)` nor `this(...)` is written explicitly, the Java compiler automatically inserts `super()` (the no-argument superclass constructor call).\n2. Calling Overridden Superclass Methods: `super.methodName()` allows a subclass to execute the parent's implementation while extending or decorating it with additional logic.\n3. Accessing Hidden Parent Fields: `super.fieldName` accesses a field in the superclass that is shadowed by a field with the same name in the child class.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     CONSTRUCTOR EXECUTION CHRONOLOGY                    |\n+-------------------------------------------------------------------------+\n| Statement: new GraduateStudent()                                        |\n|                                                                         |\n|   [1] java.lang.Object() constructor runs FIRST                         |\n|            ^                                                            |\n|            | super()                                                    |\n|   [2] Person() constructor runs SECOND                                  |\n|            ^                                                            |\n|            | super()                                                    |\n|   [3] Student() constructor runs THIRD                                  |\n|            ^                                                            |\n|            | super()                                                    |\n|   [4] GraduateStudent() constructor runs LAST                           |\n| * Constructors always execute TOP-DOWN from root parent to leaf child! *|\n+-------------------------------------------------------------------------+",
+    "syntax": "public class Child extends Parent {\n    public Child(String name, int age) {\n        super(name); // 1. Super constructor invocation (first line!)\n    }\n\n    @Override\n    public void action() {\n        super.action(); // 2. Call parent's overridden method\n        System.out.println(\"Child extension logic\");\n    }\n}",
+    "simpleExample": {
+      "code": "public class SuperDemo {\n    static class Parent {\n        String role = \"Parent\";\n        Parent() { System.out.println(\"1. Parent constructor\"); }\n        void greet() { System.out.println(\"Greetings from Parent\"); }\n    }\n\n    static class Child extends Parent {\n        String role = \"Child\"; // Shadows Parent.role\n        Child() {\n            super(); // Explicit or implicit\n            System.out.println(\"2. Child constructor\");\n        }\n        void show() {\n            System.out.println(\"Child role: \" + role);\n            System.out.println(\"Parent role: \" + super.role);\n        }\n    }\n\n    public static void main(String[] args) {\n        Child c = new Child();\n        c.show();\n    }\n}",
+      "explanation": "The parent constructor executes before the child constructor. super.role accesses the shadowed parent field."
+    },
+    "codeExample": "public class SuperMethodExtendingDemo {\n    static class BankTransaction {\n        protected String id;\n        protected double amount;\n\n        public BankTransaction(String id, double amount) {\n            this.id = id;\n            this.amount = amount;\n        }\n\n        public void process() {\n            System.out.println(\"Base transaction: validated debit $\" + amount);\n        }\n    }\n\n    static class InternationalWire extends BankTransaction {\n        private double swiftFee;\n\n        public InternationalWire(String id, double amount, double swiftFee) {\n            super(id, amount); // Initialize parent fields\n            this.swiftFee = swiftFee;\n        }\n\n        @Override\n        public void process() {\n            super.process(); // Execute parent verification first!\n            System.out.println(\"Swift wire clearing: assessed fee $\" + swiftFee);\n        }\n    }\n\n    public static void main(String[] args) {\n        InternationalWire wire = new InternationalWire(\"WIRE-701\", 5000.0, 45.0);\n        wire.process();\n    }\n}",
+    "expectedOutput": "Base transaction: validated debit $5000.0\nSwift wire clearing: assessed fee $45.0",
+    "stepByStep": [
+      "InternationalWire delegates id and amount to the BankTransaction super constructor.",
+      "Overridden process() calls super.process() to preserve core debit logic.",
+      "Additional specialized Swift fee logging executes after the base call."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Omitting super(args) in a subclass when the superclass lacks a no-argument constructor.",
+        "correction": "Explicitly call the superclass parameterized constructor as the first statement.",
+        "explanation": "If the parent has no default constructor, the child MUST explicitly call `super(arguments)`."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Custom Exception Handling",
+      "code": "public class AccountNotFoundException extends RuntimeException {\n    public AccountNotFoundException(String accountId) {\n        super(\"Account not found in ledger: \" + accountId);\n    }\n}",
+      "explanation": "Custom exceptions call `super(message)` to store the diagnostic error string in the base Throwable class."
+    },
+    "practice": {
+      "prompt": "Create a Vehicle superclass with brand, and an ElectricCar subclass with batteryCapacity. In ElectricCar constructor, use super(brand) to initialize brand.",
+      "starterCode": "public class SuperPractice {\n    static class Vehicle {\n        String brand;\n        Vehicle(String b) { this.brand = b; }\n    }\n    static class ElectricCar extends Vehicle {\n        // Implement constructor using super\n    }\n    public static void main(String[] args) {\n        // Test\n    }\n}",
+      "expectedOutputMatcher": "Battery",
+      "hint": "In ElectricCar(String b, int kwh), write super(b); this.battery = kwh;.",
+      "solution": "public class SuperPractice {\n    static class Vehicle {\n        String brand;\n        Vehicle(String b) { this.brand = b; }\n    }\n    static class ElectricCar extends Vehicle {\n        int battery;\n        ElectricCar(String b, int kwh) {\n            super(b);\n            this.battery = kwh;\n        }\n    }\n    public static void main(String[] args) {\n        ElectricCar ev = new ElectricCar(\"Tesla\", 82);\n        System.out.println(ev.brand + \" Battery: \" + ev.battery + \"kWh\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-super-1",
+        "question": "What is the purpose of the `super` keyword in Java?",
+        "options": [
+          "To allocate memory for static arrays",
+          "To reference and access members and constructors of the immediate superclass",
+          "To terminate a loop early",
+          "To make a class final"
+        ],
+        "correctIndex": 1,
+        "explanation": "`super` refers to the immediate parent class, enabling constructor delegation and superclass member access."
+      },
+      {
+        "id": "quiz-java-oop-super-2",
+        "question": "Where must `super(...)` appear inside a subclass constructor?",
+        "options": [
+          "As the very first statement in the constructor body",
+          "Anywhere before the closing brace",
+          "Inside a catch block",
+          "Only after instance variables are initialized"
+        ],
+        "correctIndex": 0,
+        "explanation": "Java mandates that superclass constructor calls must be the very first line of a child constructor."
+      },
+      {
+        "id": "quiz-java-oop-super-3",
+        "question": "What happens if a child constructor does NOT explicitly write `super()` or `this()`?",
+        "options": [
+          "The code will not compile",
+          "The Java compiler automatically inserts a no-argument `super();` call as the first line",
+          "The parent object is completely skipped in memory",
+          "The child class becomes abstract"
+        ],
+        "correctIndex": 1,
+        "explanation": "Java automatically supplies an invisible `super();` if neither `this()` nor `super()` is explicitly provided."
+      },
+      {
+        "id": "quiz-java-oop-super-4",
+        "question": "How do constructor calls execute in an inheritance chain?",
+        "options": [
+          "Bottom-up: Child runs first, parent runs last",
+          "Top-down: Object runs first, down to parent, down to child",
+          "Randomly based on available threads",
+          "In alphabetical order of class names"
+        ],
+        "correctIndex": 1,
+        "explanation": "Constructors execute top-down starting from java.lang.Object down through intermediate parents to the concrete leaf child."
+      },
+      {
+        "id": "quiz-java-oop-super-5",
+        "question": "How can a subclass method invoke the superclass's version of an overridden method?",
+        "options": [
+          "this.methodName()",
+          "super.methodName()",
+          "Parent.methodName()",
+          "base.methodName()"
+        ],
+        "correctIndex": 1,
+        "explanation": "`super.methodName()` bypasses dynamic dispatch on the child and directly invokes the parent's implementation."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Secure Audited Document Repository",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create Document with title and sizeBytes. Create SecureDocument extending Document with encryptionAlgorithm. In SecureDocument, override printInfo() to first call super.printInfo() then print the encryption algorithm.",
+      "input_format": "Document parameters.",
+      "output_format": "Chained document info.",
+      "starter_code": "public class DocChallenge {\n    static class Document {}\n    static class SecureDocument extends Document {}\n    public static void main(String[] args) {\n        // Test\n    }\n}",
+      "expected_output": "Doc: Policy.pdf (4096 bytes) [Encrypted: AES-256]",
+      "test_cases": [
+        {
+          "input": "Policy.pdf, 4096, AES-256",
+          "expected_output": "Doc: Policy.pdf (4096 bytes) [Encrypted: AES-256]"
+        }
+      ]
+    },
+    "summary": [
+      "`super()` calls the parent constructor and must be the first line of the child constructor.",
+      "Constructors execute top-down from `Object` down to the concrete subclass.",
+      "Use `super.method()` to invoke parent behavior within an overridden method.",
+      "Use `super.field` to access a parent field shadowed by a child field."
+    ]
+  },
+  {
+    "id": "top-java-oop-method-overriding",
+    "number": 17,
+    "numberDisplay": "17",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "Method Overriding",
+    "slug": "method-overriding",
+    "language": "java",
+    "shortDescription": "Redefine inherited behavior, master the @Override annotation, Covariant return types, and dynamic method dispatch.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-super-keyword",
+    "learningObjectives": [
+      "Understand method overriding as providing a specialized child implementation of an inherited method",
+      "Apply the @Override annotation to catch signature mismatches at compile time",
+      "Comply with overriding rules: identical signature, same or broader access modifier, covariant returns",
+      "Distinguish Method Overriding (runtime polymorphism) from Method Overloading (compile-time polymorphism)"
+    ],
+    "conceptExplanation": "Method Overriding occurs when a subclass defines a method that has the EXACT same name, parameter list, and return type (or covariant subtype) as a method in its superclass. Overriding provides specialized behavior for child entities while preserving a uniform interface.\n\nStrict Rules for Method Overriding:\n1. Same Signature: Method name and parameter types must be identical.\n2. Access Modifier Rule: The overriding method CANNOT be more restrictive than the overridden method. (If parent is `protected`, child can be `protected` or `public`, but NOT `private`).\n3. Return Type (Covariant Returns): The return type must be identical OR a subtype of the superclass return type.\n4. Exceptions Rule: The overriding method cannot throw new or broader checked exceptions than declared by the parent.\n5. What cannot be overridden: `final` methods, `static` methods (static methods are hidden, not overridden), and `private` methods.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     METHOD OVERRIDING DYNAMICS                          |\n+-------------------------------------------------------------------------+\n| Parent Reference: Animal a = new Cat();                                 |\n|                                                                         |\n| Call: a.makeSound()                                                     |\n|                                                                         |\n|   Compile Time: Compiler checks Animal.class -> finds makeSound() [OK]  |\n|                                                                         |\n|   Runtime: JVM inspects actual object in heap (Cat)                     |\n|            -> Executes Cat's overridden makeSound() (\"Meow!\")          |\n|                                                                         |\n| * Dynamic Method Dispatch routes execution to the concrete instance! *  |\n+-------------------------------------------------------------------------+",
+    "syntax": "class Parent {\n    public void render() {\n        System.out.println(\"Default render\");\n    }\n}\n\nclass Child extends Parent {\n    @Override // Compiler validates exact override match\n    public void render() {\n        System.out.println(\"High-definition 3D render\");\n    }\n}",
+    "simpleExample": {
+      "code": "public class OverridingDemo {\n    static class Bank {\n        double getInterestRate() { return 2.0; }\n    }\n\n    static class PremiumBank extends Bank {\n        @Override\n        double getInterestRate() { return 5.5; }\n    }\n\n    public static void main(String[] args) {\n        Bank general = new Bank();\n        Bank premium = new PremiumBank(); // Upcasting\n        System.out.println(\"General Rate: \" + general.getInterestRate() + \"%\");\n        System.out.println(\"Premium Rate: \" + premium.getInterestRate() + \"%\");\n    }\n}",
+      "explanation": "premium.getInterestRate() executes PremiumBank's version (5.5%) even though the reference type is Bank."
+    },
+    "codeExample": "public class CovariantReturnDemo {\n    static class Document {\n        String title = \"Generic Document\";\n    }\n\n    static class PdfDocument extends Document {\n        String pdfVersion = \"v1.7\";\n    }\n\n    static class DocumentFactory {\n        public Document create() {\n            return new Document();\n        }\n    }\n\n    static class PdfFactory extends DocumentFactory {\n        // COVARIANT RETURN TYPE: PdfDocument is a subtype of Document\n        @Override\n        public PdfDocument create() {\n            return new PdfDocument();\n        }\n    }\n\n    public static void main(String[] args) {\n        PdfFactory factory = new PdfFactory();\n        PdfDocument doc = factory.create(); // No cast needed!\n        System.out.println(\"Created: \" + doc.title + \" (\" + doc.pdfVersion + \")\");\n    }\n}",
+    "expectedOutput": "Created: Generic Document (v1.7)",
+    "stepByStep": [
+      "PdfFactory overrides create() with return type PdfDocument (subtype of Document).",
+      "Covariant returns eliminate the need for callers to cast the return value.",
+      "Validates Java's type safety rules during method overriding."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Accidentally overloading instead of overriding by changing a parameter type (e.g. `double` instead of `int`).",
+        "correction": "Always annotate overriding methods with `@Override`.",
+        "explanation": "If the method signature does not match a parent method, `@Override` causes the compiler to flag an error immediately."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "toString(), equals(), and hashCode() in Domain Objects",
+      "code": "public class User {\n    String username;\n    @Override\n    public String toString() { return \"User[\" + username + \"]\"; }\n}",
+      "explanation": "Every Java entity overrides java.lang.Object's toString() to provide meaningful JSON/text representations."
+    },
+    "practice": {
+      "prompt": "Create a Shape class with calculateArea() returning 0.0, and a Circle subclass with radius that overrides calculateArea() to return Math.PI * r * r.",
+      "starterCode": "public class ShapeOverridePractice {\n    static class Shape {}\n    static class Circle extends Shape {}\n    public static void main(String[] args) {\n        // Test overriding\n    }\n}",
+      "expectedOutputMatcher": "Circle Area",
+      "hint": "Annotate Circle's method with @Override and return Math.PI * radius * radius.",
+      "solution": "public class ShapeOverridePractice {\n    static class Shape {\n        double calculateArea() { return 0.0; }\n    }\n    static class Circle extends Shape {\n        double radius = 7.0;\n        @Override\n        double calculateArea() { return Math.PI * radius * radius; }\n    }\n    public static void main(String[] args) {\n        Shape s = new Circle();\n        System.out.printf(\"Circle Area: %.2f\\n\", s.calculateArea());\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-over-1",
+        "question": "What is the role of the `@Override` annotation in Java?",
+        "options": [
+          "It is mandatory; code will not run without it",
+          "It instructs the compiler to verify that the method actually overrides a superclass method",
+          "It converts instance methods into static methods",
+          "It bypasses access modifier restrictions"
+        ],
+        "correctIndex": 1,
+        "explanation": "`@Override` provides compile-time checking, preventing subtle bugs caused by misspelled names or mismatched parameters."
+      },
+      {
+        "id": "quiz-java-oop-over-2",
+        "question": "Can an overriding method in a subclass have a more restrictive access modifier than the parent method?",
+        "options": [
+          "Yes, a public parent method can be made private in the child",
+          "No, an overriding method cannot reduce the visibility of the inherited method",
+          "Only if the method is synchronized",
+          "Only if the subclass is in a different package"
+        ],
+        "correctIndex": 1,
+        "explanation": "Liskov Substitution Principle: An overriding method must provide equal or broader visibility (e.g. protected -> public is legal; public -> protected is illegal)."
+      },
+      {
+        "id": "quiz-java-oop-over-3",
+        "question": "What is a covariant return type in Java method overriding?",
+        "options": [
+          "A return type that changes from void to int",
+          "A return type in the child method that is a subtype of the return type declared in the parent method",
+          "Returning multiple values in an array",
+          "A generic type parameter"
+        ],
+        "correctIndex": 1,
+        "explanation": "Covariant returns allow a child method to narrow the return type to a more specific subclass of the parent's return type."
+      },
+      {
+        "id": "quiz-java-oop-over-4",
+        "question": "Can `static` methods be overridden in Java?",
+        "options": [
+          "Yes, static methods behave identically to instance methods",
+          "No, static methods are resolved at compile time and are hidden (method hiding), not overridden",
+          "Only if marked with @Override",
+          "Only in interfaces"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static methods are bound at compile time based on reference type; they cannot participate in runtime dynamic method dispatch."
+      },
+      {
+        "id": "quiz-java-oop-over-5",
+        "question": "Which methods in a class can NEVER be overridden by a subclass?",
+        "options": [
+          "Methods marked `final` or `private`",
+          "Methods with more than three parameters",
+          "Methods that return double",
+          "Methods inside public classes"
+        ],
+        "correctIndex": 0,
+        "explanation": "`final` explicitly prohibits overriding; `private` methods are not visible to subclasses and thus cannot be overridden."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Payment Processing Fee Specialization",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create PaymentProcessor with calculateFee(double amount) returning amount * 0.02. Create CryptoProcessor extending it and overriding calculateFee to return amount * 0.005 + 1.0 (network flat fee).",
+      "input_format": "Transaction amounts.",
+      "output_format": "Computed transaction fee.",
+      "starter_code": "public class FeeChallenge {\n    static class PaymentProcessor {}\n    static class CryptoProcessor extends PaymentProcessor {}\n    public static void main(String[] args) {\n        // Test polymorphic fee calculation\n    }\n}",
+      "expected_output": "Standard: $20.00, Crypto: $6.00",
+      "test_cases": [
+        {
+          "input": "1000.0",
+          "expected_output": "Standard: $20.00, Crypto: $6.00"
+        }
+      ]
+    },
+    "summary": [
+      "Method overriding provides specialized implementation for inherited methods.",
+      "Always use `@Override` to ensure compile-time verification of signatures.",
+      "Overriding methods cannot reduce visibility (must be equal or broader).",
+      "Static, private, and final methods cannot be overridden."
+    ]
+  },
+  {
+    "id": "top-java-oop-final-keyword",
+    "number": 18,
+    "numberDisplay": "18",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "The final Keyword",
+    "slug": "final-keyword",
+    "language": "java",
+    "shortDescription": "Prevent reassignment, forbid method overriding, and prohibit inheritance using Java's final modifier.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-method-overriding",
+    "learningObjectives": [
+      "Apply final to variables to create constants and immutable references",
+      "Apply final to methods to prevent subclasses from altering critical security algorithms",
+      "Apply final to classes to prohibit inheritance entirely (e.g. java.lang.String)",
+      "Understand that a final object reference prevents reassignment, not internal mutation"
+    ],
+    "conceptExplanation": "The `final` keyword in Java is a non-access modifier that imposes immutability and finality across three contexts:\n\n1. Final Variables:\n   - Constant primitives: Value cannot be reassigned once initialized (`final int MAX = 100;`).\n   - Reference variables: The memory address reference cannot be changed to point to another object. However, the object's internal mutable state CAN still be modified unless the object itself is immutable.\n\n2. Final Methods: A method marked `final` CANNOT be overridden by any subclass (`public final void verifySecurityToken()`). Used to guarantee security protocols, hashing algorithms, or core business rules cannot be subverted by subclasses.\n\n3. Final Classes: A class marked `final` CANNOT be extended by any other class (`public final class String`). Guarantees that no subclass can masquerade as this type or tamper with its internal representation.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     THE THREE FACES OF 'final'                          |\n+-------------------------------------------------------------------------+\n| 1. final VARIABLE:                                                      |\n|    final int LIMIT = 50;                                                |\n|    LIMIT = 100; // COMPILE ERROR! Value cannot be reassigned.          |\n+-------------------------------------------------------------------------+\n| 2. final METHOD:                                                        |\n|    class Auth { final void hashPassword() { ... } }                     |\n|    class SubAuth extends Auth { void hashPassword() {} } // ILLEGAL!    |\n+-------------------------------------------------------------------------+\n| 3. final CLASS:                                                         |\n|    final class String { ... }                                           |\n|    class MyString extends String {} // COMPILE ERROR! No subclasses.    |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Final constant\npublic static final double PI = 3.141592653589793;\n\n// Final method\npublic final void executeSecurityCheck() {\n    // Immutable algorithm\n}\n\n// Final class\npublic final class ImmutableVault {\n    // Cannot be extended\n}",
+    "simpleExample": {
+      "code": "public class FinalDemo {\n    static final class MathConstants {\n        static final int MAX_USERS = 5000;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(\"Max users allowed: \" + MathConstants.MAX_USERS);\n        // MathConstants.MAX_USERS = 6000; // Compile Error!\n    }\n}",
+      "explanation": "MAX_USERS cannot be reassigned. MathConstants is final, meaning no other class can extend it."
+    },
+    "codeExample": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class FinalReferenceNuance {\n    public static void main(String[] args) {\n        // final reference variable\n        final List<String> whitelist = new ArrayList<>();\n\n        // 1. Modifying internal object state is completely VALID!\n        whitelist.add(\"192.168.1.1\");\n        whitelist.add(\"10.0.0.1\");\n        System.out.println(\"Whitelist entries: \" + whitelist);\n\n        // 2. Reassigning reference pointer is FORBIDDEN:\n        // whitelist = new ArrayList<>(); // COMPILE ERROR: cannot assign value to final variable whitelist\n    }\n}",
+    "expectedOutput": "Whitelist entries: [192.168.1.1, 10.0.0.1]",
+    "stepByStep": [
+      "whitelist is declared as a final reference to an ArrayList in heap memory.",
+      "Adding items mutates the heap object payload without changing the reference pointer address.",
+      "Attempting to assign whitelist to a new ArrayList fails compilation."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Believing that `final List<T> list = new ArrayList<>();` makes the list contents immutable.",
+        "correction": "Recognize that `final` only freezes the reference pointer; use `Collections.unmodifiableList()` or `List.of()` for immutable contents.",
+        "explanation": "A final reference cannot point elsewhere, but the object it points to can still be modified unless frozen."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Standard Java Runtime Security: String and Integer Classes",
+      "code": "public final class String implements java.io.Serializable, Comparable<String>, CharSequence {\n    // Declared final to prevent malicious subclasses from hijacking password verification or security tokens\n}",
+      "explanation": "If String were open to inheritance, an attacker could create a rogue SubString bypassing equals() checks."
+    },
+    "practice": {
+      "prompt": "Create an ImmutableConfig class with final String apiKey and final int timeoutSeconds initialized in its constructor.",
+      "starterCode": "public class ConfigPractice {\n    static class ImmutableConfig {\n        // Complete with final fields\n    }\n    public static void main(String[] args) {\n        // Test config\n    }\n}",
+      "expectedOutputMatcher": "Key",
+      "hint": "Declare final String apiKey; and initialize inside public ImmutableConfig(String k, int t) { ... }.",
+      "solution": "public class ConfigPractice {\n    static class ImmutableConfig {\n        final String apiKey;\n        final int timeoutSeconds;\n        ImmutableConfig(String key, int timeout) {\n            this.apiKey = key;\n            this.timeoutSeconds = timeout;\n        }\n    }\n    public static void main(String[] args) {\n        ImmutableConfig cfg = new ImmutableConfig(\"SEC-KEY-99\", 30);\n        System.out.println(\"Key: \" + cfg.apiKey + \" Timeout: \" + cfg.timeoutSeconds + \"s\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-final-1",
+        "question": "What happens when a class is declared with the `final` keyword?",
+        "options": [
+          "It cannot be instantiated",
+          "It cannot be extended (subclassed) by any other class",
+          "All of its methods become static",
+          "It can only have one instance (Singleton)"
+        ],
+        "correctIndex": 1,
+        "explanation": "A final class cannot be extended; compiler prohibits any class from writing `extends FinalClass`."
+      },
+      {
+        "id": "quiz-java-oop-final-2",
+        "question": "Can a `final` method in a superclass be overridden in a subclass?",
+        "options": [
+          "Yes, if the subclass method is also marked final",
+          "No, the compiler generates an error: overridden method is final",
+          "Only if the subclass is in the same package",
+          "Only in Java 17 and above"
+        ],
+        "correctIndex": 1,
+        "explanation": "Final methods cannot be overridden; their implementation is sealed."
+      },
+      {
+        "id": "quiz-java-oop-final-3",
+        "question": "If an object reference is declared `final StringBuilder sb = new StringBuilder();`, which statement is true?",
+        "options": [
+          "`sb.append(\"text\")` is illegal",
+          "`sb = new StringBuilder();` is illegal, but `sb.append(\"text\")` is legal",
+          "The StringBuilder is frozen in read-only mode",
+          "The JVM throws a FinalAssignmentException"
+        ],
+        "correctIndex": 1,
+        "explanation": "Final on an object reference prevents reassigning the variable to a new instance, but the object itself remains mutable."
+      },
+      {
+        "id": "quiz-java-oop-final-4",
+        "question": "Why are classes like `java.lang.String` and `java.lang.Integer` declared `final` in the Java standard library?",
+        "options": [
+          "To save disk space in the JDK installer",
+          "For security, immutability guarantees, and compiler optimizations (e.g. method inlining)",
+          "Because they contain native code",
+          "To prevent them from being used in collections"
+        ],
+        "correctIndex": 1,
+        "explanation": "Sealing String guarantees security (network and file permissions depend on immutable strings) and enables performance optimizations."
+      },
+      {
+        "id": "quiz-java-oop-final-5",
+        "question": "What is a 'blank final' variable in Java?",
+        "options": [
+          "A final variable initialized to empty string",
+          "A final instance variable that is not initialized at its declaration point, but MUST be initialized in every constructor",
+          "A variable with no identifier name",
+          "A final variable that can be reassigned once"
+        ],
+        "correctIndex": 1,
+        "explanation": "A blank final variable is assigned inside the constructor body, after which it cannot be altered."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Immutable Cryptographic Keystore",
+      "difficulty": "Intermediate",
+      "problem_statement": "Design a final class Keystore with private final byte[] secretKey and private final long createdEpoch. Provide a constructor that defensively clones the input byte array, and a getSecretKey() that returns a clone.",
+      "input_format": "Raw key bytes and timestamp.",
+      "output_format": "Keystore status string.",
+      "starter_code": "public class KeystoreChallenge {\n    // Complete final class Keystore\n    public static void main(String[] args) {\n        // Test keystore immutability\n    }\n}",
+      "expected_output": "Keystore initialized: 4 bytes",
+      "test_cases": [
+        {
+          "input": "4 bytes",
+          "expected_output": "Keystore initialized: 4 bytes"
+        }
+      ]
+    },
+    "summary": [
+      "`final` variable: cannot be reassigned after initialization.",
+      "`final` method: cannot be overridden by any subclass.",
+      "`final` class: cannot be extended (subclassed).",
+      "A final reference guarantees pointer stability, not payload immutability."
+    ]
+  },
+  {
+    "id": "top-java-oop-inheritance-design",
+    "number": 19,
+    "numberDisplay": "19",
+    "moduleId": "mod-java-oop-04",
+    "moduleTitle": "MODULE 04: Inheritance and Code Reusability",
+    "title": "Inheritance Design",
+    "slug": "inheritance-design",
+    "language": "java",
+    "shortDescription": "Evaluate IS-A vs HAS-A relationships, avoid deep hierarchies, and choose composition over inheritance effectively.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-final-keyword",
+    "learningObjectives": [
+      "Evaluate whether an architecture genuinely requires inheritance (IS-A) or composition (HAS-A)",
+      "Understand the Fragile Base Class Problem caused by tight inheritance coupling",
+      "Apply the Liskov Substitution Principle (LSP) to ensure subclasses can stand in for superclasses",
+      "Adopt the industry guideline: 'Favor composition over inheritance'"
+    ],
+    "conceptExplanation": "Inheritance is a powerful tool, but misuse leads to brittle architectures known as the Fragile Base Class Problem: a small change in a superclass can unexpectedly break subclass invariants across large codebases.\n\nWhen to use Inheritance (IS-A):\n- A true conceptual subtype relationship exists (e.g. `SavingsAccount` IS-A `Account`).\n- The subclass satisfies the Liskov Substitution Principle (LSP): any code expecting the superclass functions correctly when passed the subclass.\n- You want polymorphic behavior where callers treat subclasses interchangeably.\n\nWhen to use Composition (HAS-A):\n- The relationship is one of ownership or containment (`Car` HAS-A `Engine`, `Order` HAS-A `List<Item>`).\n- You want to change or swap behavior dynamically at runtime.\n- You want to shield internal implementation details without exposing superclass methods to clients.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     INHERITANCE (IS-A) VS COMPOSITION (HAS-A)           |\n+-------------------------------------------------------------------------+\n| INHERITANCE (Tightly Coupled):                                          |\n|   class InstrumentedHashSet extends HashSet { ... }                     |\n|   * If HashSet's internal implementation changes, subclass breaks!      |\n+-------------------------------------------------------------------------+\n| COMPOSITION (Loosely Coupled & Swappable):                              |\n|   class InstrumentedSet {                                               |\n|       private final Set<T> internalSet; // HAS-A                        |\n|       public void add(T item) {                                         |\n|           count++;                                                      |\n|           internalSet.add(item); // Forwarding                          |\n|       }                                                                 |\n|   }                                                                     |\n|   * Flexible, resilient to internal changes, swappable at runtime! *   |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Composition pattern: Forwarding calls to an internal component\npublic class ReportNotifier {\n    private final EmailService emailer; // HAS-A relationship\n\n    public ReportNotifier(EmailService emailer) {\n        this.emailer = emailer;\n    }\n\n    public void notifyAdmin(String report) {\n        this.emailer.send(\"admin@corp.com\", report);\n    }\n}",
+    "simpleExample": {
+      "code": "public class CompositionVsInheritanceDemo {\n    static class Engine {\n        void ignite() { System.out.println(\"V8 Engine ignited\"); }\n    }\n\n    // Car HAS-A Engine (Composition), NOT Car IS-A Engine\n    static class Car {\n        private final Engine engine = new Engine();\n\n        void start() {\n            engine.ignite();\n            System.out.println(\"Car is ready to drive\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Car car = new Car();\n        car.start();\n    }\n}",
+      "explanation": "Car delegates ignition to its internal Engine. If the Engine is later replaced with an ElectricMotor, Car's interface remains stable."
+    },
+    "codeExample": "public class LiskovSubstitutionDemo {\n    static class Bird {\n        void eat() { System.out.println(\"Bird eating seeds\"); }\n    }\n\n    static class FlyingBird extends Bird {\n        void fly() { System.out.println(\"Flying high in the sky\"); }\n    }\n\n    static class Sparrow extends FlyingBird {}\n\n    static class Ostrich extends Bird {\n        // Ostrich extends Bird, NOT FlyingBird!\n        // If Ostrich extended FlyingBird, fly() would fail or throw exceptions, violating LSP!\n        void sprint() { System.out.println(\"Ostrich sprinting at 60 km/h\"); }\n    }\n\n    public static void main(String[] args) {\n        FlyingBird b1 = new Sparrow();\n        b1.fly();\n        Bird b2 = new Ostrich();\n        b2.eat();\n    }\n}",
+    "expectedOutput": "Flying high in the sky\nBird eating seeds",
+    "stepByStep": [
+      "Good inheritance design segregates capabilities into FlyingBird vs Bird.",
+      "Ostrich does not inherit an unusable fly() method.",
+      "Liskov Substitution Principle is preserved across all types."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Inheriting from a class just to reuse a single helper method (e.g. extending ArrayList to add a filter helper).",
+        "correction": "Use composition: encapsulate an ArrayList field inside your custom collection class.",
+        "explanation": "Extending concrete classes exposes 50+ unwanted methods to your clients, creating brittle coupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Java I/O Decorator Streams",
+      "code": "// BufferedInputStream wraps (HAS-A) an underlying InputStream\nInputStream in = new BufferedInputStream(new FileInputStream(\"data.bin\"));",
+      "explanation": "Java I/O uses composition and the Decorator pattern to wrap and enhance streams without deep inheritance hierarchies."
+    },
+    "practice": {
+      "prompt": "Refactor a Printer inheritance design into composition: Create a PrintEngine class and a LaserPrinter class that HAS-A PrintEngine.",
+      "starterCode": "public class CompositionPractice {\n    // Implement PrintEngine and LaserPrinter via composition\n    public static void main(String[] args) {\n        // Test\n    }\n}",
+      "expectedOutputMatcher": "Laser",
+      "hint": "In LaserPrinter, store private PrintEngine engine = new PrintEngine(); and call engine.print().",
+      "solution": "public class CompositionPractice {\n    static class PrintEngine {\n        void print(String doc) { System.out.println(\"Engine printing: \" + doc); }\n    }\n    static class LaserPrinter {\n        private final PrintEngine engine = new PrintEngine();\n        void printDocument(String d) {\n            System.out.println(\"Laser Printer warm-up\");\n            engine.print(d);\n        }\n    }\n    public static void main(String[] args) {\n        LaserPrinter lp = new LaserPrinter();\n        lp.printDocument(\"Invoice #101\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-design-1",
+        "question": "What is the core recommendation of the 'Favor composition over inheritance' design principle?",
+        "options": [
+          "Never use classes; use interfaces only",
+          "Prefer assembling objects with HAS-A relationships rather than deriving deep IS-A class hierarchies",
+          "Inherit from at least five classes for maximum reusability",
+          "Always use public variables"
+        ],
+        "correctIndex": 1,
+        "explanation": "Composition provides greater flexibility, lower coupling, and runtime swappability without superclass fragility."
+      },
+      {
+        "id": "quiz-java-oop-design-2",
+        "question": "What is the 'Fragile Base Class' problem?",
+        "options": [
+          "A class file being corrupted on disk",
+          "When modifications to a superclass inadvertently break the functionality or invariants of derived subclasses",
+          "A compiler running out of memory",
+          "A class with no constructors"
+        ],
+        "correctIndex": 1,
+        "explanation": "Inheritance breaks encapsulation across the boundary; changing parent internals can break subclasses."
+      },
+      {
+        "id": "quiz-java-oop-design-3",
+        "question": "What does the Liskov Substitution Principle (LSP) require?",
+        "options": [
+          "Subclasses must define more methods than superclasses",
+          "Objects of a superclass should be replaceable with objects of its subclasses without breaking application correctness",
+          "All classes must be declared final",
+          "Subclasses must throw RuntimeExceptions"
+        ],
+        "correctIndex": 1,
+        "explanation": "LSP states that any subclass must fulfill the behavioral contract of its superclass without surprising callers."
+      },
+      {
+        "id": "quiz-java-oop-design-4",
+        "question": "Which of the following relationships is a proper candidate for class inheritance (IS-A)?",
+        "options": [
+          "Car and SteeringWheel",
+          "SavingsAccount and BankAccount",
+          "House and Bedroom",
+          "Computer and CPU"
+        ],
+        "correctIndex": 1,
+        "explanation": "A SavingsAccount IS-A BankAccount. The other examples represent HAS-A composition relationships."
+      },
+      {
+        "id": "quiz-java-oop-design-5",
+        "question": "What is a key architectural advantage of composition over inheritance?",
+        "options": [
+          "The composed component can be swapped dynamically at runtime, whereas inheritance is fixed at compile time",
+          "Composition bypasses Java's type checking",
+          "Composition makes all fields public",
+          "Composition requires fewer lines of bytecode"
+        ],
+        "correctIndex": 0,
+        "explanation": "Composition enables runtime dependency injection and strategy swapping without rebuilding class hierarchies."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Payment Terminal with Swappable Validator",
+      "difficulty": "Intermediate",
+      "problem_statement": "Implement PaymentValidator interface and CardValidator implementation. Build PaymentTerminal using composition (HAS-A PaymentValidator) that delegates validate() and processes payments.",
+      "input_format": "Card number and amount.",
+      "output_format": "Terminal transaction confirmation.",
+      "starter_code": "public class TerminalChallenge {\n    // Complete composition design\n    public static void main(String[] args) {\n        // Test terminal\n    }\n}",
+      "expected_output": "Payment $50.0 verified via CardValidator",
+      "test_cases": [
+        {
+          "input": "50.0",
+          "expected_output": "Payment $50.0 verified via CardValidator"
+        }
+      ]
+    },
+    "summary": [
+      "Inheritance models IS-A relationships; Composition models HAS-A relationships.",
+      "Favor composition over inheritance to avoid the Fragile Base Class problem.",
+      "Subclasses must strictly satisfy the Liskov Substitution Principle (LSP).",
+      "Composition provides swappability, encapsulation, and lower coupling."
+    ]
+  },
+  {
+    "id": "top-java-oop-polymorphism-intro",
+    "number": 20,
+    "numberDisplay": "20",
+    "moduleId": "mod-java-oop-05",
+    "moduleTitle": "MODULE 05: Polymorphism and Dynamic Method Dispatch",
+    "title": "Introduction to Polymorphism",
+    "slug": "polymorphism-intro",
+    "language": "java",
+    "shortDescription": "Understand polymorphism: 'one interface, multiple implementations', code flexibility, and real-world architectures.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-inheritance-design",
+    "learningObjectives": [
+      "Define polymorphism ('many forms') in object-oriented programming",
+      "Differentiate compile-time (static) polymorphism from runtime (dynamic) polymorphism",
+      "Understand how polymorphism enables the Open-Closed Principle (OCP)",
+      "Write clean client code that interacts with parent abstractions instead of concrete subclasses"
+    ],
+    "conceptExplanation": "Polymorphism (from Greek 'poly' meaning many, and 'morph' meaning form) is the ability of an entity to exhibit different behaviors depending on the context. In Java, it means: 'One interface, multiple implementations.'\n\nTwo Broad Categories of Polymorphism:\n1. Compile-Time (Static) Polymorphism: Achieved via Method Overloading and Constructor Overloading. The specific method to execute is determined at compile time based on parameter types.\n2. Runtime (Dynamic) Polymorphism: Achieved via Method Overriding and Interfaces. A superclass or interface reference refers to a subclass object. At runtime, the JVM uses Dynamic Method Dispatch to call the version implemented by the concrete object in the heap, not the reference type!\n\nArchitectural Value:\nPolymorphism allows you to write extensible software adhering to the Open-Closed Principle: open for extension, closed for modification. You can introduce new subclasses without modifying any existing client code.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     POLYMORPHIC EXECUTION PIPELINE                      |\n+-------------------------------------------------------------------------+\n| Client Loop:                                                            |\n|   List<Shape> shapes = [ Circle, Rectangle, Triangle ];                 |\n|   for (Shape s : shapes) {                                              |\n|       s.draw(); // POLYMORPHIC INVOCATION!                              |\n|   }                                                                     |\n|                                                                         |\n| Iteration 1: s (Circle reference)    --> Executes Circle.draw()         |\n| Iteration 2: s (Rectangle reference) --> Executes Rectangle.draw()      |\n| Iteration 3: s (Triangle reference)  --> Executes Triangle.draw()       |\n|                                                                         |\n| * Same method call -> Distinct specialized behaviors at runtime! *     |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Polymorphic reference assignment\nSuperType obj = new SubType();\nobj.performAction(); // Dispatches dynamically to SubType's implementation",
+    "simpleExample": {
+      "code": "public class PolymorphismIntroDemo {\n    static class Speaker {\n        void speak() { System.out.println(\"...\"); }\n    }\n    static class EnglishSpeaker extends Speaker {\n        void speak() { System.out.println(\"Hello!\"); }\n    }\n    static class SpanishSpeaker extends Speaker {\n        void speak() { System.out.println(\"Hola!\"); }\n    }\n\n    public static void main(String[] args) {\n        Speaker s1 = new EnglishSpeaker();\n        Speaker s2 = new SpanishSpeaker();\n        s1.speak();\n        s2.speak();\n    }\n}",
+      "explanation": "Both s1 and s2 have reference type Speaker, but they execute EnglishSpeaker and SpanishSpeaker behavior dynamically."
+    },
+    "codeExample": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class NotificationDispatchDemo {\n    static class NotificationChannel {\n        void send(String recipient, String message) {\n            System.out.println(\"Default channel: \" + message + \" to \" + recipient);\n        }\n    }\n\n    static class EmailChannel extends NotificationChannel {\n        @Override\n        void send(String recipient, String message) {\n            System.out.println(\"[EMAIL] Delivering SMTP packet to <\" + recipient + \">: \" + message);\n        }\n    }\n\n    static class SmsChannel extends NotificationChannel {\n        @Override\n        void send(String recipient, String message) {\n            System.out.println(\"[SMS] Dispatching cellular payload to \" + recipient + \": \" + message);\n        }\n    }\n\n    public static void main(String[] args) {\n        List<NotificationChannel> channels = new ArrayList<>();\n        channels.add(new EmailChannel());\n        channels.add(new SmsChannel());\n\n        // Polymorphic broadcast loop\n        for (NotificationChannel channel : channels) {\n            channel.send(\"user_42\", \"Security code: 884129\");\n        }\n    }\n}",
+    "expectedOutput": "[EMAIL] Delivering SMTP packet to <user_42>: Security code: 884129\n[SMS] Dispatching cellular payload to user_42: Security code: 884129",
+    "stepByStep": [
+      "NotificationChannel collection holds heterogenous EmailChannel and SmsChannel instances.",
+      "The client loop invokes channel.send without caring which specific concrete subclass it is.",
+      "Dynamic dispatch automatically routes each call to the correct transport protocol."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using `if (type.equals(\"EMAIL\")) ... else if (type.equals(\"SMS\"))` instead of polymorphism.",
+        "correction": "Replace type-checking if-else branches with polymorphic subclasses.",
+        "explanation": "Type-switching ladders violate the Open-Closed Principle; adding a new channel requires editing existing code."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "JDBC Database Drivers",
+      "code": "java.sql.Connection conn = DriverManager.getConnection(url);\nconn.createStatement().executeQuery(\"SELECT 1\");",
+      "explanation": "JDBC code works identically whether connected to PostgreSQL, Oracle, or MySQL because of polymorphism."
+    },
+    "practice": {
+      "prompt": "Create an Instrument parent class with play(), and Guitar and Piano subclasses overriding play(). Call play() polymorphically in an array.",
+      "starterCode": "public class MusicPractice {\n    static class Instrument {}\n    static class Guitar extends Instrument {}\n    static class Piano extends Instrument {}\n    public static void main(String[] args) {\n        // Array of instruments\n    }\n}",
+      "expectedOutputMatcher": "strum",
+      "hint": "Put Instrument[] band = { new Guitar(), new Piano() }; and iterate.",
+      "solution": "public class MusicPractice {\n    static class Instrument {\n        void play() { System.out.println(\"Sound\"); }\n    }\n    static class Guitar extends Instrument {\n        void play() { System.out.println(\"Guitar strum\"); }\n    }\n    static class Piano extends Instrument {\n        void play() { System.out.println(\"Piano chord\"); }\n    }\n    public static void main(String[] args) {\n        Instrument[] band = { new Guitar(), new Piano() };\n        for (Instrument i : band) i.play();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-poly-1",
+        "question": "What is the core meaning of polymorphism in computer science?",
+        "options": [
+          "A class having many private fields",
+          "The ability of different objects to respond to the same message/method call in their own specialized way",
+          "A program executing on multiple CPU cores",
+          "A program written in multiple languages"
+        ],
+        "correctIndex": 1,
+        "explanation": "Polymorphism means 'many forms': one uniform interface dispatching to distinct specialized behaviors."
+      },
+      {
+        "id": "quiz-java-oop-poly-2",
+        "question": "Which of the following is an example of compile-time polymorphism?",
+        "options": [
+          "Method overriding",
+          "Method overloading",
+          "Dynamic method dispatch",
+          "Garbage collection"
+        ],
+        "correctIndex": 1,
+        "explanation": "Method overloading is resolved by the compiler at compile time based on method signatures."
+      },
+      {
+        "id": "quiz-java-oop-poly-3",
+        "question": "Which of the following is an example of runtime polymorphism?",
+        "options": [
+          "Constructor overloading",
+          "Method overloading",
+          "Method overriding via dynamic method dispatch",
+          "Bitwise shifting"
+        ],
+        "correctIndex": 2,
+        "explanation": "Method overriding allows the JVM to determine at runtime which subclass method to execute."
+      },
+      {
+        "id": "quiz-java-oop-poly-4",
+        "question": "How does polymorphism support the Open-Closed Principle (OCP)?",
+        "options": [
+          "By allowing all methods to be public",
+          "By enabling new subclasses to be added without modifying existing client code that relies on the superclass interface",
+          "By closing down all network sockets",
+          "By making classes final"
+        ],
+        "correctIndex": 1,
+        "explanation": "New implementations can be added to the system without editing or breaking existing caller methods."
+      },
+      {
+        "id": "quiz-java-oop-poly-5",
+        "question": "If `Animal a = new Cat();`, what determines whether `a.meow()` compiles?",
+        "options": [
+          "The concrete object in heap memory (Cat)",
+          "The reference type of the variable (Animal)",
+          "The JVM garbage collector",
+          "The operating system"
+        ],
+        "correctIndex": 1,
+        "explanation": "The compiler checks the reference type (Animal). If Animal lacks meow(), compilation fails even if Cat defines it."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Cloud Storage Provider Polymorphic Gateway",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a StorageService base class with upload(String filename). Create S3Storage and AzureBlobStorage subclasses overriding upload(). In main, process a list of storage providers polymorphically.",
+      "input_format": "Filenames to upload.",
+      "output_format": "Upload confirmation messages.",
+      "starter_code": "public class StorageChallenge {\n    static class StorageService {}\n    static class S3Storage extends StorageService {}\n    static class AzureBlobStorage extends StorageService {}\n    public static void main(String[] args) {\n        // Test polymorphic uploads\n    }\n}",
+      "expected_output": "S3: Uploaded backup.tar.gz | Azure: Uploaded backup.tar.gz",
+      "test_cases": [
+        {
+          "input": "backup.tar.gz",
+          "expected_output": "S3: Uploaded backup.tar.gz | Azure: Uploaded backup.tar.gz"
+        }
+      ]
+    },
+    "summary": [
+      "Polymorphism allows one interface to take on multiple concrete implementations.",
+      "Static polymorphism = Method overloading (compile-time resolution).",
+      "Dynamic polymorphism = Method overriding (runtime resolution via Dynamic Dispatch).",
+      "Promotes the Open-Closed Principle: extensible without rewriting existing code."
+    ]
+  },
+  {
+    "id": "top-java-oop-compile-time-polymorphism",
+    "number": 21,
+    "numberDisplay": "21",
+    "moduleId": "mod-java-oop-05",
+    "moduleTitle": "MODULE 05: Polymorphism and Dynamic Method Dispatch",
+    "title": "Compile-Time Polymorphism",
+    "slug": "compile-time-polymorphism",
+    "language": "java",
+    "shortDescription": "Master method overloading, parameter list variations, type conversion rules, and resolution of ambiguous overloads.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-polymorphism-intro",
+    "learningObjectives": [
+      "Overload methods by varying argument count, types, and parameter ordering",
+      "Understand why changing return type alone is NOT sufficient for overloading",
+      "Trace Java compiler type promotion and widening resolution rules",
+      "Identify and resolve ambiguous method overload compiler errors"
+    ],
+    "conceptExplanation": "Compile-Time Polymorphism (Static Polymorphism) in Java is achieved primarily through Method Overloading. Method Overloading allows multiple methods in the same class to share the same name, provided their parameter lists are unique.\n\nRules for Method Overloading:\n1. Parameter List Must Differ: By number of parameters, by types of parameters, or by order of parameter types.\n2. Return Type is IRRELEVANT: Changing only the return type does NOT overload a method. `int calc(int x)` and `double calc(int x)` will fail compilation with a 'duplicate method' error because the compiler cannot determine which to call at an invocation like `calc(5)`.\n\nCompiler Resolution Order (Widening vs Boxing vs Varargs):\nWhen matching an overload, Java resolves arguments in strict precedence order:\n1. Exact Type Match\n2. Primitive Widening (e.g. `int` -> `long` -> `float` -> `double`)\n3. Autoboxing (e.g. `int` -> `Integer`)\n4. Varargs (`int...`)",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     METHOD OVERLOAD RESOLUTION ORDER                    |\n+-------------------------------------------------------------------------+\n| Invocation: compute(5)  [Argument is primitive int]                     |\n|                                                                         |\n| 1. Exact Match:            compute(int x)        --> MATCH! (Selected)  |\n|        |                                                                |\n|        v (If absent)                                                    |\n| 2. Primitive Widening:     compute(long x)       --> Promotes int->long |\n|        |                                                                |\n|        v (If absent)                                                    |\n| 3. Autoboxing:             compute(Integer x)    --> Boxes int->Integer |\n|        |                                                                |\n|        v (If absent)                                                    |\n| 4. Variable Arguments:     compute(int... x)     --> Lowest Precedence  |\n+-------------------------------------------------------------------------+",
+    "syntax": "public class MathOps {\n    public int add(int a, int b) { return a + b; }\n    public double add(double a, double b) { return a + b; } // Overload by type\n    public int add(int a, int b, int c) { return a + b + c; } // Overload by count\n}",
+    "simpleExample": {
+      "code": "public class OverloadingDemo {\n    static class Formatter {\n        static String format(int val) { return \"Integer: \" + val; }\n        static String format(double val) { return \"Double: \" + val; }\n        static String format(String val) { return \"Text: '\" + val + \"'\"; }\n    }\n\n    public static void main(String[] args) {\n        System.out.println(Formatter.format(100));\n        System.out.println(Formatter.format(99.95));\n        System.out.println(Formatter.format(\"Java\"));\n    }\n}",
+      "explanation": "The compiler determines at build time which format method to bind based on the argument literal type."
+    },
+    "codeExample": "public class OverloadResolutionPriority {\n    static class Dispatcher {\n        static void process(long x) {\n            System.out.println(\"1. Primitive Widening (long) called\");\n        }\n        static void process(Integer x) {\n            System.out.println(\"2. Autoboxing (Integer) called\");\n        }\n        static void process(int... x) {\n            System.out.println(\"3. Varargs called\");\n        }\n    }\n\n    public static void main(String[] args) {\n        int value = 42;\n        // Java prefers Widening over Boxing: calls process(long)!\n        Dispatcher.process(value);\n    }\n}",
+    "expectedOutput": "1. Primitive Widening (long) called",
+    "stepByStep": [
+      "value is of type int.",
+      "Java inspects available overloads: long, Integer, int....",
+      "Primitive widening (int -> long) takes priority over autoboxing (int -> Integer).",
+      "process(long) is bound at compile time."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Attempting to overload by changing only the return type, e.g. `int get()` and `String get()`.",
+        "correction": "Ensure parameter lists differ; return types alone do not participate in overload resolution.",
+        "explanation": "The compiler cannot determine which method to invoke if caller writes `get();` without capturing the return."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "System.out.println Overload Suite",
+      "code": "System.out.println(true);    // println(boolean)\nSystem.out.println(42);      // println(int)\nSystem.out.println(\"Hello\"); // println(String)",
+      "explanation": "PrintStream provides 10+ overloaded println methods to accept any primitive or Object transparently."
+    },
+    "practice": {
+      "prompt": "Create a Calculator class with overloaded multiply methods: 1) multiply(int a, int b), 2) multiply(double a, double b), and 3) multiply(int a, int b, int c).",
+      "starterCode": "public class CalcPractice {\n    static class Calculator {\n        // Implement overloaded multiply methods\n    }\n    public static void main(String[] args) {\n        // Test overloads\n    }\n}",
+      "expectedOutputMatcher": "24",
+      "hint": "Provide three multiply methods with different signatures.",
+      "solution": "public class CalcPractice {\n    static class Calculator {\n        static int multiply(int a, int b) { return a * b; }\n        static double multiply(double a, double b) { return a * b; }\n        static int multiply(int a, int b, int c) { return a * b * c; }\n    }\n    public static void main(String[] args) {\n        System.out.println(Calculator.multiply(2, 3, 4));\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-comp-1",
+        "question": "Which of the following is sufficient on its own to overload a method in Java?",
+        "options": [
+          "Changing only the return type of the method",
+          "Changing the method's parameter count, parameter types, or parameter order",
+          "Changing only the access modifier (e.g. from public to private)",
+          "Changing only the parameter variable names"
+        ],
+        "correctIndex": 1,
+        "explanation": "Method overloading requires differing parameter counts, types, or order. Return types, modifiers, and parameter names alone do not count."
+      },
+      {
+        "id": "quiz-java-oop-comp-2",
+        "question": "Given `void show(int a, double b)` and `void show(double a, int b)`, what happens if you call `show(10, 20)`?",
+        "options": [
+          "Calls the first method",
+          "Calls the second method",
+          "Compile error: reference to show is ambiguous",
+          "Runs both methods sequentially"
+        ],
+        "correctIndex": 2,
+        "explanation": "Because 10 and 20 are both ints, both methods require one widening conversion. Neither is more specific, causing an ambiguity compile error."
+      },
+      {
+        "id": "quiz-java-oop-comp-3",
+        "question": "Between primitive widening and autoboxing, which does the Java compiler prioritize during overload resolution?",
+        "options": [
+          "Autoboxing is preferred over Widening",
+          "Widening is preferred over Autoboxing",
+          "Varargs is preferred over both",
+          "The compiler picks randomly"
+        ],
+        "correctIndex": 1,
+        "explanation": "For backward compatibility with pre-Java 5 code, primitive widening is chosen over autoboxing."
+      },
+      {
+        "id": "quiz-java-oop-comp-4",
+        "question": "Why is compile-time polymorphism also referred to as static binding?",
+        "options": [
+          "Because it only applies to methods declared with the static keyword",
+          "Because method binding is fixed and resolved by the compiler at compile time based on reference types",
+          "Because it uses static RAM",
+          "Because variables cannot be modified"
+        ],
+        "correctIndex": 1,
+        "explanation": "Binding is 'static' because the exact target method signature is resolved during compilation."
+      },
+      {
+        "id": "quiz-java-oop-comp-5",
+        "question": "Can constructors be overloaded in Java?",
+        "options": [
+          "No, only methods can be overloaded",
+          "Yes, a class can have multiple constructors with differing parameter lists",
+          "Only if the class is abstract",
+          "Only in subclasses"
+        ],
+        "correctIndex": 1,
+        "explanation": "Constructor overloading is very common in Java to provide multiple initialization options."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Geometry Surface Area Overloader",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a SurfaceAreaCalculator class with overloaded calculateArea methods: 1) square (int side), 2) rectangle (int length, int width), 3) circle (double radius).",
+      "input_format": "Dimensions for square, rectangle, and circle.",
+      "output_format": "Computed surface areas.",
+      "starter_code": "public class AreaChallenge {\n    static class SurfaceAreaCalculator {\n        // Implement overloads\n    }\n    public static void main(String[] args) {\n        // Test overloads\n    }\n}",
+      "expected_output": "Square: 16 | Rect: 30 | Circle: 78.54",
+      "test_cases": [
+        {
+          "input": "4, (5, 6), 5.0",
+          "expected_output": "Square: 16 | Rect: 30 | Circle: 78.54"
+        }
+      ]
+    },
+    "summary": [
+      "Compile-time polymorphism is achieved through method and constructor overloading.",
+      "Overloading requires distinct parameter lists (count, type, or order).",
+      "Return type alone does not differentiate overloaded methods.",
+      "Overload resolution preference: Exact match -> Widening -> Boxing -> Varargs."
+    ]
+  },
+  {
+    "id": "top-java-oop-runtime-polymorphism",
+    "number": 22,
+    "numberDisplay": "22",
+    "moduleId": "mod-java-oop-05",
+    "moduleTitle": "MODULE 05: Polymorphism and Dynamic Method Dispatch",
+    "title": "Runtime Polymorphism",
+    "slug": "runtime-polymorphism",
+    "language": "java",
+    "shortDescription": "Master Dynamic Method Dispatch, parent references pointing to child objects, and late binding in Java.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-compile-time-polymorphism",
+    "learningObjectives": [
+      "Explain Dynamic Method Dispatch as the runtime mechanism driving dynamic polymorphism",
+      "Understand how the JVM determines which overridden method to execute at runtime",
+      "Learn how virtual method tables (vtables) resolve invocations in constant time",
+      "Write flexible software that operates on parent types while executing specialized child logic"
+    ],
+    "conceptExplanation": "Runtime Polymorphism (Dynamic Polymorphism) is the mechanism where a call to an overridden method is resolved at runtime rather than compile time. In Java, this is achieved through Dynamic Method Dispatch.\n\nHow Dynamic Method Dispatch Works:\n1. A superclass reference variable refers to a subclass object in the heap: `Animal a = new Dog();`\n2. When an overridden instance method is invoked (`a.sound()`), the compiler verifies that `sound()` exists in the `Animal` class.\n3. At runtime, the JVM does NOT run `Animal.sound()`. Instead, it inspects the actual object type in the Heap (`Dog`) and executes the `Dog` class's implementation of `sound()`.\n\nVirtual Method Table (vtable):\nUnder the hood, the JVM HotSpot engine maintains an internal table of method pointers for each loaded class called a vtable. Overridden methods have their slot pointed to the child's bytecode address, enabling instant O(1) runtime dispatch.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     DYNAMIC METHOD DISPATCH RESOLUTION                  |\n+-------------------------------------------------------------------------+\n| Call: Employee e = new Manager();                                       |\n|       e.calculatePay();                                                 |\n|                                                                         |\n| 1. Compile Time: Checks Employee class for calculatePay() [FOUND]       |\n| 2. Bytecode generated: invokevirtual Employee.calculatePay:()D          |\n| 3. Runtime JVM Execution:                                               |\n|    - Inspects object at pointer 'e' -> It's a Manager!                  |\n|    - Queries Manager's vtable slot for calculatePay()                   |\n|    - Jumps directly to Manager's overridden bytecode!                   |\n+-------------------------------------------------------------------------+",
+    "syntax": "// Superclass reference pointing to subclass instance\nBaseClass ref = new DerivedClass();\nref.overriddenMethod(); // Dynamically dispatches to DerivedClass",
+    "simpleExample": {
+      "code": "public class DynamicDispatchDemo {\n    static class Printer {\n        void print() { System.out.println(\"Generic monochrome print\"); }\n    }\n    static class ColorLaserPrinter extends Printer {\n        @Override\n        void print() { System.out.println(\"High-resolution CMYK color print\"); }\n    }\n\n    public static void main(String[] args) {\n        Printer p = new ColorLaserPrinter(); // Upcasting\n        p.print(); // Dispatches to ColorLaserPrinter at runtime!\n    }\n}",
+      "explanation": "Even though p is declared as type Printer, the JVM executes ColorLaserPrinter's overridden print() method."
+    },
+    "codeExample": "public class ShapePolymorphismDemo {\n    static class Shape {\n        double getArea() { return 0.0; }\n        String getName() { return \"Generic Shape\"; }\n    }\n\n    static class Circle extends Shape {\n        double radius;\n        Circle(double r) { this.radius = r; }\n        @Override double getArea() { return Math.PI * radius * radius; }\n        @Override String getName() { return \"Circle (r=\" + radius + \")\"; }\n    }\n\n    static class Rectangle extends Shape {\n        double w, h;\n        Rectangle(double w, double h) { this.w = w; this.h = h; }\n        @Override double getArea() { return w * h; }\n        @Override String getName() { return \"Rectangle (\" + w + \"x\" + h + \")\"; }\n    }\n\n    public static void main(String[] args) {\n        Shape[] canvas = {\n            new Circle(5.0),\n            new Rectangle(4.0, 6.0)\n        };\n\n        for (Shape s : canvas) {\n            System.out.printf(\"%s has area: %.2f\\n\", s.getName(), s.getArea());\n        }\n    }\n}",
+    "expectedOutput": "Circle (r=5.0) has area: 78.54\nRectangle (4.0x6.0) has area: 24.00",
+    "stepByStep": [
+      "canvas array holds references typed as Shape.",
+      "In the loop, s.getArea() and s.getName() dynamically resolve to Circle and Rectangle.",
+      "Client loop requires zero modification if a new Shape (e.g. Triangle) is added later."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Expecting instance variables to be polymorphic (e.g. `p.name` resolving to child variable).",
+        "correction": "Remember: In Java, METHODS are polymorphic, but VARIABLES ARE NOT.",
+        "explanation": "Field access is resolved at compile time based on the reference type; only instance methods participate in dynamic dispatch."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Spring MVC Controller Request Routing",
+      "code": "public interface ViewResolver {\n    View resolveViewName(String viewName, Locale locale);\n}",
+      "explanation": "Spring dynamically dispatches to Thymeleaf, FreeMarker, or JSON resolvers based on runtime configuration."
+    },
+    "practice": {
+      "prompt": "Create an Account parent class with double calculateFee(), and SavingsAccount (fee 0.0) and CheckingAccount (fee 5.0) subclasses. Test with a loop over an Account array.",
+      "starterCode": "public class AccountDispatchPractice {\n    static class Account {}\n    static class SavingsAccount extends Account {}\n    static class CheckingAccount extends Account {}\n    public static void main(String[] args) {\n        // Test polymorphic fees\n    }\n}",
+      "expectedOutputMatcher": "Fee",
+      "hint": "Put calculateFee() in Account, override in subclasses, and iterate.",
+      "solution": "public class AccountDispatchPractice {\n    static class Account {\n        double calculateFee() { return 1.0; }\n    }\n    static class SavingsAccount extends Account {\n        @Override double calculateFee() { return 0.0; }\n    }\n    static class CheckingAccount extends Account {\n        @Override double calculateFee() { return 5.0; }\n    }\n    public static void main(String[] args) {\n        Account[] accounts = { new SavingsAccount(), new CheckingAccount() };\n        for (Account a : accounts) {\n            System.out.println(\"Account Fee: $\" + a.calculateFee());\n        }\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-run-1",
+        "question": "What is Dynamic Method Dispatch in Java?",
+        "options": [
+          "A multithreading scheduling algorithm",
+          "The runtime mechanism by which an overridden method call is resolved to the concrete object's implementation rather than the reference type",
+          "A way to allocate native memory",
+          "A compiler warning for slow methods"
+        ],
+        "correctIndex": 1,
+        "explanation": "Dynamic Method Dispatch inspects the actual object type in the heap at runtime and invokes its overridden method."
+      },
+      {
+        "id": "quiz-java-oop-run-2",
+        "question": "If `Parent p = new Child();`, and both declare an instance variable `int x = 10` and `int x = 20`, what does `System.out.println(p.x)` print?",
+        "options": [
+          "20, because the concrete object is Child",
+          "10, because variable access is bound at compile time based on reference type (variables are NOT polymorphic)",
+          "A ClassCastException is thrown",
+          "Compilation fails with variable ambiguous error"
+        ],
+        "correctIndex": 1,
+        "explanation": "In Java, instance variables are resolved statically based on the reference type. Polymorphism applies strictly to instance methods."
+      },
+      {
+        "id": "quiz-java-oop-run-3",
+        "question": "Which Java bytecode instruction is generated for an ordinary instance method call subject to dynamic dispatch?",
+        "options": [
+          "invokestatic",
+          "invokevirtual",
+          "invokespecial",
+          "invokedynamic"
+        ],
+        "correctIndex": 1,
+        "explanation": "`invokevirtual` is the standard bytecode instruction for dynamic dispatch on non-interface instance methods."
+      },
+      {
+        "id": "quiz-java-oop-run-4",
+        "question": "Can private methods participate in dynamic method dispatch?",
+        "options": [
+          "Yes, if called within the package",
+          "No, private methods are not inherited or visible outside the defining class, so they are statically bound",
+          "Only if annotated with @Override",
+          "Only in final classes"
+        ],
+        "correctIndex": 1,
+        "explanation": "Private methods cannot be overridden; the compiler binds them using `invokespecial` without dynamic dispatch."
+      },
+      {
+        "id": "quiz-java-oop-run-5",
+        "question": "What data structure does the JVM HotSpot engine use to achieve O(1) dynamic method dispatch?",
+        "options": [
+          "LinkedList",
+          "Virtual Method Table (vtable)",
+          "Binary Search Tree",
+          "Bloom Filter"
+        ],
+        "correctIndex": 1,
+        "explanation": "The JVM maintains a vtable containing method pointers for instant indexed lookup during runtime dispatch."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Tax Liability Calculator for Multi-State Entities",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create TaxCalculator with computeTax(double grossIncome). Implement CaliforniaTax (rate 9.3%) and TexasTax (rate 0.0% income tax). Test dynamic dispatch through a common TaxCalculator reference.",
+      "input_format": "Gross income values.",
+      "output_format": "Tax liability amounts.",
+      "starter_code": "public class TaxChallenge {\n    static class TaxCalculator {}\n    static class CaliforniaTax extends TaxCalculator {}\n    static class TexasTax extends TaxCalculator {}\n    public static void main(String[] args) {\n        // Test dynamic dispatch\n    }\n}",
+      "expected_output": "CA Tax: $9300.0, TX Tax: $0.0",
+      "test_cases": [
+        {
+          "input": "100000.0",
+          "expected_output": "CA Tax: $9300.0, TX Tax: $0.0"
+        }
+      ]
+    },
+    "summary": [
+      "Runtime polymorphism resolves overridden method calls based on the heap object's actual class.",
+      "Dynamic Method Dispatch relies on internal JVM vtables for O(1) performance.",
+      "Instance methods are polymorphic; instance variables are NOT polymorphic.",
+      "Private, static, and final methods do not participate in dynamic dispatch."
+    ]
+  },
+  {
+    "id": "top-java-oop-upcasting-downcasting",
+    "number": 23,
+    "numberDisplay": "23",
+    "moduleId": "mod-java-oop-05",
+    "moduleTitle": "MODULE 05: Polymorphism and Dynamic Method Dispatch",
+    "title": "Upcasting and Downcasting",
+    "slug": "upcasting-and-downcasting",
+    "language": "java",
+    "shortDescription": "Master implicit upcasting, explicit downcasting, safe type verification with instanceof, and avoiding ClassCastException.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-runtime-polymorphism",
+    "learningObjectives": [
+      "Perform implicit Upcasting to treat child instances through superclass references",
+      "Perform explicit Downcasting to access specialized subclass members",
+      "Use the instanceof operator (and Java 16+ pattern matching) to avoid ClassCastException",
+      "Understand why downcasting an incompatible object causes runtime failure"
+    ],
+    "conceptExplanation": "Type casting in Java object hierarchies comes in two directions:\n\n1. Upcasting (Widening): Casting a subclass reference to a superclass type (`Animal a = new Dog();`).\n   - Safe and Implicit: Java automatically permits upcasting because a Dog IS-A Animal. No explicit cast syntax `(Animal)` is required.\n   - Trade-off: You can only call methods defined in the superclass `Animal`. Subclass-specific methods (like `bark()`) are not directly accessible.\n\n2. Downcasting (Narrowing): Casting a superclass reference back to its concrete subclass type (`Dog d = (Dog) a;`).\n   - Explicit Syntax Required: Must write `(SubClass) ref`.\n   - Danger: If the underlying object in heap memory is NOT actually an instance of the target subclass (e.g. casting a `Cat` to `Dog`), the JVM throws a runtime `ClassCastException`!\n   - Protection: ALWAYS verify with `instanceof` before downcasting: `if (a instanceof Dog d) { d.bark(); }`.",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     UPCASTING VS DOWNCASTING                            |\n+-------------------------------------------------------------------------+\n| Animal                                                                  |\n|   ^                                                                     |\n|   |  UPCASTING (Implicit, 100% Safe):                                   |\n|   |  Animal a = new Dog();                                              |\n|   |                                                                     |\n|   |  DOWNCASTING (Explicit, Potentially Dangerous!):                    |\n|   v  if (a instanceof Dog) { Dog d = (Dog) a; }                         |\n| Dog                                                                     |\n+-------------------------------------------------------------------------+",
+    "syntax": "// 1. Upcasting (Automatic)\nParent p = new Child();\n\n// 2. Safe Downcasting with instanceof pattern matching (Java 16+)\nif (p instanceof Child c) {\n    c.childSpecificMethod();\n}",
+    "simpleExample": {
+      "code": "public class CastingDemo {\n    static class Vehicle { void drive() { System.out.println(\"Driving\"); } }\n    static class SportsCar extends Vehicle {\n        void turboBoost() { System.out.println(\"TURBO BOOST ENGAGED!\"); }\n    }\n\n    public static void main(String[] args) {\n        Vehicle v = new SportsCar(); // Upcast\n        v.drive(); // OK: defined in Vehicle\n        // v.turboBoost(); // Compile Error! Vehicle has no turboBoost\n\n        if (v instanceof SportsCar) {\n            SportsCar sc = (SportsCar) v; // Downcast\n            sc.turboBoost(); // OK!\n        }\n    }\n}",
+      "explanation": "Upcasting allows general handling as Vehicle. Downcasting recovers access to SportsCar-specific turboBoost()."
+    },
+    "codeExample": "public class ClassCastExceptionPrevention {\n    static class Account { String id; Account(String id) { this.id = id; } }\n    static class SavingsAccount extends Account {\n        double interestRate = 0.05;\n        SavingsAccount(String id) { super(id); }\n    }\n    static class CheckingAccount extends Account {\n        CheckingAccount(String id) { super(id); }\n    }\n\n    static void inspectAccount(Account acc) {\n        System.out.println(\"Inspecting Account ID: \" + acc.id);\n        // Safe pattern matching instanceof\n        if (acc instanceof SavingsAccount sa) {\n            System.out.println(\" -> Savings account interest: \" + (sa.interestRate * 100) + \"%\");\n        } else {\n            System.out.println(\" -> Standard/Checking account (no interest accrual)\");\n        }\n    }\n\n    public static void main(String[] args) {\n        Account a1 = new SavingsAccount(\"SA-101\");\n        Account a2 = new CheckingAccount(\"CA-202\");\n        inspectAccount(a1);\n        inspectAccount(a2);\n    }\n}",
+    "expectedOutput": "Inspecting Account ID: SA-101\n -> Savings account interest: 5.0%\nInspecting Account ID: CA-202\n -> Standard/Checking account (no interest accrual)",
+    "stepByStep": [
+      "a1 and a2 are passed as generic Account references (Upcasting).",
+      "Pattern matching instanceof safely checks if underlying heap object is a SavingsAccount.",
+      "Prevents fatal ClassCastException when CheckingAccount is evaluated."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Blind downcasting without instanceof, e.g. `Dog d = (Dog) animal;`.",
+        "correction": "Always wrap explicit downcasts in `if (animal instanceof Dog) { ... }`.",
+        "explanation": "If the reference points to Cat or Animal, a runtime ClassCastException crashes the thread."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Implementing equals(Object other) in Domain Entities",
+      "code": "@Override\npublic boolean equals(Object obj) {\n    if (this == obj) return true;\n    if (!(obj instanceof User other)) return false;\n    return this.id.equals(other.id);\n}",
+      "explanation": "Standard equals() methods receive Object and use instanceof pattern matching to safely downcast."
+    },
+    "practice": {
+      "prompt": "Write an Employee hierarchy: Employee (name) and Developer (name, language). Write a method printDevLanguage(Employee e) that downcasts only if e is a Developer.",
+      "starterCode": "public class CastPractice {\n    static class Employee { String name; Employee(String n) { this.name = n; } }\n    static class Developer extends Employee {\n        String language;\n        Developer(String n, String l) { super(n); this.language = l; }\n    }\n    static void printDevLanguage(Employee e) {\n        // Implement safe downcast\n    }\n    public static void main(String[] args) {\n        // Test\n    }\n}",
+      "expectedOutputMatcher": "Language",
+      "hint": "Use if (e instanceof Developer d) System.out.println(\"Language: \" + d.language);.",
+      "solution": "public class CastPractice {\n    static class Employee { String name; Employee(String n) { this.name = n; } }\n    static class Developer extends Employee {\n        String language;\n        Developer(String n, String l) { super(n); this.language = l; }\n    }\n    static void printDevLanguage(Employee e) {\n        if (e instanceof Developer d) {\n            System.out.println(d.name + \" Language: \" + d.language);\n        }\n    }\n    public static void main(String[] args) {\n        Employee emp = new Developer(\"Kiran\", \"Java\");\n        printDevLanguage(emp);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-cast-1",
+        "question": "What is Upcasting in Java?",
+        "options": [
+          "Casting a primitive to an object",
+          "Assigning a subclass reference to a superclass reference variable (automatic & safe)",
+          "Casting a double to an int",
+          "Converting a class into an interface"
+        ],
+        "correctIndex": 1,
+        "explanation": "Upcasting casts a child type to a parent type; it is always safe and handled implicitly by the compiler."
+      },
+      {
+        "id": "quiz-java-oop-cast-2",
+        "question": "What exception is thrown at runtime if you attempt an invalid downcast?",
+        "options": [
+          "NullPointerException",
+          "ClassCastException",
+          "IllegalArgumentException",
+          "TypeMismatchException"
+        ],
+        "correctIndex": 1,
+        "explanation": "The JVM throws a `java.lang.ClassCastException` when downcasting an object to an incompatible type."
+      },
+      {
+        "id": "quiz-java-oop-cast-3",
+        "question": "What does the `instanceof` operator do?",
+        "options": [
+          "Allocates a new instance on the heap",
+          "Tests whether an object in heap memory is an instance of a specified class or interface, returning true or false",
+          "Returns the byte size of an object",
+          "Deletes an object reference"
+        ],
+        "correctIndex": 1,
+        "explanation": "`instanceof` tests type compatibility at runtime, preventing invalid downcasts."
+      },
+      {
+        "id": "quiz-java-oop-cast-4",
+        "question": "If `Object obj = null;`, what does `obj instanceof String` evaluate to?",
+        "options": [
+          "true",
+          "false",
+          "Throws NullPointerException",
+          "Compile error"
+        ],
+        "correctIndex": 1,
+        "explanation": "In Java, `instanceof` evaluated against a null reference always returns `false` without throwing an exception."
+      },
+      {
+        "id": "quiz-java-oop-cast-5",
+        "question": "What is Pattern Matching for instanceof (introduced in Java 16)?",
+        "options": [
+          "A regex string scanner",
+          "A language enhancement that tests type and binds a casted local variable in a single expression: `if (obj instanceof String s)`",
+          "A way to compare database tables",
+          "An AI code generator"
+        ],
+        "correctIndex": 1,
+        "explanation": "Pattern matching for instanceof combines type verification and explicit variable binding into one safe clause."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Hardware Peripheral Identification Bus",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create Peripheral base class. Create Keyboard (has keyCount) and Mouse (has dpi). Implement a method inspectPeripheral(Peripheral p) that downcasts safely to display peripheral-specific metrics.",
+      "input_format": "Peripheral types and metrics.",
+      "output_format": "Peripheral metric report.",
+      "starter_code": "public class PeripheralChallenge {\n    static class Peripheral {}\n    static class Keyboard extends Peripheral {}\n    static class Mouse extends Peripheral {}\n    public static void main(String[] args) {\n        // Test peripheral identification\n    }\n}",
+      "expected_output": "Keyboard Keys: 104 | Mouse DPI: 16000",
+      "test_cases": [
+        {
+          "input": "Key: 104, Mouse: 16000",
+          "expected_output": "Keyboard Keys: 104 | Mouse DPI: 16000"
+        }
+      ]
+    },
+    "summary": [
+      "Upcasting casts a child to a parent reference; it is automatic and completely type-safe.",
+      "Downcasting casts a parent reference back to a child type; requires explicit syntax.",
+      "Always check with `instanceof` before downcasting to avoid fatal `ClassCastException`.",
+      "Pattern matching instanceof (`if (obj instanceof SubClass s)`) simplifies safe casting."
+    ]
+  },
+  {
+    "id": "top-java-oop-binding-dispatch",
+    "number": 24,
+    "numberDisplay": "24",
+    "moduleId": "mod-java-oop-05",
+    "moduleTitle": "MODULE 05: Polymorphism and Dynamic Method Dispatch",
+    "title": "Static and Dynamic Binding",
+    "slug": "static-and-dynamic-binding",
+    "language": "java",
+    "shortDescription": "Understand static binding vs dynamic binding, method hiding of static methods, and compile-time resolution rules.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 18,
+    "prerequisiteId": "top-java-oop-upcasting-downcasting",
+    "learningObjectives": [
+      "Differentiate Static Binding (Early Binding) from Dynamic Binding (Late Binding)",
+      "Identify which Java members use static binding: static methods, private methods, and final methods",
+      "Understand Method Hiding: why static methods with identical signatures in child classes do NOT override parent methods",
+      "Predict exact output in tricky static vs instance resolution scenarios"
+    ],
+    "conceptExplanation": "Binding refers to the linking of a method call to the method body code that will be executed.\n\n1. Static Binding (Early Binding):\n   - Resolved at COMPILE TIME by the compiler based on the reference type of the variable.\n   - Applies to: `static` methods, `private` methods, and `final` methods. Because these methods cannot be overridden, the compiler can bind them directly into bytecode (`invokestatic` / `invokespecial`) with zero runtime lookup overhead.\n\n2. Dynamic Binding (Late Binding):\n   - Resolved at RUNTIME by the JVM based on the actual object in heap memory.\n   - Applies to: all standard virtual instance methods. The compiler emits `invokevirtual`, and the JVM dynamically dispatches.\n\nMethod Hiding (Static Methods):\nIf a subclass declares a static method with the exact same signature as a static method in its superclass, it is called METHOD HIDING, NOT overriding! Calling `Parent p = new Child(); p.staticMethod();` executes the PARENT method because static calls bind to the reference type (`Parent`), not the heap object!",
+    "visualDiagram": "+-------------------------------------------------------------------------+\n|                     STATIC BINDING VS DYNAMIC BINDING                   |\n+-------------------------------------------------------------------------+\n| Code: Parent p = new Child();                                           |\n|                                                                         |\n| Call: p.staticMethod();                                                 |\n|   -> STATIC BINDING: Compiler looks at reference type 'Parent'          |\n|   -> Executes Parent.staticMethod()!                                    |\n+-------------------------------------------------------------------------+\n| Call: p.instanceMethod();                                               |\n|   -> DYNAMIC BINDING: JVM inspects heap object 'Child'                  |\n|   -> Executes Child.instanceMethod()!                                   |\n+-------------------------------------------------------------------------+",
+    "syntax": "class Parent {\n    static void printType() { System.out.println(\"Parent Static\"); } // Hidden\n    void printState() { System.out.println(\"Parent Instance\"); }     // Overridden\n}\nclass Child extends Parent {\n    static void printType() { System.out.println(\"Child Static\"); }  // Hides parent\n    @Override void printState() { System.out.println(\"Child Instance\"); }\n}",
+    "simpleExample": {
+      "code": "public class BindingDemo {\n    static class SuperClass {\n        static void identify() { System.out.println(\"Static: SuperClass\"); }\n        void describe() { System.out.println(\"Instance: SuperClass\"); }\n    }\n\n    static class SubClass extends SuperClass {\n        static void identify() { System.out.println(\"Static: SubClass (Hidden)\"); }\n        @Override void describe() { System.out.println(\"Instance: SubClass (Overridden)\"); }\n    }\n\n    public static void main(String[] args) {\n        SuperClass ref = new SubClass();\n        ref.identify(); // Static Binding -> SuperClass!\n        ref.describe(); // Dynamic Binding -> SubClass!\n    }\n}",
+      "explanation": "ref.identify() prints SuperClass because static methods are bound to the reference type. ref.describe() prints SubClass."
+    },
+    "codeExample": "public class MethodHidingPitfall {\n    static class ConfigurationLoader {\n        static String getEnvironment() { return \"PRODUCTION\"; }\n        String getDbUrl() { return \"jdbc:prod-cluster\"; }\n    }\n\n    static class StagingLoader extends ConfigurationLoader {\n        // Method Hiding: does NOT override static method!\n        static String getEnvironment() { return \"STAGING\"; }\n        @Override String getDbUrl() { return \"jdbc:staging-db\"; }\n    }\n\n    public static void main(String[] args) {\n        ConfigurationLoader loader = new StagingLoader();\n\n        // Tricky interview scenario:\n        System.out.println(\"Environment: \" + loader.getEnvironment()); // Prints PRODUCTION!\n        System.out.println(\"DB URL: \" + loader.getDbUrl());           // Prints jdbc:staging-db!\n\n        // Best Practice: Always invoke static methods directly on Class name:\n        System.out.println(\"Direct Static: \" + StagingLoader.getEnvironment());\n    }\n}",
+    "expectedOutput": "Environment: PRODUCTION\nDB URL: jdbc:staging-db\nDirect Static: STAGING",
+    "stepByStep": [
+      "loader reference is declared as ConfigurationLoader.",
+      "loader.getEnvironment() is bound at compile time directly to ConfigurationLoader.getEnvironment.",
+      "loader.getDbUrl() is an instance method, so dynamic dispatch executes StagingLoader's version."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Adding `@Override` to a static method in a subclass.",
+        "correction": "Never put `@Override` on static methods.",
+        "explanation": "Static methods cannot be overridden; the compiler will produce an error: 'static method cannot be annotated with @Override'."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Factory Methods in Utility Classes",
+      "code": "List<String> list = List.of(\"A\", \"B\"); // Static factory bound directly\nlist.size(); // Instance virtual call dynamically bound",
+      "explanation": "Utility factory methods use static binding; the returned collections utilize dynamic dispatch."
+    },
+    "practice": {
+      "prompt": "Create a Base class with static void log() and void report(). Create a Derived subclass that hides log() and overrides report(). Test calling both via Base reference.",
+      "starterCode": "public class BindingPractice {\n    static class Base {}\n    static class Derived extends Base {}\n    public static void main(String[] args) {\n        // Test binding\n    }\n}",
+      "expectedOutputMatcher": "Base Log",
+      "hint": "Base ref = new Derived(); ref.log() runs Base log, ref.report() runs Derived report.",
+      "solution": "public class BindingPractice {\n    static class Base {\n        static void log() { System.out.println(\"Base Log\"); }\n        void report() { System.out.println(\"Base Report\"); }\n    }\n    static class Derived extends Base {\n        static void log() { System.out.println(\"Derived Log\"); }\n        @Override void report() { System.out.println(\"Derived Report\"); }\n    }\n    public static void main(String[] args) {\n        Base b = new Derived();\n        b.log();\n        b.report();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-java-oop-bind-1",
+        "question": "Which of the following method types uses static (early) binding in Java?",
+        "options": [
+          "Public virtual instance methods",
+          "Methods marked `static`, `private`, or `final`",
+          "Methods declared in an interface",
+          "Abstract methods"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static, private, and final methods cannot be overridden, so the compiler binds them statically at compile time."
+      },
+      {
+        "id": "quiz-java-oop-bind-2",
+        "question": "What is 'method hiding' in Java?",
+        "options": [
+          "Encrypting method bytecode in a JAR",
+          "When a subclass declares a static method with the exact same signature as a static method in its superclass",
+          "Making a method private",
+          "Deleting a method from an interface"
+        ],
+        "correctIndex": 1,
+        "explanation": "When child static methods shadow parent static methods, it is called method hiding, not method overriding."
+      },
+      {
+        "id": "quiz-java-oop-bind-3",
+        "question": "If `Parent p = new Child();` and both declare `static void greet()`, what executes when `p.greet()` is called?",
+        "options": [
+          "Child's greet() executes because of dynamic dispatch",
+          "Parent's greet() executes because static calls bind to the reference type",
+          "Both methods execute in parallel",
+          "A NoSuchMethodError is thrown"
+        ],
+        "correctIndex": 1,
+        "explanation": "Static methods are resolved based on the variable's declared reference type (`Parent`), ignoring the heap object."
+      },
+      {
+        "id": "quiz-java-oop-bind-4",
+        "question": "Can you annotate a static method in a subclass with `@Override`?",
+        "options": [
+          "Yes, it is recommended",
+          "No, the compiler emits an error because static methods cannot be overridden",
+          "Only if the superclass is abstract",
+          "Only in default methods"
+        ],
+        "correctIndex": 1,
+        "explanation": "`@Override` on a static method causes a compilation error because static methods hide, rather than override."
+      },
+      {
+        "id": "quiz-java-oop-bind-5",
+        "question": "Why is dynamic binding considered more flexible than static binding?",
+        "options": [
+          "It consumes zero memory",
+          "It allows software to execute new specialized behaviors at runtime without changing caller code",
+          "It disables compiler type checks",
+          "It runs faster than static binding"
+        ],
+        "correctIndex": 1,
+        "explanation": "Dynamic binding enables runtime polymorphism, allowing callers to handle new extensions seamlessly."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Static vs Dynamic Protocol Simulator",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create ProtocolHandler with static String getProtocolName() ('HTTP/1.1') and instance String handshake() ('Base Handshake'). Create SecureHandler extending it (static 'HTTPS/2', instance 'TLS 1.3 Handshake'). Demonstrate both static and dynamic outputs.",
+      "input_format": "Execution of protocol handlers.",
+      "output_format": "Protocol name and handshake results.",
+      "starter_code": "public class ProtocolChallenge {\n    static class ProtocolHandler {}\n    static class SecureHandler extends ProtocolHandler {}\n    public static void main(String[] args) {\n        // Test protocol binding\n    }\n}",
+      "expected_output": "Static: HTTP/1.1, Dynamic: TLS 1.3 Handshake",
+      "test_cases": [
+        {
+          "input": "run",
+          "expected_output": "Static: HTTP/1.1, Dynamic: TLS 1.3 Handshake"
+        }
+      ]
+    },
+    "summary": [
+      "Static Binding (Compile-Time): Applies to static, private, and final methods.",
+      "Dynamic Binding (Runtime): Applies to virtual instance methods via Dynamic Dispatch.",
+      "Static methods are HIDDEN, not overridden; they resolve based on reference type.",
+      "Always invoke static methods using the ClassName directly (e.g. `ClassName.method()`)."
+    ]
+  },
+  {
+    "id": "top-java-oop-intro-abstraction",
+    "number": 25,
+    "numberDisplay": "25",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Introduction to Abstraction",
+    "slug": "intro-abstraction",
+    "language": "java",
+    "shortDescription": "Understand abstraction in Java: hiding complex internal implementation details and exposing only essential behavior.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-binding-dispatch",
+    "learningObjectives": [
+      "Define abstraction in computer science and Java object-oriented design",
+      "Understand how abstraction reduces system complexity and cognitive load",
+      "Compare abstraction with encapsulation and understand their synergy",
+      "Identify real-world examples of abstraction contracts"
+    ],
+    "conceptExplanation": "### 1. Definition\nAbstraction is the process of hiding internal implementation mechanics and presenting only the necessary, high-level behavioral capabilities to the client.\n\n### 2. Why It Is Needed\nWithout abstraction, systems become tightly coupled to concrete implementation details. Any modification to internal algorithms or data structures breaks consuming code.\n\n### 3. How It Works Internally\nIn Java, abstraction is achieved via abstract classes (partial abstraction, 0-100%) and interfaces (pure contracts, 100% abstract before Java 8 default methods). Clients depend on abstract types rather than concrete subclasses.\n\n### 4. Real-World Analogy\nAn ATM interface displays options like 'Withdraw Cash' and 'Check Balance'. You interact with the abstract buttons without knowing the database queries or cash-dispensing motor pulses happening behind the vault.",
+    "visualDiagram": "Client Code ----> [ Abstract Contract (Vehicle) ]\n                           |\n             +-------------+-------------+\n             |                           |\n   [ Car (Concrete) ]          [ Truck (Concrete) ]\n   - gas injection details     - diesel turbo details",
+    "syntax": "// Abstract declaration\nabstract class Vehicle {\n    abstract void accelerate();\n}",
+    "simpleExample": {
+      "code": "abstract class CloudStorage {\n    abstract void uploadFile(String fileName, byte[] data);\n}\n\nclass S3Storage extends CloudStorage {\n    @Override\n    void uploadFile(String fileName, byte[] data) {\n        System.out.println(\"Uploading \" + fileName + \" (\" + data.length + \" bytes) to AWS S3 bucket.\");\n    }\n}\n\npublic class AbstractionDemo {\n    public static void main(String[] args) {\n        CloudStorage storage = new S3Storage();\n        storage.uploadFile(\"report.pdf\", new byte[]{1, 2, 3});\n    }\n}",
+      "explanation": "The client references CloudStorage. It knows how to uploadFile without needing knowledge of AWS SDK internals or HTTP REST headers."
+    },
+    "codeExample": "abstract class CloudStorage {\n    abstract void uploadFile(String fileName, byte[] data);\n}\n\nclass S3Storage extends CloudStorage {\n    @Override\n    void uploadFile(String fileName, byte[] data) {\n        System.out.println(\"Uploading \" + fileName + \" (\" + data.length + \" bytes) to AWS S3 bucket.\");\n    }\n}\n\npublic class AbstractionDemo {\n    public static void main(String[] args) {\n        CloudStorage storage = new S3Storage();\n        storage.uploadFile(\"report.pdf\", new byte[]{1, 2, 3});\n    }\n}",
+    "expectedOutput": "Uploading report.pdf (3 bytes) to AWS S3 bucket.",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Introduction to Abstraction.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Confusing abstraction ('what it does') with encapsulation ('how state is protected')",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Creating premature abstractions before understanding concrete variation points",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Introduction to Abstraction",
+      "code": "abstract class CloudStorage {\n    abstract void uploadFile(String fileName, byte[] data);\n}\n\nclass S3Storage extends CloudStorage {\n    @Override\n    void uploadFile(String fileName, byte[] data) {\n        System.out.println(\"Uploading \" + fileName + \" (\" + data.length + \" bytes) to AWS S3 bucket.\");\n    }\n}\n\npublic class AbstractionDemo {\n    public static void main(String[] args) {\n        CloudStorage storage = new S3Storage();\n        storage.uploadFile(\"report.pdf\", new byte[]{1, 2, 3});\n    }\n}",
+      "explanation": "The client references CloudStorage. It knows how to uploadFile without needing knowledge of AWS SDK internals or HTTP REST headers."
+    },
+    "practice": {
+      "prompt": "Define an abstract class Notification with an abstract method send(String recipient, String message). Implement EmailNotification that prints 'Email to <recipient>: <message>'.",
+      "starterCode": "abstract class Notification {\n    // Define abstract method\n}\n\nclass EmailNotification extends Notification {\n    // Implement send\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Notification n = new EmailNotification();\n        n.send(\"alice@example.com\", \"Welcome to Java OOP!\");\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Declare 'abstract void send(String recipient, String message);' and override it in EmailNotification.",
+      "solution": "abstract class Notification {\n    // Define abstract method\n}\n\nclass EmailNotification extends Notification {\n    // Implement send\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Notification n = new EmailNotification();\n        n.send(\"alice@example.com\", \"Welcome to Java OOP!\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-intro-abstraction-1",
+        "question": "What is the primary objective of Abstraction in Java?",
+        "options": [
+          "Hiding implementation details and exposing only essential behavior",
+          "Packing code and data into a single private unit",
+          "Preventing subclasses from overriding methods",
+          "Speeding up Java byte-code compilation"
+        ],
+        "correctIndex": 0,
+        "explanation": "Abstraction isolates the 'what' from the 'how', exposing a clean behavioral contract."
+      },
+      {
+        "id": "quiz-top-java-oop-intro-abstraction-2",
+        "question": "How does Abstraction differ from Encapsulation?",
+        "options": [
+          "Abstraction focuses on hiding data using private variables; Encapsulation hides implementations",
+          "Abstraction hides complexity by exposing essential behavior; Encapsulation bundles data and restricts direct access to it",
+          "Encapsulation requires interfaces; Abstraction requires final classes",
+          "They are identical terms in Java with no differences"
+        ],
+        "correctIndex": 1,
+        "explanation": "Encapsulation is data-hiding and modular packaging; Abstraction is complexity-hiding through conceptual contracts."
+      },
+      {
+        "id": "quiz-top-java-oop-intro-abstraction-3",
+        "question": "Can you create an instance of an abstract class using 'new'?",
+        "options": [
+          "No, abstract classes cannot be directly instantiated",
+          "Yes, as long as it has a default constructor",
+          "Yes, if all methods are concrete",
+          "Only if instantiated inside a static method"
+        ],
+        "correctIndex": 0,
+        "explanation": "Abstract classes cannot be instantiated with new; they require concrete subclass implementations."
+      },
+      {
+        "id": "quiz-top-java-oop-intro-abstraction-4",
+        "question": "Which Java constructs provide abstraction?",
+        "options": [
+          "Abstract classes and interfaces",
+          "Only the 'private' keyword",
+          "Only static methods",
+          "Enums and records exclusively"
+        ],
+        "correctIndex": 0,
+        "explanation": "Abstract classes and interfaces are the two primary mechanisms for specifying abstractions in Java."
+      },
+      {
+        "id": "quiz-top-java-oop-intro-abstraction-5",
+        "question": "What problem occurs if a system lacks abstraction?",
+        "options": [
+          "Tight coupling where changes in concrete implementation break dependent code",
+          "The JVM fails to garbage collect unused memory",
+          "Primitive data types cannot be used",
+          "Classes cannot declare instance methods"
+        ],
+        "correctIndex": 0,
+        "explanation": "Without abstraction, consumers couple directly to concrete details, making refactoring and evolution fragile."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Cloud Logger Abstraction",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create an abstract class Logger with abstract method log(String msg). Implement ConsoleLogger (prints '[CONSOLE] ' + msg) and CloudLogger (prints '[CLOUD] ' + msg). Process an array of Logger references polymorphically.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "[CONSOLE] System online\n[CLOUD] System online",
+      "starter_code": "abstract class Logger {\n    abstract void log(String msg);\n}\n\nclass ConsoleLogger extends Logger {\n    // Implementation\n}\n\nclass CloudLogger extends Logger {\n    // Implementation\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Logger[] loggers = { new ConsoleLogger(), new CloudLogger() };\n        for (Logger l : loggers) {\n            l.log(\"System online\");\n        }\n    }\n}",
+      "expected_output": "[CONSOLE] System online\n[CLOUD] System online",
+      "test_cases": [
+        {
+          "input": "System online",
+          "expected": "[CONSOLE] System online\n[CLOUD] System online"
+        }
+      ]
+    },
+    "summary": [
+      "Abstraction defines 'what' an entity does while subclasses define 'how' it does it",
+      "Encapsulation protects internal state; abstraction hides procedural complexity",
+      "Abstract classes cannot be instantiated directly",
+      "Abstraction enables loose coupling and modular software architecture"
+    ]
+  },
+  {
+    "id": "top-java-oop-abstract-classes",
+    "number": 26,
+    "numberDisplay": "26",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Abstract Classes",
+    "slug": "abstract-classes",
+    "language": "java",
+    "shortDescription": "Deep dive into abstract classes, abstract methods, concrete methods, constructors, fields, and subclass implementation rules.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-intro-abstraction",
+    "learningObjectives": [
+      "Declare abstract classes using the 'abstract' keyword",
+      "Define abstract methods and enforce mandatory overriding in subclasses",
+      "Understand why abstract classes can have constructors, instance fields, and concrete methods",
+      "Handle partial implementations and the Template Method design pattern"
+    ],
+    "conceptExplanation": "### 1. Definition\nAn abstract class is a restricted class declared with the 'abstract' keyword that cannot be instantiated directly, but can contain both implemented methods and abstract method signatures.\n\n### 2. Why It Is Needed\nWhen multiple subclasses share common state and concrete behavior, but also require unique specialized operations, an abstract base class acts as the ideal template.\n\n### 3. How It Works Internally\nThe compiler prevents direct instantiation via `new AbstractClass()`. Subclasses must either implement all inherited abstract methods or be declared abstract themselves. Abstract classes have constructors invoked via `super()` during subclass instantiation.\n\n### 4. Real-World Analogy\nA government building application blueprint specifies common foundations and utility connections, but leaves individual room layouts abstract until the tenant submits their specific floor plan.",
+    "visualDiagram": "+------------------------------------------+\n|        abstract class BaseReport         |\n|  - String title                          |\n|  + BaseReport(title) [Constructor]       |\n|  + print() [Concrete Shared Method]      |\n|  + abstract void renderBody() [Contract] |\n+------------------------------------------+\n                     ^\n                     |\n+--------------------+---------------------+\n|                                          |\n[ PDFReport: implements renderBody() ]   [ CSVReport: implements renderBody() ]",
+    "syntax": "abstract class BaseReport {\n    String title;\n    BaseReport(String title) { this.title = title; }\n    abstract void renderBody();\n    void print() {\n        System.out.println(\"Header: \" + title);\n        renderBody();\n    }\n}",
+    "simpleExample": {
+      "code": "abstract class DocumentParser {\n    public final void processDocument() {\n        openFile();\n        parseContent();\n        closeFile();\n    }\n    private void openFile() { System.out.println(\"Opening file...\"); }\n    private void closeFile() { System.out.println(\"Closing file...\"); }\n    protected abstract void parseContent();\n}\n\nclass JsonParser extends DocumentParser {\n    @Override\n    protected void parseContent() {\n        System.out.println(\"Parsing JSON tree nodes.\");\n    }\n}\n\npublic class AbstractDemo {\n    public static void main(String[] args) {\n        DocumentParser parser = new JsonParser();\n        parser.processDocument();\n    }\n}",
+      "explanation": "DocumentParser defines the immutable skeleton of the algorithm in processDocument(), while delegating parseContent() to subclasses."
+    },
+    "codeExample": "abstract class DocumentParser {\n    public final void processDocument() {\n        openFile();\n        parseContent();\n        closeFile();\n    }\n    private void openFile() { System.out.println(\"Opening file...\"); }\n    private void closeFile() { System.out.println(\"Closing file...\"); }\n    protected abstract void parseContent();\n}\n\nclass JsonParser extends DocumentParser {\n    @Override\n    protected void parseContent() {\n        System.out.println(\"Parsing JSON tree nodes.\");\n    }\n}\n\npublic class AbstractDemo {\n    public static void main(String[] args) {\n        DocumentParser parser = new JsonParser();\n        parser.processDocument();\n    }\n}",
+    "expectedOutput": "Opening file...\nParsing JSON tree nodes.\nClosing file...",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Abstract Classes.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Assuming abstract classes cannot have constructors",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Trying to declare private abstract methods (which can never be overridden)",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Abstract Classes",
+      "code": "abstract class DocumentParser {\n    public final void processDocument() {\n        openFile();\n        parseContent();\n        closeFile();\n    }\n    private void openFile() { System.out.println(\"Opening file...\"); }\n    private void closeFile() { System.out.println(\"Closing file...\"); }\n    protected abstract void parseContent();\n}\n\nclass JsonParser extends DocumentParser {\n    @Override\n    protected void parseContent() {\n        System.out.println(\"Parsing JSON tree nodes.\");\n    }\n}\n\npublic class AbstractDemo {\n    public static void main(String[] args) {\n        DocumentParser parser = new JsonParser();\n        parser.processDocument();\n    }\n}",
+      "explanation": "DocumentParser defines the immutable skeleton of the algorithm in processDocument(), while delegating parseContent() to subclasses."
+    },
+    "practice": {
+      "prompt": "Create an abstract class Employee with String name and double baseSalary, and an abstract method calculateBonus(). Implement Developer who receives a 15% bonus.",
+      "starterCode": "abstract class Employee {\n    String name;\n    double baseSalary;\n    Employee(String name, double baseSalary) {\n        this.name = name;\n        this.baseSalary = baseSalary;\n    }\n    abstract double calculateBonus();\n}\n\nclass Developer extends Employee {\n    Developer(String name, double baseSalary) {\n        super(name, baseSalary);\n    }\n    // Implement calculateBonus\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Employee emp = new Developer(\"Alex\", 80000);\n        System.out.println(emp.name + \" Bonus: \" + (int)emp.calculateBonus());\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Return baseSalary * 0.15 inside Developer's calculateBonus() override.",
+      "solution": "abstract class Employee {\n    String name;\n    double baseSalary;\n    Employee(String name, double baseSalary) {\n        this.name = name;\n        this.baseSalary = baseSalary;\n    }\n    abstract double calculateBonus();\n}\n\nclass Developer extends Employee {\n    Developer(String name, double baseSalary) {\n        super(name, baseSalary);\n    }\n    // Implement calculateBonus\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Employee emp = new Developer(\"Alex\", 80000);\n        System.out.println(emp.name + \" Bonus: \" + (int)emp.calculateBonus());\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-abstract-classes-1",
+        "question": "Can an abstract class have a constructor?",
+        "options": [
+          "Yes, and it is called via super() during subclass construction",
+          "No, abstract classes cannot have constructors because they cannot be instantiated",
+          "Only if the constructor is declared abstract",
+          "Only if all instance variables are static"
+        ],
+        "correctIndex": 0,
+        "explanation": "Abstract classes have constructors to initialize their own fields when a subclass is instantiated."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-classes-2",
+        "question": "Which modifier combination is ILLEGAL for an abstract method?",
+        "options": [
+          "private abstract",
+          "protected abstract",
+          "public abstract",
+          "package-private abstract"
+        ],
+        "correctIndex": 0,
+        "explanation": "'private abstract' is a compiler error because private methods cannot be seen or overridden by subclasses."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-classes-3",
+        "question": "If a class contains at least one abstract method, what MUST be true?",
+        "options": [
+          "The class itself must be declared abstract",
+          "The class must be an interface",
+          "All methods in the class must be abstract",
+          "The class cannot have any instance fields"
+        ],
+        "correctIndex": 0,
+        "explanation": "Any class declaring or inheriting an unimplemented abstract method must be declared abstract."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-classes-4",
+        "question": "Can an abstract class declare concrete (implemented) methods?",
+        "options": [
+          "Yes, an abstract class can mix concrete and abstract methods",
+          "No, all methods in an abstract class must be abstract",
+          "Only if the concrete methods are static",
+          "Only if the class implements java.io.Serializable"
+        ],
+        "correctIndex": 0,
+        "explanation": "Abstract classes excel at providing shared default behavior alongside abstract extension hooks."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-classes-5",
+        "question": "What happens if a concrete subclass fails to override an inherited abstract method?",
+        "options": [
+          "The subclass fails to compile unless it is also declared abstract",
+          "The JVM provides a default null return at runtime",
+          "The method is automatically removed from the subclass",
+          "A ClassCastException is thrown at application startup"
+        ],
+        "correctIndex": 0,
+        "explanation": "Failure to implement inherited abstract methods results in a compile-time error unless the subclass is abstract."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Abstract Vehicle Fleet Cost Calculator",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create an abstract class Vehicle with protected int mileage and abstract method calculateToll(). Implement Car (toll = mileage * 2) and Truck (toll = mileage * 5). Print the total toll for an array of Vehicles.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Total Toll: $700",
+      "starter_code": "abstract class Vehicle {\n    protected int mileage;\n    public Vehicle(int mileage) { this.mileage = mileage; }\n    public abstract int calculateToll();\n}\n\nclass Car extends Vehicle {\n    public Car(int mileage) { super(mileage); }\n    // Override\n}\n\nclass Truck extends Vehicle {\n    public Truck(int mileage) { super(mileage); }\n    // Override\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Vehicle[] fleet = { new Car(100), new Truck(100) };\n        int total = 0;\n        for (Vehicle v : fleet) {\n            total += v.calculateToll();\n        }\n        System.out.println(\"Total Toll: $\" + total);\n    }\n}",
+      "expected_output": "Total Toll: $700",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Total Toll: $700"
+        }
+      ]
+    },
+    "summary": [
+      "Abstract classes cannot be instantiated with new",
+      "They can contain instance variables, constructors, concrete methods, and abstract methods",
+      "Constructors in abstract classes are invoked via super() by subclass constructors",
+      "Concrete subclasses must implement all inherited abstract methods"
+    ]
+  },
+  {
+    "id": "top-java-oop-interfaces",
+    "number": 27,
+    "numberDisplay": "27",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Interfaces",
+    "slug": "interfaces",
+    "language": "java",
+    "shortDescription": "Master Java interfaces: contracts, implements keyword, interface constants, default methods, static methods, and functional interfaces.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-abstract-classes",
+    "learningObjectives": [
+      "Declare interfaces and understand pure contract design",
+      "Implement interfaces using the 'implements' keyword",
+      "Understand interface variables (public static final by default)",
+      "Leverage default methods and static methods introduced in Java 8+",
+      "Understand Functional Interfaces and single abstract method (SAM) contracts"
+    ],
+    "conceptExplanation": "### 1. Definition\nAn interface in Java is a reference type that specifies a contract of abstract methods, constants, and optional default/static utility methods that implementing classes must satisfy.\n\n### 2. Why It Is Needed\nJava does not support multiple inheritance with classes to avoid state conflicts. Interfaces allow a class to declare conformance to multiple behavioral capabilities (e.g. Serializable, Comparable, Cloneable).\n\n### 3. How It Works Internally\nMethods in interfaces are `public abstract` by default. Variables are implicitly `public static final`. Since Java 8, interfaces can provide concrete `default` methods (to add features without breaking existing implementers) and `static` utility methods. Since Java 9, private helper methods are also allowed.\n\n### 4. Real-World Analogy\nA power socket is an interface. Any appliance with a matching two-prong plug can draw power, whether it is a toaster, a lamp, or a laptop charger.",
+    "visualDiagram": "   <<interface>> RemoteControl\n   + turnOn(): void\n   + turnOff(): void\n         ^\n         |\n    +----+----+\n    |         |\n [ TV ]   [ AC Unit ]",
+    "syntax": "interface Drivable {\n    int MAX_SPEED = 200; // public static final\n    void drive();         // public abstract\n    default void honk() { System.out.println(\"Beep!\"); }\n    static void checkSafety() { System.out.println(\"Safety check OK\"); }\n}",
+    "simpleExample": {
+      "code": "interface Operable {\n    int TIMEOUT = 5000; // public static final\n    void start();       // public abstract\n    default void stop() {\n        System.out.println(\"Default graceful stop completed.\");\n    }\n}\n\nclass WebServer implements Operable {\n    @Override\n    public void start() {\n        System.out.println(\"Web server started on port 8080. Timeout: \" + TIMEOUT + \"ms\");\n    }\n}\n\npublic class InterfaceDemo {\n    public static void main(String[] args) {\n        Operable service = new WebServer();\n        service.start();\n        service.stop();\n    }\n}",
+      "explanation": "WebServer implements Operable, provides concrete logic for start(), and inherits the default stop() method."
+    },
+    "codeExample": "interface Operable {\n    int TIMEOUT = 5000; // public static final\n    void start();       // public abstract\n    default void stop() {\n        System.out.println(\"Default graceful stop completed.\");\n    }\n}\n\nclass WebServer implements Operable {\n    @Override\n    public void start() {\n        System.out.println(\"Web server started on port 8080. Timeout: \" + TIMEOUT + \"ms\");\n    }\n}\n\npublic class InterfaceDemo {\n    public static void main(String[] args) {\n        Operable service = new WebServer();\n        service.start();\n        service.stop();\n    }\n}",
+    "expectedOutput": "Web server started on port 8080. Timeout: 5000ms\nDefault graceful stop completed.",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Interfaces.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Attempting to declare instance variables in an interface",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Attempting to reduce the visibility of implemented methods from public",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Interfaces",
+      "code": "interface Operable {\n    int TIMEOUT = 5000; // public static final\n    void start();       // public abstract\n    default void stop() {\n        System.out.println(\"Default graceful stop completed.\");\n    }\n}\n\nclass WebServer implements Operable {\n    @Override\n    public void start() {\n        System.out.println(\"Web server started on port 8080. Timeout: \" + TIMEOUT + \"ms\");\n    }\n}\n\npublic class InterfaceDemo {\n    public static void main(String[] args) {\n        Operable service = new WebServer();\n        service.start();\n        service.stop();\n    }\n}",
+      "explanation": "WebServer implements Operable, provides concrete logic for start(), and inherits the default stop() method."
+    },
+    "practice": {
+      "prompt": "Create an interface Resizable with method void resize(int factor). Implement class Rectangle with int width, height and update dimensions in resize.",
+      "starterCode": "interface Resizable {\n    void resize(int factor);\n}\n\nclass Rectangle implements Resizable {\n    int width = 10;\n    int height = 20;\n    // Implement resize\n    void printInfo() {\n        System.out.println(width + \"x\" + height);\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle();\n        r.resize(2);\n        r.printInfo();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "In resize(int factor), set width *= factor; height *= factor. Make sure the method is public!",
+      "solution": "interface Resizable {\n    void resize(int factor);\n}\n\nclass Rectangle implements Resizable {\n    int width = 10;\n    int height = 20;\n    // Implement resize\n    void printInfo() {\n        System.out.println(width + \"x\" + height);\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Rectangle r = new Rectangle();\n        r.resize(2);\n        r.printInfo();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-interfaces-1",
+        "question": "What are the implicit modifiers for variables declared inside a Java interface?",
+        "options": [
+          "public static final",
+          "private volatile",
+          "protected transient",
+          "default package-private"
+        ],
+        "correctIndex": 0,
+        "explanation": "All interface variables are implicitly public, static, and final (constants)."
+      },
+      {
+        "id": "quiz-top-java-oop-interfaces-2",
+        "question": "When implementing an interface method in a class, what access modifier MUST be used?",
+        "options": [
+          "public",
+          "protected",
+          "default (no modifier)",
+          "private"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interface methods are implicitly public. Subclasses cannot reduce method visibility, so the override must be public."
+      },
+      {
+        "id": "quiz-top-java-oop-interfaces-3",
+        "question": "Why were 'default methods' introduced in Java 8?",
+        "options": [
+          "To allow adding new methods to existing interfaces without breaking existing implementing classes",
+          "To replace abstract classes entirely in the language",
+          "To make interfaces allocate memory on the heap",
+          "To allow private static constructors"
+        ],
+        "correctIndex": 0,
+        "explanation": "Default methods enabled API maintainers to evolve interfaces (such as adding stream() to Collection) without breaking legacy code."
+      },
+      {
+        "id": "quiz-top-java-oop-interfaces-4",
+        "question": "What is a Functional Interface in Java?",
+        "options": [
+          "An interface containing exactly one abstract method (Single Abstract Method)",
+          "An interface that contains only static methods",
+          "An interface with no methods at all",
+          "An interface that can only be implemented by immutable classes"
+        ],
+        "correctIndex": 0,
+        "explanation": "A functional interface has exactly one abstract method (SAM) and can be implemented with lambda expressions."
+      },
+      {
+        "id": "quiz-top-java-oop-interfaces-5",
+        "question": "Can an interface extend another interface in Java?",
+        "options": [
+          "Yes, an interface can extend one or more interfaces using the 'extends' keyword",
+          "No, interfaces can only be implemented by classes",
+          "Only if the parent interface has no default methods",
+          "Only if both interfaces are marked final"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces can extend multiple interfaces using the 'extends' keyword (e.g. interface C extends A, B)."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Printer and Scanner Multifunction Device",
+      "difficulty": "Intermediate",
+      "problem_statement": "Define interface Printable with method printDoc(). Define interface Scannable with method scanDoc(). Implement both in class SmartCopier. Demonstrate calling both methods via the respective interface references.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Printing document...\nScanning document...",
+      "starter_code": "interface Printable {\n    void printDoc();\n}\n\ninterface Scannable {\n    void scanDoc();\n}\n\nclass SmartCopier implements Printable, Scannable {\n    // Implement both methods\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        SmartCopier copier = new SmartCopier();\n        copier.printDoc();\n        copier.scanDoc();\n    }\n}",
+      "expected_output": "Printing document...\nScanning document...",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Printing document...\nScanning document..."
+        }
+      ]
+    },
+    "summary": [
+      "Interfaces specify a contract without holding instance state",
+      "Interface fields are implicitly public static final",
+      "Interface methods are implicitly public abstract (unless marked default, static, or private)",
+      "A single class can implement multiple interfaces, achieving multiple behavioral compliance"
+    ]
+  },
+  {
+    "id": "top-java-oop-abstract-vs-interface",
+    "number": 28,
+    "numberDisplay": "28",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Abstract Class versus Interface",
+    "slug": "abstract-vs-interface",
+    "language": "java",
+    "shortDescription": "Examine the technical differences, architectural trade-offs, state management, and selection criteria between abstract classes and interfaces.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-interfaces",
+    "learningObjectives": [
+      "Compare abstract classes and interfaces across state, constructors, and inheritance",
+      "Understand when to choose an abstract class vs an interface",
+      "Analyze modern Java evolution (Java 8 default methods, Java 9 private methods)",
+      "Apply hybrid design: defining interface contracts backed by abstract skeletal implementations"
+    ],
+    "conceptExplanation": "### 1. Definition\nAn abstract class is an incomplete class hierarchy defining common state and partial behavior. An interface is a contract defining behavioral capabilities independent of class hierarchy.\n\n### 2. Why It Is Needed\nChoosing the wrong abstraction mechanism leads to brittle inheritance trees or repetitive boilerplate across unrelated classes.\n\n### 3. How It Works Internally\nAbstract classes support instance variables (state), non-public methods, and constructors, but a class can only extend one abstract class. Interfaces support multiple implementation and loose coupling, but cannot hold mutable instance state.\n\n### 4. Real-World Analogy\nAn abstract class is like 'Mammal' (shares warm blood, heartbeat, lungs). An interface is like 'Swimmable' (both a Dolphin and a Submarine can swim, despite completely different parentage).",
+    "visualDiagram": "+----------------------+------------------------+--------------------------+\n| Feature              | Abstract Class         | Interface                |\n+----------------------+------------------------+--------------------------+\n| Multiple Inheritance | No (Single extends)    | Yes (Multiple implements)|\n| State (Variables)    | Instance fields allowed| Only public static final |\n| Constructors         | Yes (via super)        | None                     |\n| Access Modifiers     | public, protected, etc.| Methods implicitly public|\n| Primary Purpose      | Code reuse & identity  | Behavioral contract      |\n+----------------------+------------------------+--------------------------+",
+    "syntax": "// Comparison:\n// Abstract class: IS-A relationship, holds mutable state, single inheritance\n// Interface: CAN-DO capability, stateless contract, multiple implementation",
+    "simpleExample": {
+      "code": "interface StorageEngine {\n    void save(String key, String value);\n    String get(String key);\n}\n\nabstract class AbstractStorageEngine implements StorageEngine {\n    protected void validateKey(String key) {\n        if (key == null || key.isEmpty()) throw new IllegalArgumentException(\"Invalid key\");\n    }\n}\n\nclass MemoryStorage extends AbstractStorageEngine {\n    private java.util.Map<String, String> map = new java.util.HashMap<>();\n    @Override\n    public void save(String key, String value) {\n        validateKey(key);\n        map.put(key, value);\n        System.out.println(\"Saved: \" + key + \" = \" + value);\n    }\n    @Override\n    public String get(String key) {\n        validateKey(key);\n        return map.get(key);\n    }\n}\n\npublic class HybridDemo {\n    public static void main(String[] args) {\n        StorageEngine storage = new MemoryStorage();\n        storage.save(\"token\", \"xyz123\");\n    }\n}",
+      "explanation": "StorageEngine defines the contract, AbstractStorageEngine supplies common validation logic, and MemoryStorage provides the concrete data store."
+    },
+    "codeExample": "interface StorageEngine {\n    void save(String key, String value);\n    String get(String key);\n}\n\nabstract class AbstractStorageEngine implements StorageEngine {\n    protected void validateKey(String key) {\n        if (key == null || key.isEmpty()) throw new IllegalArgumentException(\"Invalid key\");\n    }\n}\n\nclass MemoryStorage extends AbstractStorageEngine {\n    private java.util.Map<String, String> map = new java.util.HashMap<>();\n    @Override\n    public void save(String key, String value) {\n        validateKey(key);\n        map.put(key, value);\n        System.out.println(\"Saved: \" + key + \" = \" + value);\n    }\n    @Override\n    public String get(String key) {\n        validateKey(key);\n        return map.get(key);\n    }\n}\n\npublic class HybridDemo {\n    public static void main(String[] args) {\n        StorageEngine storage = new MemoryStorage();\n        storage.save(\"token\", \"xyz123\");\n    }\n}",
+    "expectedOutput": "Saved: token = xyz123",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Abstract Class versus Interface.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using an abstract class just to share code when classes do not share an IS-A identity",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Adding mutable state fields to interfaces (impossible in Java)",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Abstract Class versus Interface",
+      "code": "interface StorageEngine {\n    void save(String key, String value);\n    String get(String key);\n}\n\nabstract class AbstractStorageEngine implements StorageEngine {\n    protected void validateKey(String key) {\n        if (key == null || key.isEmpty()) throw new IllegalArgumentException(\"Invalid key\");\n    }\n}\n\nclass MemoryStorage extends AbstractStorageEngine {\n    private java.util.Map<String, String> map = new java.util.HashMap<>();\n    @Override\n    public void save(String key, String value) {\n        validateKey(key);\n        map.put(key, value);\n        System.out.println(\"Saved: \" + key + \" = \" + value);\n    }\n    @Override\n    public String get(String key) {\n        validateKey(key);\n        return map.get(key);\n    }\n}\n\npublic class HybridDemo {\n    public static void main(String[] args) {\n        StorageEngine storage = new MemoryStorage();\n        storage.save(\"token\", \"xyz123\");\n    }\n}",
+      "explanation": "StorageEngine defines the contract, AbstractStorageEngine supplies common validation logic, and MemoryStorage provides the concrete data store."
+    },
+    "practice": {
+      "prompt": "Create an interface Flyable with method fly(). Create an abstract class Bird with String species and abstract makeSound(). Implement class Sparrow.",
+      "starterCode": "interface Flyable {\n    void fly();\n}\nabstract class Bird {\n    String species;\n    Bird(String species) { this.species = species; }\n    abstract void makeSound();\n}\nclass Sparrow extends Bird implements Flyable {\n    Sparrow() { super(\"Sparrow\"); }\n    // Implement makeSound and fly\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Sparrow s = new Sparrow();\n        s.makeSound();\n        s.fly();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "In Sparrow, print 'Chirp' in makeSound() and 'Flying high' in fly().",
+      "solution": "interface Flyable {\n    void fly();\n}\nabstract class Bird {\n    String species;\n    Bird(String species) { this.species = species; }\n    abstract void makeSound();\n}\nclass Sparrow extends Bird implements Flyable {\n    Sparrow() { super(\"Sparrow\"); }\n    // Implement makeSound and fly\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Sparrow s = new Sparrow();\n        s.makeSound();\n        s.fly();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-abstract-vs-interface-1",
+        "question": "Which of the following can have instance variables (non-static mutable fields)?",
+        "options": [
+          "Abstract classes only",
+          "Interfaces only",
+          "Both abstract classes and interfaces",
+          "Neither"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces can only have 'public static final' constants. Only abstract classes can store mutable instance variables."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-vs-interface-2",
+        "question": "When should you prefer an interface over an abstract class?",
+        "options": [
+          "When defining a contract that can be implemented by unrelated classes across different hierarchies",
+          "When you need to define constructor logic for state initialization",
+          "When you want private non-static instance fields",
+          "When performance requires avoiding dynamic dispatch"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces represent polymorphic capabilities across completely unrelated classes (e.g., Comparable)."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-vs-interface-3",
+        "question": "Can a Java class extend an abstract class AND implement multiple interfaces?",
+        "options": [
+          "Yes, exactly one superclass can be extended while multiple interfaces can be implemented",
+          "No, Java forbids mixing extends and implements",
+          "Only if all interfaces have no methods",
+          "Only if the abstract class has no constructors"
+        ],
+        "correctIndex": 0,
+        "explanation": "Java supports single class inheritance and multiple interface implementation: class C extends A implements X, Y, Z."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-vs-interface-4",
+        "question": "Can an interface have protected methods in Java?",
+        "options": [
+          "No, interface methods can only be public or private (since Java 9)",
+          "Yes, starting in Java 8",
+          "Yes, if marked default protected",
+          "Only if marked static"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interface methods can be public (abstract, default, static) or private (helper methods inside the interface). Protected is not allowed."
+      },
+      {
+        "id": "quiz-top-java-oop-abstract-vs-interface-5",
+        "question": "What is the primary advantage of combining an interface with an abstract skeletal class?",
+        "options": [
+          "Clients program to the interface while implementers can extend the abstract class to avoid writing common boilerplate",
+          "It eliminates the need for compilation",
+          "It allows multiple inheritance of state",
+          "It prevents any class from overriding methods"
+        ],
+        "correctIndex": 0,
+        "explanation": "This pattern (used across java.util) combines the decoupling of interfaces with the code-reuse benefits of abstract classes."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Export Architecture Comparison",
+      "difficulty": "Intermediate",
+      "problem_statement": "Design an interface Exportable with method String exportData(). Create an abstract class DataFile with String fileName and an abstract method void validate(). Implement CsvFile extending DataFile and implementing Exportable.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "records.csv validated\nCSV data exported",
+      "starter_code": "interface Exportable {\n    String exportData();\n}\n\nabstract class DataFile {\n    String fileName;\n    DataFile(String fileName) { this.fileName = fileName;\n    }\n    abstract void validate();\n}\n\nclass CsvFile extends DataFile implements Exportable {\n    CsvFile(String fileName) { super(fileName); }\n    // Implement validate and exportData\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        CsvFile file = new CsvFile(\"records.csv\");\n        file.validate();\n        System.out.println(file.exportData());\n    }\n}",
+      "expected_output": "records.csv validated\nCSV data exported",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "records.csv validated\nCSV data exported"
+        }
+      ]
+    },
+    "summary": [
+      "Use abstract classes for IS-A relationships requiring shared state and constructors",
+      "Use interfaces for CAN-DO capabilities independent of class hierarchy",
+      "A class can implement multiple interfaces but extend only one superclass",
+      "Interfaces contain no instance state"
+    ]
+  },
+  {
+    "id": "top-java-oop-multiple-inheritance-interfaces",
+    "number": 29,
+    "numberDisplay": "29",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Multiple Inheritance Through Interfaces",
+    "slug": "multiple-inheritance-interfaces",
+    "language": "java",
+    "shortDescription": "Understand how Java achieves multiple inheritance of type and behavior through interfaces, default method conflict resolution, and the diamond problem.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-abstract-vs-interface",
+    "learningObjectives": [
+      "Understand how Java avoids multiple inheritance of state while supporting multiple inheritance of type and behavior",
+      "Analyze the classic Diamond Problem and how Java handles it",
+      "Resolve default method conflicts using explicit `InterfaceName.super.method()` syntax",
+      "Master the three rules of default method resolution in Java"
+    ],
+    "conceptExplanation": "### 1. Definition\nMultiple inheritance through interfaces is Java's mechanism allowing a class to implement multiple interfaces, adopting multiple types and default behaviors without inheriting conflicting state.\n\n### 2. Why It Is Needed\nA class often needs to satisfy multiple orthogonal contracts. In languages like C++, multiple inheritance of classes causes complex state duplication (diamond problem). Java solves this by prohibiting multiple state inheritance while permitting multiple interface implementation.\n\n### 3. How It Works Internally\nWhen two interfaces provide identical default method signatures, the compiler flags a conflict. The implementing class must explicitly override the conflicting method and resolve ambiguity (optionally calling `InterfaceName.super.method()`).\n\n### 4. Real-World Analogy\nAn amphibious vehicle is both a 'Car' and a 'Boat'. It satisfies the driving rules on land and the maritime navigation rules on water.",
+    "visualDiagram": "       <<interface>> A (default void log())\n             /                  \\\n    <<interface>> B         <<interface>> C\n(default void log())       (default void log())\n             \\                  /\n       class Device implements B, C\n   [ MUST override log() to resolve conflict! ]\n   Resolution: B.super.log(); or custom logic",
+    "syntax": "class SmartTV implements VideoPlayer, AudioPlayer {\n    @Override\n    public void powerOn() {\n        VideoPlayer.super.powerOn();\n        System.out.println(\"TV is now active.\");\n    }\n}",
+    "simpleExample": {
+      "code": "interface Radio {\n    default void start() {\n        System.out.println(\"Radio tuning to FM frequencies.\");\n    }\n}\n\ninterface MediaPlayer {\n    default void start() {\n        System.out.println(\"Media player streaming audio track.\");\n    }\n}\n\nclass CarInfotainment implements Radio, MediaPlayer {\n    @Override\n    public void start() {\n        Radio.super.start();\n        MediaPlayer.super.start();\n        System.out.println(\"Car Infotainment ready.\");\n    }\n}\n\npublic class ConflictDemo {\n    public static void main(String[] args) {\n        CarInfotainment system = new CarInfotainment();\n        system.start();\n    }\n}",
+      "explanation": "CarInfotainment resolves the clash by overriding start() and explicitly invoking both interface behaviors using Interface.super syntax."
+    },
+    "codeExample": "interface Radio {\n    default void start() {\n        System.out.println(\"Radio tuning to FM frequencies.\");\n    }\n}\n\ninterface MediaPlayer {\n    default void start() {\n        System.out.println(\"Media player streaming audio track.\");\n    }\n}\n\nclass CarInfotainment implements Radio, MediaPlayer {\n    @Override\n    public void start() {\n        Radio.super.start();\n        MediaPlayer.super.start();\n        System.out.println(\"Car Infotainment ready.\");\n    }\n}\n\npublic class ConflictDemo {\n    public static void main(String[] args) {\n        CarInfotainment system = new CarInfotainment();\n        system.start();\n    }\n}",
+    "expectedOutput": "Radio tuning to FM frequencies.\nMedia player streaming audio track.\nCar Infotainment ready.",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Multiple Inheritance Through Interfaces.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Forgetting to override a method when two interfaces provide conflicting default implementations",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Using super.method() instead of InterfaceName.super.method()",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Multiple Inheritance Through Interfaces",
+      "code": "interface Radio {\n    default void start() {\n        System.out.println(\"Radio tuning to FM frequencies.\");\n    }\n}\n\ninterface MediaPlayer {\n    default void start() {\n        System.out.println(\"Media player streaming audio track.\");\n    }\n}\n\nclass CarInfotainment implements Radio, MediaPlayer {\n    @Override\n    public void start() {\n        Radio.super.start();\n        MediaPlayer.super.start();\n        System.out.println(\"Car Infotainment ready.\");\n    }\n}\n\npublic class ConflictDemo {\n    public static void main(String[] args) {\n        CarInfotainment system = new CarInfotainment();\n        system.start();\n    }\n}",
+      "explanation": "CarInfotainment resolves the clash by overriding start() and explicitly invoking both interface behaviors using Interface.super syntax."
+    },
+    "practice": {
+      "prompt": "Create interface MachineA with default void status() { System.out.println(\"A OK\"); } and interface MachineB with default void status() { System.out.println(\"B OK\"); }. Implement both in ComboDevice and resolve status() to print 'Combo OK'.",
+      "starterCode": "interface MachineA {\n    default void status() { System.out.println(\"A OK\"); }\n}\ninterface MachineB {\n    default void status() { System.out.println(\"B OK\"); }\n}\nclass ComboDevice implements MachineA, MachineB {\n    // Resolve status\n}\npublic class Solution {\n    public static void main(String[] args) {\n        ComboDevice d = new ComboDevice();\n        d.status();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Override public void status() in ComboDevice and print 'Combo OK'.",
+      "solution": "interface MachineA {\n    default void status() { System.out.println(\"A OK\"); }\n}\ninterface MachineB {\n    default void status() { System.out.println(\"B OK\"); }\n}\nclass ComboDevice implements MachineA, MachineB {\n    // Resolve status\n}\npublic class Solution {\n    public static void main(String[] args) {\n        ComboDevice d = new ComboDevice();\n        d.status();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-multiple-inheritance-interfaces-1",
+        "question": "What happens if a class implements two interfaces that have the exact same default method signature?",
+        "options": [
+          "The code fails to compile unless the class explicitly overrides the conflicting method",
+          "The compiler randomly chooses the first interface listed",
+          "The JVM executes both methods in sequence at runtime",
+          "The program compiles but throws an IncompatibleClassChangeError"
+        ],
+        "correctIndex": 0,
+        "explanation": "The compiler mandates an explicit override in the implementing class to eliminate ambiguity."
+      },
+      {
+        "id": "quiz-top-java-oop-multiple-inheritance-interfaces-2",
+        "question": "How do you invoke a specific interface's default method from the overriding class?",
+        "options": [
+          "InterfaceName.super.methodName()",
+          "super.InterfaceName.methodName()",
+          "InterfaceName.this.methodName()",
+          "InterfaceName::methodName"
+        ],
+        "correctIndex": 0,
+        "explanation": "Java syntax specifies `InterfaceName.super.methodName()` to disambiguate interface default calls."
+      },
+      {
+        "id": "quiz-top-java-oop-multiple-inheritance-interfaces-3",
+        "question": "What is the 'Classes win' rule in Java default method resolution?",
+        "options": [
+          "A method declaration in a superclass or abstract class always takes precedence over any default method in an interface",
+          "Classes run faster than interfaces in bytecode",
+          "Interfaces cannot override class methods",
+          "Abstract classes cannot implement interfaces"
+        ],
+        "correctIndex": 0,
+        "explanation": "If a superclass provides a concrete method, it always overrides any interface default method with the same signature."
+      },
+      {
+        "id": "quiz-top-java-oop-multiple-inheritance-interfaces-4",
+        "question": "Why does Java allow multiple inheritance of interfaces but NOT multiple inheritance of classes?",
+        "options": [
+          "Interfaces do not hold instance state (fields), eliminating state duplication and field ambiguity",
+          "Interfaces are compiled into separate JVMs",
+          "Classes are too large to inherit more than once",
+          "Because C++ handles multiple inheritance with zero issues"
+        ],
+        "correctIndex": 0,
+        "explanation": "Because interfaces have no instance variables, there is no conflict over duplicate memory state."
+      },
+      {
+        "id": "quiz-top-java-oop-multiple-inheritance-interfaces-5",
+        "question": "Can an interface extend multiple other interfaces?",
+        "options": [
+          "Yes, an interface can extend multiple interfaces using commas: interface C extends A, B",
+          "No, interfaces can only extend a single interface",
+          "Only if none of the parent interfaces have methods",
+          "Only if marked with @FunctionalInterface"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces can extend multiple interfaces via `interface C extends A, B`."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Multi-Sensor IoT Node",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create interface TemperatureSensor with default int readVal() { return 25; } and interface PressureSensor with default int readVal() { return 1013; }. Implement class WeatherStation that overrides readVal() to return the average of both sensors.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Combined Reading: 519",
+      "starter_code": "interface TemperatureSensor {\n    default int readVal() { return 25; }\n}\n\ninterface PressureSensor {\n    default int readVal() { return 1013; }\n}\n\nclass WeatherStation implements TemperatureSensor, PressureSensor {\n    @Override\n    public int readVal() {\n        // Return average of TemperatureSensor and PressureSensor\n        return 0;\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        WeatherStation station = new WeatherStation();\n        System.out.println(\"Combined Reading: \" + station.readVal());\n    }\n}",
+      "expected_output": "Combined Reading: 519",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Combined Reading: 519"
+        }
+      ]
+    },
+    "summary": [
+      "Java supports multiple inheritance of type and behavior through interfaces",
+      "Multiple inheritance of state is prohibited to avoid data corruption and ambiguity",
+      "Conflicting default methods must be overridden by the implementing class",
+      "Use InterfaceName.super.method() to call specific default implementations"
+    ]
+  },
+  {
+    "id": "top-java-oop-interface-based-design",
+    "number": 30,
+    "numberDisplay": "30",
+    "moduleId": "mod-java-oop-06",
+    "moduleTitle": "MODULE 06: Abstraction and Interfaces",
+    "title": "Interface-Based Design",
+    "slug": "interface-based-design",
+    "language": "java",
+    "shortDescription": "Design extensible, maintainable architectures: programming to an interface, loose coupling, dependency inversion, and mock testing.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 15,
+    "prerequisiteId": "top-java-oop-multiple-inheritance-interfaces",
+    "learningObjectives": [
+      "Apply the core principle: 'Program to an interface, not an implementation'",
+      "Understand loose coupling and how it enables software extensibility",
+      "Learn the basics of Dependency Inversion (the 'D' in SOLID)",
+      "Design testable systems using mock and dummy implementations"
+    ],
+    "conceptExplanation": "### 1. Definition\nInterface-based design is an architectural practice where software components declare dependencies on interface contracts rather than concrete classes, isolating consumers from implementation changes.\n\n### 2. Why It Is Needed\nWhen high-level business logic instantiates concrete classes directly (e.g. `MySQLDatabase db = new MySQLDatabase()`), switching to PostgreSQL or writing automated unit tests becomes extremely difficult.\n\n### 3. How It Works Internally\nComponents accept interface references in their constructors or methods (Dependency Injection). At runtime, any class implementing that interface can be provided seamlessly.\n\n### 4. Real-World Analogy\nA wall outlet doesn't care whether you plug in a Samsung television or an LG television—as long as the plug satisfies the electrical interface standard, power flows.",
+    "visualDiagram": "Tight Coupling:\nOrderService -----> MySQLDatabase (Direct dependency, hard to change)\n\nInterface-Based Loose Coupling:\nOrderService -----> [ <<interface>> Database ]\n                              ^\n                 +------------+------------+\n                 |                         |\n           MySQLDatabase             MongoDatabase",
+    "syntax": "class OrderService {\n    private final PaymentProcessor paymentProcessor;\n    // Injected via interface contract\n    public OrderService(PaymentProcessor paymentProcessor) {\n        this.paymentProcessor = paymentProcessor;\n    }\n}",
+    "simpleExample": {
+      "code": "interface PaymentProcessor {\n    boolean process(double amount);\n}\n\nclass CreditCardProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via Credit Card Gateway.\");\n        return true;\n    }\n}\n\nclass PayPalProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via PayPal API.\");\n        return true;\n    }\n}\n\nclass CheckoutService {\n    private PaymentProcessor processor;\n    public CheckoutService(PaymentProcessor processor) {\n        this.processor = processor;\n    }\n    public void checkout(double total) {\n        processor.process(total);\n    }\n}\n\npublic class InterfaceDesignDemo {\n    public static void main(String[] args) {\n        CheckoutService cart1 = new CheckoutService(new CreditCardProcessor());\n        cart1.checkout(150.0);\n        CheckoutService cart2 = new CheckoutService(new PayPalProcessor());\n        cart2.checkout(75.5);\n    }\n}",
+      "explanation": "CheckoutService depends solely on PaymentProcessor. New processors can be added without altering CheckoutService code."
+    },
+    "codeExample": "interface PaymentProcessor {\n    boolean process(double amount);\n}\n\nclass CreditCardProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via Credit Card Gateway.\");\n        return true;\n    }\n}\n\nclass PayPalProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via PayPal API.\");\n        return true;\n    }\n}\n\nclass CheckoutService {\n    private PaymentProcessor processor;\n    public CheckoutService(PaymentProcessor processor) {\n        this.processor = processor;\n    }\n    public void checkout(double total) {\n        processor.process(total);\n    }\n}\n\npublic class InterfaceDesignDemo {\n    public static void main(String[] args) {\n        CheckoutService cart1 = new CheckoutService(new CreditCardProcessor());\n        cart1.checkout(150.0);\n        CheckoutService cart2 = new CheckoutService(new PayPalProcessor());\n        cart2.checkout(75.5);\n    }\n}",
+    "expectedOutput": "Processing $150.0 via Credit Card Gateway.\nProcessing $75.5 via PayPal API.",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Interface-Based Design.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Creating interfaces with only a single implementation when no variation or testing requirement exists",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Leaking implementation details into interface method signatures",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Interface-Based Design",
+      "code": "interface PaymentProcessor {\n    boolean process(double amount);\n}\n\nclass CreditCardProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via Credit Card Gateway.\");\n        return true;\n    }\n}\n\nclass PayPalProcessor implements PaymentProcessor {\n    @Override\n    public boolean process(double amount) {\n        System.out.println(\"Processing $\" + amount + \" via PayPal API.\");\n        return true;\n    }\n}\n\nclass CheckoutService {\n    private PaymentProcessor processor;\n    public CheckoutService(PaymentProcessor processor) {\n        this.processor = processor;\n    }\n    public void checkout(double total) {\n        processor.process(total);\n    }\n}\n\npublic class InterfaceDesignDemo {\n    public static void main(String[] args) {\n        CheckoutService cart1 = new CheckoutService(new CreditCardProcessor());\n        cart1.checkout(150.0);\n        CheckoutService cart2 = new CheckoutService(new PayPalProcessor());\n        cart2.checkout(75.5);\n    }\n}",
+      "explanation": "CheckoutService depends solely on PaymentProcessor. New processors can be added without altering CheckoutService code."
+    },
+    "practice": {
+      "prompt": "Create interface MessageSender with void send(String msg). Implement MockSender that records the message into a public String lastMessage. Test it in main.",
+      "starterCode": "interface MessageSender {\n    void send(String msg);\n}\n\nclass MockSender implements MessageSender {\n    public String lastMessage = \"\";\n    // Implement send\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        MockSender mock = new MockSender();\n        mock.send(\"Test payload\");\n        System.out.println(\"Mock captured: \" + mock.lastMessage);\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "In MockSender.send(String msg), assign this.lastMessage = msg.",
+      "solution": "interface MessageSender {\n    void send(String msg);\n}\n\nclass MockSender implements MessageSender {\n    public String lastMessage = \"\";\n    // Implement send\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        MockSender mock = new MockSender();\n        mock.send(\"Test payload\");\n        System.out.println(\"Mock captured: \" + mock.lastMessage);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-interface-based-design-1",
+        "question": "What is the meaning of the principle 'Program to an interface, not an implementation'?",
+        "options": [
+          "Declare variables, parameters, and return types using interface types rather than concrete classes",
+          "Never write concrete classes in Java",
+          "Avoid using classes with more than two methods",
+          "Always write interfaces inside abstract methods"
+        ],
+        "correctIndex": 0,
+        "explanation": "Referencing interface types ensures client code is decoupled from specific concrete implementations."
+      },
+      {
+        "id": "quiz-top-java-oop-interface-based-design-2",
+        "question": "What is the primary benefit of Interface-Based Design for automated testing?",
+        "options": [
+          "It allows injecting lightweight mock implementations without spinning up heavy external systems like databases or web services",
+          "It makes the Java compiler run twice as fast",
+          "It eliminates the need to run unit tests",
+          "It automatically detects memory leaks"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces allow swapping real database/network dependencies with fast, deterministic in-memory mock objects."
+      },
+      {
+        "id": "quiz-top-java-oop-interface-based-design-3",
+        "question": "Which SOLID design principle directly aligns with programming to interfaces rather than concrete details?",
+        "options": [
+          "Dependency Inversion Principle",
+          "Single Responsibility Principle",
+          "Liskov Substitution Principle only",
+          "Inheritance Inversion Rule"
+        ],
+        "correctIndex": 0,
+        "explanation": "Dependency Inversion states: 'High-level modules should not depend on low-level modules; both should depend on abstractions.'"
+      },
+      {
+        "id": "quiz-top-java-oop-interface-based-design-4",
+        "question": "Why is declaring 'List<String> list = new ArrayList<>()' preferred over 'ArrayList<String> list = new ArrayList<>()'?",
+        "options": [
+          "Because you can easily switch the underlying implementation to LinkedList or CopyOnWriteArrayList without changing consuming code",
+          "Because ArrayList takes more memory if typed as ArrayList",
+          "Because the JVM forbids concrete variable declarations",
+          "Because List executes faster in CPU cache"
+        ],
+        "correctIndex": 0,
+        "explanation": "Typing against the List interface permits changing the collection implementation without breaking downstream code."
+      },
+      {
+        "id": "quiz-top-java-oop-interface-based-design-5",
+        "question": "What is a sign of poor interface design?",
+        "options": [
+          "Fat interfaces forcing implementers to write dummy empty methods for operations they do not support",
+          "Interfaces with descriptive method names",
+          "Interfaces implemented by multiple classes",
+          "Interfaces declaring default methods"
+        ],
+        "correctIndex": 0,
+        "explanation": "Fat interfaces violate the Interface Segregation Principle (ISP). Interfaces should be cohesive and client-focused."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Payment Gateway Module Practical Exercise",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create interface Payment with method process(double amount). Implement CreditCardPayment ('Paid $<amt> with Credit Card'), UpiPayment ('Paid $<amt> with UPI'), and CashPayment ('Paid $<amt> with Cash'). Process all three in a loop.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Paid $100.0 with Credit Card\nPaid $100.0 with UPI\nPaid $100.0 with Cash",
+      "starter_code": "interface Payment {\n    void process(double amount);\n}\n\nclass CreditCardPayment implements Payment {\n    // Implement\n}\n\nclass UpiPayment implements Payment {\n    // Implement\n}\n\nclass CashPayment implements Payment {\n    // Implement\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Payment[] payments = {\n            new CreditCardPayment(),\n            new UpiPayment(),\n            new CashPayment()\n        };\n        for (Payment p : payments) {\n            p.process(100.0);\n        }\n    }\n}",
+      "expected_output": "Paid $100.0 with Credit Card\nPaid $100.0 with UPI\nPaid $100.0 with Cash",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Paid $100.0 with Credit Card\nPaid $100.0 with UPI\nPaid $100.0 with Cash"
+        }
+      ]
+    },
+    "summary": [
+      "Interface-based design isolates clients from concrete implementation details",
+      "Enables loose coupling and adherence to the Open/Closed Principle",
+      "Facilitates unit testing via mock/fake test doubles",
+      "Foundational to modern enterprise frameworks like Spring"
+    ]
+  },
+  {
+    "id": "top-java-oop-association",
+    "number": 31,
+    "numberDisplay": "31",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Association",
+    "slug": "association",
+    "language": "java",
+    "shortDescription": "Model real-world relationships between objects: 1-to-1, 1-to-many, many-to-many relationships and navigability in Java.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-interface-based-design",
+    "learningObjectives": [
+      "Define Association and understand peer-to-peer object relationships",
+      "Differentiate between unidirectional and bidirectional association",
+      "Model multiplicity: One-to-One, One-to-Many, and Many-to-Many",
+      "Implement associations cleanly using object references and collections"
+    ],
+    "conceptExplanation": "### 1. Definition\nAssociation represents a relationship between two separate classes where objects of one class interact with objects of another, but both classes have independent lifecycles without ownership.\n\n### 2. Why It Is Needed\nObjects rarely operate in isolation. They must send messages, invoke methods, and share context with other objects.\n\n### 3. How It Works Internally\nAssociation is implemented through instance variables referencing other objects (or collections of objects). In unidirectional association, only one object knows about the other; in bidirectional association, both maintain references.\n\n### 4. Real-World Analogy\nA Passenger and an Airline. A passenger books a flight on an airline, but neither owns the lifecycle of the other. If the airline ceases operations, the passenger still exists.",
+    "visualDiagram": "Unidirectional Association:\n[ BankCustomer ] --------> [ CreditCard ]\n(Customer references card, card has no back-pointer)\n\nBidirectional Association:\n[ Teacher ] <--------> [ Student ]\n(Teacher has list of students, Student has reference to advisor)",
+    "syntax": "class Doctor {\n    String name;\n    List<Patient> patients = new ArrayList<>();\n}\nclass Patient {\n    String name;\n}",
+    "simpleExample": {
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Book {\n    private String title;\n    public Book(String title) { this.title = title; }\n    public String getTitle() { return title; }\n}\n\nclass Author {\n    private String name;\n    private List<Book> books = new ArrayList<>();\n    \n    public Author(String name) { this.name = name; }\n    public void writeBook(Book book) { books.add(book); }\n    public void printCatalog() {\n        System.out.println(\"Author: \" + name);\n        for (Book b : books) {\n            System.out.println(\" - \" + b.getTitle());\n        }\n    }\n}\n\npublic class AssociationDemo {\n    public static void main(String[] args) {\n        Author author = new Author(\"George Orwell\");\n        author.writeBook(new Book(\"1984\"));\n        author.writeBook(new Book(\"Animal Farm\"));\n        author.printCatalog();\n    }\n}",
+      "explanation": "Author is associated with Book. Both exist independently; books are added dynamically to the author's list."
+    },
+    "codeExample": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Book {\n    private String title;\n    public Book(String title) { this.title = title; }\n    public String getTitle() { return title; }\n}\n\nclass Author {\n    private String name;\n    private List<Book> books = new ArrayList<>();\n    \n    public Author(String name) { this.name = name; }\n    public void writeBook(Book book) { books.add(book); }\n    public void printCatalog() {\n        System.out.println(\"Author: \" + name);\n        for (Book b : books) {\n            System.out.println(\" - \" + b.getTitle());\n        }\n    }\n}\n\npublic class AssociationDemo {\n    public static void main(String[] args) {\n        Author author = new Author(\"George Orwell\");\n        author.writeBook(new Book(\"1984\"));\n        author.writeBook(new Book(\"Animal Farm\"));\n        author.printCatalog();\n    }\n}",
+    "expectedOutput": "Author: George Orwell\n - 1984\n - Animal Farm",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Association.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Creating circular bidirectional references that cause infinite recursion in toString() or JSON serialization",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Confusing association with parent-child inheritance",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Association",
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Book {\n    private String title;\n    public Book(String title) { this.title = title; }\n    public String getTitle() { return title; }\n}\n\nclass Author {\n    private String name;\n    private List<Book> books = new ArrayList<>();\n    \n    public Author(String name) { this.name = name; }\n    public void writeBook(Book book) { books.add(book); }\n    public void printCatalog() {\n        System.out.println(\"Author: \" + name);\n        for (Book b : books) {\n            System.out.println(\" - \" + b.getTitle());\n        }\n    }\n}\n\npublic class AssociationDemo {\n    public static void main(String[] args) {\n        Author author = new Author(\"George Orwell\");\n        author.writeBook(new Book(\"1984\"));\n        author.writeBook(new Book(\"Animal Farm\"));\n        author.printCatalog();\n    }\n}",
+      "explanation": "Author is associated with Book. Both exist independently; books are added dynamically to the author's list."
+    },
+    "practice": {
+      "prompt": "Create a Doctor class with name and a method consult(Patient p) that prints '<doctor> consulted with <patient>'. Create Patient class with name.",
+      "starterCode": "class Patient {\n    String name;\n    Patient(String name) { this.name = name; }\n}\nclass Doctor {\n    String name;\n    Doctor(String name) { this.name = name; }\n    void consult(Patient p) {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Doctor doc = new Doctor(\"Dr. Watson\");\n        Patient pat = new Patient(\"John\");\n        doc.consult(pat);\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Print name + \" consulted with \" + p.name inside consult.",
+      "solution": "class Patient {\n    String name;\n    Patient(String name) { this.name = name; }\n}\nclass Doctor {\n    String name;\n    Doctor(String name) { this.name = name; }\n    void consult(Patient p) {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Doctor doc = new Doctor(\"Dr. Watson\");\n        Patient pat = new Patient(\"John\");\n        doc.consult(pat);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-association-1",
+        "question": "What is the key characteristic of an Association relationship?",
+        "options": [
+          "Two independent classes interact, with neither owning the lifecycle of the other",
+          "One class extends another class using 'extends'",
+          "A child class cannot exist without its parent",
+          "All fields in both classes must be static"
+        ],
+        "correctIndex": 0,
+        "explanation": "Association is a 'uses-a' or structural peer relationship where objects have independent lifecycles."
+      },
+      {
+        "id": "quiz-top-java-oop-association-2",
+        "question": "What distinguishes unidirectional association from bidirectional association?",
+        "options": [
+          "In unidirectional, only one class contains a reference to the other; in bidirectional, both reference each other",
+          "Unidirectional association only works for primitive data types",
+          "Bidirectional association requires multiple inheritance",
+          "Unidirectional association is only evaluated at compile time"
+        ],
+        "correctIndex": 0,
+        "explanation": "Navigability defines whether traversal happens in one direction or both directions."
+      },
+      {
+        "id": "quiz-top-java-oop-association-3",
+        "question": "What is a common bug when printing bidirectional associated objects using toString()?",
+        "options": [
+          "StackOverflowError due to infinite mutual recursion",
+          "NullPointerException during JVM initialization",
+          "ClassCastException",
+          "Memory fragmentation on the stack"
+        ],
+        "correctIndex": 0,
+        "explanation": "If class A's toString calls B's toString, which calls A's toString, infinite recursion results in a StackOverflowError."
+      },
+      {
+        "id": "quiz-top-java-oop-association-4",
+        "question": "How is a One-to-Many association typically represented in a Java class?",
+        "options": [
+          "Using a Collection (such as List, Set) of the target objects",
+          "Using the 'super' keyword",
+          "Using a single primitive int",
+          "Using an abstract constructor"
+        ],
+        "correctIndex": 0,
+        "explanation": "A One-to-Many relationship is modeled holding a List<Target> or Set<Target> field."
+      },
+      {
+        "id": "quiz-top-java-oop-association-5",
+        "question": "If object A is associated with object B, does garbage collecting A destroy B?",
+        "options": [
+          "No, B has an independent lifecycle and will not be collected if other references exist",
+          "Yes, associated objects are always collected together",
+          "Only if B is an inner class",
+          "Only if A was declared final"
+        ],
+        "correctIndex": 0,
+        "explanation": "Association implies independent lifecycles; destroying one peer does not cascade to the other."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Course Registration Association",
+      "difficulty": "Intermediate",
+      "problem_statement": "Model a Course and Student association. Student has a name. Course has courseCode and a List<Student>. Implement enroll(Student s) and displayRoster() printing '<courseCode> enrolled: <student1>, <student2>'.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "CS101 enrolled: Alice, Bob",
+      "starter_code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Student {\n    String name;\n    Student(String name) { this.name = name; }\n}\n\nclass Course {\n    String courseCode;\n    List<Student> roster = new ArrayList<>();\n    Course(String courseCode) { this.courseCode = courseCode; }\n    void enroll(Student s) { roster.add(s); }\n    void displayRoster() {\n        // Print\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Course c = new Course(\"CS101\");\n        c.enroll(new Student(\"Alice\"));\n        c.enroll(new Student(\"Bob\"));\n        c.displayRoster();\n    }\n}",
+      "expected_output": "CS101 enrolled: Alice, Bob",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "CS101 enrolled: Alice, Bob"
+        }
+      ]
+    },
+    "summary": [
+      "Association represents structural relationships between independent peer objects",
+      "Navigability can be unidirectional or bidirectional",
+      "Multiplicity (1:1, 1:N, N:M) is modeled via direct references or Collections",
+      "Objects have independent lifecycles"
+    ]
+  },
+  {
+    "id": "top-java-oop-aggregation",
+    "number": 32,
+    "numberDisplay": "32",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Aggregation",
+    "slug": "aggregation",
+    "language": "java",
+    "shortDescription": "Understand aggregation: the weak HAS-A relationship, shared ownership, and independent object lifecycles.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-association",
+    "learningObjectives": [
+      "Define Aggregation as a specialized form of Association",
+      "Understand the weak HAS-A relationship and shared ownership",
+      "Analyze why aggregated objects survive the destruction of the container",
+      "Implement aggregation through constructor and setter dependency injection"
+    ],
+    "conceptExplanation": "### 1. Definition\nAggregation is a specialized form of association that represents a weak 'HAS-A' part-whole relationship where the child component can exist independently of the parent container.\n\n### 2. Why It Is Needed\nSystems need to group existing objects into collections or assemblies without taking strict lifecycle ownership.\n\n### 3. How It Works Internally\nThe parent class receives references to already-instantiated child objects (typically via constructor parameters or setter methods). The parent does not create the child internally using `new`, nor does it destroy the child when discarded.\n\n### 4. Real-World Analogy\nA car and its driver. The car HAS-A driver. If the car is parked or decommissioned, the driver steps out and continues their life.",
+    "visualDiagram": "[ Department ] <>-------- [ Teacher ]\n  (Empty Diamond)        (Weak ownership)\n\nLifecycle: Department destroyed ===> Teacher SURVIVES",
+    "syntax": "class Department {\n    private List<Teacher> teachers;\n    // Injected externally - Aggregation\n    public Department(List<Teacher> teachers) {\n        this.teachers = teachers;\n    }\n}",
+    "simpleExample": {
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Professor {\n    private String name;\n    public Professor(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass Department {\n    private String deptName;\n    private List<Professor> professors;\n    \n    // Aggregation: professors are passed in from outside\n    public Department(String deptName, List<Professor> professors) {\n        this.deptName = deptName;\n        this.professors = professors;\n    }\n    \n    public void showStaff() {\n        System.out.println(\"Department: \" + deptName);\n        for (Professor p : professors) {\n            System.out.println(\" - Prof. \" + p.getName());\n        }\n    }\n}\n\npublic class AggregationDemo {\n    public static void main(String[] args) {\n        Professor p1 = new Professor(\"Snape\");\n        Professor p2 = new Professor(\"McGonagall\");\n        List<Professor> staff = new ArrayList<>();\n        staff.add(p1);\n        staff.add(p2);\n        \n        Department dept = new Department(\"Magic\", staff);\n        dept.showStaff();\n        // Even if dept becomes null, p1 and p2 remain accessible\n    }\n}",
+      "explanation": "Professors exist outside Department. Passing them in models aggregation with independent lifecycles."
+    },
+    "codeExample": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Professor {\n    private String name;\n    public Professor(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass Department {\n    private String deptName;\n    private List<Professor> professors;\n    \n    // Aggregation: professors are passed in from outside\n    public Department(String deptName, List<Professor> professors) {\n        this.deptName = deptName;\n        this.professors = professors;\n    }\n    \n    public void showStaff() {\n        System.out.println(\"Department: \" + deptName);\n        for (Professor p : professors) {\n            System.out.println(\" - Prof. \" + p.getName());\n        }\n    }\n}\n\npublic class AggregationDemo {\n    public static void main(String[] args) {\n        Professor p1 = new Professor(\"Snape\");\n        Professor p2 = new Professor(\"McGonagall\");\n        List<Professor> staff = new ArrayList<>();\n        staff.add(p1);\n        staff.add(p2);\n        \n        Department dept = new Department(\"Magic\", staff);\n        dept.showStaff();\n        // Even if dept becomes null, p1 and p2 remain accessible\n    }\n}",
+    "expectedOutput": "Department: Magic\n - Prof. Snape\n - Prof. McGonagall",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Aggregation.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Instantiating child objects inside the parent constructor using 'new' (which turns it into Composition)",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Aggregation",
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Professor {\n    private String name;\n    public Professor(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass Department {\n    private String deptName;\n    private List<Professor> professors;\n    \n    // Aggregation: professors are passed in from outside\n    public Department(String deptName, List<Professor> professors) {\n        this.deptName = deptName;\n        this.professors = professors;\n    }\n    \n    public void showStaff() {\n        System.out.println(\"Department: \" + deptName);\n        for (Professor p : professors) {\n            System.out.println(\" - Prof. \" + p.getName());\n        }\n    }\n}\n\npublic class AggregationDemo {\n    public static void main(String[] args) {\n        Professor p1 = new Professor(\"Snape\");\n        Professor p2 = new Professor(\"McGonagall\");\n        List<Professor> staff = new ArrayList<>();\n        staff.add(p1);\n        staff.add(p2);\n        \n        Department dept = new Department(\"Magic\", staff);\n        dept.showStaff();\n        // Even if dept becomes null, p1 and p2 remain accessible\n    }\n}",
+      "explanation": "Professors exist outside Department. Passing them in models aggregation with independent lifecycles."
+    },
+    "practice": {
+      "prompt": "Create Player (String name) and Team (String teamName, Player captain). Print '<captain> leads <teamName>'.",
+      "starterCode": "class Player {\n    String name;\n    Player(String name) { this.name = name; }\n}\nclass Team {\n    String teamName;\n    Player captain;\n    Team(String teamName, Player captain) {\n        this.teamName = teamName;\n        this.captain = captain;\n    }\n    void display() {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Player p = new Player(\"Lionel\");\n        Team t = new Team(\"Strikers\", p);\n        t.display();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Print captain.name + \" leads \" + teamName in display().",
+      "solution": "class Player {\n    String name;\n    Player(String name) { this.name = name; }\n}\nclass Team {\n    String teamName;\n    Player captain;\n    Team(String teamName, Player captain) {\n        this.teamName = teamName;\n        this.captain = captain;\n    }\n    void display() {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Player p = new Player(\"Lionel\");\n        Team t = new Team(\"Strikers\", p);\n        t.display();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-aggregation-1",
+        "question": "What is the defining trait of Aggregation compared to Composition?",
+        "options": [
+          "In Aggregation, the child object has an independent lifecycle and can survive without the parent",
+          "Aggregation uses the 'extends' keyword",
+          "Aggregation only allows private static members",
+          "In Aggregation, the parent completely destroys all children when garbage collected"
+        ],
+        "correctIndex": 0,
+        "explanation": "Aggregation represents weak HAS-A where child entities exist independently of the container."
+      },
+      {
+        "id": "quiz-top-java-oop-aggregation-2",
+        "question": "How is Aggregation represented in UML class diagrams?",
+        "options": [
+          "An open (hollow) diamond attached to the container class",
+          "A solid filled diamond attached to the container class",
+          "A dashed arrow pointing to the interface",
+          "A solid triangle pointing to the superclass"
+        ],
+        "correctIndex": 0,
+        "explanation": "A hollow diamond represents Aggregation; a filled diamond represents Composition."
+      },
+      {
+        "id": "quiz-top-java-oop-aggregation-3",
+        "question": "How are aggregated objects typically supplied to the parent class?",
+        "options": [
+          "Injected via constructor arguments or setter methods from the caller",
+          "Instantiated inside the parent constructor using 'new'",
+          "Inherited from Object",
+          "Generated by the JVM compiler"
+        ],
+        "correctIndex": 0,
+        "explanation": "External injection allows existing objects to be passed in, decoupling their creation."
+      },
+      {
+        "id": "quiz-top-java-oop-aggregation-4",
+        "question": "Can an aggregated object be part of multiple different parent containers simultaneously?",
+        "options": [
+          "Yes, because ownership is shared / weak",
+          "No, Java memory forbids referencing an object twice",
+          "Only if the object is declared volatile",
+          "Only if the class implements Cloneable"
+        ],
+        "correctIndex": 0,
+        "explanation": "Shared ownership in aggregation allows an object (e.g. an Instructor) to belong to multiple Departments."
+      },
+      {
+        "id": "quiz-top-java-oop-aggregation-5",
+        "question": "Which of the following is an example of Aggregation?",
+        "options": [
+          "A Library and its Books (books can exist outside the library in transit or private collections)",
+          "A Human and a Heart (a living human heart cannot function independently outside a human body)",
+          "A File and its byte stream",
+          "An int primitive and a double primitive"
+        ],
+        "correctIndex": 0,
+        "explanation": "Books have an independent existence from any specific library building."
+      }
+    ],
+    "codingChallenge": {
+      "title": "College Department Aggregation System",
+      "difficulty": "Intermediate",
+      "problem_statement": "Build Faculty (name, designation) and Department (deptName, List<Faculty>). Implement addFaculty(Faculty f) and printFacultyList() displaying 'Dept: <name>' followed by ' - <name> (<designation>)'.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Dept: Computer Science\n - Dr. Alan (Professor)\n - Grace (Lecturer)",
+      "starter_code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Faculty {\n    String name;\n    String designation;\n    Faculty(String name, String designation) {\n        this.name = name;\n        this.designation = designation;\n    }\n}\n\nclass Department {\n    String deptName;\n    List<Faculty> facultyList = new ArrayList<>();\n    Department(String deptName) { this.deptName = deptName; }\n    void addFaculty(Faculty f) { facultyList.add(f); }\n    void printFacultyList() {\n        // Print\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Faculty f1 = new Faculty(\"Dr. Alan\", \"Professor\");\n        Faculty f2 = new Faculty(\"Grace\", \"Lecturer\");\n        Department d = new Department(\"Computer Science\");\n        d.addFaculty(f1);\n        d.addFaculty(f2);\n        d.printFacultyList();\n    }\n}",
+      "expected_output": "Dept: Computer Science\n - Dr. Alan (Professor)\n - Grace (Lecturer)",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Dept: Computer Science\n - Dr. Alan (Professor)\n - Grace (Lecturer)"
+        }
+      ]
+    },
+    "summary": [
+      "Aggregation is a weak HAS-A part-whole relationship",
+      "Child objects exist independently and survive parent destruction",
+      "Child references are injected from the outside rather than created with 'new' inside the parent",
+      "Represented by a hollow diamond in UML"
+    ]
+  },
+  {
+    "id": "top-java-oop-composition",
+    "number": 33,
+    "numberDisplay": "33",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Composition",
+    "slug": "composition",
+    "language": "java",
+    "shortDescription": "Master composition: strong HAS-A relationships, lifecycle dependency, object ownership, and encapsulation.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-aggregation",
+    "learningObjectives": [
+      "Define Composition as strong 'HAS-A' ownership",
+      "Understand lifecycle dependency: when the parent dies, the child dies",
+      "Instantiate and manage dependent components privately inside the parent",
+      "Compare Composition with Aggregation in real-world system architecture"
+    ],
+    "conceptExplanation": "### 1. Definition\nComposition is a form of association representing a strong 'HAS-A' relationship where the child component is owned by and cannot exist independently of the parent object.\n\n### 2. Why It Is Needed\nComplex objects are formed by combining simpler building blocks whose state and lifecycle must be strictly controlled by the owner.\n\n### 3. How It Works Internally\nThe parent class creates and manages the child instance directly (e.g. inside its constructor). The child is declared private and is not exposed directly to the outside world. When the parent is garbage collected, the child is also collected.\n\n### 4. Real-World Analogy\nA human body and a heart. The body creates and owns the heart. If the body dies, the heart dies with it.",
+    "visualDiagram": "[ House ] *--------- [ Room ]\n(Solid Black Diamond)   (Strong Ownership)\n\nLifecycle: House destroyed ===> Room is DESTROYED",
+    "syntax": "class House {\n    private Room livingRoom;\n    public House() {\n        this.livingRoom = new Room(\"Living Room\"); // Owned completely\n    }\n}",
+    "simpleExample": {
+      "code": "class Room {\n    private String name;\n    public Room(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass House {\n    private Room kitchen;\n    private Room bedroom;\n    \n    public House() {\n        // Strong ownership: House instantiates and controls its rooms\n        this.kitchen = new Room(\"Modern Kitchen\");\n        this.bedroom = new Room(\"Master Bedroom\");\n    }\n    \n    public void inspect() {\n        System.out.println(\"House contains:\");\n        System.out.println(\" - \" + kitchen.getName());\n        System.out.println(\" - \" + bedroom.getName());\n    }\n}\n\npublic class CompositionDemo {\n    public static void main(String[] args) {\n        House home = new House();\n        home.inspect();\n    }\n}",
+      "explanation": "House creates and manages its own Room instances. Outside code cannot detach the rooms."
+    },
+    "codeExample": "class Room {\n    private String name;\n    public Room(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass House {\n    private Room kitchen;\n    private Room bedroom;\n    \n    public House() {\n        // Strong ownership: House instantiates and controls its rooms\n        this.kitchen = new Room(\"Modern Kitchen\");\n        this.bedroom = new Room(\"Master Bedroom\");\n    }\n    \n    public void inspect() {\n        System.out.println(\"House contains:\");\n        System.out.println(\" - \" + kitchen.getName());\n        System.out.println(\" - \" + bedroom.getName());\n    }\n}\n\npublic class CompositionDemo {\n    public static void main(String[] args) {\n        House home = new House();\n        home.inspect();\n    }\n}",
+    "expectedOutput": "House contains:\n - Modern Kitchen\n - Master Bedroom",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Composition.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Exposing direct references to composed internal objects via public getters (violating ownership encapsulation)",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Composition",
+      "code": "class Room {\n    private String name;\n    public Room(String name) { this.name = name; }\n    public String getName() { return name; }\n}\n\nclass House {\n    private Room kitchen;\n    private Room bedroom;\n    \n    public House() {\n        // Strong ownership: House instantiates and controls its rooms\n        this.kitchen = new Room(\"Modern Kitchen\");\n        this.bedroom = new Room(\"Master Bedroom\");\n    }\n    \n    public void inspect() {\n        System.out.println(\"House contains:\");\n        System.out.println(\" - \" + kitchen.getName());\n        System.out.println(\" - \" + bedroom.getName());\n    }\n}\n\npublic class CompositionDemo {\n    public static void main(String[] args) {\n        House home = new House();\n        home.inspect();\n    }\n}",
+      "explanation": "House creates and manages its own Room instances. Outside code cannot detach the rooms."
+    },
+    "practice": {
+      "prompt": "Create a Processor class with model and a Computer class that instantiates Processor('Intel i7') in its constructor. Print '<model> running'.",
+      "starterCode": "class Processor {\n    String model;\n    Processor(String model) { this.model = model; }\n}\nclass Computer {\n    private Processor cpu;\n    Computer() {\n        // Compose processor\n    }\n    void run() {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Computer pc = new Computer();\n        pc.run();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "In Computer constructor: this.cpu = new Processor(\"Intel i7\"); in run(): System.out.println(cpu.model + \" running\");",
+      "solution": "class Processor {\n    String model;\n    Processor(String model) { this.model = model; }\n}\nclass Computer {\n    private Processor cpu;\n    Computer() {\n        // Compose processor\n    }\n    void run() {\n        // Print\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Computer pc = new Computer();\n        pc.run();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-composition-1",
+        "question": "What is the key difference between Composition and Aggregation?",
+        "options": [
+          "In Composition, the child cannot exist without the parent; in Aggregation, the child can exist independently",
+          "Composition uses interfaces; Aggregation uses abstract classes",
+          "Composition is always bidirectional; Aggregation is always unidirectional",
+          "Composition does not allow methods"
+        ],
+        "correctIndex": 0,
+        "explanation": "Composition is strong ownership with matching lifecycles; Aggregation is weak ownership."
+      },
+      {
+        "id": "quiz-top-java-oop-composition-2",
+        "question": "How is Composition depicted in UML diagrams?",
+        "options": [
+          "A solid (filled) black diamond on the owning class",
+          "A hollow diamond on the owning class",
+          "A dotted arrow",
+          "A zigzag line"
+        ],
+        "correctIndex": 0,
+        "explanation": "A filled diamond represents Composition."
+      },
+      {
+        "id": "quiz-top-java-oop-composition-3",
+        "question": "Where are composed child objects typically created in Java?",
+        "options": [
+          "Inside the parent class's constructor or field initializer using 'new'",
+          "In the main method and passed as an argument",
+          "In a static utility package",
+          "In a serialized byte array"
+        ],
+        "correctIndex": 0,
+        "explanation": "The parent manages creation directly, ensuring complete control over the child's lifecycle."
+      },
+      {
+        "id": "quiz-top-java-oop-composition-4",
+        "question": "What happens to composed child objects when the parent object is destroyed?",
+        "options": [
+          "They become eligible for garbage collection along with the parent",
+          "They are automatically transferred to another parent object",
+          "They remain permanently in memory as zombies",
+          "The JVM throws an IllegalStateException"
+        ],
+        "correctIndex": 0,
+        "explanation": "Because no external references exist to the private composed children, they are garbage collected with the parent."
+      },
+      {
+        "id": "quiz-top-java-oop-composition-5",
+        "question": "Which of the following represents Composition?",
+        "options": [
+          "An Order and its OrderLineItems",
+          "A Customer and a Store",
+          "A Teacher and a School",
+          "A Car and a Driver"
+        ],
+        "correctIndex": 0,
+        "explanation": "An OrderLineItem has no meaning or existence outside of its parent Order."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Car Engine Composition Hierarchy",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create class Engine with type ('V8') and horsepower (450). Create Car which instantiates Engine in its constructor. Provide car.start() that outputs 'V8 engine (450 HP) started'.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "V8 engine (450 HP) started",
+      "starter_code": "class Engine {\n    String type;\n    int horsepower;\n    Engine(String type, int horsepower) {\n        this.type = type;\n        this.horsepower = horsepower;\n    }\n}\n\nclass Car {\n    private Engine engine;\n    public Car() {\n        // Compose Engine here\n    }\n    public void start() {\n        // Print\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Car car = new Car();\n        car.start();\n    }\n}",
+      "expected_output": "V8 engine (450 HP) started",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "V8 engine (450 HP) started"
+        }
+      ]
+    },
+    "summary": [
+      "Composition models strong 'HAS-A' ownership",
+      "Child lifetime is strictly bound to parent lifetime",
+      "Child objects are instantiated and kept private within the parent",
+      "UML symbol is a filled black diamond"
+    ]
+  },
+  {
+    "id": "top-java-oop-inheritance-vs-composition",
+    "number": 34,
+    "numberDisplay": "34",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Inheritance versus Composition",
+    "slug": "inheritance-vs-composition",
+    "language": "java",
+    "shortDescription": "Understand the design principle 'Favor composition over inheritance', IS-A vs HAS-A, coupling risks, and architectural maintainability.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-composition",
+    "learningObjectives": [
+      "Understand the famous Gang of Four guideline: 'Favor object composition over class inheritance'",
+      "Analyze the Fragile Base Class problem in deep inheritance hierarchies",
+      "Compare IS-A (inheritance) with HAS-A (composition)",
+      "Transform rigid inheritance trees into flexible composite delegates"
+    ],
+    "conceptExplanation": "### 1. Definition\n'Favor composition over inheritance' is a fundamental software design principle stating that code reuse should be achieved by assembling components (HAS-A) rather than subclassing (IS-A) whenever possible.\n\n### 2. Why It Is Needed\nInheritance introduces tight coupling: changes in a superclass ripple unpredictably down to subclasses (the fragile base class problem). Subclasses also inherit unnecessary methods.\n\n### 3. How It Works Internally\nInstead of extending a class, you create a private instance of that class inside your class and delegate specific operations to it (Forwarding / Delegation).\n\n### 4. Real-World Analogy\nA Swiss Army Knife HAS a knife, scissors, and bottle opener. It does not inherit from Knife (because a knife is not scissors).",
+    "visualDiagram": "Inheritance (White-box reuse - Tight Coupling):\n[ SuperClass ]\n      ^\n      | (Subclass exposed to all internals of superclass)\n[ SubClass ]\n\nComposition (Black-box reuse - Loose Coupling):\n[ ClientClass ] ----has-a----> [ ComponentClass ]\n(Interacts only through public interface, internals completely hidden)",
+    "syntax": "// Favor composition:\nclass MyStack<E> {\n    private ArrayList<E> list = new ArrayList<>(); // Composition\n    public void push(E item) { list.add(item); }     // Delegation\n    public E pop() { return list.remove(list.size() - 1); }\n}",
+    "simpleExample": {
+      "code": "// Inheritance Anti-Pattern:\n// class InstrumentedSet extends HashSet<String> { ... breaks addAll counter! }\n\n// Composition with Delegation (Clean Pattern):\nimport java.util.HashSet;\nimport java.util.Set;\n\nclass SafeSet {\n    private Set<String> set = new HashSet<>();\n    private int addCount = 0;\n    \n    public boolean add(String item) {\n        addCount++;\n        return set.add(item);\n    }\n    \n    public int getAddCount() { return addCount; }\n    public int size() { return set.size(); }\n}\n\npublic class CompositionRefactorDemo {\n    public static void main(String[] args) {\n        SafeSet safe = new SafeSet();\n        safe.add(\"Java\");\n        safe.add(\"OOP\");\n        System.out.println(\"Added count: \" + safe.getAddCount());\n    }\n}",
+      "explanation": "SafeSet wraps a Set instance rather than subclassing HashSet, keeping full control over its invariants."
+    },
+    "codeExample": "// Inheritance Anti-Pattern:\n// class InstrumentedSet extends HashSet<String> { ... breaks addAll counter! }\n\n// Composition with Delegation (Clean Pattern):\nimport java.util.HashSet;\nimport java.util.Set;\n\nclass SafeSet {\n    private Set<String> set = new HashSet<>();\n    private int addCount = 0;\n    \n    public boolean add(String item) {\n        addCount++;\n        return set.add(item);\n    }\n    \n    public int getAddCount() { return addCount; }\n    public int size() { return set.size(); }\n}\n\npublic class CompositionRefactorDemo {\n    public static void main(String[] args) {\n        SafeSet safe = new SafeSet();\n        safe.add(\"Java\");\n        safe.add(\"OOP\");\n        System.out.println(\"Added count: \" + safe.getAddCount());\n    }\n}",
+    "expectedOutput": "Added count: 2",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Inheritance versus Composition.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Using inheritance simply to reuse 1 or 2 utility methods from a parent class",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Creating rigid, 5-level deep inheritance hierarchies",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Inheritance versus Composition",
+      "code": "// Inheritance Anti-Pattern:\n// class InstrumentedSet extends HashSet<String> { ... breaks addAll counter! }\n\n// Composition with Delegation (Clean Pattern):\nimport java.util.HashSet;\nimport java.util.Set;\n\nclass SafeSet {\n    private Set<String> set = new HashSet<>();\n    private int addCount = 0;\n    \n    public boolean add(String item) {\n        addCount++;\n        return set.add(item);\n    }\n    \n    public int getAddCount() { return addCount; }\n    public int size() { return set.size(); }\n}\n\npublic class CompositionRefactorDemo {\n    public static void main(String[] args) {\n        SafeSet safe = new SafeSet();\n        safe.add(\"Java\");\n        safe.add(\"OOP\");\n        System.out.println(\"Added count: \" + safe.getAddCount());\n    }\n}",
+      "explanation": "SafeSet wraps a Set instance rather than subclassing HashSet, keeping full control over its invariants."
+    },
+    "practice": {
+      "prompt": "Create class CustomQueue using a private java.util.LinkedList as a delegate. Implement enqueue(String) and dequeue().",
+      "starterCode": "import java.util.LinkedList;\n\nclass CustomQueue {\n    private LinkedList<String> list = new LinkedList<>();\n    void enqueue(String s) {\n        list.addLast(s);\n    }\n    String dequeue() {\n        return list.removeFirst();\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        CustomQueue q = new CustomQueue();\n        q.enqueue(\"First\");\n        q.enqueue(\"Second\");\n        System.out.println(q.dequeue());\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "CustomQueue delegates to internal LinkedList without exposing unwanted LinkedList methods.",
+      "solution": "import java.util.LinkedList;\n\nclass CustomQueue {\n    private LinkedList<String> list = new LinkedList<>();\n    void enqueue(String s) {\n        list.addLast(s);\n    }\n    String dequeue() {\n        return list.removeFirst();\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        CustomQueue q = new CustomQueue();\n        q.enqueue(\"First\");\n        q.enqueue(\"Second\");\n        System.out.println(q.dequeue());\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-inheritance-vs-composition-1",
+        "question": "Why does the Gang of Four advocate 'Favor composition over inheritance'?",
+        "options": [
+          "Composition produces looser coupling and protects encapsulation from fragile base class changes",
+          "Inheritance is deprecated in Java 17",
+          "Composition consumes zero heap memory",
+          "Inheritance cannot be used with interfaces"
+        ],
+        "correctIndex": 0,
+        "explanation": "Composition provides black-box reuse, eliminating fragile base-class coupling."
+      },
+      {
+        "id": "quiz-top-java-oop-inheritance-vs-composition-2",
+        "question": "What is the 'Fragile Base Class' problem?",
+        "options": [
+          "Modifications to a superclass can unintentionally alter or break the functionality of subclasses",
+          "A class file gets corrupted during compilation",
+          "A base class can never be marked public",
+          "Subclasses run out of stack memory"
+        ],
+        "correctIndex": 0,
+        "explanation": "Because subclasses rely on superclass internal implementation details, changes to the superclass can silently break subclasses."
+      },
+      {
+        "id": "quiz-top-java-oop-inheritance-vs-composition-3",
+        "question": "When is inheritance appropriate?",
+        "options": [
+          "When there is a genuine, permanent IS-A relationship and the subclass truly satisfies the Liskov Substitution Principle",
+          "Whenever you want to save typing 10 lines of code",
+          "Only when using abstract static methods",
+          "Whenever two classes have similar variable names"
+        ],
+        "correctIndex": 0,
+        "explanation": "Inheritance should only be used when the subclass truly IS-A subtype of the parent in all contexts."
+      },
+      {
+        "id": "quiz-top-java-oop-inheritance-vs-composition-4",
+        "question": "What is 'Delegation' in the context of composition?",
+        "options": [
+          "A method passing the execution of a task to an internal helper object",
+          "Declaring a method as abstract",
+          "Using the 'synchronized' keyword",
+          "A garbage collector routine"
+        ],
+        "correctIndex": 0,
+        "explanation": "Delegation means forwarding method calls to an internal composed instance."
+      },
+      {
+        "id": "quiz-top-java-oop-inheritance-vs-composition-5",
+        "question": "What was the architectural mistake in Java's java.util.Stack class?",
+        "options": [
+          "It extended Vector (inheritance) instead of holding a Vector (composition), exposing non-stack methods like insertElementAt",
+          "It could only store integers",
+          "It did not implement Serializable",
+          "It was marked final"
+        ],
+        "correctIndex": 0,
+        "explanation": "By extending Vector, Stack inherited arbitrary-index insertions, violating LIFO invariants."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Secure Bank Account Delegation Wrapper",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create class RealVault with method unlock() returning 'Vault Opened'. Create class SecureAgent which HAS-A RealVault and requires a passcode ('1234') to delegate unlock(). Output 'Access Denied' on wrong passcode.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Access Denied\nVault Opened",
+      "starter_code": "class RealVault {\n    public String unlock() { return \"Vault Opened\"; }\n}\n\nclass SecureAgent {\n    private RealVault vault = new RealVault();\n    public String tryOpen(String passcode) {\n        // Validate and delegate\n        return \"\";\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        SecureAgent agent = new SecureAgent();\n        System.out.println(agent.tryOpen(\"wrong\"));\n        System.out.println(agent.tryOpen(\"1234\"));\n    }\n}",
+      "expected_output": "Access Denied\nVault Opened",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Access Denied\nVault Opened"
+        }
+      ]
+    },
+    "summary": [
+      "Favor composition over inheritance for loose coupling and encapsulation",
+      "Inheritance is white-box reuse (tightly coupled); composition is black-box reuse",
+      "Composition avoids the fragile base class problem",
+      "Use delegation to forward selected calls to internal components"
+    ]
+  },
+  {
+    "id": "top-java-oop-packages",
+    "number": 35,
+    "numberDisplay": "35",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Packages",
+    "slug": "packages",
+    "language": "java",
+    "shortDescription": "Organize large Java applications: built-in and user-defined packages, package declarations, imports, naming conventions, and access control.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-inheritance-vs-composition",
+    "learningObjectives": [
+      "Understand packages as namespaces preventing naming collisions",
+      "Learn package declaration syntax and standard reverse-domain naming conventions",
+      "Master import statements, wildcard imports, and static imports",
+      "Understand how package-private (default) access controls visibility within a package"
+    ],
+    "conceptExplanation": "### 1. Definition\nA package in Java is a namespace that groups related classes, interfaces, and sub-packages together, preventing naming conflicts and providing package-level access protection.\n\n### 2. Why It Is Needed\nWithout packages, all classes reside in the global default namespace, leading to catastrophic naming collisions in projects containing thousands of classes and third-party dependencies.\n\n### 3. How It Works Internally\nThe `package` statement must be the very first non-comment line in a Java source file. The package name corresponds directly to the directory path on the file system. Classes in different packages are accessed via `import` statements or fully qualified names.\n\n### 4. Real-World Analogy\nFolders on your hard drive. You can have a file named `resume.docx` in `C:\\Work` and another `resume.docx` in `C:\\Personal` without conflict.",
+    "visualDiagram": "Source Code:\npackage com.myapp.service;\n\nFile System Path:\nsrc/\n  └── com/\n        └── myapp/\n              └── service/\n                    └── OrderService.java",
+    "syntax": "package com.company.billing.service;\n\nimport java.util.List;\nimport static java.lang.Math.PI;",
+    "simpleExample": {
+      "code": "// Demonstrated in single compilation unit simulation\npackage com.demo.math;\n\n// Static import allows direct access to static members without class prefix\nimport static java.lang.Math.sqrt;\nimport static java.lang.Math.pow;\n\npublic class GeometryHelper {\n    public static double hypotenuse(double a, double b) {\n        return sqrt(pow(a, 2) + pow(b, 2));\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Hypotenuse (3, 4) = \" + (int)hypotenuse(3, 4));\n    }\n}",
+      "explanation": "hypotenuse() uses static imports from java.lang.Math to write clean mathematical expressions."
+    },
+    "codeExample": "// Demonstrated in single compilation unit simulation\npackage com.demo.math;\n\n// Static import allows direct access to static members without class prefix\nimport static java.lang.Math.sqrt;\nimport static java.lang.Math.pow;\n\npublic class GeometryHelper {\n    public static double hypotenuse(double a, double b) {\n        return sqrt(pow(a, 2) + pow(b, 2));\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Hypotenuse (3, 4) = \" + (int)hypotenuse(3, 4));\n    }\n}",
+    "expectedOutput": "Hypotenuse (3, 4) = 5",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Packages.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Mismatch between package declaration and directory folder structure on disk",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Overusing wildcard imports (e.g. import java.util.*) causing accidental class ambiguity",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Packages",
+      "code": "// Demonstrated in single compilation unit simulation\npackage com.demo.math;\n\n// Static import allows direct access to static members without class prefix\nimport static java.lang.Math.sqrt;\nimport static java.lang.Math.pow;\n\npublic class GeometryHelper {\n    public static double hypotenuse(double a, double b) {\n        return sqrt(pow(a, 2) + pow(b, 2));\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Hypotenuse (3, 4) = \" + (int)hypotenuse(3, 4));\n    }\n}",
+      "explanation": "hypotenuse() uses static imports from java.lang.Math to write clean mathematical expressions."
+    },
+    "practice": {
+      "prompt": "Write code that uses both java.util.Date and java.sql.Date by using their fully qualified names.",
+      "starterCode": "public class Solution {\n    public static void main(String[] args) {\n        java.util.Date utilDate = new java.util.Date(100000000000L);\n        java.sql.Date sqlDate = new java.sql.Date(100000000000L);\n        System.out.println(\"Both Date objects instantiated successfully.\");\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Using fully qualified class names resolves ambiguity when two imported classes have the same name.",
+      "solution": "public class Solution {\n    public static void main(String[] args) {\n        java.util.Date utilDate = new java.util.Date(100000000000L);\n        java.sql.Date sqlDate = new java.sql.Date(100000000000L);\n        System.out.println(\"Both Date objects instantiated successfully.\");\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-packages-1",
+        "question": "Where must the 'package' declaration appear in a Java source file?",
+        "options": [
+          "As the very first non-comment, non-whitespace line of code",
+          "Anywhere before the class declaration",
+          "Inside the class definition",
+          "After the import statements"
+        ],
+        "correctIndex": 0,
+        "explanation": "Java requires the package declaration to be the first statement in the file."
+      },
+      {
+        "id": "quiz-top-java-oop-packages-2",
+        "question": "What is the standard Java convention for naming packages?",
+        "options": [
+          "All lowercase, starting with the reversed internet domain of the organization (e.g. com.example.project)",
+          "CamelCase with capitalized prefixes",
+          "UPPERCASE_WITH_UNDERSCORES",
+          "PascalCase matching the main class name"
+        ],
+        "correctIndex": 0,
+        "explanation": "Package names use reversed domain names in lowercase (e.g., org.apache.commons)."
+      },
+      {
+        "id": "quiz-top-java-oop-packages-3",
+        "question": "What does a 'static import' do in Java?",
+        "options": [
+          "Imports static fields and methods so they can be referenced without specifying their enclosing class name",
+          "Imports all static classes from the JDK",
+          "Makes imported classes thread-safe",
+          "Prevents the imported class from being modified"
+        ],
+        "correctIndex": 0,
+        "explanation": "Static imports (e.g. `import static java.lang.Math.PI;`) allow direct access to static members."
+      },
+      {
+        "id": "quiz-top-java-oop-packages-4",
+        "question": "What package is automatically imported by the Java compiler into every compilation unit?",
+        "options": [
+          "java.lang",
+          "java.util",
+          "java.io",
+          "java.net"
+        ],
+        "correctIndex": 0,
+        "explanation": "The `java.lang` package (String, System, Math, Object, etc.) is imported implicitly."
+      },
+      {
+        "id": "quiz-top-java-oop-packages-5",
+        "question": "If class A in package `foo` wants to access class B in package `bar`, what access modifier must class B have?",
+        "options": [
+          "public",
+          "default (package-private)",
+          "protected",
+          "private"
+        ],
+        "correctIndex": 0,
+        "explanation": "Classes outside the package can only access public classes from another package."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Package Namespace Simulation",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a class MathUtility simulating com.math.tools with a static method int factorial(int n). Print factorial(5).",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Factorial 5: 120",
+      "starter_code": "public class Solution {\n    public static int factorial(int n) {\n        int res = 1;\n        for (int i = 1; i <= n; i++) res *= i;\n        return res;\n    }\n    \n    public static void main(String[] args) {\n        System.out.println(\"Factorial 5: \" + factorial(5));\n    }\n}",
+      "expected_output": "Factorial 5: 120",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Factorial 5: 120"
+        }
+      ]
+    },
+    "summary": [
+      "Packages group related classes and prevent naming collisions",
+      "Package directory structure must match package declaration",
+      "Use reverse domain naming conventions (e.g. com.company.app)",
+      "Static imports allow direct access to static members without class prefixes"
+    ]
+  },
+  {
+    "id": "top-java-oop-nested-inner-classes",
+    "number": 36,
+    "numberDisplay": "36",
+    "moduleId": "mod-java-oop-07",
+    "moduleTitle": "MODULE 07: Object Relationships and Packages",
+    "title": "Nested and Inner Classes",
+    "slug": "nested-inner-classes",
+    "language": "java",
+    "shortDescription": "Understand Java nested classes: static nested classes, non-static inner classes, local classes, anonymous inner classes, and practical use cases.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 10,
+    "prerequisiteId": "top-java-oop-packages",
+    "learningObjectives": [
+      "Differentiate between Static Nested Classes and Non-Static Inner Classes",
+      "Understand how inner classes access enclosing instance state (including private fields)",
+      "Implement Local Inner Classes and Anonymous Inner Classes",
+      "Apply nested classes to Builder and Iterator design patterns"
+    ],
+    "conceptExplanation": "### 1. Definition\nA nested class is a class defined within another enclosing class. They are categorized into Static Nested Classes and Non-Static Inner Classes (member inner, local, and anonymous).\n\n### 2. Why It Is Needed\nWhen a helper class is used exclusively by one enclosing class, placing it inside that class increases encapsulation, prevents cluttering the package namespace, and enables readable code.\n\n### 3. How It Works Internally\nStatic nested classes do not hold an implicit reference to an enclosing instance and can be instantiated without an outer object (`new Outer.Nested()`). Non-static inner classes hold a hidden reference to their enclosing instance (`outerInstance.new Inner()`) and can access all outer members, even private ones.\n\n### 4. Real-World Analogy\nA car's dashboard controls are inner elements tightly bound to that specific car instance. A standard wrench in the car's trunk toolkit is a static nested tool—it belongs to the car kit logically, but doesn't need the car running to function.",
+    "visualDiagram": "Nested Classes:\n ├── Static Nested Classes (static class Helper) [Independent of outer instance]\n └── Inner Classes (Non-Static):\n      ├── Member Inner Class (class Node) [Bound to outer instance]\n      ├── Local Inner Class (inside a method body)\n      └── Anonymous Inner Class (new ActionListener() { ... })",
+    "syntax": "class Outer {\n    static class StaticNested {} // No outer instance needed\n    class MemberInner {}        // Tied to outer instance\n}",
+    "simpleExample": {
+      "code": "class DatabaseConfig {\n    private String host;\n    private int port;\n    \n    // Private constructor\n    private DatabaseConfig(Builder b) {\n        this.host = b.host;\n        this.port = b.port;\n    }\n    \n    public void display() {\n        System.out.println(\"Connecting to \" + host + \":\" + port);\n    }\n    \n    // Static nested Builder\n    public static class Builder {\n        private String host = \"localhost\";\n        private int port = 3306;\n        \n        public Builder host(String h) { this.host = h; return this; }\n        public Builder port(int p) { this.port = p; return this; }\n        public DatabaseConfig build() { return new DatabaseConfig(this); }\n    }\n}\n\npublic class NestedDemo {\n    public static void main(String[] args) {\n        DatabaseConfig config = new DatabaseConfig.Builder()\n                .host(\"db.production.internal\")\n                .port(5432)\n                .build();\n        config.display();\n    }\n}",
+      "explanation": "DatabaseConfig.Builder is a static nested class. It can be instantiated without an outer DatabaseConfig instance."
+    },
+    "codeExample": "class DatabaseConfig {\n    private String host;\n    private int port;\n    \n    // Private constructor\n    private DatabaseConfig(Builder b) {\n        this.host = b.host;\n        this.port = b.port;\n    }\n    \n    public void display() {\n        System.out.println(\"Connecting to \" + host + \":\" + port);\n    }\n    \n    // Static nested Builder\n    public static class Builder {\n        private String host = \"localhost\";\n        private int port = 3306;\n        \n        public Builder host(String h) { this.host = h; return this; }\n        public Builder port(int p) { this.port = p; return this; }\n        public DatabaseConfig build() { return new DatabaseConfig(this); }\n    }\n}\n\npublic class NestedDemo {\n    public static void main(String[] args) {\n        DatabaseConfig config = new DatabaseConfig.Builder()\n                .host(\"db.production.internal\")\n                .port(5432)\n                .build();\n        config.display();\n    }\n}",
+    "expectedOutput": "Connecting to db.production.internal:5432",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Nested and Inner Classes.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Creating memory leaks when non-static inner classes inadvertently keep large outer activity instances alive",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Trying to access non-static outer members from a static nested class",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Nested and Inner Classes",
+      "code": "class DatabaseConfig {\n    private String host;\n    private int port;\n    \n    // Private constructor\n    private DatabaseConfig(Builder b) {\n        this.host = b.host;\n        this.port = b.port;\n    }\n    \n    public void display() {\n        System.out.println(\"Connecting to \" + host + \":\" + port);\n    }\n    \n    // Static nested Builder\n    public static class Builder {\n        private String host = \"localhost\";\n        private int port = 3306;\n        \n        public Builder host(String h) { this.host = h; return this; }\n        public Builder port(int p) { this.port = p; return this; }\n        public DatabaseConfig build() { return new DatabaseConfig(this); }\n    }\n}\n\npublic class NestedDemo {\n    public static void main(String[] args) {\n        DatabaseConfig config = new DatabaseConfig.Builder()\n                .host(\"db.production.internal\")\n                .port(5432)\n                .build();\n        config.display();\n    }\n}",
+      "explanation": "DatabaseConfig.Builder is a static nested class. It can be instantiated without an outer DatabaseConfig instance."
+    },
+    "practice": {
+      "prompt": "Create Outer class with private String secret = 'TOP_SECRET' and inner class Inner with method printSecret().",
+      "starterCode": "class Outer {\n    private String secret = \"TOP_SECRET\";\n    class Inner {\n        void printSecret() {\n            // Access outer secret\n        }\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Outer outer = new Outer();\n        Outer.Inner inner = outer.new Inner();\n        inner.printSecret();\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Inside printSecret(), output 'Secret: ' + secret. Inner classes have direct access to private outer fields.",
+      "solution": "class Outer {\n    private String secret = \"TOP_SECRET\";\n    class Inner {\n        void printSecret() {\n            // Access outer secret\n        }\n    }\n}\npublic class Solution {\n    public static void main(String[] args) {\n        Outer outer = new Outer();\n        Outer.Inner inner = outer.new Inner();\n        inner.printSecret();\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-nested-inner-classes-1",
+        "question": "Can a static nested class directly access non-static instance variables of the outer class?",
+        "options": [
+          "No, because it does not possess an implicit reference to an outer class instance",
+          "Yes, all nested classes have access to all outer variables",
+          "Only if the variable is marked volatile",
+          "Only if the nested class extends the outer class"
+        ],
+        "correctIndex": 0,
+        "explanation": "Static nested classes do not have an enclosing instance pointer; they can only access static members of the outer class."
+      },
+      {
+        "id": "quiz-top-java-oop-nested-inner-classes-2",
+        "question": "How do you instantiate a non-static member inner class from outside the outer class?",
+        "options": [
+          "outerInstance.new InnerClass()",
+          "new OuterClass.InnerClass()",
+          "InnerClass.getInstance()",
+          "OuterClass::new InnerClass()"
+        ],
+        "correctIndex": 0,
+        "explanation": "Non-static inner classes require an active enclosing instance: `outerObj.new InnerClass()`."
+      },
+      {
+        "id": "quiz-top-java-oop-nested-inner-classes-3",
+        "question": "What is an Anonymous Inner Class in Java?",
+        "options": [
+          "An inner class declared and instantiated simultaneously in a single expression without a formal class name",
+          "A class declared inside a private package",
+          "A class without any methods",
+          "A class loaded by a custom ClassLoader"
+        ],
+        "correctIndex": 0,
+        "explanation": "Anonymous inner classes define and instantiate an inline one-off subclass or interface implementer."
+      },
+      {
+        "id": "quiz-top-java-oop-nested-inner-classes-4",
+        "question": "Why is the Builder pattern commonly implemented using a static nested class?",
+        "options": [
+          "The Builder can be instantiated before the outer class exists and has access to the outer class's private constructor",
+          "Static classes execute faster in the JVM",
+          "It prevents garbage collection",
+          "It makes the class serializable"
+        ],
+        "correctIndex": 0,
+        "explanation": "Static nested builders can access the private constructor of the enclosing class while being instantiated cleanly via `new Outer.Builder()`."
+      },
+      {
+        "id": "quiz-top-java-oop-nested-inner-classes-5",
+        "question": "What potential issue can non-static inner classes cause in long-running applications or UI frameworks?",
+        "options": [
+          "Memory leaks, because the inner class retains a hidden reference to the outer instance, preventing it from being garbage collected",
+          "Compiler deadlock",
+          "Bytecode corruption",
+          "Automatic package renaming"
+        ],
+        "correctIndex": 0,
+        "explanation": "Because non-static inner classes hold implicit references to Outer.this, holding a reference to the inner class leaks the outer instance."
+      }
+    ],
+    "codingChallenge": {
+      "title": "University Department & Course Registry",
+      "difficulty": "Intermediate",
+      "problem_statement": "Demonstrate the practical exercise for Module 07: Design a University Management System showing Association, Aggregation, and Composition.\n- University has Department (Composition - instantiated inside University).\n- Department aggregates Faculty (passed into addFaculty).\n- Student associates with Course (registerCourse).\nPrint a summary verification line.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Ada enrolled in Algorithms\nUniversity System verified.",
+      "starter_code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Faculty {\n    String name;\n    Faculty(String name) { this.name = name; }\n}\n\nclass Department {\n    String name;\n    List<Faculty> facultyList = new ArrayList<>();\n    Department(String name) { this.name = name; }\n    void addFaculty(Faculty f) { facultyList.add(f); }\n}\n\nclass University {\n    // Composition: University creates and owns its Computer Science department\n    Department csDept = new Department(\"Computer Science\");\n}\n\nclass Course {\n    String title;\n    Course(String title) { this.title = title; }\n}\n\nclass Student {\n    String name;\n    // Association: Student references course\n    void registerCourse(Course c) {\n        System.out.println(name + \" enrolled in \" + c.title);\n    }\n    Student(String name) { this.name = name; }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        University uni = new University();\n        Faculty prof = new Faculty(\"Dr. Turing\");\n        uni.csDept.addFaculty(prof);\n        \n        Student s = new Student(\"Ada\");\n        Course c = new Course(\"Algorithms\");\n        s.registerCourse(c);\n        System.out.println(\"University System verified.\");\n    }\n}",
+      "expected_output": "Ada enrolled in Algorithms\nUniversity System verified.",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Ada enrolled in Algorithms\nUniversity System verified."
+        }
+      ]
+    },
+    "summary": [
+      "Static nested classes do not require an enclosing outer instance",
+      "Member inner classes have an implicit pointer to the outer instance and can access private outer fields",
+      "Anonymous inner classes allow rapid inline interface and subclass implementation",
+      "Beware of memory leaks with non-static inner class references"
+    ]
+  },
+  {
+    "id": "top-java-oop-final-project",
+    "number": 37,
+    "numberDisplay": "37",
+    "moduleId": "mod-java-oop-08",
+    "moduleTitle": "MODULE 08: Final Mini Project — Object-Oriented Library Management System",
+    "title": "Final Mini Project — Object-Oriented Library Management System",
+    "slug": "final-project",
+    "language": "java",
+    "shortDescription": "Synthesize all OOP concepts into a production-grade, console-based Library Management System incorporating encapsulation, inheritance, polymorphism, abstraction, and interfaces.",
+    "difficulty": "Intermediate",
+    "estimatedMinutes": 20,
+    "prerequisiteId": "top-java-oop-nested-inner-classes",
+    "learningObjectives": [
+      "Design and implement a complete modular Java application using all 4 OOP pillars",
+      "Model Member hierarchies using inheritance (StudentMember, FacultyMember)",
+      "Implement polymorphic borrowing limits and fine calculations",
+      "Enforce contracts with interfaces (Borrowable, FineCalculator)",
+      "Demonstrate composition, encapsulation, and exception handling in a console application"
+    ],
+    "conceptExplanation": "### 1. Definition\nThe Capstone Project synthesizes classes, objects, encapsulation, constructors, inheritance, runtime polymorphism, abstract classes, interfaces, object relationships, and robust error handling into a coherent application architecture.\n\n### 2. Why It Is Needed\nMastery of individual concepts must culminate in the ability to design harmonious multi-class architectures solving complex real-world domain requirements.\n\n### 3. How It Works Internally\nThe project follows a clean layered design:\n1. Domain Models (`Book`, `Loan`)\n2. Polymorphic Hierarchies (`Member` -> `StudentMember`, `FacultyMember`)\n3. Behavioral Contracts (`Borrowable`, `FineCalculator`)\n4. Composite Aggregate Engine (`Library`)\n5. Interactive Application Layer (`LibraryApplication`).\n\n### 4. Real-World Analogy\nA physical library functions as an ecosystem: patrons have different privileges (students vs faculty), catalog items follow checkout rules, and the central registry maintains ledger consistency.",
+    "visualDiagram": "+----------------------------------------------------------------+\n|                 <<interface>> Borrowable                       |\n|  + getTitle(): String | + isAvailable(): boolean               |\n|  + markBorrowed(): void | + markReturned(): void               |\n+----------------------------------------------------------------+\n                                ^\n                                |\n                       +----------------+\n                       |   class Book   |\n                       +----------------+\n\n               +----------------------------------+\n               |      abstract class Member       |\n               |  # id, name, borrowedBooks       |\n               |  + abstract getMaxBorrowLimit()  |\n               |  + abstract getFinePerDay()      |\n               +----------------------------------+\n                                ^\n                                |\n               +----------------+----------------+\n               |                                 |\n       StudentMember                       FacultyMember\n   (Limit: 3, Fine: $1)                 (Limit: 10, Fine: $0.25)\n\n+----------------------------------------------------------------+\n|                       class Library                            |\n|  - List<Book> inventory                                        |\n|  - List<Member> members                                        |\n|  - List<Loan> activeLoans                                      |\n+----------------------------------------------------------------+",
+    "syntax": "// Component interaction summary:\nBorrowable item = library.findBook(\"B001\");\nmember.borrowItem(item);",
+    "simpleExample": {
+      "code": "import java.util.*;\n\ninterface Borrowable {\n    String getId();\n    String getTitle();\n    boolean isAvailable();\n    void setAvailable(boolean available);\n}\n\nclass Book implements Borrowable {\n    private String id;\n    private String title;\n    private String author;\n    private boolean available = true;\n\n    public Book(String id, String title, String author) {\n        this.id = id;\n        this.title = title;\n        this.author = author;\n    }\n\n    public String getId() { return id; }\n    public String getTitle() { return title; }\n    public boolean isAvailable() { return available; }\n    public void setAvailable(boolean available) { this.available = available; }\n}\n\nabstract class Member {\n    private String id;\n    private String name;\n    private List<Borrowable> borrowedItems = new ArrayList<>();\n\n    public Member(String id, String name) {\n        this.id = id;\n        this.name = name;\n    }\n\n    public String getId() { return id; }\n    public String getName() { return name; }\n    public List<Borrowable> getBorrowedItems() { return borrowedItems; }\n\n    public abstract int getMaxBorrowLimit();\n    public abstract double getDailyFine();\n\n    public boolean canBorrow() {\n        return borrowedItems.size() < getMaxBorrowLimit();\n    }\n}\n\nclass StudentMember extends Member {\n    public StudentMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 3; }\n    @Override public double getDailyFine() { return 1.00; }\n}\n\nclass FacultyMember extends Member {\n    public FacultyMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 10; }\n    @Override public double getDailyFine() { return 0.25; }\n}\n\nclass Library {\n    private Map<String, Book> books = new HashMap<>();\n    private Map<String, Member> members = new HashMap<>();\n\n    public void addBook(Book book) { books.put(book.getId(), book); }\n    public void registerMember(Member member) { members.put(member.getId(), member); }\n\n    public boolean borrowBook(String memberId, String bookId) {\n        Member m = members.get(memberId);\n        Book b = books.get(bookId);\n        if (m == null || b == null) return false;\n        if (!b.isAvailable() || !m.canBorrow()) return false;\n\n        b.setAvailable(false);\n        m.getBorrowedItems().add(b);\n        System.out.println(m.getName() + \" borrowed '\" + b.getTitle() + \"'\");\n        return true;\n    }\n}\n\npublic class LibraryApplication {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(new Book(\"B01\", \"Effective Java\", \"Joshua Bloch\"));\n        lib.addBook(new Book(\"B02\", \"Clean Architecture\", \"Robert Martin\"));\n\n        Member student = new StudentMember(\"S01\", \"Bob\");\n        lib.registerMember(student);\n\n        lib.borrowBook(\"S01\", \"B01\");\n    }\n}",
+      "explanation": "The architecture separates concerns cleanly: Book encapsulates state, Member defines polymorphic privilege rules, and Library coordinates interactions."
+    },
+    "codeExample": "import java.util.*;\n\ninterface Borrowable {\n    String getId();\n    String getTitle();\n    boolean isAvailable();\n    void setAvailable(boolean available);\n}\n\nclass Book implements Borrowable {\n    private String id;\n    private String title;\n    private String author;\n    private boolean available = true;\n\n    public Book(String id, String title, String author) {\n        this.id = id;\n        this.title = title;\n        this.author = author;\n    }\n\n    public String getId() { return id; }\n    public String getTitle() { return title; }\n    public boolean isAvailable() { return available; }\n    public void setAvailable(boolean available) { this.available = available; }\n}\n\nabstract class Member {\n    private String id;\n    private String name;\n    private List<Borrowable> borrowedItems = new ArrayList<>();\n\n    public Member(String id, String name) {\n        this.id = id;\n        this.name = name;\n    }\n\n    public String getId() { return id; }\n    public String getName() { return name; }\n    public List<Borrowable> getBorrowedItems() { return borrowedItems; }\n\n    public abstract int getMaxBorrowLimit();\n    public abstract double getDailyFine();\n\n    public boolean canBorrow() {\n        return borrowedItems.size() < getMaxBorrowLimit();\n    }\n}\n\nclass StudentMember extends Member {\n    public StudentMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 3; }\n    @Override public double getDailyFine() { return 1.00; }\n}\n\nclass FacultyMember extends Member {\n    public FacultyMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 10; }\n    @Override public double getDailyFine() { return 0.25; }\n}\n\nclass Library {\n    private Map<String, Book> books = new HashMap<>();\n    private Map<String, Member> members = new HashMap<>();\n\n    public void addBook(Book book) { books.put(book.getId(), book); }\n    public void registerMember(Member member) { members.put(member.getId(), member); }\n\n    public boolean borrowBook(String memberId, String bookId) {\n        Member m = members.get(memberId);\n        Book b = books.get(bookId);\n        if (m == null || b == null) return false;\n        if (!b.isAvailable() || !m.canBorrow()) return false;\n\n        b.setAvailable(false);\n        m.getBorrowedItems().add(b);\n        System.out.println(m.getName() + \" borrowed '\" + b.getTitle() + \"'\");\n        return true;\n    }\n}\n\npublic class LibraryApplication {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(new Book(\"B01\", \"Effective Java\", \"Joshua Bloch\"));\n        lib.addBook(new Book(\"B02\", \"Clean Architecture\", \"Robert Martin\"));\n\n        Member student = new StudentMember(\"S01\", \"Bob\");\n        lib.registerMember(student);\n\n        lib.borrowBook(\"S01\", \"B01\");\n    }\n}",
+    "expectedOutput": "Bob borrowed 'Effective Java'",
+    "stepByStep": [
+      "1. JVM loads class hierarchy for Final Mini Project — Object-Oriented Library Management System.",
+      "2. Bytecode verifier validates method table references and access modifiers.",
+      "3. Objects are instantiated on the heap with references allocated on stack frame.",
+      "4. Virtual method table (vtable) resolves polymorphic invocations at runtime."
+    ],
+    "commonMistakes": [
+      {
+        "mistake": "Writing a procedural 'god class' that holds all logic instead of delegating to domain objects",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Violating encapsulation by making model fields public",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      },
+      {
+        "mistake": "Failing to handle invalid inputs or unavailable inventory",
+        "correction": "Follow standard Java object-oriented design contracts and access modifiers.",
+        "explanation": "Violating this design principle breaks encapsulation, type safety, or architectural decoupling."
+      }
+    ],
+    "realWorldExample": {
+      "scenario": "Enterprise Architecture: Final Mini Project — Object-Oriented Library Management System",
+      "code": "import java.util.*;\n\ninterface Borrowable {\n    String getId();\n    String getTitle();\n    boolean isAvailable();\n    void setAvailable(boolean available);\n}\n\nclass Book implements Borrowable {\n    private String id;\n    private String title;\n    private String author;\n    private boolean available = true;\n\n    public Book(String id, String title, String author) {\n        this.id = id;\n        this.title = title;\n        this.author = author;\n    }\n\n    public String getId() { return id; }\n    public String getTitle() { return title; }\n    public boolean isAvailable() { return available; }\n    public void setAvailable(boolean available) { this.available = available; }\n}\n\nabstract class Member {\n    private String id;\n    private String name;\n    private List<Borrowable> borrowedItems = new ArrayList<>();\n\n    public Member(String id, String name) {\n        this.id = id;\n        this.name = name;\n    }\n\n    public String getId() { return id; }\n    public String getName() { return name; }\n    public List<Borrowable> getBorrowedItems() { return borrowedItems; }\n\n    public abstract int getMaxBorrowLimit();\n    public abstract double getDailyFine();\n\n    public boolean canBorrow() {\n        return borrowedItems.size() < getMaxBorrowLimit();\n    }\n}\n\nclass StudentMember extends Member {\n    public StudentMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 3; }\n    @Override public double getDailyFine() { return 1.00; }\n}\n\nclass FacultyMember extends Member {\n    public FacultyMember(String id, String name) { super(id, name); }\n    @Override public int getMaxBorrowLimit() { return 10; }\n    @Override public double getDailyFine() { return 0.25; }\n}\n\nclass Library {\n    private Map<String, Book> books = new HashMap<>();\n    private Map<String, Member> members = new HashMap<>();\n\n    public void addBook(Book book) { books.put(book.getId(), book); }\n    public void registerMember(Member member) { members.put(member.getId(), member); }\n\n    public boolean borrowBook(String memberId, String bookId) {\n        Member m = members.get(memberId);\n        Book b = books.get(bookId);\n        if (m == null || b == null) return false;\n        if (!b.isAvailable() || !m.canBorrow()) return false;\n\n        b.setAvailable(false);\n        m.getBorrowedItems().add(b);\n        System.out.println(m.getName() + \" borrowed '\" + b.getTitle() + \"'\");\n        return true;\n    }\n}\n\npublic class LibraryApplication {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(new Book(\"B01\", \"Effective Java\", \"Joshua Bloch\"));\n        lib.addBook(new Book(\"B02\", \"Clean Architecture\", \"Robert Martin\"));\n\n        Member student = new StudentMember(\"S01\", \"Bob\");\n        lib.registerMember(student);\n\n        lib.borrowBook(\"S01\", \"B01\");\n    }\n}",
+      "explanation": "The architecture separates concerns cleanly: Book encapsulates state, Member defines polymorphic privilege rules, and Library coordinates interactions."
+    },
+    "practice": {
+      "prompt": "Add a returnBook(String memberId, String bookId, int daysLate) method in Library that marks the book available, removes it from borrowedItems, and prints '<name> returned <book>. Fine: $<amount>'.",
+      "starterCode": "class FineTest {\n    // Implement fine calculation test\n}\npublic class Solution {\n    public static void main(String[] args) {\n        StudentMember s = new StudentMember(\"S01\", \"Bob\");\n        double fine = 4 * s.getDailyFine();\n        System.out.println(s.getName() + \" Fine for 4 days late: $\" + (int)fine);\n    }\n}",
+      "expectedOutputMatcher": "solution",
+      "hint": "Days late multiplied by student's daily fine ($1.00).",
+      "solution": "class FineTest {\n    // Implement fine calculation test\n}\npublic class Solution {\n    public static void main(String[] args) {\n        StudentMember s = new StudentMember(\"S01\", \"Bob\");\n        double fine = 4 * s.getDailyFine();\n        System.out.println(s.getName() + \" Fine for 4 days late: $\" + (int)fine);\n    }\n}"
+    },
+    "quiz": [
+      {
+        "id": "quiz-top-java-oop-final-project-1",
+        "question": "Which design pattern / principle is used when StudentMember and FacultyMember provide different borrowing limits?",
+        "options": [
+          "Runtime Polymorphism via Method Overriding",
+          "Static method hiding",
+          "Procedural switch-case branching",
+          "Interface singleton pattern"
+        ],
+        "correctIndex": 0,
+        "explanation": "Subclasses override getMaxBorrowLimit(), enabling dynamic polymorphic dispatch without messy if/switch statements."
+      },
+      {
+        "id": "quiz-top-java-oop-final-project-2",
+        "question": "Why should the `borrowedItems` list inside Member be encapsulated with controlled add/remove methods rather than public access?",
+        "options": [
+          "To prevent outside code from bypassing max borrow limit validation checks and modifying the collection directly",
+          "Because Java lists cannot be public",
+          "To force garbage collection of returned books",
+          "Because collections can only be stored in interfaces"
+        ],
+        "correctIndex": 0,
+        "explanation": "Encapsulation ensures the object enforces invariants (like max borrow limits) and prevents external corruption."
+      },
+      {
+        "id": "quiz-top-java-oop-final-project-3",
+        "question": "What object relationship exists between Library and Book?",
+        "options": [
+          "Aggregation or Association (Books exist as distinct entities and can be added/removed from the Library collection)",
+          "Multiple class inheritance",
+          "Dynamic downcasting",
+          "Method overloading"
+        ],
+        "correctIndex": 0,
+        "explanation": "Books have an independent existence from the library system, representing an aggregated collection."
+      },
+      {
+        "id": "quiz-top-java-oop-final-project-4",
+        "question": "Why is `Borrowable` declared as an interface instead of an abstract class in an enterprise library system?",
+        "options": [
+          "To allow non-book items (like DVDs, Laptops, Audiobooks) with completely different class hierarchies to be borrowed seamlessly",
+          "Because abstract classes are slower at runtime",
+          "Because interfaces cannot have methods",
+          "Because interfaces can only be implemented once"
+        ],
+        "correctIndex": 0,
+        "explanation": "Interfaces represent pure capabilities (CAN-DO), allowing books, electronics, and digital media to all participate in borrowing."
+      },
+      {
+        "id": "quiz-top-java-oop-final-project-5",
+        "question": "In a clean OOP design, what class is responsible for calculating overdue return fines?",
+        "options": [
+          "A dedicated FineCalculator strategy or the Member/Loan model that understands the member's rate and duration",
+          "The main method via hardcoded global variables",
+          "The JVM garbage collector",
+          "The Book class"
+        ],
+        "correctIndex": 0,
+        "explanation": "Following Single Responsibility, fine logic belongs in a FineCalculator or Member policy object, not hardcoded globally."
+      }
+    ],
+    "codingChallenge": {
+      "title": "Complete Library Search and Borrow Flow",
+      "difficulty": "Intermediate",
+      "problem_statement": "Create a console application simulation with Book (id, title, isBorrowed) and Library. Provide searchBook(String query) matching title substring, and checkout(String bookId) returning true if successfully borrowed, false if already borrowed or not found.",
+      "input_format": "Standard Java input / method parameters.",
+      "output_format": "Checkout 1: true\nCheckout 1 again: false",
+      "starter_code": "import java.util.*;\n\nclass Book {\n    String id;\n    String title;\n    boolean isBorrowed = false;\n    Book(String id, String title) { this.id = id; this.title = title; }\n}\n\nclass Library {\n    List<Book> catalog = new ArrayList<>();\n    void addBook(Book b) { catalog.add(b); }\n    \n    public boolean checkout(String id) {\n        // Find book, mark borrowed if available, return true; else return false\n        return false;\n    }\n}\n\npublic class Solution {\n    public static void main(String[] args) {\n        Library lib = new Library();\n        lib.addBook(new Book(\"1\", \"Java in Action\"));\n        lib.addBook(new Book(\"2\", \"Spring Boot Mastery\"));\n        \n        System.out.println(\"Checkout 1: \" + lib.checkout(\"1\"));\n        System.out.println(\"Checkout 1 again: \" + lib.checkout(\"1\"));\n    }\n}",
+      "expected_output": "Checkout 1: true\nCheckout 1 again: false",
+      "test_cases": [
+        {
+          "input": "none",
+          "expected": "Checkout 1: true\nCheckout 1 again: false"
+        }
+      ]
+    },
+    "summary": [
+      "A well-architected system distributes responsibilities among cohesive domain classes",
+      "Polymorphic hierarchies eliminate brittle conditional branching logic",
+      "Interfaces decouple system services from concrete entity types",
+      "Encapsulation ensures invariants are strictly maintained across concurrent operations"
+    ]
+  }
+];
+
+// Authoritative 8-Module Definition
+export const JAVA_OOP_MODULES: JavaOopModule[] = [
+  {
+    id: 'mod-java-oop-01',
+    number: 1,
+    numberDisplay: '01',
+    title: 'MODULE 01: Introduction to Object-Oriented Programming',
+    level: 'Intermediate',
+    duration: '1 Hour',
+    estimatedMinutes: 60,
+    description: 'Understand the foundations of object-oriented programming, its four pillars, and how Java represents real-world entities using classes and objects.',
+    topicCount: 3,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-01')
+  },
+  {
+    id: 'mod-java-oop-02',
+    number: 2,
+    numberDisplay: '02',
+    title: 'MODULE 02: Constructors and Object Initialization',
+    level: 'Intermediate',
+    duration: '1 Hour',
+    estimatedMinutes: 60,
+    description: 'Learn how Java initializes objects using constructors, constructor overloading, constructor chaining, and initialization blocks.',
+    topicCount: 5,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-02')
+  },
+  {
+    id: 'mod-java-oop-03',
+    number: 3,
+    numberDisplay: '03',
+    title: 'MODULE 03: Encapsulation and Access Modifiers',
+    level: 'Intermediate',
+    duration: '1.5 Hours',
+    estimatedMinutes: 90,
+    description: 'Protect object state and enforce data integrity using encapsulation, access modifiers, getters, setters, and controlled access to class members.',
+    topicCount: 5,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-03')
+  },
+  {
+    id: 'mod-java-oop-04',
+    number: 4,
+    numberDisplay: '04',
+    title: 'MODULE 04: Inheritance and Code Reusability',
+    level: 'Intermediate',
+    duration: '1.5 Hours',
+    estimatedMinutes: 90,
+    description: 'Reuse existing class behavior and build hierarchical relationships using Java inheritance, method overriding, and the super keyword.',
+    topicCount: 6,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-04')
+  },
+  {
+    id: 'mod-java-oop-05',
+    number: 5,
+    numberDisplay: '05',
+    title: 'MODULE 05: Polymorphism and Dynamic Method Dispatch',
+    level: 'Intermediate',
+    duration: '1 Hour',
+    estimatedMinutes: 60,
+    description: 'Understand how Java supports multiple forms of behavior through method overloading, method overriding, upcasting, and runtime method dispatch.',
+    topicCount: 5,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-05')
+  },
+  {
+    id: 'mod-java-oop-06',
+    number: 6,
+    numberDisplay: '06',
+    title: 'MODULE 06: Abstraction and Interfaces',
+    level: 'Intermediate',
+    duration: '1.5 Hours',
+    estimatedMinutes: 90,
+    description: 'Design flexible Java applications by hiding implementation details and defining contracts using abstract classes and interfaces.',
+    topicCount: 6,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-06')
+  },
+  {
+    id: 'mod-java-oop-07',
+    number: 7,
+    numberDisplay: '07',
+    title: 'MODULE 07: Object Relationships and Packages',
+    level: 'Intermediate',
+    duration: '1 Hour',
+    estimatedMinutes: 60,
+    description: 'Organize Java applications into maintainable components and model relationships between objects using association, aggregation, composition, and packages.',
+    topicCount: 6,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-07')
+  },
+  {
+    id: 'mod-java-oop-08',
+    number: 8,
+    numberDisplay: '08',
+    title: 'MODULE 08: Final Mini Project — Object-Oriented Library Management System',
+    level: 'Intermediate',
+    duration: '1.5 Hours',
+    estimatedMinutes: 90,
+    description: 'Build a complete console-based library management application using classes, objects, encapsulation, inheritance, polymorphism, abstraction, interfaces, and object relationships.',
+    topicCount: 1,
+    topics: JAVA_OOP_TOPICS.filter(t => t.moduleId === 'mod-java-oop-08')
+  }
+];
+
+// Helper to look up topic by ID
+export const getJavaOopTopicById = (id: string): JavaOopTopic | undefined => {
+  if (id === 'top-java-oop' || id === 'top-java-oop-intro') {
+    return JAVA_OOP_TOPICS[0];
+  }
+  return JAVA_OOP_TOPICS.find(t => t.id === id);
+};

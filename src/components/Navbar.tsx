@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { UserAvatar } from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive, CognitiveLoadLevel } from '../context/CognitiveContext';
 import { useTheme } from '../context/ThemeContext';
@@ -29,7 +30,8 @@ import {
 interface NavbarProps {
   currentView: string;
   setCurrentView: (view: string) => void;
-  openAuthModal: () => void;
+  openAuthModal?: () => void;
+  onOpenLogin?: () => void;
   openAiDrawer: () => void;
   openSearchModal?: () => void;
   openOnboardingModal?: () => void;
@@ -40,6 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentView,
   setCurrentView,
   openAuthModal,
+  onOpenLogin,
   openAiDrawer,
   openSearchModal,
   openOnboardingModal,
@@ -210,18 +213,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             <FileText className="w-3.5 h-3.5" />
             <span className="hidden xl:inline">Notes</span>
           </button>
-
-          <button
-            onClick={() => setCurrentView('admin')}
-            className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
-              currentView === 'admin'
-                ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Admin</span>
-          </button>
         </nav>
 
         {/* Right Section: Cognitive State Badge & Actions */}
@@ -307,9 +298,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200"
               >
-                <div className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar user={user} size="sm" />
                 <span className="hidden md:inline text-xs font-medium max-w-[100px] truncate">
                   {user.name}
                 </span>
@@ -400,7 +389,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           ) : (
             <button
-              onClick={openAuthModal}
+              onClick={() => {
+                if (onOpenLogin) {
+                  onOpenLogin();
+                } else if (openAuthModal) {
+                  openAuthModal();
+                } else {
+                  setCurrentView('login');
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
             >
               <User className="w-3.5 h-3.5" />

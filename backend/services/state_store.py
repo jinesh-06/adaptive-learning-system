@@ -175,8 +175,13 @@ class StateStore:
             conn.close()
 
     def get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA busy_timeout=30000;")
+        except Exception:
+            pass
         return conn
 
     # --- Telemetry & Behavior ---
@@ -382,28 +387,80 @@ class StateStore:
             conn.close()
 
     # --- Topic & Course Progress Persistence ---
-    def get_user_course_progress(self, user_id: str, course_id: str = "py-beg") -> List[Dict[str, Any]]:
-        conn = self.get_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? ORDER BY topic_id ASC",
-            (user_id, course_id)
-        )
-        rows = [dict(r) for r in cur.fetchall()]
-        conn.close()
-        return rows
+    def get_user_course_progress(self, user_id: Optional[str] = "guest-learner", course_id: str = "py-beg") -> List[Dict[str, Any]]:
+        safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? ORDER BY topic_id ASC",
+                (safe_user_id, course_id)
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+            conn.close()
+            return rows
+        except Exception as e:
+            print(f"[StateStore] get_user_course_progress error: {e}")
+            return []
+
+    def get_user_adapted_topic_ids(self, user_id: Optional[str] = "guest-learner") -> set:
+        safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT topic_id FROM adapted_lessons WHERE user_id = ?", (safe_user_id,))
+            rows = cur.fetchall()
+            conn.close()
+            return {r["topic_id"] for r in rows if r["topic_id"]}
+        except Exception as e:
+            print(f"[StateStore] get_user_adapted_topic_ids error: {e}")
+            return set()
+
+    def get_topic_progress(self, topic_id: str, user_id: str = "guest-learner", course_id: Optional[str] = None) -> str:
+        """Get progress status for a specific topic, defaulting to NOT_STARTED."""
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            if course_id:
+                cur.execute(
+                    "SELECT status FROM user_progress WHERE topic_id = ? AND user_id = ? AND course_id = ? ORDER BY updated_at DESC LIMIT 1",
+                    (topic_id, user_id, course_id)
+                )
+            else:
+                cur.execute(
+                    "SELECT status FROM user_progress WHERE topic_id = ? AND user_id = ? ORDER BY updated_at DESC LIMIT 1",
+                    (topic_id, user_id)
+                )
+            row = cur.fetchone()
+            conn.close()
+            if row and row["status"]:
+                return row["status"]
+            return "NOT_STARTED"
+        except Exception as e:
+            print(f"[StateStore] get_topic_progress error: {e}")
+            return "NOT_STARTED"
 
     def save_topic_progress(
         self,
-        user_id: str,
-        course_id: str,
-        topic_id: str,
+        user_id: str = "guest-learner",
+        course_id: str = "c-int",
+        topic_id: Optional[str] = None,
         status: Optional[str] = None,
         completion_pct: Optional[float] = None,
         quiz_score: Optional[float] = None,
         attempts_delta: int = 0,
-        time_spent_delta: float = 0.0
+        time_spent_delta: float = 0.0,
+        **kwargs
     ) -> Dict[str, Any]:
+        # Handle cases where topic_id was passed positionally as first arg: save_topic_progress(topic_id, status)
+        if topic_id is None and isinstance(user_id, str) and (user_id.startswith("top-") or user_id.startswith("mod-")):
+            topic_id = user_id
+            status = course_id if status is None else status
+            user_id = kwargs.get("user_id", "guest-learner")
+            course_id = kwargs.get("course_id", "c-int")
+        elif not topic_id:
+            topic_id = "top-unknown"
+
         with self._lock:
             conn = self.get_connection()
             cur = conn.cursor()
@@ -426,7 +483,7 @@ class StateStore:
                 )
             else:
                 cur_status = status or "IN_PROGRESS"
-                cur_comp = completion_pct if completion_pct is not None else 0.0
+                cur_comp = completion_pct if completion_pct is not None else (100.0 if cur_status == "COMPLETED" else 0.0)
                 cur_quiz = quiz_score if quiz_score is not None else 0.0
                 cur_attempts = attempts_delta
                 cur_time = time_spent_delta
@@ -481,27 +538,32 @@ class StateStore:
             conn.close()
             return {"success": True, "id": rec_id, "topic_id": topic_id, "strategy": adaptation_strategy}
 
-    def get_adapted_lesson(self, user_id: str, topic_id: str) -> Optional[Dict[str, Any]]:
-        conn = self.get_connection()
-        cur = conn.cursor()
-        rec_id = f"{user_id}_{topic_id}"
-        cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
-        row = cur.fetchone()
-        conn.close()
-        if not row:
+    def get_adapted_lesson(self, user_id: Optional[str], topic_id: str) -> Optional[Dict[str, Any]]:
+        safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            rec_id = f"{safe_user_id}_{topic_id}"
+            cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
+            row = cur.fetchone()
+            conn.close()
+            if not row:
+                return None
+            res = dict(row)
+            if res.get("lesson_data_json"):
+                try:
+                    res["lesson_data"] = json.loads(res["lesson_data_json"])
+                except Exception:
+                    res["lesson_data"] = {}
+            if res.get("signals_json"):
+                try:
+                    res["signals"] = json.loads(res["signals_json"])
+                except Exception:
+                    res["signals"] = {}
+            return res
+        except Exception as e:
+            print(f"[StateStore] get_adapted_lesson error: {e}")
             return None
-        res = dict(row)
-        if res.get("lesson_data_json"):
-            try:
-                res["lesson_data"] = json.loads(res["lesson_data_json"])
-            except Exception:
-                res["lesson_data"] = {}
-        if res.get("signals_json"):
-            try:
-                res["signals"] = json.loads(res["signals_json"])
-            except Exception:
-                res["signals"] = {}
-        return res
 
 
 state_store = StateStore()

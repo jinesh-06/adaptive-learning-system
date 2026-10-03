@@ -8,16 +8,28 @@ import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
 import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
 import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
 import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
+import { C_INTERMEDIATE_TOPICS } from '../data/cIntermediateData';
+import { C_ADVANCED_TOPICS } from '../data/cAdvancedData';
 import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
+import { CPP_OOP_TOPICS } from '../data/cppOopData';
+import { CPP_ADVANCED_TOPICS } from '../data/cppAdvancedData';
 import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
+import { JAVA_OOP_TOPICS } from '../data/javaOopData';
+import { JAVA_ADV_TOPICS } from '../data/javaAdvData';
 
 const ALL_TOPICS: any[] = [
   ...PYTHON_FUNDAMENTALS_TOPICS,
   ...PYTHON_INTERMEDIATE_TOPICS,
   ...PYTHON_ADVANCED_TOPICS,
   ...C_FUNDAMENTALS_TOPICS,
+  ...C_INTERMEDIATE_TOPICS,
+  ...C_ADVANCED_TOPICS,
   ...CPP_FUNDAMENTALS_TOPICS,
-  ...JAVA_FUNDAMENTALS_TOPICS
+  ...CPP_OOP_TOPICS,
+  ...CPP_ADVANCED_TOPICS,
+  ...JAVA_FUNDAMENTALS_TOPICS,
+  ...JAVA_OOP_TOPICS,
+  ...JAVA_ADV_TOPICS
 ];
 import {
   BookOpen,
@@ -68,7 +80,14 @@ export interface TopicLessonPageProps {
   onBackToPythonIntermediateDashboard?: () => void;
   onBackToPythonAdvancedDashboard?: () => void;
   onBackToCDashboard?: () => void;
+  onBackToCIntermediateDashboard?: () => void;
+  onBackToCAdvancedDashboard?: () => void;
+  onBackToCppDashboard?: () => void;
+  onBackToCppOopDashboard?: () => void;
+  onBackToCppAdvDashboard?: () => void;
   onBackToJavaDashboard?: () => void;
+  onBackToJavaOopDashboard?: () => void;
+  onBackToJavaAdvDashboard?: () => void;
   onOpenAdaptedLesson?: (topicId: string) => void;
   onOpenAiDrawer?: () => void;
   onOpenSearch?: () => void;
@@ -89,7 +108,14 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   onBackToPythonIntermediateDashboard,
   onBackToPythonAdvancedDashboard,
   onBackToCDashboard,
+  onBackToCIntermediateDashboard,
+  onBackToCAdvancedDashboard,
+  onBackToCppDashboard,
+  onBackToCppOopDashboard,
+  onBackToCppAdvDashboard,
   onBackToJavaDashboard,
+  onBackToJavaOopDashboard,
+  onBackToJavaAdvDashboard,
   onOpenAdaptedLesson,
   onOpenAiDrawer,
   onOpenSearch,
@@ -167,18 +193,64 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   // Determine previous and next topics from curriculum sequence
   const curriculumSequence = useMemo(() => {
+
+    const isCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+    const isCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
+    if (isCAdv) {
+      return C_ADVANCED_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'Advanced C Systems & Data Structures'
+      }));
+    }
+    if (isCInt) {
+      return C_INTERMEDIATE_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'C Pointers & Memory Management'
+      }));
+    }
     if (topicId.startsWith('top-c-')) {
+
       return C_FUNDAMENTALS_TOPICS.map(t => ({
         id: t.id,
         title: t.title,
         moduleTitle: t.moduleTitle || 'Core Language Foundations'
       }));
     }
+    if (topicId.startsWith('top-cpp-adv-')) {
+      return CPP_ADVANCED_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'Advanced C++ & STL Architecture'
+      }));
+    }
+    if (topicId.startsWith('top-cpp-oop-')) {
+      return CPP_OOP_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'Object-Oriented C++ Architecture & Design'
+      }));
+    }
     if (topicId.startsWith('top-cpp-')) {
       return CPP_FUNDAMENTALS_TOPICS.map(t => ({
         id: t.id,
         title: t.title,
-        moduleTitle: 'C++ Modern Fundamentals'
+        moduleTitle: t.moduleTitle || 'C++ Modern Fundamentals'
+      }));
+    }
+    if (topicId.startsWith('top-java-adv-')) {
+      return JAVA_ADV_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'Advanced Java & Collections Framework'
+      }));
+    }
+    if (topicId.startsWith('top-java-oop-')) {
+      return JAVA_OOP_TOPICS.map(t => ({
+        id: t.id,
+        title: t.title,
+        moduleTitle: t.moduleTitle || 'Java Object-Oriented Design'
       }));
     }
     if (topicId.startsWith('top-java-')) {
@@ -229,8 +301,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const nextTopic = currentIndex >= 0 && currentIndex < curriculumSequence.length - 1 ? curriculumSequence[currentIndex + 1] : null;
 
   const handleTopicNavigation = (targetId: string) => {
-    if (topicId.startsWith('top-c-')) {
+    const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
+    const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+    if (isTopicCAdv) {
+      api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (isTopicCInt) {
+      api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-c-')) {
       api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-cpp-adv-')) {
+      api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-cpp-oop-')) {
+      api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
+    } else if (topicId.startsWith('top-cpp-')) {
+      api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
     } else if (topicId.startsWith('top-java-')) {
       api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
     } else if (topicId.startsWith('top-py-')) {
@@ -244,8 +328,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const handleMarkCompleted = async () => {
     setCompletedLocally(true);
     try {
-      if (topicId.startsWith('top-c-')) {
+      const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
+      const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+      if (isTopicCAdv) {
+        await api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (isTopicCInt) {
+        await api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-c-')) {
         await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-cpp-adv-')) {
+        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-cpp-oop-')) {
+        await api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-cpp-')) {
+        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       } else if (topicId.startsWith('top-java-')) {
         await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       } else if (topicId.startsWith('top-py-')) {
@@ -285,6 +381,14 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       await api.submitContentFeedback(topicId, type);
       if (topicId.startsWith('top-c-')) {
         await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-cpp-adv-')) {
+        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-cpp-')) {
+        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-java-adv-')) {
+        await api.updateJavaAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
+      } else if (topicId.startsWith('top-java-oop-')) {
+        await api.updateJavaOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       } else if (topicId.startsWith('top-java-')) {
         await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
       }
@@ -323,16 +427,34 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   const isAdvanced = topicId.startsWith('top-py-adv-') || PYTHON_ADVANCED_TOPICS.some(t => t.id === topicId);
   const isIntermediate = topicId.startsWith('top-py-int-') || PYTHON_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+  const isCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
+  const isCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
+  const isCppAdv = topicId.startsWith('top-cpp-adv-') || CPP_ADVANCED_TOPICS.some(t => t.id === topicId);
+  const isCppOop = topicId.startsWith('top-cpp-oop-') || CPP_OOP_TOPICS.some(t => t.id === topicId);
+  const isJavaAdv = topicId.startsWith('top-java-adv-') || JAVA_ADV_TOPICS.some(t => t.id === topicId);
+  const isJavaOop = topicId.startsWith('top-java-oop-') || JAVA_OOP_TOPICS.some(t => t.id === topicId);
   const courseTitle = isAdvanced
     ? 'Advanced Python & Async'
     : isIntermediate
     ? 'Intermediate Python & DSA'
+    : isCAdv
+    ? 'Advanced C Systems & Data Structures'
+    : isCInt
+    ? 'C Pointers & Memory Management'
+    : isCppAdv
+    ? 'Advanced C++ & STL Architecture'
+    : isCppOop
+    ? 'Object-Oriented C++'
+    : isJavaAdv
+    ? 'Advanced Java & Collections Framework'
+    : isJavaOop
+    ? 'Java Object-Oriented Design'
     : topic.language === 'python'
     ? 'Python Fundamentals'
     : topic.language === 'c' || topicId.startsWith('top-c-')
     ? 'C Programming Foundations'
     : topic.language === 'cpp'
-    ? (topicId === 'top-cpp-references-memory'
+    ? (topicId === 'top-cpp-references-memory' || topicId.startsWith('top-cpp-adv-')
         ? 'Advanced C++ & STL Architecture'
         : topicId === 'top-cpp-oop'
         ? 'Object-Oriented C++'
@@ -405,12 +527,61 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 >
                   Python Fundamentals
                 </button>
+              ) : isCAdv && onBackToCAdvancedDashboard ? (
+                <button
+                  onClick={onBackToCAdvancedDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Advanced C Systems & Data Structures
+                </button>
+              ) : isCInt && onBackToCIntermediateDashboard ? (
+                <button
+                  onClick={onBackToCIntermediateDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  C Pointers & Memory Management
+                </button>
               ) : onBackToCDashboard && topicId.startsWith('top-c-') ? (
                 <button
                   onClick={onBackToCDashboard}
                   className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
                 >
                   C Programming Foundations
+                </button>
+              ) : onBackToCppAdvDashboard && (topicId.startsWith('top-cpp-adv-') || isCppAdv) ? (
+                <button
+                  onClick={onBackToCppAdvDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Advanced C++ & STL Architecture
+                </button>
+              ) : onBackToCppOopDashboard && (topicId.startsWith('top-cpp-oop-') || isCppOop) ? (
+                <button
+                  onClick={onBackToCppOopDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Object-Oriented C++
+                </button>
+              ) : onBackToCppDashboard && topicId.startsWith('top-cpp-') ? (
+                <button
+                  onClick={onBackToCppDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  C++ Modern Fundamentals
+                </button>
+              ) : onBackToJavaAdvDashboard && (topicId.startsWith('top-java-adv-') || isJavaAdv) ? (
+                <button
+                  onClick={onBackToJavaAdvDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Advanced Java & Collections
+                </button>
+              ) : onBackToJavaOopDashboard && topicId.startsWith('top-java-oop-') ? (
+                <button
+                  onClick={onBackToJavaOopDashboard}
+                  className="hover:text-cyan-400 light-theme:hover:text-blue-600 truncate font-medium text-cyan-400"
+                >
+                  Java Object-Oriented Design
                 </button>
               ) : onBackToJavaDashboard && topicId.startsWith('top-java-') ? (
                 <button
@@ -740,7 +911,19 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             />
           </section>
 
-          {/* SECTION 7: VISUAL CONCEPT EXPLAINER */}
+          {/* SECTION 7: VISUAL LEARNING & ARCHITECTURAL DIAGRAMS */}
+          {topic.visualDiagram && (
+            <section id="section-diagram" className="space-y-3">
+              <h2 className="text-lg sm:text-xl font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
+                <span className="w-2 h-5 rounded-full bg-cyan-400" />
+                Architectural & Memory Diagram
+              </h2>
+              <div className="rounded-xl border border-cyan-500/30 bg-slate-950 p-4 font-mono text-xs sm:text-sm text-cyan-300 overflow-x-auto shadow-inner shadow-cyan-950/20 leading-relaxed">
+                <pre>{typeof topic.visualDiagram === 'string' ? topic.visualDiagram : JSON.stringify(topic.visualDiagram, null, 2)}</pre>
+              </div>
+            </section>
+          )}
+
           <VisualConceptExplainer
             topicId={topicId}
             topicTitle={topic.title}

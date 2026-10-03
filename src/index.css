@@ -164,3 +164,78 @@ body {
 .animate-typing-dot-2 { animation: typingDot 1.4s infinite ease-in-out 0.2s; }
 .animate-typing-dot-3 { animation: typingDot 1.4s infinite ease-in-out 0.4s; }
 
+/* Futuristic Animated Login Keyframes */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.5deg); }
+}
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+@keyframes floatMedium {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-2deg); }
+}
+.animate-float-medium {
+  animation: floatMedium 4s ease-in-out infinite;
+}
+
+@keyframes floatFast {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-15px) rotate(2.5deg); }
+}
+.animate-float-fast {
+  animation: floatFast 3.2s ease-in-out infinite;
+}
+
+@keyframes robotHover {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(1deg); }
+}
+.animate-robot-hover {
+  animation: robotHover 4.5s ease-in-out infinite;
+}
+
+@keyframes auraGlow {
+  0%, 100% { opacity: 0.6; transform: scale(0.95); filter: blur(24px); }
+  50% { opacity: 0.9; transform: scale(1.05); filter: blur(30px); }
+}
+.animate-aura-glow {
+  animation: auraGlow 3.5s ease-in-out infinite;
+}
+
+@keyframes beamOrbit {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.7; }
+  50% { transform: rotate(180deg) scale(1.02); opacity: 0.95; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.7; }
+}
+.animate-beam-orbit {
+  animation: beamOrbit 25s linear infinite;
+}
+
+@keyframes cyberGridMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 60px; }
+}
+.animate-cyber-grid {
+  animation: cyberGridMove 4s linear infinite;
+}
+
+@keyframes eyeBlink {
+  0%, 94%, 98%, 100% { transform: scaleY(1); }
+  96% { transform: scaleY(0.1); }
+}
+.animate-eye-blink {
+  animation: eyeBlink 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes cubeFloat {
+  0%, 100% { transform: translateY(0px) rotateX(25deg) rotateY(35deg); }
+  50% { transform: translateY(-10px) rotateX(35deg) rotateY(45deg); }
+}
+.animate-cube-float {
+  animation: cubeFloat 6s ease-in-out infinite;
+}
+

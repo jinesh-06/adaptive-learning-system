@@ -3,6 +3,15 @@ import { api } from '../services/api';
 import { PYTHON_FUNDAMENTALS_TOPICS, PythonTopic } from '../data/pythonFundamentalsData';
 import { PYTHON_INTERMEDIATE_TOPICS } from '../data/pythonIntermediateData';
 import { PYTHON_ADVANCED_TOPICS } from '../data/pythonAdvancedData';
+import { C_FUNDAMENTALS_TOPICS } from '../data/cFundamentalsData';
+import { C_INTERMEDIATE_TOPICS } from '../data/cIntermediateData';
+import { C_ADVANCED_TOPICS } from '../data/cAdvancedData';
+import { CPP_FUNDAMENTALS_TOPICS } from '../data/cppFundamentalsData';
+import { CPP_OOP_TOPICS } from '../data/cppOopData';
+import { CPP_ADVANCED_TOPICS } from '../data/cppAdvancedData';
+import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
+import { JAVA_OOP_TOPICS } from '../data/javaOopData';
+import { JAVA_ADV_TOPICS } from '../data/javaAdvData';
 import { executeCodeInBrowser } from '../services/pythonRunner';
 import {
   Sparkles,
@@ -56,23 +65,33 @@ export const AdaptedLessonPage: React.FC<AdaptedLessonPageProps> = ({
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
 
+  const findAnyTopic = (id: string) => {
+    return (
+      C_ADVANCED_TOPICS.find(t => t.id === id) ||
+      C_INTERMEDIATE_TOPICS.find(t => t.id === id) ||
+      JAVA_ADV_TOPICS.find(t => t.id === id) ||
+      JAVA_OOP_TOPICS.find(t => t.id === id) ||
+      CPP_ADVANCED_TOPICS.find(t => t.id === id) ||
+      CPP_OOP_TOPICS.find(t => t.id === id) ||
+      CPP_FUNDAMENTALS_TOPICS.find(t => t.id === id) ||
+      JAVA_FUNDAMENTALS_TOPICS.find(t => t.id === id) ||
+      C_FUNDAMENTALS_TOPICS.find(t => t.id === id) ||
+      PYTHON_ADVANCED_TOPICS.find(t => t.id === id) ||
+      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === id) ||
+      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === id) ||
+      PYTHON_FUNDAMENTALS_TOPICS[0]
+    );
+  };
+
   useEffect(() => {
-    const topic =
-      PYTHON_ADVANCED_TOPICS.find(t => t.id === topicId) ||
-      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === topicId) ||
-      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === topicId) ||
-      PYTHON_FUNDAMENTALS_TOPICS[0];
+    const topic = findAnyTopic(topicId);
     setTopicInfo(topic);
     loadAdaptedLesson(topic.id);
   }, [topicId]);
 
   const loadAdaptedLesson = async (tId: string) => {
     setLoading(true);
-    const activeTopic =
-      PYTHON_ADVANCED_TOPICS.find(t => t.id === tId) ||
-      PYTHON_INTERMEDIATE_TOPICS.find(t => t.id === tId) ||
-      PYTHON_FUNDAMENTALS_TOPICS.find(t => t.id === tId) ||
-      PYTHON_FUNDAMENTALS_TOPICS[0];
+    const activeTopic = findAnyTopic(tId);
 
     try {
       const res = await api.getAdaptedLesson(tId);
