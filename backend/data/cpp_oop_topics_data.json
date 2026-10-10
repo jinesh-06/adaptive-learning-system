@@ -70,7 +70,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-intro-1",
+          "id": "q-top-cpp-oop-intro-1",
           "question": "Which of the following describes the core philosophical difference between procedural and object-oriented programming?",
           "options": [
             "Procedural programming compiles faster than OOP",
@@ -78,11 +78,13 @@
             "OOP cannot use primitive data types like int and float",
             "OOP only runs on 64-bit operating systems"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Procedural code separates state and procedures, whereas OOP encapsulates state and operations into coherent objects."
+          "explanation": "Procedural code separates state and procedures, whereas OOP encapsulates state and operations into coherent objects.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-intro-2",
+          "id": "q-top-cpp-oop-intro-2",
           "question": "What are the Four Pillars of Object-Oriented Programming?",
           "options": [
             "Recursion, Iteration, Compilation, Linking",
@@ -90,11 +92,13 @@
             "Stack, Heap, Data, BSS",
             "Pointers, References, Arrays, Vectors"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Encapsulation, Abstraction, Inheritance, and Polymorphism form the foundational four pillars of OOP."
+          "explanation": "Encapsulation, Abstraction, Inheritance, and Polymorphism form the foundational four pillars of OOP.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-intro-3",
+          "id": "q-top-cpp-oop-intro-3",
           "question": "What is the relationship between a class and an object in C++?",
           "options": [
             "A class is an instantiated entity in memory, while an object is the compile-time blueprint",
@@ -102,11 +106,13 @@
             "Class and object are exact synonyms in C++",
             "An object can only exist if declared as a global variable"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The class defines the structure and behavior (blueprint); an object is an allocated instance with real data."
+          "explanation": "The class defines the structure and behavior (blueprint); an object is an allocated instance with real data.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-intro-4",
+          "id": "q-top-cpp-oop-intro-4",
           "question": "What syntax character must terminate every class declaration in C++?",
           "options": [
             "Colon (:)",
@@ -114,18 +120,94 @@
             "Semicolon (;)",
             "Exclamation point (!)"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "C++ class declarations must end with a semicolon after the closing curly brace."
+          "explanation": "C++ class declarations must end with a semicolon after the closing curly brace.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-intro-5",
+          "id": "q-top-cpp-oop-intro-5",
           "question": "True or False: In procedural programming, multiple functions can directly access and mutate global variables without restriction.",
           "options": [
             "True",
-            "False"
+            "False",
+            "Alternative option 3",
+            "Alternative option 4"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "True. A core flaw of procedural architectures is unrestricted global data mutation, which OOP resolves through encapsulation."
+          "explanation": "True. A core flaw of procedural architectures is unrestricted global data mutation, which OOP resolves through encapsulation.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-intro-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the limitations of procedural programming when building large-scale software systems'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Introduction to Object-Oriented Programming in C++.",
+            "Restricts Introduction to Object-Oriented Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Object-Oriented Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-intro-7",
+          "question": "Which statement best describes mastering the concept: 'Learn how real-world entities map to software classes and instantiated objects'?",
+          "options": [
+            "Restricts Introduction to Object-Oriented Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Introduction to Object-Oriented Programming in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Object-Oriented Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-intro-8",
+          "question": "Which statement best describes mastering the concept: 'Master the definitions and conceptual roles of the Four Pillars of OOP: Encapsulation, Abstraction, Inheritance, and Polymorphism'?",
+          "options": [
+            "Restricts Introduction to Object-Oriented Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Introduction to Object-Oriented Programming in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Object-Oriented Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-intro-9",
+          "question": "Which statement best describes mastering the concept: 'Analyze the structural differences between procedural record keeping and object-oriented encapsulation'?",
+          "options": [
+            "Restricts Introduction to Object-Oriented Programming to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Introduction to Object-Oriented Programming in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Object-Oriented Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-intro-10",
+          "question": "Which syntax convention applies to Introduction to Object-Oriented Programming in C++?",
+          "options": [
+            "Standard syntax: // Standard C++ Class Structure\nclass ClassName {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -223,7 +305,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-class-1",
+          "id": "q-top-cpp-oop-classes-objects-1",
           "question": "When a C++ class is defined without creating any objects, how much data memory is allocated for its non-static member variables?",
           "options": [
             "4 bytes per variable",
@@ -231,11 +313,13 @@
             "Depends on the compiler optimization flag",
             "32 bytes default allocation"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A class definition is merely a type specification. Memory is allocated only when an instance (object) is instantiated."
+          "explanation": "A class definition is merely a type specification. Memory is allocated only when an instance (object) is instantiated.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-class-2",
+          "id": "q-top-cpp-oop-classes-objects-2",
           "question": "Which operator is used to access members of an object directly in C++?",
           "options": [
             "Arrow operator (->)",
@@ -243,11 +327,13 @@
             "Scope resolution operator (::)",
             "Tilde operator (~)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The dot operator (.) is used to access member variables and methods of a direct object reference."
+          "explanation": "The dot operator (.) is used to access member variables and methods of a direct object reference.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-class-3",
+          "id": "q-top-cpp-oop-classes-objects-3",
           "question": "What is the purpose of the implicit 'this' pointer inside a C++ member function?",
           "options": [
             "It points to the next class in the inheritance chain",
@@ -255,11 +341,13 @@
             "It points to the heap memory manager",
             "It deletes the object when the function returns"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "this is a const pointer holding the address of the calling object, allowing the function to bind to that instance's data."
+          "explanation": "this is a const pointer holding the address of the calling object, allowing the function to bind to that instance's data.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-class-4",
+          "id": "q-top-cpp-oop-classes-objects-4",
           "question": "If two objects s1 and s2 of class Student are created, how many copies of the member function display() exist in memory?",
           "options": [
             "Two copies, one inside each object",
@@ -267,11 +355,13 @@
             "Zero copies, functions are always inlined",
             "It varies based on whether the object is in heap or stack"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Member functions are stored once in the executable code segment; individual objects only allocate memory for their data members."
+          "explanation": "Member functions are stored once in the executable code segment; individual objects only allocate memory for their data members.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-class-5",
+          "id": "q-top-cpp-oop-classes-objects-5",
           "question": "What will be the output of executing:\nStudent s1;\ns1.name = 'Jinesh';\ns1.age = 19;\ns1.display();\ngiven the lesson example?",
           "options": [
             "Jinesh",
@@ -279,8 +369,80 @@
             "Jinesh 19",
             "Compilation Error"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "s1.display() outputs name followed by space and age: 'Jinesh 19'."
+          "explanation": "s1.display() outputs name followed by space and age: 'Jinesh 19'.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-classes-objects-6",
+          "question": "Which statement best describes mastering the concept: 'Define classes with member variables (data members) and member functions (methods)'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Classes and Objects in C++.",
+            "Restricts Classes and Objects to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Classes and Objects.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-classes-objects-7",
+          "question": "Which statement best describes mastering the concept: 'Instantiate single and multiple objects on the stack and understand their memory footprints'?",
+          "options": [
+            "Restricts Classes and Objects to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Classes and Objects in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Classes and Objects.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-classes-objects-8",
+          "question": "Which statement best describes mastering the concept: 'Use the dot operator (.) to inspect and mutate accessible class members'?",
+          "options": [
+            "Restricts Classes and Objects to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Classes and Objects in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Classes and Objects.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-classes-objects-9",
+          "question": "Which statement best describes mastering the concept: 'Understand how the implicit this pointer resolves member function calls to the calling instance'?",
+          "options": [
+            "Restricts Classes and Objects to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Classes and Objects in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Classes and Objects.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-classes-objects-10",
+          "question": "Which syntax convention applies to Classes and Objects in C++?",
+          "options": [
+            "Standard syntax: // Declaring and Accessing Class Members\nclass TypeName {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -378,7 +540,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-access-1",
+          "id": "q-top-cpp-oop-access-specifiers-1",
           "question": "What is the default access specifier for members of a C++ class if none is explicitly specified?",
           "options": [
             "public",
@@ -386,11 +548,13 @@
             "protected",
             "package-private"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "In a C++ class, members default to private until an access label like public: is encountered."
+          "explanation": "In a C++ class, members default to private until an access label like public: is encountered.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-access-2",
+          "id": "q-top-cpp-oop-access-specifiers-2",
           "question": "What is the default access specifier for members of a C++ struct?",
           "options": [
             "public",
@@ -398,11 +562,13 @@
             "protected",
             "internal"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "In a C++ struct, members default to public to preserve backward compatibility with C."
+          "explanation": "In a C++ struct, members default to public to preserve backward compatibility with C.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-access-3",
+          "id": "q-top-cpp-oop-access-specifiers-3",
           "question": "Which access specifier allows member access to derived (child) classes while blocking access from external code?",
           "options": [
             "private",
@@ -410,11 +576,13 @@
             "protected",
             "virtual"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "protected members are accessible within the base and derived classes, but inaccessible to arbitrary outside callers."
+          "explanation": "protected members are accessible within the base and derived classes, but inaccessible to arbitrary outside callers.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-access-4",
+          "id": "q-top-cpp-oop-access-specifiers-4",
           "question": "What happens at compile time if main() attempts to directly access a private variable obj.balance?",
           "options": [
             "The compiler emits a compilation error: member is inaccessible",
@@ -422,11 +590,13 @@
             "It throws a runtime AccessViolationException",
             "It automatically converts the variable to public"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "C++ enforces access specifiers statically at compile time; accessing private members causes a fatal compilation error."
+          "explanation": "C++ enforces access specifiers statically at compile time; accessing private members causes a fatal compilation error.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-access-5",
+          "id": "q-top-cpp-oop-access-specifiers-5",
           "question": "Why should sensitive fields like balance be kept private rather than public?",
           "options": [
             "Private variables take less RAM than public variables",
@@ -434,8 +604,80 @@
             "Public variables cannot be printed with cout",
             "C++ compilers disallow mathematical operations on public variables"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Data hiding prevents external code from putting the object into an illegal or corrupt state."
+          "explanation": "Data hiding prevents external code from putting the object into an illegal or corrupt state.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-access-specifiers-6",
+          "question": "Which statement best describes mastering the concept: 'Differentiate between public, private, and protected access specifiers in C++'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Access Specifiers in C++.",
+            "Restricts Access Specifiers to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Access Specifiers.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-specifiers-7",
+          "question": "Which statement best describes mastering the concept: 'Understand default access control rules in C++ classes versus C++ structs'?",
+          "options": [
+            "Restricts Access Specifiers to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Access Specifiers in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Access Specifiers.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-specifiers-8",
+          "question": "Which statement best describes mastering the concept: 'Implement data hiding to prevent corruption of internal states'?",
+          "options": [
+            "Restricts Access Specifiers to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Access Specifiers in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Access Specifiers.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-specifiers-9",
+          "question": "Which statement best describes mastering the concept: 'Analyze why directly modifying sensitive fields like bank balances breaks system integrity'?",
+          "options": [
+            "Restricts Access Specifiers to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Access Specifiers in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Access Specifiers.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-specifiers-10",
+          "question": "Which syntax convention applies to Access Specifiers in C++?",
+          "options": [
+            "Standard syntax: class BankAccount {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -533,7 +775,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-ctor-1",
+          "id": "q-top-cpp-oop-constructors-1",
           "question": "What return type does a C++ constructor have?",
           "options": [
             "void",
@@ -541,11 +783,13 @@
             "No return type at all",
             "Pointer to the created object"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Constructors in C++ have no return type, not even void."
+          "explanation": "Constructors in C++ have no return type, not even void.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-ctor-2",
+          "id": "q-top-cpp-oop-constructors-2",
           "question": "What is the 'Most Vexing Parse' in C++ when trying to invoke a default constructor?",
           "options": [
             "Writing Student s1(); which is parsed as a function declaration rather than object instantiation",
@@ -553,11 +797,13 @@
             "Naming the constructor lowercase",
             "Using double quotes instead of single quotes"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Student s1(); is interpreted as a function prototype declaring function s1 taking no arguments and returning Student."
+          "explanation": "Student s1(); is interpreted as a function prototype declaring function s1 taking no arguments and returning Student.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-ctor-3",
+          "id": "q-top-cpp-oop-constructors-3",
           "question": "Why are member initializer lists preferred over assignment inside the constructor body?",
           "options": [
             "Initializer lists allow members to be directly initialized rather than constructed then overwritten",
@@ -565,11 +811,13 @@
             "Initializer lists avoid redundant temporary object allocations",
             "All of the above"
           ],
+          "correct_index": 3,
           "correctIndex": 3,
-          "explanation": "Member initializer lists provide direct initialization, avoid redundant copies, and are mandatory for const and reference members."
+          "explanation": "Member initializer lists provide direct initialization, avoid redundant copies, and are mandatory for const and reference members.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-ctor-4",
+          "id": "q-top-cpp-oop-constructors-4",
           "question": "In what order are member variables initialized during constructor execution?",
           "options": [
             "In the order they are listed in the member initializer list",
@@ -577,11 +825,13 @@
             "In the order they are declared in the class definition",
             "In reverse order of declaration"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "C++ standards mandate that member variables are initialized strictly in the order they are declared within the class body."
+          "explanation": "C++ standards mandate that member variables are initialized strictly in the order they are declared within the class body.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-ctor-5",
+          "id": "q-top-cpp-oop-constructors-5",
           "question": "What will be printed by the code:\nStudent s1;\nStudent s2('Jinesh', 19);\ns1.display(); s2.display();\nfrom the lesson example?",
           "options": [
             "Unknown 0 followed by Jinesh 19",
@@ -589,8 +839,80 @@
             "0 0 followed by Jinesh 19",
             "Compilation Error"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "s1 uses default values 'Unknown' and 0, while s2 receives 'Jinesh' and 19."
+          "explanation": "s1 uses default values 'Unknown' and 0, while s2 receives 'Jinesh' and 19.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-constructors-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the role of constructors in establishing valid object states at creation time'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Constructors in C++.",
+            "Restricts Constructors to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Constructors.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-constructors-7",
+          "question": "Which statement best describes mastering the concept: 'Implement default, parameterized, and copy constructors'?",
+          "options": [
+            "Restricts Constructors to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Constructors in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Constructors.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-constructors-8",
+          "question": "Which statement best describes mastering the concept: 'Use member initializer lists for direct and efficient member initialization'?",
+          "options": [
+            "Restricts Constructors to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Constructors in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Constructors.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-constructors-9",
+          "question": "Which statement best describes mastering the concept: 'Understand constructor execution sequence, delegating constructors, and common pitfalls'?",
+          "options": [
+            "Restricts Constructors to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Constructors in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Constructors.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-constructors-10",
+          "question": "Which syntax convention applies to Constructors in C++?",
+          "options": [
+            "Standard syntax: class Student {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -688,7 +1010,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-dtor-1",
+          "id": "q-top-cpp-oop-destructors-lifecycle-1",
           "question": "What prefix character identifies a destructor in C++?",
           "options": [
             "Exclamation mark (!)",
@@ -696,11 +1018,13 @@
             "Ampersand (&)",
             "Asterisk (*)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A destructor is declared using a tilde followed by the class name (~ClassName())."
+          "explanation": "A destructor is declared using a tilde followed by the class name (~ClassName()).",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-dtor-2",
+          "id": "q-top-cpp-oop-destructors-lifecycle-2",
           "question": "In what order are automatic stack objects destroyed when leaving a scope?",
           "options": [
             "In random order",
@@ -708,11 +1032,13 @@
             "In reverse order of creation (LIFO)",
             "All at the exact same instant"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Stack objects follow Last-In, First-Out (LIFO); the last object created is the first destroyed."
+          "explanation": "Stack objects follow Last-In, First-Out (LIFO); the last object created is the first destroyed.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-dtor-3",
+          "id": "q-top-cpp-oop-destructors-lifecycle-3",
           "question": "Can a C++ destructor be overloaded to accept arguments?",
           "options": [
             "Yes, by defining multiple destructors with different parameter lists",
@@ -720,11 +1046,13 @@
             "Only if the class has a virtual function",
             "Only if declared protected"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Destructors take no arguments and can never be overloaded; every class has exactly one destructor."
+          "explanation": "Destructors take no arguments and can never be overloaded; every class has exactly one destructor.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-dtor-4",
+          "id": "q-top-cpp-oop-destructors-lifecycle-4",
           "question": "What happens to a dynamically allocated object created with new if delete is never called?",
           "options": [
             "The C++ runtime automatically deletes it when its pointer goes out of scope",
@@ -732,11 +1060,13 @@
             "The compiler emits a warning and forces deletion",
             "It is converted to a stack object"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "C++ has no garbage collection; objects allocated with new persist until delete is executed, otherwise leaking."
+          "explanation": "C++ has no garbage collection; objects allocated with new persist until delete is executed, otherwise leaking.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-dtor-5",
+          "id": "q-top-cpp-oop-destructors-lifecycle-5",
           "question": "What does the RAII idiom stand for in modern C++?",
           "options": [
             "Runtime Array Index Inspection",
@@ -744,8 +1074,80 @@
             "Realtime Asynchronous Inter-process Integration",
             "Read Access Immediately Invalidated"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "RAII stands for Resource Acquisition Is Initialization, tying resource management to object scope lifetimes."
+          "explanation": "RAII stands for Resource Acquisition Is Initialization, tying resource management to object scope lifetimes.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-destructors-lifecycle-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the role of destructors in reclaiming dynamically acquired system resources'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Destructors and Object Lifecycle in C++.",
+            "Restricts Destructors and Object Lifecycle to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Destructors and Object Lifecycle.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-destructors-lifecycle-7",
+          "question": "Which statement best describes mastering the concept: 'Master destructor syntax (~ClassName) and invocation guarantees'?",
+          "options": [
+            "Restricts Destructors and Object Lifecycle to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Destructors and Object Lifecycle in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Destructors and Object Lifecycle.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-destructors-lifecycle-8",
+          "question": "Which statement best describes mastering the concept: 'Trace deterministic destruction order for automatic stack objects vs dynamic objects'?",
+          "options": [
+            "Restricts Destructors and Object Lifecycle to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Destructors and Object Lifecycle in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Destructors and Object Lifecycle.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-destructors-lifecycle-9",
+          "question": "Which statement best describes mastering the concept: 'Understand Resource Acquisition Is Initialization (RAII) and leak prevention'?",
+          "options": [
+            "Restricts Destructors and Object Lifecycle to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Destructors and Object Lifecycle in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Destructors and Object Lifecycle.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-destructors-lifecycle-10",
+          "question": "Which syntax convention applies to Destructors and Object Lifecycle in C++?",
+          "options": [
+            "Standard syntax: class ResourceHolder {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -842,7 +1244,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-encap-1",
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-1",
           "question": "What is the primary objective of data hiding within encapsulation?",
           "options": [
             "To compress the binary file size",
@@ -850,11 +1252,13 @@
             "To hide C++ code from decompilers",
             "To increase CPU cache bandwidth"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Data hiding protects internal members from direct tampering, guaranteeing that state changes pass through validated methods."
+          "explanation": "Data hiding protects internal members from direct tampering, guaranteeing that state changes pass through validated methods.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-encap-2",
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-2",
           "question": "Why should getter methods generally be marked with the const keyword?",
           "options": [
             "Because const methods run faster in multi-threaded loops",
@@ -862,11 +1266,13 @@
             "Because non-const getters cannot return integers",
             "Because const automatically converts private variables to public"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "const methods guarantee immutability of the calling object and enable read-only access on const instances."
+          "explanation": "const methods guarantee immutability of the calling object and enable read-only access on const instances.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-encap-3",
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-3",
           "question": "What happens if a bank account balance is made public instead of private with deposit/withdraw validation?",
           "options": [
             "The code fails to compile",
@@ -874,11 +1280,13 @@
             "The balance variable becomes read-only",
             "Memory allocation fails on 32-bit systems"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Public fields allow unrestricted modification, enabling invalid states such as negative balances without audit trails."
+          "explanation": "Public fields allow unrestricted modification, enabling invalid states such as negative balances without audit trails.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-encap-4",
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-4",
           "question": "What is a 'class invariant'?",
           "options": [
             "A variable that can never be modified after compilation",
@@ -886,18 +1294,94 @@
             "A class that cannot be inherited",
             "A member function marked inline"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A class invariant is a condition that must always hold true for an object to be considered in a valid state."
+          "explanation": "A class invariant is a condition that must always hold true for an object to be considered in a valid state.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-encap-5",
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-5",
           "question": "True or False: Encapsulation allows internal class data structures (e.g., array to vector) to be rewritten without breaking existing calling code, provided public interface remains constant.",
           "options": [
             "True",
-            "False"
+            "False",
+            "Alternative option 3",
+            "Alternative option 4"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "True. Encapsulation decouples internal representation from external interface, allowing safe internal refactoring."
+          "explanation": "True. Encapsulation decouples internal representation from external interface, allowing safe internal refactoring.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the dual principles of encapsulation: grouping data with methods and hiding internal representation'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Encapsulation and Data Hiding in C++.",
+            "Restricts Encapsulation and Data Hiding to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Encapsulation and Data Hiding.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-7",
+          "question": "Which statement best describes mastering the concept: 'Implement defensive validation inside setter methods to preserve business rules and invariants'?",
+          "options": [
+            "Restricts Encapsulation and Data Hiding to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Encapsulation and Data Hiding in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Encapsulation and Data Hiding.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-8",
+          "question": "Which statement best describes mastering the concept: 'Design clean, read-only getters using const member functions'?",
+          "options": [
+            "Restricts Encapsulation and Data Hiding to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Encapsulation and Data Hiding in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Encapsulation and Data Hiding.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-9",
+          "question": "Which statement best describes mastering the concept: 'Analyze how encapsulation reduces coupling and enables safe code refactoring'?",
+          "options": [
+            "Restricts Encapsulation and Data Hiding to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Encapsulation and Data Hiding in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Encapsulation and Data Hiding.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-encapsulation-data-hiding-10",
+          "question": "Which syntax convention applies to Encapsulation and Data Hiding in C++?",
+          "options": [
+            "Standard syntax: class EncapsulatedEntity {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -995,7 +1479,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-this-1",
+          "id": "q-top-cpp-oop-this-pointer-static-members-1",
           "question": "What does the 'this' keyword represent inside a non-static C++ member function?",
           "options": [
             "A pointer to the base class",
@@ -1003,11 +1487,13 @@
             "A reference to the main() function",
             "A keyword that allocates memory on the heap"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "this is an implicit pointer storing the address of the object instance invoking the member function."
+          "explanation": "this is an implicit pointer storing the address of the object instance invoking the member function.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-this-2",
+          "id": "q-top-cpp-oop-this-pointer-static-members-2",
           "question": "Why can a static member function NOT use the 'this' pointer?",
           "options": [
             "Static member functions are deprecated in C++",
@@ -1015,11 +1501,13 @@
             "Because static member functions run before the operating system boots",
             "Because 'this' only works with integer data types"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Static member functions are invoked at class scope without an instantiated object instance, so no this pointer exists."
+          "explanation": "Static member functions are invoked at class scope without an instantiated object instance, so no this pointer exists.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-this-3",
+          "id": "q-top-cpp-oop-this-pointer-static-members-3",
           "question": "How many copies of a static data member exist when 100 objects of that class are instantiated?",
           "options": [
             "100 copies",
@@ -1027,11 +1515,13 @@
             "2 copies (stack and heap)",
             "0 copies until called"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A static data member is shared globally across all instances of the class; only one copy exists in memory."
+          "explanation": "A static data member is shared globally across all instances of the class; only one copy exists in memory.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-this-4",
+          "id": "q-top-cpp-oop-this-pointer-static-members-4",
           "question": "What must be returned from a member function to enable method chaining (e.g., obj.setA(1).setB(2))?",
           "options": [
             "return void;",
@@ -1039,11 +1529,13 @@
             "return *this; with the function return type declared as a reference (ClassName&)",
             "return 0;"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Returning *this by reference (ClassName&) allows chained member functions to modify the original calling object."
+          "explanation": "Returning *this by reference (ClassName&) allows chained member functions to modify the original calling object.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-this-5",
+          "id": "q-top-cpp-oop-this-pointer-static-members-5",
           "question": "Where must a static data member typically be defined in C++ (prior to C++17 inline static)?",
           "options": [
             "Inside the main() function",
@@ -1051,8 +1543,80 @@
             "Inside the class constructor",
             "Inside the class destructor"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Static data members are declared in the class header and must be explicitly defined outside the class in global scope."
+          "explanation": "Static data members are declared in the class header and must be explicitly defined outside the class in global scope.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-this-pointer-static-members-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the implicit this pointer passed to non-static member functions'?",
+          "options": [
+            "Demonstrates proper understanding and execution of The this Pointer and Static Members in C++.",
+            "Restricts The this Pointer and Static Members to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in The this Pointer and Static Members.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-this-pointer-static-members-7",
+          "question": "Which statement best describes mastering the concept: 'Disambiguate shadowed member variables when parameter names match member names'?",
+          "options": [
+            "Restricts The this Pointer and Static Members to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of The this Pointer and Static Members in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in The this Pointer and Static Members.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-this-pointer-static-members-8",
+          "question": "Which statement best describes mastering the concept: 'Implement fluent API method chaining by returning *this by reference'?",
+          "options": [
+            "Restricts The this Pointer and Static Members to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of The this Pointer and Static Members in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in The this Pointer and Static Members.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-this-pointer-static-members-9",
+          "question": "Which statement best describes mastering the concept: 'Declare, define, and access static data members and static member functions'?",
+          "options": [
+            "Restricts The this Pointer and Static Members to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of The this Pointer and Static Members in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in The this Pointer and Static Members.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-this-pointer-static-members-10",
+          "question": "Which syntax convention applies to The this Pointer and Static Members in C++?",
+          "options": [
+            "Standard syntax: class Sample {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1150,7 +1714,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-inh-1",
+          "id": "q-top-cpp-oop-inheritance-fundamentals-1",
           "question": "What type of relationship is modeled by inheritance in object-oriented programming?",
           "options": [
             "Has-A relationship",
@@ -1158,11 +1722,13 @@
             "Uses-A relationship",
             "Depends-On relationship"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Inheritance models an 'Is-A' relationship (e.g., a Dog is an Animal)."
+          "explanation": "Inheritance models an 'Is-A' relationship (e.g., a Dog is an Animal).",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-inh-2",
+          "id": "q-top-cpp-oop-inheritance-fundamentals-2",
           "question": "In what order are constructors executed when an object of a derived class is created?",
           "options": [
             "Derived constructor first, then Base constructor",
@@ -1170,11 +1736,13 @@
             "Simultaneously in parallel threads",
             "Only the derived constructor executes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Constructors execute from the top of the inheritance tree downwards: Base class constructor executes first."
+          "explanation": "Constructors execute from the top of the inheritance tree downwards: Base class constructor executes first.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-inh-3",
+          "id": "q-top-cpp-oop-inheritance-fundamentals-3",
           "question": "In what order are destructors executed when a derived class object is destroyed?",
           "options": [
             "Base destructor first, then Derived destructor",
@@ -1182,11 +1750,13 @@
             "In arbitrary order",
             "Destructors are never called for base classes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Destructors execute in reverse order of construction: Derived class destructor executes first."
+          "explanation": "Destructors execute in reverse order of construction: Derived class destructor executes first.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-inh-4",
+          "id": "q-top-cpp-oop-inheritance-fundamentals-4",
           "question": "Which type of inheritance occurs when a derived class inherits directly from two or more base classes (e.g., class C : public A, public B)?",
           "options": [
             "Single inheritance",
@@ -1194,11 +1764,13 @@
             "Multiple inheritance",
             "Hierarchical inheritance"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Multiple inheritance allows a derived class to inherit directly from more than one base class."
+          "explanation": "Multiple inheritance allows a derived class to inherit directly from more than one base class.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-inh-5",
+          "id": "q-top-cpp-oop-inheritance-fundamentals-5",
           "question": "Can a derived class directly access private members of its base class?",
           "options": [
             "Yes, all base members are directly accessible",
@@ -1206,8 +1778,80 @@
             "Only if using public inheritance",
             "Only if the member is an integer"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Private members of a base class are hidden from derived classes; use protected for derived access."
+          "explanation": "Private members of a base class are hidden from derived classes; use protected for derived access.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-inheritance-fundamentals-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the core mechanics and motivations for inheritance (the 'Is-A' relationship)'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Inheritance Fundamentals in C++.",
+            "Restricts Inheritance Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Inheritance Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-inheritance-fundamentals-7",
+          "question": "Which statement best describes mastering the concept: 'Implement base classes and derived classes using C++ inheritance syntax'?",
+          "options": [
+            "Restricts Inheritance Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Inheritance Fundamentals in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Inheritance Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-inheritance-fundamentals-8",
+          "question": "Which statement best describes mastering the concept: 'Classify the five types of inheritance: Single, Multilevel, Multiple, Hierarchical, and Hybrid'?",
+          "options": [
+            "Restricts Inheritance Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Inheritance Fundamentals in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Inheritance Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-inheritance-fundamentals-9",
+          "question": "Which statement best describes mastering the concept: 'Trace constructor initialization and destructor teardown order across inheritance hierarchies'?",
+          "options": [
+            "Restricts Inheritance Fundamentals to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Inheritance Fundamentals in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Inheritance Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-inheritance-fundamentals-10",
+          "question": "Which syntax convention applies to Inheritance Fundamentals in C++?",
+          "options": [
+            "Standard syntax: // C++ Derived Class Syntax\nclass BaseClass {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1305,7 +1949,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-acc-inh-1",
+          "id": "q-top-cpp-oop-access-control-inheritance-1",
           "question": "What is the default inheritance access mode for a C++ class if none is specified (e.g., class Derived : Base {})?",
           "options": [
             "public",
@@ -1313,11 +1957,13 @@
             "protected",
             "virtual"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "In a C++ class, inheritance defaults to private; in a C++ struct, inheritance defaults to public."
+          "explanation": "In a C++ class, inheritance defaults to private; in a C++ struct, inheritance defaults to public.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-acc-inh-2",
+          "id": "q-top-cpp-oop-access-control-inheritance-2",
           "question": "When a derived class inherits using protected mode (class D : protected B), what does a public member of B become in D?",
           "options": [
             "public",
@@ -1325,11 +1971,13 @@
             "private",
             "Inaccessible"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Protected inheritance demotes public members of the base class to protected members in the derived class."
+          "explanation": "Protected inheritance demotes public members of the base class to protected members in the derived class.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-acc-inh-3",
+          "id": "q-top-cpp-oop-access-control-inheritance-3",
           "question": "When a derived class inherits using private mode (class D : private B), how can external callers in main() use public methods of B through an instance of D?",
           "options": [
             "They can access them freely",
@@ -1337,11 +1985,13 @@
             "By casting D to void*",
             "Only if B has a virtual destructor"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Private inheritance makes all inherited members private in D, hiding them from external clients unless re-exposed."
+          "explanation": "Private inheritance makes all inherited members private in D, hiding them from external clients unless re-exposed.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-acc-inh-4",
+          "id": "q-top-cpp-oop-access-control-inheritance-4",
           "question": "Which inheritance mode is used to express a genuine 'Is-A' relationship supporting polymorphic subtyping?",
           "options": [
             "private inheritance",
@@ -1349,11 +1999,13 @@
             "public inheritance",
             "static inheritance"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Public inheritance represents the Liskov substitution principle ('Is-A'), allowing derived instances to be treated as base objects."
+          "explanation": "Public inheritance represents the Liskov substitution principle ('Is-A'), allowing derived instances to be treated as base objects.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-acc-inh-5",
+          "id": "q-top-cpp-oop-access-control-inheritance-5",
           "question": "Can private members of a base class be accessed by a derived class under public inheritance?",
           "options": [
             "Yes, public inheritance exposes everything",
@@ -1361,8 +2013,80 @@
             "Only if using the this pointer",
             "Only in debug builds"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Private base members are completely inaccessible to derived classes regardless of inheritance mode."
+          "explanation": "Private base members are completely inaccessible to derived classes regardless of inheritance mode.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-access-control-inheritance-6",
+          "question": "Which statement best describes mastering the concept: 'Analyze how public, protected, and private inheritance alter member access levels in derived classes'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Access Control and Inheritance in C++.",
+            "Restricts Access Control and Inheritance to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Access Control and Inheritance.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-control-inheritance-7",
+          "question": "Which statement best describes mastering the concept: 'Understand when to choose public inheritance (Is-A) vs private inheritance (implemented-in-terms-of)'?",
+          "options": [
+            "Restricts Access Control and Inheritance to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Access Control and Inheritance in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Access Control and Inheritance.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-control-inheritance-8",
+          "question": "Which statement best describes mastering the concept: 'Use using declarations to unhide or adjust accessibility of inherited members'?",
+          "options": [
+            "Restricts Access Control and Inheritance to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Access Control and Inheritance in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Access Control and Inheritance.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-control-inheritance-9",
+          "question": "Which statement best describes mastering the concept: 'Diagnose and correct common compiler access control errors during inheritance'?",
+          "options": [
+            "Restricts Access Control and Inheritance to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Access Control and Inheritance in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Access Control and Inheritance.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-access-control-inheritance-10",
+          "question": "Which syntax convention applies to Access Control and Inheritance in C++?",
+          "options": [
+            "Standard syntax: // Specifying Inheritance Modes\nclass DerivedPublic : public Base {};...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1460,7 +2184,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-virt-1",
+          "id": "q-top-cpp-oop-method-overriding-virtual-1",
           "question": "What keyword is required in C++ to enable runtime dynamic dispatch on a member function?",
           "options": [
             "override",
@@ -1468,11 +2192,13 @@
             "dynamic",
             "polymorphic"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The virtual keyword instructs the compiler to generate vtable dispatch for dynamic binding."
+          "explanation": "The virtual keyword instructs the compiler to generate vtable dispatch for dynamic binding.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-virt-2",
+          "id": "q-top-cpp-oop-method-overriding-virtual-2",
           "question": "What is the primary benefit of the C++11 'override' specifier?",
           "options": [
             "It makes the function run twice as fast",
@@ -1480,11 +2206,13 @@
             "It forces the function to be inlined",
             "It makes the function accessible from other threads"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "override ensures compile-time validation that a matching virtual base function exists."
+          "explanation": "override ensures compile-time validation that a matching virtual base function exists.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-virt-3",
+          "id": "q-top-cpp-oop-method-overriding-virtual-3",
           "question": "What critical issue occurs if a polymorphic base class does NOT have a virtual destructor when deleting via base pointer?",
           "options": [
             "Compilation error occurs on line 1",
@@ -1492,11 +2220,13 @@
             "The base class destructor is called twice",
             "The pointer is automatically set to nullptr"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Non-virtual destructors cause static binding to ~Base(), skipping ~Derived() entirely and leaking derived resources."
+          "explanation": "Non-virtual destructors cause static binding to ~Base(), skipping ~Derived() entirely and leaking derived resources.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-virt-4",
+          "id": "q-top-cpp-oop-method-overriding-virtual-4",
           "question": "What data structure does the C++ compiler construct to manage virtual function lookups?",
           "options": [
             "Hash map",
@@ -1504,11 +2234,13 @@
             "Linked list",
             "Binary search tree"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The compiler creates a vtable containing pointers to the overridden virtual functions for each class."
+          "explanation": "The compiler creates a vtable containing pointers to the overridden virtual functions for each class.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-virt-5",
+          "id": "q-top-cpp-oop-method-overriding-virtual-5",
           "question": "What will be printed by the lesson code example:\nAnimal* animal = new Dog();\nanimal->sound();\ndelete animal;",
           "options": [
             "Animal sound",
@@ -1516,8 +2248,80 @@
             "Animal sound Dog barks",
             "Compilation Error"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Because sound() is virtual, the call dynamically resolves to Dog's implementation: 'Dog barks'."
+          "explanation": "Because sound() is virtual, the call dynamically resolves to Dog's implementation: 'Dog barks'.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-method-overriding-virtual-6",
+          "question": "Which statement best describes mastering the concept: 'Differentiate compile-time function overloading from runtime method overriding'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Method Overriding and the virtual Keyword in C++.",
+            "Restricts Method Overriding and the virtual Keyword to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Method Overriding and the virtual Keyword.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-method-overriding-virtual-7",
+          "question": "Which statement best describes mastering the concept: 'Understand the virtual keyword, dynamic dispatch, and the virtual method table (vtable)'?",
+          "options": [
+            "Restricts Method Overriding and the virtual Keyword to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Method Overriding and the virtual Keyword in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Method Overriding and the virtual Keyword.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-method-overriding-virtual-8",
+          "question": "Which statement best describes mastering the concept: 'Use base class pointers to transparently invoke overridden derived class methods'?",
+          "options": [
+            "Restricts Method Overriding and the virtual Keyword to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Method Overriding and the virtual Keyword in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Method Overriding and the virtual Keyword.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-method-overriding-virtual-9",
+          "question": "Which statement best describes mastering the concept: 'Apply override and final specifiers for compile-time safety, and understand virtual destructors'?",
+          "options": [
+            "Restricts Method Overriding and the virtual Keyword to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Method Overriding and the virtual Keyword in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Method Overriding and the virtual Keyword.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-method-overriding-virtual-10",
+          "question": "Which syntax convention applies to Method Overriding and the virtual Keyword in C++?",
+          "options": [
+            "Standard syntax: class Base {\npublic:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1616,7 +2420,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-poly-1",
+          "id": "q-top-cpp-oop-polymorphism-1",
           "question": "What is the primary difference between compile-time polymorphism and runtime polymorphism?",
           "options": [
             "Compile-time polymorphism uses virtual functions, while runtime polymorphism uses templates",
@@ -1624,11 +2428,13 @@
             "Compile-time polymorphism only works on integers",
             "Runtime polymorphism cannot use classes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Compile-time polymorphism resolves function signatures statically; runtime polymorphism resolves targets dynamically at execution time."
+          "explanation": "Compile-time polymorphism resolves function signatures statically; runtime polymorphism resolves targets dynamically at execution time.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-poly-2",
+          "id": "q-top-cpp-oop-polymorphism-2",
           "question": "What is 'Object Slicing' in C++?",
           "options": [
             "Splitting a string into characters",
@@ -1636,11 +2442,13 @@
             "Dividing an array in half during binary search",
             "Deallocating half of an object's heap memory"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Object slicing occurs when copying a derived object into a base value type, truncating derived state and polymorphic dispatch."
+          "explanation": "Object slicing occurs when copying a derived object into a base value type, truncating derived state and polymorphic dispatch.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-poly-3",
+          "id": "q-top-cpp-oop-polymorphism-3",
           "question": "Which of the following is an example of compile-time polymorphism?",
           "options": [
             "Function overloading",
@@ -1648,11 +2456,13 @@
             "C++ templates",
             "All of the above"
           ],
+          "correct_index": 3,
           "correctIndex": 3,
-          "explanation": "Function overloading, operator overloading, and templates are all resolved at compile time with zero runtime overhead."
+          "explanation": "Function overloading, operator overloading, and templates are all resolved at compile time with zero runtime overhead.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-poly-4",
+          "id": "q-top-cpp-oop-polymorphism-4",
           "question": "How should polymorphic objects typically be stored in standard library containers like std::vector?",
           "options": [
             "By value: std::vector<Base>",
@@ -1660,11 +2470,13 @@
             "By void pointer: std::vector<void*>",
             "Polymorphic objects cannot be stored in vectors"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Pointers or smart pointers must be used to preserve dynamic dispatch and prevent object slicing."
+          "explanation": "Pointers or smart pointers must be used to preserve dynamic dispatch and prevent object slicing.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-poly-5",
+          "id": "q-top-cpp-oop-polymorphism-5",
           "question": "What is the key advantage of writing code against polymorphic base class interfaces?",
           "options": [
             "The code compiles in zero milliseconds",
@@ -1672,8 +2484,80 @@
             "Memory consumption is always zero",
             "It eliminates the need for header files"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Polymorphism decouples client code from concrete implementations, adhering to the Open-Closed Principle."
+          "explanation": "Polymorphism decouples client code from concrete implementations, adhering to the Open-Closed Principle.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-polymorphism-6",
+          "question": "Which statement best describes mastering the concept: 'Define polymorphism ('many forms') and analyze its two primary classifications in C++'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Polymorphism in C++ in C++.",
+            "Restricts Polymorphism in C++ to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Polymorphism in C++.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-polymorphism-7",
+          "question": "Which statement best describes mastering the concept: 'Compare compile-time (static) polymorphism with runtime (dynamic) polymorphism'?",
+          "options": [
+            "Restricts Polymorphism in C++ to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Polymorphism in C++ in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Polymorphism in C++.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-polymorphism-8",
+          "question": "Which statement best describes mastering the concept: 'Design polymorphic class hierarchies where a single interface operates on distinct concrete subclasses'?",
+          "options": [
+            "Restricts Polymorphism in C++ to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Polymorphism in C++ in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Polymorphism in C++.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-polymorphism-9",
+          "question": "Which statement best describes mastering the concept: 'Apply polymorphism to decouple high-level business logic from low-level implementation details'?",
+          "options": [
+            "Restricts Polymorphism in C++ to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Polymorphism in C++ in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Polymorphism in C++.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-polymorphism-10",
+          "question": "Which syntax convention applies to Polymorphism in C++ in C++?",
+          "options": [
+            "Standard syntax: // Runtime Polymorphic Interface\nclass BaseInterface {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1771,7 +2655,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-abst-1",
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-1",
           "question": "What syntax makes a virtual function 'pure virtual' in C++?",
           "options": [
             "virtual void func() = pure;",
@@ -1779,11 +2663,13 @@
             "pure virtual void func();",
             "abstract void func();"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The '= 0' suffix designates a virtual function as pure virtual."
+          "explanation": "The '= 0' suffix designates a virtual function as pure virtual.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-abst-2",
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-2",
           "question": "What is an abstract class in C++?",
           "options": [
             "A class with no member variables",
@@ -1791,11 +2677,13 @@
             "A class written in assembly",
             "A class with only private members"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Any class containing at least one pure virtual function is abstract and cannot be instantiated."
+          "explanation": "Any class containing at least one pure virtual function is abstract and cannot be instantiated.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-abst-3",
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-3",
           "question": "Can you declare a pointer of an abstract class type (e.g., Shape* ptr;)?",
           "options": [
             "No, pointers to abstract classes cause a compilation error",
@@ -1803,11 +2691,13 @@
             "Only if the pointer is allocated on the heap",
             "Only if marked static"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "While abstract classes cannot be instantiated, pointers and references to them are widely used for polymorphic interfaces."
+          "explanation": "While abstract classes cannot be instantiated, pointers and references to them are widely used for polymorphic interfaces.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-abst-4",
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-4",
           "question": "What happens if a derived class fails to implement one of the pure virtual functions inherited from its base class?",
           "options": [
             "The compiler fills in an empty default body",
@@ -1815,11 +2705,13 @@
             "A runtime warning is emitted",
             "The missing function is deleted"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "If any pure virtual function remains unimplemented, the derived class is also considered abstract."
+          "explanation": "If any pure virtual function remains unimplemented, the derived class is also considered abstract.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-abst-5",
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-5",
           "question": "What is the output of the lesson example:\nRectangle r(5, 4);\ncout << r.area() << endl;",
           "options": [
             "9",
@@ -1827,8 +2719,80 @@
             "0",
             "Compilation Error"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Rectangle implements area() as width * height: 5 * 4 = 20."
+          "explanation": "Rectangle implements area() as width * height: 5 * 4 = 20.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the abstraction pillar: displaying essential features while hiding implementation details'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Abstraction and Abstract Classes in C++.",
+            "Restricts Abstraction and Abstract Classes to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Abstraction and Abstract Classes.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-7",
+          "question": "Which statement best describes mastering the concept: 'Declare pure virtual functions using the = 0 syntax'?",
+          "options": [
+            "Restricts Abstraction and Abstract Classes to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Abstraction and Abstract Classes in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Abstraction and Abstract Classes.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-8",
+          "question": "Which statement best describes mastering the concept: 'Understand why abstract classes cannot be directly instantiated'?",
+          "options": [
+            "Restricts Abstraction and Abstract Classes to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Abstraction and Abstract Classes in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Abstraction and Abstract Classes.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-9",
+          "question": "Which statement best describes mastering the concept: 'Design clean C++ interface contracts that concrete derived classes must implement'?",
+          "options": [
+            "Restricts Abstraction and Abstract Classes to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Abstraction and Abstract Classes in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Abstraction and Abstract Classes.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-abstraction-abstract-classes-10",
+          "question": "Which syntax convention applies to Abstraction and Abstract Classes in C++?",
+          "options": [
+            "Standard syntax: class AbstractBase {\npublic:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -1926,7 +2890,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-op-1",
+          "id": "q-top-cpp-oop-operator-overloading-1",
           "question": "Which of the following operators CANNOT be overloaded in C++?",
           "options": [
             "operator+",
@@ -1934,11 +2898,13 @@
             "operator.",
             "operator<<"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "The dot (.) operator (member access) cannot be overloaded in C++."
+          "explanation": "The dot (.) operator (member access) cannot be overloaded in C++.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-op-2",
+          "id": "q-top-cpp-oop-operator-overloading-2",
           "question": "Why must the stream insertion operator << be overloaded as a non-member (friend) function rather than a member function?",
           "options": [
             "Because member functions cannot use references",
@@ -1946,11 +2912,13 @@
             "Because friend functions are required for all math operators",
             "Because stream operators only work in C, not C++"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "In 'cout << obj', the left operand is std::cout (type std::ostream), so the function cannot be a member of obj's class."
+          "explanation": "In 'cout << obj', the left operand is std::cout (type std::ostream), so the function cannot be a member of obj's class.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-op-3",
+          "id": "q-top-cpp-oop-operator-overloading-3",
           "question": "Can operator overloading in C++ create entirely new operators such as '**' or '@@'?",
           "options": [
             "Yes, any ASCII combination can be created",
@@ -1958,11 +2926,13 @@
             "Only if defined in a namespace",
             "Only in C++20"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "C++ strictly forbids creating new operator symbols; only existing operators can be overloaded."
+          "explanation": "C++ strictly forbids creating new operator symbols; only existing operators can be overloaded.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-op-4",
+          "id": "q-top-cpp-oop-operator-overloading-4",
           "question": "Does operator overloading alter operator precedence or associativity in C++?",
           "options": [
             "Yes, you can change precedence using parentheses in declarations",
@@ -1970,11 +2940,13 @@
             "Only for comparison operators",
             "Only when marked constexpr"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Precedence and associativity rules remain unchanged regardless of how an operator is overloaded."
+          "explanation": "Precedence and associativity rules remain unchanged regardless of how an operator is overloaded.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-op-5",
+          "id": "q-top-cpp-oop-operator-overloading-5",
           "question": "Why does operator<< return a reference to std::ostream (ostream&)?",
           "options": [
             "To allow stream operation chaining, such as cout << a << b << c;",
@@ -1982,8 +2954,80 @@
             "To flush the CPU buffer",
             "It is required by the Windows API"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Returning ostream& allows successive stream insertions to chain together sequentially."
+          "explanation": "Returning ostream& allows successive stream insertions to chain together sequentially.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-operator-overloading-6",
+          "question": "Which statement best describes mastering the concept: 'Understand why operator overloading enables custom types to behave as natural first-class citizens'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Operator Overloading in C++.",
+            "Restricts Operator Overloading to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Operator Overloading.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-operator-overloading-7",
+          "question": "Which statement best describes mastering the concept: 'Overload binary arithmetic operators (+, -) and comparison operators (==, !=, <)'?",
+          "options": [
+            "Restricts Operator Overloading to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Operator Overloading in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Operator Overloading.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-operator-overloading-8",
+          "question": "Which statement best describes mastering the concept: 'Implement stream insertion (<<) and extraction (>>) using friend non-member functions'?",
+          "options": [
+            "Restricts Operator Overloading to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Operator Overloading in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Operator Overloading.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-operator-overloading-9",
+          "question": "Which statement best describes mastering the concept: 'Understand operator overloading restrictions (cannot invent new symbols, cannot alter precedence)'?",
+          "options": [
+            "Restricts Operator Overloading to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Operator Overloading in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Operator Overloading.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-operator-overloading-10",
+          "question": "Which syntax convention applies to Operator Overloading in C++?",
+          "options": [
+            "Standard syntax: // Binary Arithmetic (Member):\nReturnType operator+(const ClassName& rhs) const;...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -2081,7 +3125,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-comp-1",
+          "id": "q-top-cpp-oop-composition-relationships-1",
           "question": "What type of relationship is represented by object composition in C++?",
           "options": [
             "Is-A relationship",
@@ -2089,11 +3133,13 @@
             "Inherits-From relationship",
             "Static relationship"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Composition represents a 'Has-A' ownership relationship (e.g., a Car has an Engine)."
+          "explanation": "Composition represents a 'Has-A' ownership relationship (e.g., a Car has an Engine).",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-comp-2",
+          "id": "q-top-cpp-oop-composition-relationships-2",
           "question": "In what order are member objects constructed when an enclosing class instance is instantiated?",
           "options": [
             "The enclosing class constructor body executes before member objects are constructed",
@@ -2101,11 +3147,13 @@
             "At random times during program startup",
             "Member objects are only constructed when accessed"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Member objects are fully initialized in the member initializer list before the enclosing class body begins execution."
+          "explanation": "Member objects are fully initialized in the member initializer list before the enclosing class body begins execution.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-comp-3",
+          "id": "q-top-cpp-oop-composition-relationships-3",
           "question": "What is the key difference between Composition and Aggregation?",
           "options": [
             "Composition is weak ownership with independent lifecycles; Aggregation is strong ownership",
@@ -2113,11 +3161,13 @@
             "Composition only works with structs, while Aggregation only works with classes",
             "There is no difference; they are exact synonyms"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "In composition, the child cannot exist without the parent (bound lifecycles). In aggregation, children exist independently."
+          "explanation": "In composition, the child cannot exist without the parent (bound lifecycles). In aggregation, children exist independently.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-comp-4",
+          "id": "q-top-cpp-oop-composition-relationships-4",
           "question": "Why does modern software engineering recommend 'Favor composition over inheritance'?",
           "options": [
             "Inheritance creates tight compile-time coupling, whereas composition creates loose, interchangeable modular components",
@@ -2125,11 +3175,13 @@
             "Inheritance is unsupported in 64-bit C++",
             "Composition allows variables to be renamed at runtime"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Composition provides loose coupling and black-box reuse without exposing internal implementation details."
+          "explanation": "Composition provides loose coupling and black-box reuse without exposing internal implementation details.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-comp-5",
+          "id": "q-top-cpp-oop-composition-relationships-5",
           "question": "If class Library has a member std::vector<Book*> books where books can exist outside the library, what relationship is this?",
           "options": [
             "Composition",
@@ -2137,8 +3189,80 @@
             "Inheritance",
             "Polymorphism"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Because books exist independently of the library and are stored via pointer references, this is an Aggregation relationship."
+          "explanation": "Because books exist independently of the library and are stored via pointer references, this is an Aggregation relationship.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-composition-relationships-6",
+          "question": "Which statement best describes mastering the concept: 'Differentiate between Association, Aggregation, and Composition object relationships'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Object Composition and Relationships in C++.",
+            "Restricts Object Composition and Relationships to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Object Composition and Relationships.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-composition-relationships-7",
+          "question": "Which statement best describes mastering the concept: 'Model strong ownership ('Has-A') through composition using member objects'?",
+          "options": [
+            "Restricts Object Composition and Relationships to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Object Composition and Relationships in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Object Composition and Relationships.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-composition-relationships-8",
+          "question": "Which statement best describes mastering the concept: 'Properly initialize composed member objects using constructor member initializer lists'?",
+          "options": [
+            "Restricts Object Composition and Relationships to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Object Composition and Relationships in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Object Composition and Relationships.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-composition-relationships-9",
+          "question": "Which statement best describes mastering the concept: 'Apply the industry design principle: 'Favor object composition over class inheritance''?",
+          "options": [
+            "Restricts Object Composition and Relationships to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Object Composition and Relationships in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Object Composition and Relationships.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-composition-relationships-10",
+          "question": "Which syntax convention applies to Object Composition and Relationships in C++?",
+          "options": [
+            "Standard syntax: // Composition Syntax: Direct Member Object\nclass Part {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -2236,7 +3360,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-copy-1",
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-1",
           "question": "What is the primary danger of a default compiler-generated shallow copy when a class manages raw heap pointers?",
           "options": [
             "The code runs too slowly",
@@ -2244,11 +3368,13 @@
             "The pointer is automatically converted to null",
             "It causes a stack overflow error at compile time"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Shallow copy copies the memory address; when both objects leave scope, both call delete on the same address (double-free bug)."
+          "explanation": "Shallow copy copies the memory address; when both objects leave scope, both call delete on the same address (double-free bug).",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-copy-2",
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-2",
           "question": "What functions comprise the C++ 'Rule of Three'?",
           "options": [
             "Constructor, Getter, Setter",
@@ -2256,11 +3382,13 @@
             "Virtual method, Pure virtual method, Static method",
             "Stack, Heap, Register"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The Rule of Three specifies that any class managing a resource must define a Destructor, Copy Constructor, and Copy Assignment Operator."
+          "explanation": "The Rule of Three specifies that any class managing a resource must define a Destructor, Copy Constructor, and Copy Assignment Operator.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-copy-3",
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-3",
           "question": "Why is the self-assignment check 'if (this == &other) return *this;' essential in a copy assignment operator?",
           "options": [
             "To satisfy the compiler optimizer",
@@ -2268,11 +3396,13 @@
             "Because assignment operators cannot return void",
             "To prevent infinite recursion"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "In a self-assignment (a = a), deallocating existing resources would destroy the data before copying it."
+          "explanation": "In a self-assignment (a = a), deallocating existing resources would destroy the data before copying it.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-copy-4",
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-4",
           "question": "What does a Move Constructor do differently from a Copy Constructor in C++11?",
           "options": [
             "A move constructor duplicates every single byte in the buffer",
@@ -2280,11 +3410,13 @@
             "A move constructor only works on integers",
             "A move constructor cannot be declared noexcept"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Move constructors steal pointer ownership from temporary rvalues without expensive deep copy allocations."
+          "explanation": "Move constructors steal pointer ownership from temporary rvalues without expensive deep copy allocations.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-copy-5",
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-5",
           "question": "What is the modern C++ 'Rule of Zero'?",
           "options": [
             "A program should contain zero classes",
@@ -2292,8 +3424,80 @@
             "Never allocate memory on the heap",
             "All integer variables must be initialized to 0"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The Rule of Zero advises relying on standard library RAII types to avoid writing manual memory management code."
+          "explanation": "The Rule of Zero advises relying on standard library RAII types to avoid writing manual memory management code.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-6",
+          "question": "Which statement best describes mastering the concept: 'Understand default memberwise shallow copying and the catastrophic double-free pointer bug'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Copy Semantics, Shallow Copy and Deep Copy in C++.",
+            "Restricts Copy Semantics, Shallow Copy and Deep Copy to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Copy Semantics, Shallow Copy and Deep Copy.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-7",
+          "question": "Which statement best describes mastering the concept: 'Implement deep copy constructors and copy assignment operators with self-assignment guards'?",
+          "options": [
+            "Restricts Copy Semantics, Shallow Copy and Deep Copy to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Copy Semantics, Shallow Copy and Deep Copy in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Copy Semantics, Shallow Copy and Deep Copy.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-8",
+          "question": "Which statement best describes mastering the concept: 'Master the classical Rule of Three (Destructor, Copy Constructor, Copy Assignment Operator)'?",
+          "options": [
+            "Restricts Copy Semantics, Shallow Copy and Deep Copy to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Copy Semantics, Shallow Copy and Deep Copy in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Copy Semantics, Shallow Copy and Deep Copy.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-9",
+          "question": "Which statement best describes mastering the concept: 'Understand modern C++ move semantics (std::move, rvalue references, Rule of Five and Rule of Zero)'?",
+          "options": [
+            "Restricts Copy Semantics, Shallow Copy and Deep Copy to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Copy Semantics, Shallow Copy and Deep Copy in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Copy Semantics, Shallow Copy and Deep Copy.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-copy-semantics-shallow-deep-10",
+          "question": "Which syntax convention applies to Copy Semantics, Shallow Copy and Deep Copy in C++?",
+          "options": [
+            "Standard syntax: class DeepBuffer {\nprivate:...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {
@@ -2392,7 +3596,7 @@
       },
       "quiz": [
         {
-          "id": "mcq-cpp-oop-bank-1",
+          "id": "q-top-cpp-oop-banking-project-1",
           "question": "Which OOP concept is utilized when Account contains a std::vector<Transaction> to record its statement history?",
           "options": [
             "Inheritance",
@@ -2400,11 +3604,13 @@
             "Polymorphism",
             "Operator Overloading"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Account 'has a' vector of Transaction objects, which is the definition of Object Composition."
+          "explanation": "Account 'has a' vector of Transaction objects, which is the definition of Object Composition.",
+          "difficulty": "easy"
         },
         {
-          "id": "mcq-cpp-oop-bank-2",
+          "id": "q-top-cpp-oop-banking-project-2",
           "question": "How are SavingsAccount and CheckingAccount related to the Account class in the project architecture?",
           "options": [
             "They inherit from Account using public inheritance ('Is-A' relationship)",
@@ -2412,11 +3618,13 @@
             "They are completely unrelated classes",
             "They are declared inside main()"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "SavingsAccount and CheckingAccount extend the base Account class using public inheritance."
+          "explanation": "SavingsAccount and CheckingAccount extend the base Account class using public inheritance.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-bank-3",
+          "id": "q-top-cpp-oop-banking-project-3",
           "question": "How does the banking system guarantee that every created account receives a unique account ID?",
           "options": [
             "Users input their own ID numbers manually",
@@ -2424,11 +3632,13 @@
             "By hashing the user's name",
             "By generating a random number without checking for collisions"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A static counter shared across all instances increments during construction, guaranteeing uniqueness."
+          "explanation": "A static counter shared across all instances increments during construction, guaranteeing uniqueness.",
+          "difficulty": "medium"
         },
         {
-          "id": "mcq-cpp-oop-bank-4",
+          "id": "q-top-cpp-oop-banking-project-4",
           "question": "Why is withdraw() declared as a virtual method in the base Account class?",
           "options": [
             "To allow derived classes like CheckingAccount to provide customized overdraft rules while being invoked via Account* pointers",
@@ -2436,11 +3646,13 @@
             "To prevent anyone from calling withdraw",
             "To make the account read-only"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "virtual enables runtime dispatch so derived accounts can implement custom withdrawal limits (like overdraft) through base pointers."
+          "explanation": "virtual enables runtime dispatch so derived accounts can implement custom withdrawal limits (like overdraft) through base pointers.",
+          "difficulty": "hard"
         },
         {
-          "id": "mcq-cpp-oop-bank-5",
+          "id": "q-top-cpp-oop-banking-project-5",
           "question": "What is the result of attempting to withdraw $500 from Sarah's CheckingAccount with $300 balance and $200 overdraft limit, followed by another $500 withdrawal?",
           "options": [
             "Both succeed",
@@ -2448,8 +3660,80 @@
             "Both fail",
             "The program crashes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The first $450 withdrawal uses $150 of the $200 overdraft allowance; the subsequent $500 withdrawal exceeds the remaining $50 limit and is rejected."
+          "explanation": "The first $450 withdrawal uses $150 of the $200 overdraft allowance; the subsequent $500 withdrawal exceeds the remaining $50 limit and is rejected.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-cpp-oop-banking-project-6",
+          "question": "Which statement best describes mastering the concept: 'Design a real-world multi-class banking system integrating all core OOP pillars'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Final Mini Project – Object-Oriented Banking Management System in C++.",
+            "Restricts Final Mini Project – Object-Oriented Banking Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Object-Oriented Banking Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-banking-project-7",
+          "question": "Which statement best describes mastering the concept: 'Implement base Account and derived SavingsAccount/CheckingAccount classes with polymorphic interest & fee calculations'?",
+          "options": [
+            "Restricts Final Mini Project – Object-Oriented Banking Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Final Mini Project – Object-Oriented Banking Management System in C++."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Object-Oriented Banking Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-banking-project-8",
+          "question": "Which statement best describes mastering the concept: 'Use composition to record and track structured Transaction logs for each account'?",
+          "options": [
+            "Restricts Final Mini Project – Object-Oriented Banking Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Final Mini Project – Object-Oriented Banking Management System in C++.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Object-Oriented Banking Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-banking-project-9",
+          "question": "Which statement best describes mastering the concept: 'Build a robust menu-driven interface with defensive transaction validation and search facilities'?",
+          "options": [
+            "Restricts Final Mini Project – Object-Oriented Banking Management System to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Final Mini Project – Object-Oriented Banking Management System in C++.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Object-Oriented Banking Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-cpp-oop-banking-project-10",
+          "question": "Which syntax convention applies to Final Mini Project – Object-Oriented Banking Management System in C++?",
+          "options": [
+            "Standard syntax: // Polymorphic Bank Core Architecture\nclass Account {...",
+            "Requires omitting return types and parameter brackets",
+            "Only legal inside assembly __asm blocks",
+            "Can only be declared inside global header namespaces"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Following verified syntax ensures proper parser and compiler resolution.",
+          "difficulty": "medium"
         }
       ],
       "codingChallenge": {

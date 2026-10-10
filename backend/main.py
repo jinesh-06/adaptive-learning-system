@@ -35,6 +35,7 @@ from backend.routes.cpp_adv_routes import router as cpp_adv_router
 from backend.routes.java_routes import router as java_router
 from backend.routes.java_oop_routes import router as java_oop_router
 from backend.routes.java_adv_routes import router as java_adv_router
+from backend.routes.lesson_routes import router as lesson_router
 
 app = FastAPI(
     title="Cognitive Adaptive Learning API",
@@ -59,6 +60,7 @@ api_router.include_router(quiz_router)
 api_router.include_router(code_router)
 api_router.include_router(telemetry_router)
 api_router.include_router(adaptive_router)
+api_router.include_router(lesson_router)
 api_router.include_router(ai_router)
 api_router.include_router(admin_router)
 api_router.include_router(stats_router)
@@ -106,4 +108,4 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     print(f"Starting Adaptive Learning System Backend on {HOST}:{PORT}...")
-    uvicorn.run("backend.main:app", host=HOST, port=PORT, reload=False)
+    uvicorn.run("backend.main:app", host=HOST, port=PORT, reload=True)

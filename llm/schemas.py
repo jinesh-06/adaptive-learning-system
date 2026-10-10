@@ -71,6 +71,9 @@ class AdaptiveRequest(BaseModel):
     lesson_context: Optional[str] = Field(
         default=None, description="Current lesson section title and content"
     )
+    conversation_history: Optional[list] = Field(
+        default=None, description="Recent conversation messages between student and AI copilot"
+    )
 
     @field_validator("question", mode="before")
     @classmethod

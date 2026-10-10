@@ -157,6 +157,34 @@ class StateStore:
                 )
             """)
 
+            # Generated 10-Question Quizzes Cache
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS generated_quizzes (
+                    topic_id TEXT PRIMARY KEY,
+                    quiz_data_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Quiz Attempts and Scoring Persistence
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS quiz_attempts (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT,
+                    topic_id TEXT,
+                    score REAL,
+                    percentage REAL,
+                    correct_count INTEGER,
+                    total_questions INTEGER,
+                    answers_json TEXT,
+                    review_json TEXT,
+                    adaptive_feedback_json TEXT,
+                    time_spent REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             conn.commit()
 
             # Seed default guest user if missing
@@ -515,12 +543,14 @@ class StateStore:
         topic_id: str,
         adaptation_strategy: str,
         lesson_data: Dict[str, Any],
-        signals: Optional[Dict[str, Any]] = None
+        signals: Optional[Dict[str, Any]] = None,
+        detail_level: str = "standard"
     ) -> Dict[str, Any]:
         with self._lock:
             conn = self.get_connection()
             cur = conn.cursor()
-            rec_id = f"{user_id}_{topic_id}"
+            mode_key = (detail_level or "standard").lower().strip()
+            rec_id = f"{user_id}_{topic_id}_{mode_key}"
             cur.execute(
                 """INSERT OR REPLACE INTO adapted_lessons
                    (id, user_id, topic_id, adaptation_strategy, lesson_data_json, signals_json, created_at)
@@ -534,18 +564,51 @@ class StateStore:
                     json.dumps(signals or {})
                 )
             )
+            # Also keep a legacy alias record without mode suffix for backward compatibility
+            legacy_id = f"{user_id}_{topic_id}"
+            cur.execute(
+                """INSERT OR REPLACE INTO adapted_lessons
+                   (id, user_id, topic_id, adaptation_strategy, lesson_data_json, signals_json, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                (
+                    legacy_id,
+                    user_id,
+                    topic_id,
+                    adaptation_strategy,
+                    json.dumps(lesson_data),
+                    json.dumps(signals or {})
+                )
+            )
             conn.commit()
             conn.close()
             return {"success": True, "id": rec_id, "topic_id": topic_id, "strategy": adaptation_strategy}
 
-    def get_adapted_lesson(self, user_id: Optional[str], topic_id: str) -> Optional[Dict[str, Any]]:
+    def get_adapted_lesson(self, user_id: Optional[str], topic_id: str, detail_level: Optional[str] = None) -> Optional[Dict[str, Any]]:
         safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
         try:
             conn = self.get_connection()
             cur = conn.cursor()
-            rec_id = f"{safe_user_id}_{topic_id}"
-            cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
-            row = cur.fetchone()
+            
+            row = None
+            if detail_level:
+                mode_key = str(detail_level).lower().strip()
+                rec_id = f"{safe_user_id}_{topic_id}_{mode_key}"
+                cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
+                row = cur.fetchone()
+
+            if not row:
+                legacy_id = f"{safe_user_id}_{topic_id}"
+                cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (legacy_id,))
+                row = cur.fetchone()
+
+            if not row:
+                # Try finding any adapted lesson for this user and topic
+                cur.execute(
+                    "SELECT * FROM adapted_lessons WHERE user_id = ? AND topic_id = ? ORDER BY created_at DESC LIMIT 1",
+                    (safe_user_id, topic_id)
+                )
+                row = cur.fetchone()
+
             conn.close()
             if not row:
                 return None
@@ -565,5 +628,133 @@ class StateStore:
             print(f"[StateStore] get_adapted_lesson error: {e}")
             return None
 
+    def record_adaptation_feedback(
+        self,
+        user_id: str,
+        topic_id: str,
+        detail_level: str,
+        helpful: bool,
+        rating: str,
+        comment: Optional[str] = None,
+        completed_practice: Optional[bool] = False
+    ) -> Dict[str, Any]:
+        """Record learner feedback on an adapted explanation."""
+        try:
+            with self._lock:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT INTO feedback (user_id, topic_id, feedback, comment, timestamp)
+                       VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                    (
+                        user_id,
+                        topic_id,
+                        f"helpful:{helpful}|detail:{detail_level}|rating:{rating}|practice:{completed_practice}",
+                        comment or ""
+                    )
+                )
+                conn.commit()
+                conn.close()
+                return {"success": True}
+        except Exception as e:
+            print(f"[StateStore] record_adaptation_feedback error: {e}")
+            return {"success": False, "error": str(e)}
+
+    # --- Generated 10-Question Quizzes Persistence ---
+    def save_generated_quiz(self, topic_id: str, quiz_data: Dict[str, Any]):
+        """Persist generated 10-question quiz in SQLite cache."""
+        try:
+            with self._lock:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT OR REPLACE INTO generated_quizzes (topic_id, quiz_data_json, updated_at)
+                       VALUES (?, ?, CURRENT_TIMESTAMP)""",
+                    (topic_id, json.dumps(quiz_data))
+                )
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"[StateStore] save_generated_quiz error: {e}")
+
+    def get_generated_quiz(self, topic_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve cached 10-question quiz if present and valid."""
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT quiz_data_json FROM generated_quizzes WHERE topic_id = ?",
+                (topic_id,)
+            )
+            row = cur.fetchone()
+            conn.close()
+            if row and row["quiz_data_json"]:
+                data = json.loads(row["quiz_data_json"])
+                if isinstance(data, dict) and len(data.get("questions", [])) == 10:
+                    return data
+            return None
+        except Exception as e:
+            print(f"[StateStore] get_generated_quiz error: {e}")
+            return None
+
+    def save_quiz_attempt(self, user_id: str, topic_id: str, attempt_data: Dict[str, Any]) -> str:
+        """Persist quiz attempt record for tracking and preventing duplicate submissions."""
+        import uuid
+        attempt_id = attempt_data.get("id") or f"attempt-{uuid.uuid4().hex[:12]}"
+        try:
+            with self._lock:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT INTO quiz_attempts (
+                           id, user_id, topic_id, score, percentage, correct_count,
+                           total_questions, answers_json, review_json, adaptive_feedback_json, time_spent
+                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        attempt_id,
+                        user_id,
+                        topic_id,
+                        float(attempt_data.get("score", 0.0)),
+                        float(attempt_data.get("percentage", 0.0)),
+                        int(attempt_data.get("correct_count", 0)),
+                        int(attempt_data.get("total_questions", 10)),
+                        json.dumps(attempt_data.get("answers", {})),
+                        json.dumps(attempt_data.get("review", [])),
+                        json.dumps(attempt_data.get("adaptive_feedback", {})),
+                        float(attempt_data.get("time_spent", 0.0))
+                    )
+                )
+                conn.commit()
+                conn.close()
+                return attempt_id
+        except Exception as e:
+            print(f"[StateStore] save_quiz_attempt error: {e}")
+            return attempt_id
+
+    def get_quiz_attempts(self, user_id: str, topic_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Retrieve history of quiz attempts."""
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            if topic_id:
+                cur.execute(
+                    """SELECT * FROM quiz_attempts WHERE user_id = ? AND topic_id = ?
+                       ORDER BY created_at DESC LIMIT 20""",
+                    (user_id, topic_id)
+                )
+            else:
+                cur.execute(
+                    """SELECT * FROM quiz_attempts WHERE user_id = ?
+                       ORDER BY created_at DESC LIMIT 50""",
+                    (user_id,)
+                )
+            rows = [dict(r) for r in cur.fetchall()]
+            conn.close()
+            return rows
+        except Exception as e:
+            print(f"[StateStore] get_quiz_attempts error: {e}")
+            return []
+
 
 state_store = StateStore()
+

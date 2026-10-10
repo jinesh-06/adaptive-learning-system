@@ -1886,7 +1886,7 @@
             "Evaluate cache locality and performance trade-offs between contiguous arrays and pointer-linked nodes."
           ],
           "conceptExplanation": "### 1. What are Data Structures?\nA **data structure** is a specialized format for organizing, processing, retrieving, and storing data in computer memory efficiently. The choice of data structure directly dictates whether an algorithm executes in microseconds or takes hours.\n\n### 2. Taxonomy of Data Structures\n1. **Linear Structures**: Elements form a sequential sequence where each element has a unique predecessor and successor (except head and tail).\n   - *Examples*: Arrays, Linked Lists, Stacks, Queues.\n2. **Non-Linear Structures**: Elements have hierarchical or interconnected relationships with multiple paths.\n   - *Examples*: Trees (Binary Trees, BSTs, Heaps), Graphs.\n3. **Static Structures**: Fixed memory size allocated at compile time (e.g. `int arr[100];`). Fast and simple, but risks buffer overflow or wasted space.\n4. **Dynamic Structures**: Shrink and expand on the heap at runtime using `malloc()` and `free()`. Memory scales with workload, but introduces pointer memory overhead and fragmentation.\n\n### 3. Abstract Data Types (ADTs)\nAn **Abstract Data Type (ADT)** is a mathematical model for data types defined strictly by their **behavior** (operations and contracts) rather than their internal implementation.\n- *Example*: A Stack ADT specifies `push()`, `pop()`, `peek()`, and `isEmpty()`. \n- The user of the Stack ADT does not know or care whether the stack is implemented using a fixed array, dynamic array, or singly linked list.\n\n### 4. Big O Asymptotic Complexity Analysis\nAlgorithm efficiency is measured as input size $n$ approaches infinity:\n- **$O(1)$ Constant Time**: Execution time is independent of input size (e.g., array index lookup `arr[i]`).\n- **$O(\\log n)$ Logarithmic Time**: Search space is halved each step (e.g., Binary Search on sorted data).\n- **$O(n)$ Linear Time**: Execution scales directly with $n$ (e.g., linear scan of an unsorted list).\n- **$O(n \\log n)$ Linearithmic Time**: Optimal comparison-based sorting (e.g., Merge Sort, Quick Sort average).\n- **$O(n^2)$ Quadratic Time**: Nested iterations over the data (e.g., Bubble Sort, Selection Sort).\n\n### 5. Memory Locality: Arrays vs Linked Structures\n- **Arrays**: Occupy contiguous physical memory. Modern CPU L1/L2 caches prefetch adjacent cache lines (typically 64 bytes). Iterating over an array is blisteringly fast due to high cache spatial locality. However, inserting in the middle requires shifting elements ($O(n)$).\n- **Linked Structures**: Nodes are scattered across non-contiguous heap memory addresses. Each node requires pointer storage overhead (8 bytes per pointer on 64-bit). Dereferencing pointers incurs CPU cache misses, but insertion and deletion given a node pointer are instantaneous $O(1)$.",
-          "visualDiagram": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n\u00b2) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
+          "visualDiagram": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n²) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
           "syntax": "// Typical ADT Interface in C (stack_adt.h)\ntypedef struct Stack Stack;\n\nStack* stack_create(int capacity);\nvoid   stack_push(Stack *s, int val);\nint    stack_pop(Stack *s);\nint    stack_peek(const Stack *s);\nvoid   stack_destroy(Stack *s);",
           "simpleExample": {
             "code": "#include <stdio.h>\n\n// O(1) Constant Time Operation\nint getFirst(const int arr[]) {\n    return arr[0];\n}\n\n// O(n) Linear Time Operation\nint findMax(const int arr[], int n) {\n    int max = arr[0];\n    for (int i = 1; i < n; i++) {\n        if (arr[i] > max) max = arr[i];\n    }\n    return max;\n}\n\nint main(void) {\n    int sample[5] = {14, 82, 35, 99, 41};\n    printf(\"O(1) First: %d\\n\", getFirst(sample));\n    printf(\"O(n) Max:   %d\\n\", findMax(sample, 5));\n    return 0;\n}",
@@ -2016,7 +2016,7 @@
           "content_simplified": "Data structures are like different toolboxes: some let you grab things instantly by number, while others let you connect things like a train.",
           "introduction": "Understand computational complexity, Big O notation (O(1), O(log n), O(n), O(n log n), O(n^2)), abstract data types (ADTs), and memory layout trade-offs in C.",
           "syntaxAndUsage": "// Typical ADT Interface in C (stack_adt.h)\ntypedef struct Stack Stack;\n\nStack* stack_create(int capacity);\nvoid   stack_push(Stack *s, int val);\nint    stack_pop(Stack *s);\nint    stack_peek(const Stack *s);\nvoid   stack_destroy(Stack *s);",
-          "visualModel": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n\u00b2) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
+          "visualModel": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n²) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
           "interactiveCodeExample": "#include <stdio.h>\n#include <stdlib.h>\n\n// Dynamic Vector ADT demonstrating amortized O(1) resizing\ntypedef struct {\n    int *data;\n    int size;\n    int capacity;\n} IntVector;\n\nIntVector* vectorCreate(int initialCapacity) {\n    IntVector *v = (IntVector *)malloc(sizeof(IntVector));\n    v->size = 0;\n    v->capacity = initialCapacity > 0 ? initialCapacity : 2;\n    v->data = (int *)malloc(v->capacity * sizeof(int));\n    return v;\n}\n\nvoid vectorPush(IntVector *v, int value) {\n    if (v->size == v->capacity) {\n        v->capacity *= 2; // Geometric resizing strategy\n        v->data = (int *)realloc(v->data, v->capacity * sizeof(int));\n        printf(\"Resized vector buffer to %d slots\\n\", v->capacity);\n    }\n    v->data[v->size++] = value;\n}\n\nvoid vectorFree(IntVector *v) {\n    free(v->data);\n    free(v);\n}\n\nint main(void) {\n    IntVector *vec = vectorCreate(2);\n    printf(\"Initial Capacity: %d\\n\", vec->capacity);\n\n    for (int i = 10; i <= 50; i += 10) {\n        vectorPush(vec, i);\n    }\n\n    printf(\"Vector elements: \");\n    for (int i = 0; i < vec->size; i++) {\n        printf(\"%d \", vec->data[i]);\n    }\n    printf(\"\\nFinal Size: %d, Capacity: %d\\n\", vec->size, vec->capacity);\n\n    vectorFree(vec);\n    return 0;\n}",
           "lineByLineExplanation": [
             "Line 5-9: Define `IntVector` encapsulation data pointer, current `size`, and allocated `capacity`.",
@@ -3974,7 +3974,7 @@
           "numberDisplay": "16",
           "moduleId": "mod-c-adv-algorithms-systems",
           "moduleTitle": "Module 4: Algorithms and Systems Programming",
-          "title": "Final Mini Project \u2013 Library Management System",
+          "title": "Final Mini Project – Library Management System",
           "slug": "library-management-system-project",
           "language": "c",
           "difficulty": "Advanced Project",
@@ -4205,7 +4205,7 @@
           "sections": [
             {
               "id": "top-c-library-project-sec-1",
-              "title": "1. Conceptual Foundations: Final Mini Project \u2013 Library Management System",
+              "title": "1. Conceptual Foundations: Final Mini Project – Library Management System",
               "order_index": 1,
               "content": "### 1. Project Overview & Architecture\nThe **Library Management System** is the capstone project uniting all 16 topics of the Advanced C Systems & Data Structures course. It represents an industrial-grade, menu-driven systems application.\n\n### 2. Core Data Structures Used\n1. **`Book` Structure**:\n   ```c\n   struct Book {\n       int id;\n       char title[64];\n       char author[64];\n       int year;\n       int isIssued;          // 0 = Available, 1 = Issued\n       int issuedToUserId;    // User ID who borrowed the book\n       struct Book *next;     // Singly linked list pointer\n   };\n   ```\n2. **`User` Structure**:\n   ```c\n   struct User {\n       int userId;\n       char name[64];\n       int borrowedCount;\n   };\n   ```\n\n### 3. Key Functional Modules\n- **Book Catalog CRUD**:\n  - `addBook(head, id, title, author, year)`: Dynamically allocates and prepends/appends book node.\n  - `displayBooks(head)`: Traverses linked list and renders tabular catalog.\n  - `searchBook(head, id)`: Searches by primary ID in $O(n)$ time.\n  - `updateBook(head, id, newTitle, newYear)`: Updates book metadata in-place.\n  - `deleteBook(head, id)`: Removes book node and re-stitches neighbor pointers.\n- **Transaction Engine**:\n  - `issueBook(head, bookId, userId)`: Marks book as issued and records borrower.\n  - `returnBook(head, bookId)`: Clears issue status.\n- **Persistence Engine**:\n  - `saveToFile(head, filename)`: Writes all linked nodes to disk storage.\n  - `loadFromFile(filename)`: Reconstructs dynamic heap linked list on application startup.\n- **Memory Safety & Cleanup**:\n  - `freeLibrary(head)`: Traverses and frees every heap node upon application exit.\n\n### 4. Step-by-Step Execution Walkthrough\n1. **Startup**: Program opens catalog file; if found, reads saved books into heap linked list.\n2. **Interactive Menu**: User selects action (1. Add Book, 2. Display All, 3. Search, 4. Issue, 5. Return, 6. Delete, 7. Save & Exit).\n3. **Execution**: Selected operation mutates dynamic linked list in RAM.\n4. **Shutdown**: Serializes state to disk and safely frees all heap nodes.\n\n### 5. Memory Management & Leak Prevention\nEvery node created via `malloc(sizeof(struct Book))` is registered in the list. During termination, `freeLibrary()` safely traverses the chain with a temporary pointer to guarantee zero memory leaks.",
               "code_snippet": "// Library Management System Headers\nstruct Book* addBook(struct Book *head, int id, const char *title, const char *author, int year);\nstruct Book* searchBook(struct Book *head, int id);\nint          issueBook(struct Book *head, int bookId, int userId);\nint          returnBook(struct Book *head, int bookId);\nstruct Book* deleteBook(struct Book *head, int bookId);\nvoid         displayCatalog(const struct Book *head);\nvoid         freeLibrary(struct Book *head);",
@@ -4308,7 +4308,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-struct-1",
+          "id": "q-top-c-advanced-structures-1",
           "question": "What is the primary difference between an array and a structure in C?",
           "options": [
             "Arrays are allocated in the heap, structures in the stack",
@@ -4316,11 +4316,13 @@
             "Structures cannot hold primitive types",
             "Arrays have padding, structures never have padding"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Arrays require all elements to have the exact same type; structures group disparate types under a single identifier."
+          "explanation": "Arrays require all elements to have the exact same type; structures group disparate types under a single identifier.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-struct-2",
+          "id": "q-top-c-advanced-structures-2",
           "question": "Given: struct Data { char a; int b; }; on a 32-bit aligned system, what is sizeof(struct Data)?",
           "options": [
             "5 bytes",
@@ -4328,11 +4330,13 @@
             "4 bytes",
             "6 bytes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "char takes 1 byte, followed by 3 bytes of padding so that int b aligns on a 4-byte boundary, totaling 8 bytes."
+          "explanation": "char takes 1 byte, followed by 3 bytes of padding so that int b aligns on a 4-byte boundary, totaling 8 bytes.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-struct-3",
+          "id": "q-top-c-advanced-structures-3",
           "question": "Which operator is used to access structure members from a direct structure variable?",
           "options": [
             "Arrow (->)",
@@ -4340,11 +4344,13 @@
             "Colon (:)",
             "Ampersand (&)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The dot (.) operator selects members directly from a structure variable."
+          "explanation": "The dot (.) operator selects members directly from a structure variable.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-struct-4",
+          "id": "q-top-c-advanced-structures-4",
           "question": "What happens when a large structure (e.g. 500 bytes) is passed to a function by value?",
           "options": [
             "Only the first member is copied to save memory",
@@ -4352,8 +4358,94 @@
             "All 500 bytes are pushed onto the call stack as a full copy",
             "A compiler error is raised"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Passing by value in C always creates an exact bitwise copy of the entire structure on the function call stack."
+          "explanation": "Passing by value in C always creates an exact bitwise copy of the entire structure on the function call stack.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-advanced-structures-5",
+          "question": "Which statement best describes mastering the concept: 'Define and declare structures using the struct keyword.'?",
+          "options": [
+            "Restricts Structures in C to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Structures in C in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-advanced-structures-6",
+          "question": "Which statement best describes mastering the concept: 'Instantiate structure variables and initialize them with designated initializers.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Structures in C in C.",
+            "Restricts Structures in C to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-advanced-structures-7",
+          "question": "Which statement best describes mastering the concept: 'Access structure members using the dot (.) operator.'?",
+          "options": [
+            "Restricts Structures in C to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Structures in C in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-advanced-structures-8",
+          "question": "Which statement best describes mastering the concept: 'Understand hardware memory alignment, structure padding, and sizeof calculations.'?",
+          "options": [
+            "Restricts Structures in C to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Structures in C in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-advanced-structures-9",
+          "question": "Which statement best describes mastering the concept: 'Compose complex data representations using nested structures and arrays of structures.'?",
+          "options": [
+            "Restricts Structures in C to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Structures in C in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-advanced-structures-10",
+          "question": "Which statement best describes mastering the concept: 'Pass structures to functions by value and inspect runtime copy overhead.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Structures in C in C.",
+            "Restricts Structures in C to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Structures in C.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -4568,7 +4660,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-ptr-1",
+          "id": "q-top-c-structure-pointers-1",
           "question": "What is ptr->name completely equivalent to in C?",
           "options": [
             "*ptr.name",
@@ -4576,11 +4668,13 @@
             "(*ptr).name",
             "&(ptr.name)"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "The arrow operator ptr->name is syntactic sugar for (*ptr).name."
+          "explanation": "The arrow operator ptr->name is syntactic sugar for (*ptr).name.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-ptr-2",
+          "id": "q-top-c-structure-pointers-2",
           "question": "Why can't a structure contain an actual variable of its own type (e.g. struct Node n;)?",
           "options": [
             "C syntax reserves the keyword Node",
@@ -4588,11 +4682,13 @@
             "Structures can only hold primitive types",
             "The compiler cannot assign memory addresses to nested types"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A direct member of its own type requires infinite recursive memory; a pointer has a known, fixed size (4 or 8 bytes)."
+          "explanation": "A direct member of its own type requires infinite recursive memory; a pointer has a known, fixed size (4 or 8 bytes).",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-ptr-3",
+          "id": "q-top-c-structure-pointers-3",
           "question": "What is the primary benefit of passing a structure pointer to a function?",
           "options": [
             "It makes the structure read-only",
@@ -4600,11 +4696,13 @@
             "It converts the structure into an array automatically",
             "It moves the structure from stack to heap memory"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Passing an address (8 bytes) eliminates stack copy overhead and enables direct mutation."
+          "explanation": "Passing an address (8 bytes) eliminates stack copy overhead and enables direct mutation.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-ptr-4",
+          "id": "q-top-c-structure-pointers-4",
           "question": "What dangerous bug occurs if you access ptr->field after calling free(ptr)?",
           "options": [
             "Stack overflow",
@@ -4612,8 +4710,94 @@
             "Type mismatch error",
             "Buffer underflow"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Dereferencing memory after releasing it leads to Use-After-Free undefined behavior and security exploits."
+          "explanation": "Dereferencing memory after releasing it leads to Use-After-Free undefined behavior and security exploits.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-structure-pointers-5",
+          "question": "Which statement best describes mastering the concept: 'Declare and initialize pointers to structures.'?",
+          "options": [
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Pointers to Structures in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-structure-pointers-6",
+          "question": "Which statement best describes mastering the concept: 'Use the arrow operator (->) for member access through pointers.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Pointers to Structures in C.",
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-structure-pointers-7",
+          "question": "Which statement best describes mastering the concept: 'Understand the precedence difference between (*ptr).member and *ptr.member.'?",
+          "options": [
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Pointers to Structures in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-structure-pointers-8",
+          "question": "Which statement best describes mastering the concept: 'Pass structure pointers to functions to avoid stack frame copies and modify records.'?",
+          "options": [
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Pointers to Structures in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-structure-pointers-9",
+          "question": "Which statement best describes mastering the concept: 'Dynamically allocate and deallocate structures on the heap using malloc() and free().'?",
+          "options": [
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Pointers to Structures in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-structure-pointers-10",
+          "question": "Which statement best describes mastering the concept: 'Construct self-referential structures as the foundation for linked lists and trees.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Pointers to Structures in C.",
+            "Restricts Pointers to Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Pointers to Structures.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -4827,7 +5011,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-union-1",
+          "id": "q-top-c-unions-enums-1",
           "question": "What is the primary memory characteristic of a union in C?",
           "options": [
             "Each member has its own separate stack frame",
@@ -4835,11 +5019,13 @@
             "The size is the sum of all members",
             "Union memory cannot be dynamically allocated"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "All members of a union overlap at the same starting memory location."
+          "explanation": "All members of a union overlap at the same starting memory location.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-union-2",
+          "id": "q-top-c-unions-enums-2",
           "question": "If a union contains a double (8 bytes), an int (4 bytes), and a char array of 10 bytes, what is its minimum size?",
           "options": [
             "10 bytes",
@@ -4847,11 +5033,13 @@
             "22 bytes",
             "8 bytes"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Largest member is 10 bytes (char[10]). It must align on a multiple of 8 (alignment requirement of double), so the compiler rounds up to 16 bytes."
+          "explanation": "Largest member is 10 bytes (char[10]). It must align on a multiple of 8 (alignment requirement of double), so the compiler rounds up to 16 bytes.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-union-3",
+          "id": "q-top-c-unions-enums-3",
           "question": "If an enum is declared as enum Flag { LOW, MID = 5, HIGH }; what is the integer value of HIGH?",
           "options": [
             "2",
@@ -4859,11 +5047,13 @@
             "5",
             "7"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "LOW is 0. MID is explicitly 5. In C, unassigned identifiers increment from the previous value, so HIGH is 5 + 1 = 6."
+          "explanation": "LOW is 0. MID is explicitly 5. In C, unassigned identifiers increment from the previous value, so HIGH is 5 + 1 = 6.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-union-4",
+          "id": "q-top-c-unions-enums-4",
           "question": "What is a 'tagged union' (discriminated union)?",
           "options": [
             "A union containing only pointer members",
@@ -4871,8 +5061,94 @@
             "A union encrypted with a digital signature",
             "An enum nested inside another enum"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A tagged union pairs an enum discriminator with a union to safely determine which field is currently valid."
+          "explanation": "A tagged union pairs an enum discriminator with a union to safely determine which field is currently valid.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-unions-enums-5",
+          "question": "Which statement best describes mastering the concept: 'Declare, define, and initialize unions using the union keyword.'?",
+          "options": [
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-unions-enums-6",
+          "question": "Which statement best describes mastering the concept: 'Understand mutual memory exclusion where union members share the exact same byte offsets.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C.",
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-unions-enums-7",
+          "question": "Which statement best describes mastering the concept: 'Calculate union memory footprint based on the largest member and alignment rules.'?",
+          "options": [
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-unions-enums-8",
+          "question": "Which statement best describes mastering the concept: 'Construct tagged unions (variants) using an enum discriminator.'?",
+          "options": [
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-unions-enums-9",
+          "question": "Which statement best describes mastering the concept: 'Define enumeration constants (enum) and customize their integer values.'?",
+          "options": [
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-unions-enums-10",
+          "question": "Which statement best describes mastering the concept: 'Implement clean, type-safe state machines using enums and switch statements.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Unions and Enumerations in C.",
+            "Restricts Unions and Enumerations to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Unions and Enumerations.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -5085,7 +5361,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-bit-1",
+          "id": "q-top-c-typedef-bitfields-1",
           "question": "What is the purpose of the typedef keyword in C?",
           "options": [
             "To define a brand new hardware primitive type",
@@ -5093,11 +5369,13 @@
             "To allocate heap memory for a pointer",
             "To restrict variable scope to the current file"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "typedef creates clean aliases for existing types, improving readability and portability."
+          "explanation": "typedef creates clean aliases for existing types, improving readability and portability.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-bit-2",
+          "id": "q-top-c-typedef-bitfields-2",
           "question": "Why is it illegal to write &var.bit_field_member in C?",
           "options": [
             "Bit fields are stored in CPU registers only",
@@ -5105,11 +5383,13 @@
             "Bit fields are always constant",
             "The ampersand operator is reserved for bitwise AND"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "CPUs address memory in byte increments; individual bits within a byte do not have distinct memory addresses."
+          "explanation": "CPUs address memory in byte increments; individual bits within a byte do not have distinct memory addresses.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-bit-3",
+          "id": "q-top-c-typedef-bitfields-3",
           "question": "What happens if you declare signed int flag : 1; and assign flag = 1;?",
           "options": [
             "flag equals 1",
@@ -5117,11 +5397,13 @@
             "Compiler throws a syntax error",
             "flag overflows to 2"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A 1-bit signed integer has only a sign bit: 0 is positive 0, and 1 represents -1. Use unsigned for 0 and 1 flags."
+          "explanation": "A 1-bit signed integer has only a sign bit: 0 is positive 0, and 1 represents -1. Use unsigned for 0 and 1 flags.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-bit-4",
+          "id": "q-top-c-typedef-bitfields-4",
           "question": "What is the maximum integer value that can be stored in an unsigned bit field of width 4 (unsigned int x : 4)?",
           "options": [
             "4",
@@ -5129,8 +5411,94 @@
             "15",
             "16"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "4 unsigned bits can store 2^4 = 16 values, spanning from 0 to 15 (0b1111)."
+          "explanation": "4 unsigned bits can store 2^4 = 16 values, spanning from 0 to 15 (0b1111).",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-5",
+          "question": "Which statement best describes mastering the concept: 'Create expressive type aliases using the typedef keyword.'?",
+          "options": [
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-6",
+          "question": "Which statement best describes mastering the concept: 'Simplify structure and pointer declarations using typedef aliases.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C.",
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-7",
+          "question": "Which statement best describes mastering the concept: 'Understand bit fields and declare bit-width constraints on struct members.'?",
+          "options": [
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-8",
+          "question": "Which statement best describes mastering the concept: 'Pack multiple flags and small integers into single-byte and multi-byte words.'?",
+          "options": [
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-9",
+          "question": "Which statement best describes mastering the concept: 'Recognize hardware register emulation patterns using bit fields.'?",
+          "options": [
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-typedef-bitfields-10",
+          "question": "Which statement best describes mastering the concept: 'Understand bit field limitations: address-of (&) restrictions, sign extensions, and endianness.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Typedef and Bit Fields in C.",
+            "Restricts Typedef and Bit Fields to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Typedef and Bit Fields.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -5345,7 +5713,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-file-1",
+          "id": "q-top-c-file-fundamentals-1",
           "question": "What does fopen() return when the requested file cannot be opened?",
           "options": [
             "-1",
@@ -5353,11 +5721,13 @@
             "NULL",
             "EOF"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "fopen() returns a NULL pointer on failure, signaling an invalid stream."
+          "explanation": "fopen() returns a NULL pointer on failure, signaling an invalid stream.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-file-2",
+          "id": "q-top-c-file-fundamentals-2",
           "question": "What happens if you open an existing file in \"w\" mode?",
           "options": [
             "The file is opened for reading and writing",
@@ -5365,11 +5735,13 @@
             "The existing file is immediately truncated to 0 bytes",
             "fopen returns NULL because the file already exists"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Write mode (\"w\") creates a file if it does not exist, or truncates it to 0 bytes if it already exists."
+          "explanation": "Write mode (\"w\") creates a file if it does not exist, or truncates it to 0 bytes if it already exists.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-file-3",
+          "id": "q-top-c-file-fundamentals-3",
           "question": "Why must the variable holding fgetc()'s return value be declared as int instead of char?",
           "options": [
             "To conserve CPU memory",
@@ -5377,11 +5749,13 @@
             "char variables cannot be compared with while loops in C",
             "fgetc() reads 4 bytes at a time"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "fgetc returns an int to accommodate both 256 distinct unsigned char values and EOF (-1) without collision."
+          "explanation": "fgetc returns an int to accommodate both 256 distinct unsigned char values and EOF (-1) without collision.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-file-4",
+          "id": "q-top-c-file-fundamentals-4",
           "question": "What is the primary danger of forgetting to call fclose() on an output stream?",
           "options": [
             "The compiler will fail on next compile",
@@ -5389,8 +5763,94 @@
             "The file will automatically be converted to a binary file",
             "The program will crash immediately upon return"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "fclose() flushes the userspace stream buffer to disk; failing to close can leave data unwritten."
+          "explanation": "fclose() flushes the userspace stream buffer to disk; failing to close can leave data unwritten.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-5",
+          "question": "Which statement best describes mastering the concept: 'Understand the operating system abstraction of streams and the FILE structure.'?",
+          "options": [
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-6",
+          "question": "Which statement best describes mastering the concept: 'Distinguish between text file streams and raw binary streams.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C.",
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-7",
+          "question": "Which statement best describes mastering the concept: 'Open files safely using fopen() with various access modes (r, w, a, r+, w+, a+).'?",
+          "options": [
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-8",
+          "question": "Which statement best describes mastering the concept: 'Verify file opening errors by checking for NULL pointers and interpreting errno.'?",
+          "options": [
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-9",
+          "question": "Which statement best describes mastering the concept: 'Flush and close file streams reliably using fclose() to prevent data corruption.'?",
+          "options": [
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-fundamentals-10",
+          "question": "Which statement best describes mastering the concept: 'Perform character-by-character reading and writing using fgetc() and fputc().'?",
+          "options": [
+            "Demonstrates proper understanding and execution of File Handling Fundamentals in C.",
+            "Restricts File Handling Fundamentals to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in File Handling Fundamentals.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -5608,7 +6068,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-fileops-1",
+          "id": "q-top-c-file-operations-1",
           "question": "What is the return value of fread() and fwrite()?",
           "options": [
             "The total number of bytes read or written",
@@ -5616,11 +6076,13 @@
             "0 on success and -1 on error",
             "A pointer to the stream buffer"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "fread and fwrite return the count of successfully transferred items (not bytes)."
+          "explanation": "fread and fwrite return the count of successfully transferred items (not bytes).",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-fileops-2",
+          "id": "q-top-c-file-operations-2",
           "question": "Which constant is passed to fseek() to calculate an offset relative to the end of the file?",
           "options": [
             "SEEK_TOP",
@@ -5628,11 +6090,13 @@
             "SEEK_END",
             "SEEK_CUR"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "SEEK_END tells fseek to position the cursor relative to the end of the file."
+          "explanation": "SEEK_END tells fseek to position the cursor relative to the end of the file.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-fileops-3",
+          "id": "q-top-c-file-operations-3",
           "question": "How do you calculate the total byte size of an open file fp without reading all its data?",
           "options": [
             "sizeof(fp)",
@@ -5640,11 +6104,13 @@
             "feof(fp)",
             "ferror(fp)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Seeking to SEEK_END and calling ftell() reports the total byte offset from the beginning."
+          "explanation": "Seeking to SEEK_END and calling ftell() reports the total byte offset from the beginning.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-fileops-4",
+          "id": "q-top-c-file-operations-4",
           "question": "Why should you never write a struct containing pointers (e.g. struct { char *str; }) directly with fwrite()?",
           "options": [
             "Compilers reject the code with a syntax error",
@@ -5652,8 +6118,94 @@
             "fwrite only accepts primitive integers",
             "Pointers increase file fragmentation"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Pointer values represent dynamic memory addresses in process address space, which become completely invalid in future runs."
+          "explanation": "Pointer values represent dynamic memory addresses in process address space, which become completely invalid in future runs.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-file-operations-5",
+          "question": "Which statement best describes mastering the concept: 'Perform formatted file reading and writing using fprintf() and fscanf().'?",
+          "options": [
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-operations-6",
+          "question": "Which statement best describes mastering the concept: 'Read and write buffer-safe text lines using fgets() and fputs().'?",
+          "options": [
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C.",
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-operations-7",
+          "question": "Which statement best describes mastering the concept: 'Execute binary block operations with fread() and fwrite().'?",
+          "options": [
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-operations-8",
+          "question": "Which statement best describes mastering the concept: 'Reposition stream file pointers using fseek() with SEEK_SET, SEEK_CUR, and SEEK_END.'?",
+          "options": [
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-operations-9",
+          "question": "Which statement best describes mastering the concept: 'Measure current file offsets using ftell() and reset to beginning with rewind().'?",
+          "options": [
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-file-operations-10",
+          "question": "Which statement best describes mastering the concept: 'Distinguish between EOF and stream read/write errors using feof() and ferror().'?",
+          "options": [
+            "Demonstrates proper understanding and execution of File Operations and Random Access in C.",
+            "Restricts File Operations and Random Access to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in File Operations and Random Access.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -5871,7 +6423,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-prep-1",
+          "id": "q-top-c-preprocessor-1",
           "question": "What is the primary function of header guards (#ifndef MY_HEADER_H ... #endif)?",
           "options": [
             "To encrypt header code against reverse engineering",
@@ -5879,11 +6431,13 @@
             "To automatically allocate global variables",
             "To link external libraries during assembly"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Header guards ensure that the contents of a header file are only processed once per translation unit, preventing redefinition errors."
+          "explanation": "Header guards ensure that the contents of a header file are only processed once per translation unit, preventing redefinition errors.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-prep-2",
+          "id": "q-top-c-preprocessor-2",
           "question": "If #define DOUBLE(x) x + x is called with DOUBLE(5) * 2, what does it evaluate to?",
           "options": [
             "20",
@@ -5891,11 +6445,13 @@
             "10",
             "25"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "DOUBLE(5) * 2 expands textually to 5 + 5 * 2. Multiplication binds first: 5 * 2 = 10, then 5 + 10 = 15! Parentheses were needed."
+          "explanation": "DOUBLE(5) * 2 expands textually to 5 + 5 * 2. Multiplication binds first: 5 * 2 = 10, then 5 + 10 = 15! Parentheses were needed.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-prep-3",
+          "id": "q-top-c-preprocessor-3",
           "question": "What does the preprocessor stringification operator (#) do?",
           "options": [
             "Converts a macro argument into a quoted string literal",
@@ -5903,11 +6459,13 @@
             "Calculates string length at runtime",
             "Allocates string memory on the heap"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "The # operator converts the following macro argument into a string literal (e.g. #x -> \"x\")."
+          "explanation": "The # operator converts the following macro argument into a string literal (e.g. #x -> \"x\").",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-prep-4",
+          "id": "q-top-c-preprocessor-4",
           "question": "Which predefined macro provides the current line number in the source file?",
           "options": [
             "__FILE__",
@@ -5915,8 +6473,94 @@
             "__LINE__",
             "__TIME__"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "__LINE__ expands to an integer constant representing the current line number in the source file."
+          "explanation": "__LINE__ expands to an integer constant representing the current line number in the source file.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-preprocessor-5",
+          "question": "Which statement best describes mastering the concept: 'Understand the preprocessor translation phase preceding C compilation.'?",
+          "options": [
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-preprocessor-6",
+          "question": "Which statement best describes mastering the concept: 'Define object-like and function-like macros with #define.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C.",
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-preprocessor-7",
+          "question": "Which statement best describes mastering the concept: 'Avoid critical macro expansion operator precedence pitfalls using comprehensive parenthesization.'?",
+          "options": [
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-preprocessor-8",
+          "question": "Which statement best describes mastering the concept: 'Apply conditional compilation directives (#ifdef, #ifndef, #if, #else, #endif) for portable builds.'?",
+          "options": [
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-preprocessor-9",
+          "question": "Which statement best describes mastering the concept: 'Design modular header files (.h) with include guards and #pragma once.'?",
+          "options": [
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-preprocessor-10",
+          "question": "Which statement best describes mastering the concept: 'Understand the multi-file compilation workflow: source files, object files (.o), and linking.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Preprocessor Directives and Header Files in C.",
+            "Restricts Preprocessor Directives and Header Files to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Preprocessor Directives and Header Files.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -6078,7 +6722,7 @@
         "Evaluate cache locality and performance trade-offs between contiguous arrays and pointer-linked nodes."
       ],
       "conceptExplanation": "### 1. What are Data Structures?\nA **data structure** is a specialized format for organizing, processing, retrieving, and storing data in computer memory efficiently. The choice of data structure directly dictates whether an algorithm executes in microseconds or takes hours.\n\n### 2. Taxonomy of Data Structures\n1. **Linear Structures**: Elements form a sequential sequence where each element has a unique predecessor and successor (except head and tail).\n   - *Examples*: Arrays, Linked Lists, Stacks, Queues.\n2. **Non-Linear Structures**: Elements have hierarchical or interconnected relationships with multiple paths.\n   - *Examples*: Trees (Binary Trees, BSTs, Heaps), Graphs.\n3. **Static Structures**: Fixed memory size allocated at compile time (e.g. `int arr[100];`). Fast and simple, but risks buffer overflow or wasted space.\n4. **Dynamic Structures**: Shrink and expand on the heap at runtime using `malloc()` and `free()`. Memory scales with workload, but introduces pointer memory overhead and fragmentation.\n\n### 3. Abstract Data Types (ADTs)\nAn **Abstract Data Type (ADT)** is a mathematical model for data types defined strictly by their **behavior** (operations and contracts) rather than their internal implementation.\n- *Example*: A Stack ADT specifies `push()`, `pop()`, `peek()`, and `isEmpty()`. \n- The user of the Stack ADT does not know or care whether the stack is implemented using a fixed array, dynamic array, or singly linked list.\n\n### 4. Big O Asymptotic Complexity Analysis\nAlgorithm efficiency is measured as input size $n$ approaches infinity:\n- **$O(1)$ Constant Time**: Execution time is independent of input size (e.g., array index lookup `arr[i]`).\n- **$O(\\log n)$ Logarithmic Time**: Search space is halved each step (e.g., Binary Search on sorted data).\n- **$O(n)$ Linear Time**: Execution scales directly with $n$ (e.g., linear scan of an unsorted list).\n- **$O(n \\log n)$ Linearithmic Time**: Optimal comparison-based sorting (e.g., Merge Sort, Quick Sort average).\n- **$O(n^2)$ Quadratic Time**: Nested iterations over the data (e.g., Bubble Sort, Selection Sort).\n\n### 5. Memory Locality: Arrays vs Linked Structures\n- **Arrays**: Occupy contiguous physical memory. Modern CPU L1/L2 caches prefetch adjacent cache lines (typically 64 bytes). Iterating over an array is blisteringly fast due to high cache spatial locality. However, inserting in the middle requires shifting elements ($O(n)$).\n- **Linked Structures**: Nodes are scattered across non-contiguous heap memory addresses. Each node requires pointer storage overhead (8 bytes per pointer on 64-bit). Dereferencing pointers incurs CPU cache misses, but insertion and deletion given a node pointer are instantaneous $O(1)$.",
-      "visualDiagram": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n\u00b2) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
+      "visualDiagram": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n²) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
       "syntax": "// Typical ADT Interface in C (stack_adt.h)\ntypedef struct Stack Stack;\n\nStack* stack_create(int capacity);\nvoid   stack_push(Stack *s, int val);\nint    stack_pop(Stack *s);\nint    stack_peek(const Stack *s);\nvoid   stack_destroy(Stack *s);",
       "simpleExample": {
         "code": "#include <stdio.h>\n\n// O(1) Constant Time Operation\nint getFirst(const int arr[]) {\n    return arr[0];\n}\n\n// O(n) Linear Time Operation\nint findMax(const int arr[], int n) {\n    int max = arr[0];\n    for (int i = 1; i < n; i++) {\n        if (arr[i] > max) max = arr[i];\n    }\n    return max;\n}\n\nint main(void) {\n    int sample[5] = {14, 82, 35, 99, 41};\n    printf(\"O(1) First: %d\\n\", getFirst(sample));\n    printf(\"O(n) Max:   %d\\n\", findMax(sample, 5));\n    return 0;\n}",
@@ -6131,7 +6775,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-ds-1",
+          "id": "q-top-c-data-structures-intro-1",
           "question": "What is an Abstract Data Type (ADT)?",
           "options": [
             "A data type that has no physical memory implementation",
@@ -6139,11 +6783,13 @@
             "A data structure that only stores floating-point numbers",
             "An encrypted structure stored in disk files"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "An ADT specifies what operations can be performed (the interface) without dictating how they are implemented."
+          "explanation": "An ADT specifies what operations can be performed (the interface) without dictating how they are implemented.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-ds-2",
+          "id": "q-top-c-data-structures-intro-2",
           "question": "What is the Big O time complexity of accessing an element in an array by its index (e.g. arr[k])?",
           "options": [
             "O(1)",
@@ -6151,11 +6797,13 @@
             "O(n)",
             "O(n^2)"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Array indexing uses base address arithmetic (base + k * sizeof(type)), taking O(1) constant time."
+          "explanation": "Array indexing uses base address arithmetic (base + k * sizeof(type)), taking O(1) constant time.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-ds-3",
+          "id": "q-top-c-data-structures-intro-3",
           "question": "Why do modern CPUs process contiguous arrays significantly faster than pointer-based linked lists during iteration?",
           "options": [
             "Arrays consume zero stack memory",
@@ -6163,11 +6811,13 @@
             "Linked lists cannot store 32-bit integers",
             "Arrays bypass the operating system kernel"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Contiguous memory exhibits high spatial locality, allowing CPU L1/L2 caches to prefetch cache lines and avoid RAM memory stalls."
+          "explanation": "Contiguous memory exhibits high spatial locality, allowing CPU L1/L2 caches to prefetch cache lines and avoid RAM memory stalls.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-ds-4",
+          "id": "q-top-c-data-structures-intro-4",
           "question": "What is the worst-case time complexity of an algorithm that uses two nested loops, each iterating n times?",
           "options": [
             "O(n)",
@@ -6175,8 +6825,94 @@
             "O(n log n)",
             "O(n^2)"
           ],
+          "correct_index": 3,
           "correctIndex": 3,
-          "explanation": "Two nested loops running n iterations execute n * n = n^2 operations, which is O(n^2) quadratic time."
+          "explanation": "Two nested loops running n iterations execute n * n = n^2 operations, which is O(n^2) quadratic time.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-5",
+          "question": "Which statement best describes mastering the concept: 'Define what a data structure is and distinguish linear from non-linear structures.'?",
+          "options": [
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-6",
+          "question": "Which statement best describes mastering the concept: 'Differentiate static compile-time allocations from dynamic heap-allocated structures.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C.",
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-7",
+          "question": "Which statement best describes mastering the concept: 'Understand the Abstract Data Type (ADT) separation between interface and implementation.'?",
+          "options": [
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-8",
+          "question": "Which statement best describes mastering the concept: 'Analyze time complexity and space complexity using formal Big O asymptotic notation.'?",
+          "options": [
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-9",
+          "question": "Which statement best describes mastering the concept: 'Compare growth rates: O(1), O(log n), O(n), O(n log n), and O(n^2).'?",
+          "options": [
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-data-structures-intro-10",
+          "question": "Which statement best describes mastering the concept: 'Evaluate cache locality and performance trade-offs between contiguous arrays and pointer-linked nodes.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Introduction to Data Structures in C.",
+            "Restricts Introduction to Data Structures to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Introduction to Data Structures.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -6208,7 +6944,7 @@
       "content_simplified": "Data structures are like different toolboxes: some let you grab things instantly by number, while others let you connect things like a train.",
       "introduction": "Understand computational complexity, Big O notation (O(1), O(log n), O(n), O(n log n), O(n^2)), abstract data types (ADTs), and memory layout trade-offs in C.",
       "syntaxAndUsage": "// Typical ADT Interface in C (stack_adt.h)\ntypedef struct Stack Stack;\n\nStack* stack_create(int capacity);\nvoid   stack_push(Stack *s, int val);\nint    stack_pop(Stack *s);\nint    stack_peek(const Stack *s);\nvoid   stack_destroy(Stack *s);",
-      "visualModel": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n\u00b2) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
+      "visualModel": "           Complexity Growth (Big O Notation)\nOperations ^\n     O(n²) |                                 *\n           |                          *\n  O(n logn)|                    *\n      O(n) |             *\n  O(log n) |       *\n      O(1) | *--------------------------------\n           +-----------------------------------> Elements (n)",
       "interactiveCodeExample": "#include <stdio.h>\n#include <stdlib.h>\n\n// Dynamic Vector ADT demonstrating amortized O(1) resizing\ntypedef struct {\n    int *data;\n    int size;\n    int capacity;\n} IntVector;\n\nIntVector* vectorCreate(int initialCapacity) {\n    IntVector *v = (IntVector *)malloc(sizeof(IntVector));\n    v->size = 0;\n    v->capacity = initialCapacity > 0 ? initialCapacity : 2;\n    v->data = (int *)malloc(v->capacity * sizeof(int));\n    return v;\n}\n\nvoid vectorPush(IntVector *v, int value) {\n    if (v->size == v->capacity) {\n        v->capacity *= 2; // Geometric resizing strategy\n        v->data = (int *)realloc(v->data, v->capacity * sizeof(int));\n        printf(\"Resized vector buffer to %d slots\\n\", v->capacity);\n    }\n    v->data[v->size++] = value;\n}\n\nvoid vectorFree(IntVector *v) {\n    free(v->data);\n    free(v);\n}\n\nint main(void) {\n    IntVector *vec = vectorCreate(2);\n    printf(\"Initial Capacity: %d\\n\", vec->capacity);\n\n    for (int i = 10; i <= 50; i += 10) {\n        vectorPush(vec, i);\n    }\n\n    printf(\"Vector elements: \");\n    for (int i = 0; i < vec->size; i++) {\n        printf(\"%d \", vec->data[i]);\n    }\n    printf(\"\\nFinal Size: %d, Capacity: %d\\n\", vec->size, vec->capacity);\n\n    vectorFree(vec);\n    return 0;\n}",
       "lineByLineExplanation": [
         "Line 5-9: Define `IntVector` encapsulation data pointer, current `size`, and allocated `capacity`.",
@@ -6392,7 +7128,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-sll-1",
+          "id": "q-top-c-singly-linked-list-1",
           "question": "What is the time complexity of inserting a new node at the head of a singly linked list?",
           "options": [
             "O(n)",
@@ -6400,11 +7136,13 @@
             "O(log n)",
             "O(n^2)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Inserting at head only requires creating the node, setting its next to head, and repointing head, taking O(1) constant time."
+          "explanation": "Inserting at head only requires creating the node, setting its next to head, and repointing head, taking O(1) constant time.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-sll-2",
+          "id": "q-top-c-singly-linked-list-2",
           "question": "In the standard 3-pointer linked list reversal algorithm, which pointers are maintained?",
           "options": [
             "first, second, third",
@@ -6412,11 +7150,13 @@
             "left, mid, right",
             "start, pivot, end"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "prev, curr, and next allow tracking the previous node, current node being reversed, and saving the upcoming node."
+          "explanation": "prev, curr, and next allow tracking the previous node, current node being reversed, and saving the upcoming node.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-sll-3",
+          "id": "q-top-c-singly-linked-list-3",
           "question": "What happens if you free(head) before updating head = head->next during list deletion?",
           "options": [
             "Nothing, C manages pointer recovery",
@@ -6424,11 +7164,13 @@
             "The entire list is deleted automatically",
             "A compiler warning is printed"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Freeing head invalidates its memory, making head->next undefined behavior."
+          "explanation": "Freeing head invalidates its memory, making head->next undefined behavior.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-sll-4",
+          "id": "q-top-c-singly-linked-list-4",
           "question": "What condition marks the end of a standard singly linked list?",
           "options": [
             "curr->data == 0",
@@ -6436,8 +7178,94 @@
             "curr == head",
             "curr->next == head"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The tail node of a singly linked list has its next pointer set to NULL."
+          "explanation": "The tail node of a singly linked list has its next pointer set to NULL.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-5",
+          "question": "Which statement best describes mastering the concept: 'Define a singly linked list node structure using self-referential pointers.'?",
+          "options": [
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-6",
+          "question": "Which statement best describes mastering the concept: 'Dynamically allocate nodes on the heap with malloc() and maintain the head pointer.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C.",
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-7",
+          "question": "Which statement best describes mastering the concept: 'Traverse and search a linked list in O(n) time.'?",
+          "options": [
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-8",
+          "question": "Which statement best describes mastering the concept: 'Implement O(1) insertion at head and O(n) insertion at tail and arbitrary positions.'?",
+          "options": [
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-9",
+          "question": "Which statement best describes mastering the concept: 'Delete nodes by value or position and safely stitch neighbor pointers.'?",
+          "options": [
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-singly-linked-list-10",
+          "question": "Which statement best describes mastering the concept: 'Reverse a singly linked list in-place using the classic 3-pointer algorithm (prev, curr, next).'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Singly Linked Lists in C.",
+            "Restricts Singly Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Singly Linked Lists.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -6653,7 +7481,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-dll-1",
+          "id": "q-top-c-doubly-circular-list-1",
           "question": "What is the primary advantage of a Doubly Linked List over a Singly Linked List?",
           "options": [
             "It requires half the memory",
@@ -6661,11 +7489,13 @@
             "It automatically sorts elements",
             "It stores elements in contiguous CPU cache"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A DLL allows stepping backward via prev, making node deletion O(1) since the previous node is known directly."
+          "explanation": "A DLL allows stepping backward via prev, making node deletion O(1) since the previous node is known directly.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-dll-2",
+          "id": "q-top-c-doubly-circular-list-2",
           "question": "In a Circular Doubly Linked List (CDLL) with head pointer head, what does head->prev point to?",
           "options": [
             "NULL",
@@ -6673,11 +7503,13 @@
             "The tail (last) node of the list",
             "Undefined memory"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "In a CDLL, head->prev wraps around directly to the tail node, providing O(1) tail access."
+          "explanation": "In a CDLL, head->prev wraps around directly to the tail node, providing O(1) tail access.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-dll-3",
+          "id": "q-top-c-doubly-circular-list-3",
           "question": "What happens if a while (curr != NULL) loop is run on a circular linked list?",
           "options": [
             "The loop exits after 1 iteration",
@@ -6685,11 +7517,13 @@
             "The compiler refuses to build",
             "A segmentation fault occurs on the first node"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Circular lists have no NULL pointer; without a break or cycle test, the loop will spin indefinitely."
+          "explanation": "Circular lists have no NULL pointer; without a break or cycle test, the loop will spin indefinitely.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-dll-4",
+          "id": "q-top-c-doubly-circular-list-4",
           "question": "Which real-world operating system task is best implemented using a Circular Linked List?",
           "options": [
             "Binary search trees",
@@ -6697,8 +7531,94 @@
             "Static global variable initialization",
             "Compiler lexical tokenization"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Round-Robin scheduling gives each active process equal time slices in a continuous cycle, ideally modeled by a circular list."
+          "explanation": "Round-Robin scheduling gives each active process equal time slices in a continuous cycle, ideally modeled by a circular list.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-5",
+          "question": "Which statement best describes mastering the concept: 'Design doubly linked list (DLL) nodes with prev and next pointers.'?",
+          "options": [
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-6",
+          "question": "Which statement best describes mastering the concept: 'Perform forward and backward traversal on doubly linked lists.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C.",
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-7",
+          "question": "Which statement best describes mastering the concept: 'Execute O(1) deletion of a node given its direct pointer in a DLL.'?",
+          "options": [
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-8",
+          "question": "Which statement best describes mastering the concept: 'Construct Circular Singly Linked Lists (CSLL) where tail points back to head.'?",
+          "options": [
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-9",
+          "question": "Which statement best describes mastering the concept: 'Construct Circular Doubly Linked Lists (CDLL) with seamless wrap-around navigation.'?",
+          "options": [
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-doubly-circular-list-10",
+          "question": "Which statement best describes mastering the concept: 'Identify termination conditions for circular lists to avoid infinite traversal loops.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Doubly and Circular Linked Lists in C.",
+            "Restricts Doubly and Circular Linked Lists to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Doubly and Circular Linked Lists.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -6914,7 +7834,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-stk-1",
+          "id": "q-top-c-stacks-queues-1",
           "question": "What is the time complexity of the push and pop operations on a properly implemented stack?",
           "options": [
             "O(1)",
@@ -6922,11 +7842,13 @@
             "O(log n)",
             "O(n^2)"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Push and pop operate solely on the top element, executing in O(1) constant time."
+          "explanation": "Push and pop operate solely on the top element, executing in O(1) constant time.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-stk-2",
+          "id": "q-top-c-stacks-queues-2",
           "question": "What problem does a Circular Queue solve that occurs in a simple linear array queue?",
           "options": [
             "It prevents integers from overflowing",
@@ -6934,11 +7856,13 @@
             "It makes enqueue O(log n)",
             "It automatically expands without dynamic memory"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Linear queues drift to the right, wasting front space; circular queues wrap indices around to reuse freed slots."
+          "explanation": "Linear queues drift to the right, wasting front space; circular queues wrap indices around to reuse freed slots.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-stk-3",
+          "id": "q-top-c-stacks-queues-3",
           "question": "In a 0-indexed circular queue of size 8, if rear is currently at index 7, where will the next enqueue place the element?",
           "options": [
             "Index 8",
@@ -6946,11 +7870,13 @@
             "Index 7",
             "Index 1"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "(7 + 1) % 8 = 8 % 8 = 0. The cursor wraps around to index 0."
+          "explanation": "(7 + 1) % 8 = 8 % 8 = 0. The cursor wraps around to index 0.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-stk-4",
+          "id": "q-top-c-stacks-queues-4",
           "question": "Which data structure is fundamentally used by language compilers to manage recursive function calls?",
           "options": [
             "FIFO Queue",
@@ -6958,8 +7884,94 @@
             "Binary Tree",
             "Circular Linked List"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The call stack tracks active stack frames, pushing frames upon invocation and popping them upon return."
+          "explanation": "The call stack tracks active stack frames, pushing frames upon invocation and popping them upon return.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-stacks-queues-5",
+          "question": "Which statement best describes mastering the concept: 'Implement a Stack using the Last-In First-Out (LIFO) principle.'?",
+          "options": [
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Stacks and Queues in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-stacks-queues-6",
+          "question": "Which statement best describes mastering the concept: 'Build array-based and linked-list-based Stack implementations in C.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Stacks and Queues in C.",
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-stacks-queues-7",
+          "question": "Which statement best describes mastering the concept: 'Detect and prevent Stack Overflow and Stack Underflow boundary conditions.'?",
+          "options": [
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Stacks and Queues in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-stacks-queues-8",
+          "question": "Which statement best describes mastering the concept: 'Implement a Queue using the First-In First-Out (FIFO) principle.'?",
+          "options": [
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Stacks and Queues in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-stacks-queues-9",
+          "question": "Which statement best describes mastering the concept: 'Solve the linear queue element drift problem using Circular Queues and modulo arithmetic.'?",
+          "options": [
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Stacks and Queues in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-stacks-queues-10",
+          "question": "Which statement best describes mastering the concept: 'Apply stacks to expression validation and balanced parentheses verification.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Stacks and Queues in C.",
+            "Restricts Stacks and Queues to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Stacks and Queues.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -7178,7 +8190,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-bst-1",
+          "id": "q-top-c-trees-bst-1",
           "question": "Which tree traversal order on a Binary Search Tree produces values in strictly ascending sorted order?",
           "options": [
             "Preorder",
@@ -7186,11 +8198,13 @@
             "Postorder",
             "Level-order"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Inorder traversal visits Left subtree, then Root, then Right subtree, strictly following the BST ordering invariant."
+          "explanation": "Inorder traversal visits Left subtree, then Root, then Right subtree, strictly following the BST ordering invariant.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-bst-2",
+          "id": "q-top-c-trees-bst-2",
           "question": "What is the average time complexity of searching for a value in a balanced BST containing n nodes?",
           "options": [
             "O(1)",
@@ -7198,11 +8212,13 @@
             "O(n)",
             "O(n log n)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Each comparison cuts the search space in half, yielding O(log n) logarithmic search time."
+          "explanation": "Each comparison cuts the search space in half, yielding O(log n) logarithmic search time.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-bst-3",
+          "id": "q-top-c-trees-bst-3",
           "question": "When deleting a node with two children in a BST, what node is typically used to replace it?",
           "options": [
             "The root node",
@@ -7210,11 +8226,13 @@
             "Any random leaf node",
             "The deepest left child"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Replacing with the in-order successor preserves the BST invariant because it is larger than all left nodes and smaller than all remaining right nodes."
+          "explanation": "Replacing with the in-order successor preserves the BST invariant because it is larger than all left nodes and smaller than all remaining right nodes.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-bst-4",
+          "id": "q-top-c-trees-bst-4",
           "question": "Which traversal order must be used to safely delete and free all nodes of a dynamic binary tree?",
           "options": [
             "Preorder",
@@ -7222,8 +8240,94 @@
             "Postorder",
             "Random order"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "Postorder frees both children before freeing the parent node, completely avoiding use-after-free errors."
+          "explanation": "Postorder frees both children before freeing the parent node, completely avoiding use-after-free errors.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-trees-bst-5",
+          "question": "Which statement best describes mastering the concept: 'Define hierarchical tree concepts: root, parent, child, leaf, depth, and height.'?",
+          "options": [
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-trees-bst-6",
+          "question": "Which statement best describes mastering the concept: 'Understand Binary Search Tree (BST) ordering invariants: left < root < right.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C.",
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-trees-bst-7",
+          "question": "Which statement best describes mastering the concept: 'Dynamically allocate tree nodes using self-referential left and right child pointers.'?",
+          "options": [
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-trees-bst-8",
+          "question": "Which statement best describes mastering the concept: 'Implement recursive BST insertion and search algorithms in O(log n) average time.'?",
+          "options": [
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-trees-bst-9",
+          "question": "Which statement best describes mastering the concept: 'Execute the three fundamental depth-first traversals: Inorder, Preorder, and Postorder.'?",
+          "options": [
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-trees-bst-10",
+          "question": "Which statement best describes mastering the concept: 'Prove why Inorder traversal on a BST produces elements in strictly ascending sorted order.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Trees and Binary Search Trees in C.",
+            "Restricts Trees and Binary Search Trees to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Trees and Binary Search Trees.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -7441,7 +8545,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-srch-1",
+          "id": "q-top-c-searching-1",
           "question": "What is the mandatory prerequisite before applying Binary Search to an array?",
           "options": [
             "The array must be dynamically allocated with malloc",
@@ -7449,11 +8553,13 @@
             "The array size must be an exact power of 2",
             "The array must contain unique values"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Binary Search requires elements to be sorted so that comparing with the middle element eliminates half the remaining space."
+          "explanation": "Binary Search requires elements to be sorted so that comparing with the middle element eliminates half the remaining space.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-srch-2",
+          "id": "q-top-c-searching-2",
           "question": "Why is int mid = low + (high - low) / 2 preferred over int mid = (low + high) / 2?",
           "options": [
             "It uses fewer CPU cycles",
@@ -7461,11 +8567,13 @@
             "It supports floating point values",
             "It converts the loop to constant time"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "When low + high > 2^31 - 1, (low + high) overflows to negative, corrupting the index. low + (high - low)/2 never overflows."
+          "explanation": "When low + high > 2^31 - 1, (low + high) overflows to negative, corrupting the index. low + (high - low)/2 never overflows.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-srch-3",
+          "id": "q-top-c-searching-3",
           "question": "Approximately how many comparisons does binary search take in the worst case on an array of 1,000,000 sorted elements?",
           "options": [
             "1,000,000",
@@ -7473,11 +8581,13 @@
             "20",
             "100"
           ],
+          "correct_index": 2,
           "correctIndex": 2,
-          "explanation": "log2(1,000,000) is approximately 19.93, meaning at most 20 comparisons are needed."
+          "explanation": "log2(1,000,000) is approximately 19.93, meaning at most 20 comparisons are needed.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-srch-4",
+          "id": "q-top-c-searching-4",
           "question": "What is the auxiliary space complexity of iterative binary search?",
           "options": [
             "O(log n)",
@@ -7485,8 +8595,94 @@
             "O(n)",
             "O(n log n)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Iterative binary search uses only a few index variables (low, high, mid), requiring O(1) constant auxiliary space."
+          "explanation": "Iterative binary search uses only a few index variables (low, high, mid), requiring O(1) constant auxiliary space.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-searching-5",
+          "question": "Which statement best describes mastering the concept: 'Implement Linear Search for unsorted and sorted datasets in O(n) time.'?",
+          "options": [
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Searching Algorithms in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-searching-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the strict prerequisite of sorted data for Binary Search.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Searching Algorithms in C.",
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-searching-7",
+          "question": "Which statement best describes mastering the concept: 'Implement Binary Search iteratively using two-pointer low/high bounds in O(log n) time.'?",
+          "options": [
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Searching Algorithms in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-searching-8",
+          "question": "Which statement best describes mastering the concept: 'Implement Binary Search recursively and analyze call-stack space complexity.'?",
+          "options": [
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Searching Algorithms in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-searching-9",
+          "question": "Which statement best describes mastering the concept: 'Prevent catastrophic integer overflow in midpoint calculation using low + (high - low) / 2.'?",
+          "options": [
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Searching Algorithms in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-searching-10",
+          "question": "Which statement best describes mastering the concept: 'Compare time and space complexities between linear search and binary search across scale.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Searching Algorithms in C.",
+            "Restricts Searching Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Searching Algorithms.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -7704,7 +8900,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-sort-1",
+          "id": "q-top-c-sorting-1",
           "question": "What is the guaranteed worst-case time complexity of Merge Sort?",
           "options": [
             "O(n^2)",
@@ -7712,11 +8908,13 @@
             "O(n)",
             "O(log n)"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Merge Sort always divides in half (log n levels) and performs O(n) work per level, guaranteeing O(n log n) even in the worst case."
+          "explanation": "Merge Sort always divides in half (log n levels) and performs O(n) work per level, guaranteeing O(n log n) even in the worst case.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-sort-2",
+          "id": "q-top-c-sorting-2",
           "question": "What does it mean for a sorting algorithm to be 'stable'?",
           "options": [
             "It never causes a stack overflow crash",
@@ -7724,11 +8922,13 @@
             "It runs in O(1) space",
             "It produces identical output on 32-bit and 64-bit CPUs"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "A stable sort preserves the initial relative positioning of equal elements."
+          "explanation": "A stable sort preserves the initial relative positioning of equal elements.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-sort-3",
+          "id": "q-top-c-sorting-3",
           "question": "Why is Quick Sort often faster in practice than Merge Sort, despite both having O(n log n) average complexity?",
           "options": [
             "Quick Sort has a lower constant factor and operates in-place with high cache locality",
@@ -7736,11 +8936,13 @@
             "Quick Sort does not use comparisons",
             "Merge Sort is written in interpreted bytecode"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "Quick Sort partitions in-place in continuous cache lines without auxiliary buffer copy overhead, giving it smaller constant factors."
+          "explanation": "Quick Sort partitions in-place in continuous cache lines without auxiliary buffer copy overhead, giving it smaller constant factors.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-sort-4",
+          "id": "q-top-c-sorting-4",
           "question": "Which sorting algorithm performs in O(n) linear time when the input array is already almost sorted?",
           "options": [
             "Selection Sort",
@@ -7748,8 +8950,94 @@
             "Heap Sort",
             "Merge Sort"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Insertion Sort only executes its inner shift loop when elements are out of order; if nearly sorted, it performs an O(n) scan."
+          "explanation": "Insertion Sort only executes its inner shift loop when elements are out of order; if nearly sorted, it performs an O(n) scan.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-sorting-5",
+          "question": "Which statement best describes mastering the concept: 'Implement Bubble Sort and optimize with early-exit swapped flags in O(n^2) worst case.'?",
+          "options": [
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-sorting-6",
+          "question": "Which statement best describes mastering the concept: 'Implement Selection Sort and analyze its minimal memory write property.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C.",
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-sorting-7",
+          "question": "Which statement best describes mastering the concept: 'Implement Insertion Sort and understand its optimal O(n) performance on nearly-sorted data.'?",
+          "options": [
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-sorting-8",
+          "question": "Which statement best describes mastering the concept: 'Implement Merge Sort using divide-and-conquer with guaranteed O(n log n) stable execution.'?",
+          "options": [
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-sorting-9",
+          "question": "Which statement best describes mastering the concept: 'Implement Quick Sort using Lomuto or Hoare partitioning schemes in O(n log n) average time.'?",
+          "options": [
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-sorting-10",
+          "question": "Which statement best describes mastering the concept: 'Distinguish between stable and unstable sorting algorithms.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Sorting Algorithms in C.",
+            "Restricts Sorting Algorithms to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Sorting Algorithms.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -7964,7 +9252,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-cli-1",
+          "id": "q-top-c-command-line-modular-1",
           "question": "What is argv[0] in a standard C program?",
           "options": [
             "The first user-supplied argument",
@@ -7972,11 +9260,13 @@
             "The total number of arguments",
             "A NULL pointer"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "argv[0] holds the string representing the program name or path used to invoke the binary."
+          "explanation": "argv[0] holds the string representing the program name or path used to invoke the binary.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-cli-2",
+          "id": "q-top-c-command-line-modular-2",
           "question": "What does the C standard guarantee about argv[argc]?",
           "options": [
             "It is an empty string \"\"",
@@ -7984,11 +9274,13 @@
             "It contains the environment variables",
             "It is an uninitialized dangling pointer"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "The C standard explicitly requires argv[argc] to be a NULL pointer sentinel."
+          "explanation": "The C standard explicitly requires argv[argc] to be a NULL pointer sentinel.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-cli-3",
+          "id": "q-top-c-command-line-modular-3",
           "question": "Why is strtol() preferred over atoi() for parsing integer arguments?",
           "options": [
             "strtol() supports error detection via endptr and handles integer overflow",
@@ -7996,11 +9288,13 @@
             "strtol() uses stack memory while atoi() uses heap",
             "strtol() is faster"
           ],
+          "correct_index": 0,
           "correctIndex": 0,
-          "explanation": "strtol provides the endptr to verify full conversion and sets errno on overflow, whereas atoi cannot distinguish failure from 0."
+          "explanation": "strtol provides the endptr to verify full conversion and sets errno on overflow, whereas atoi cannot distinguish failure from 0.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-cli-4",
+          "id": "q-top-c-command-line-modular-4",
           "question": "In modular C programming, what should be placed inside header files (.h)?",
           "options": [
             "Executable function bodies and global variable definitions",
@@ -8008,8 +9302,94 @@
             "Main function implementation",
             "Assembly instructions"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Headers declare the public types, prototypes, and constants without generating multiple definition errors."
+          "explanation": "Headers declare the public types, prototypes, and constants without generating multiple definition errors.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-command-line-modular-5",
+          "question": "Which statement best describes mastering the concept: 'Parse user input through int main(int argc, char *argv[]).'?",
+          "options": [
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-command-line-modular-6",
+          "question": "Which statement best describes mastering the concept: 'Understand the memory organization of argv as an array of null-terminated string pointers.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C.",
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-command-line-modular-7",
+          "question": "Which statement best describes mastering the concept: 'Perform safe numerical conversions using strtol() and avoid brittle atoi() functions.'?",
+          "options": [
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-command-line-modular-8",
+          "question": "Which statement best describes mastering the concept: 'Structure modular C programs across header (.h) and implementation (.c) files.'?",
+          "options": [
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-command-line-modular-9",
+          "question": "Which statement best describes mastering the concept: 'Compile and link multi-file projects using GCC/Clang commands.'?",
+          "options": [
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-command-line-modular-10",
+          "question": "Which statement best describes mastering the concept: 'Apply memory diagnostic tools (AddressSanitizer, Valgrind) to detect memory leaks and buffer overruns.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Command-Line Arguments and Modular Programming in C.",
+            "Restricts Command-Line Arguments and Modular Programming to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Command-Line Arguments and Modular Programming.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -8154,7 +9534,7 @@
       "numberDisplay": "16",
       "moduleId": "mod-c-adv-algorithms-systems",
       "moduleTitle": "Module 4: Algorithms and Systems Programming",
-      "title": "Final Mini Project \u2013 Library Management System",
+      "title": "Final Mini Project – Library Management System",
       "slug": "library-management-system-project",
       "language": "c",
       "difficulty": "Advanced Project",
@@ -8224,7 +9604,7 @@
       },
       "quiz": [
         {
-          "id": "q-c-adv-proj-1",
+          "id": "q-top-c-library-project-1",
           "question": "Why is a linked list chosen over a fixed array for storing books in the Library Management System?",
           "options": [
             "Linked lists use less memory per book",
@@ -8232,11 +9612,13 @@
             "Linked lists can be saved to disk faster",
             "Arrays cannot store strings"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Linked lists grow and shrink dynamically on the heap as books are added and deleted, without requiring a predetermined maximum capacity."
+          "explanation": "Linked lists grow and shrink dynamically on the heap as books are added and deleted, without requiring a predetermined maximum capacity.",
+          "difficulty": "easy"
         },
         {
-          "id": "q-c-adv-proj-2",
+          "id": "q-top-c-library-project-2",
           "question": "When deleting a book from a singly linked list, why must the predecessor node's next pointer be updated?",
           "options": [
             "To prevent the compiler from throwing a syntax error",
@@ -8244,11 +9626,13 @@
             "To automatically free memory",
             "To sort the list"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Re-stitching prev->next = curr->next ensures the chain remains unbroken when curr is freed."
+          "explanation": "Re-stitching prev->next = curr->next ensures the chain remains unbroken when curr is freed.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-proj-3",
+          "id": "q-top-c-library-project-3",
           "question": "What is the critical step when shutting down a dynamic C application?",
           "options": [
             "Deleting the binary file",
@@ -8256,11 +9640,13 @@
             "Calling exit(0) immediately without freeing",
             "Clearing console screen"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Freeing all allocated nodes ensures clean resource management and prevents memory leaks."
+          "explanation": "Freeing all allocated nodes ensures clean resource management and prevents memory leaks.",
+          "difficulty": "medium"
         },
         {
-          "id": "q-c-adv-proj-4",
+          "id": "q-top-c-library-project-4",
           "question": "How can the Library Management System achieve persistent storage across computer restarts?",
           "options": [
             "By declaring all variables static",
@@ -8268,8 +9654,94 @@
             "By storing records in the CPU registers",
             "By keeping the program running forever"
           ],
+          "correct_index": 1,
           "correctIndex": 1,
-          "explanation": "Serializing records to disk files via standard file I/O guarantees data persistence across sessions."
+          "explanation": "Serializing records to disk files via standard file I/O guarantees data persistence across sessions.",
+          "difficulty": "hard"
+        },
+        {
+          "id": "q-top-c-library-project-5",
+          "question": "Which statement best describes mastering the concept: 'Architect a multi-component C systems application using structures and dynamic linked lists.'?",
+          "options": [
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-library-project-6",
+          "question": "Which statement best describes mastering the concept: 'Implement full CRUD operations: Add, Display, Search, Update, and Delete records.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C.",
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-library-project-7",
+          "question": "Which statement best describes mastering the concept: 'Implement library transactions: Issue and Return books with user ID associations.'?",
+          "options": [
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel",
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C."
+          ],
+          "correct_index": 3,
+          "correctIndex": 3,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-library-project-8",
+          "question": "Which statement best describes mastering the concept: 'Persist catalog data across executions using text and binary file operations.'?",
+          "options": [
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C.",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 2,
+          "correctIndex": 2,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-library-project-9",
+          "question": "Which statement best describes mastering the concept: 'Handle dynamic memory allocation failures and prevent heap leaks with clean deallocation.'?",
+          "options": [
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C.",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 1,
+          "correctIndex": 1,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
+        },
+        {
+          "id": "q-top-c-library-project-10",
+          "question": "Which statement best describes mastering the concept: 'Build an interactive menu-driven command interface with rigorous input validation.'?",
+          "options": [
+            "Demonstrates proper understanding and execution of Final Mini Project – Library Management System in C.",
+            "Restricts Final Mini Project – Library Management System to legacy environment compilers only",
+            "Disables all runtime exception handling and bounds checks",
+            "Requires rewriting the host operating system kernel"
+          ],
+          "correct_index": 0,
+          "correctIndex": 0,
+          "explanation": "Mastering this objective verifies core competence in Final Mini Project – Library Management System.",
+          "difficulty": "easy"
         }
       ],
       "codingChallenge": {
@@ -8385,7 +9857,7 @@
       "sections": [
         {
           "id": "top-c-library-project-sec-1",
-          "title": "1. Conceptual Foundations: Final Mini Project \u2013 Library Management System",
+          "title": "1. Conceptual Foundations: Final Mini Project – Library Management System",
           "order_index": 1,
           "content": "### 1. Project Overview & Architecture\nThe **Library Management System** is the capstone project uniting all 16 topics of the Advanced C Systems & Data Structures course. It represents an industrial-grade, menu-driven systems application.\n\n### 2. Core Data Structures Used\n1. **`Book` Structure**:\n   ```c\n   struct Book {\n       int id;\n       char title[64];\n       char author[64];\n       int year;\n       int isIssued;          // 0 = Available, 1 = Issued\n       int issuedToUserId;    // User ID who borrowed the book\n       struct Book *next;     // Singly linked list pointer\n   };\n   ```\n2. **`User` Structure**:\n   ```c\n   struct User {\n       int userId;\n       char name[64];\n       int borrowedCount;\n   };\n   ```\n\n### 3. Key Functional Modules\n- **Book Catalog CRUD**:\n  - `addBook(head, id, title, author, year)`: Dynamically allocates and prepends/appends book node.\n  - `displayBooks(head)`: Traverses linked list and renders tabular catalog.\n  - `searchBook(head, id)`: Searches by primary ID in $O(n)$ time.\n  - `updateBook(head, id, newTitle, newYear)`: Updates book metadata in-place.\n  - `deleteBook(head, id)`: Removes book node and re-stitches neighbor pointers.\n- **Transaction Engine**:\n  - `issueBook(head, bookId, userId)`: Marks book as issued and records borrower.\n  - `returnBook(head, bookId)`: Clears issue status.\n- **Persistence Engine**:\n  - `saveToFile(head, filename)`: Writes all linked nodes to disk storage.\n  - `loadFromFile(filename)`: Reconstructs dynamic heap linked list on application startup.\n- **Memory Safety & Cleanup**:\n  - `freeLibrary(head)`: Traverses and frees every heap node upon application exit.\n\n### 4. Step-by-Step Execution Walkthrough\n1. **Startup**: Program opens catalog file; if found, reads saved books into heap linked list.\n2. **Interactive Menu**: User selects action (1. Add Book, 2. Display All, 3. Search, 4. Issue, 5. Return, 6. Delete, 7. Save & Exit).\n3. **Execution**: Selected operation mutates dynamic linked list in RAM.\n4. **Shutdown**: Serializes state to disk and safely frees all heap nodes.\n\n### 5. Memory Management & Leak Prevention\nEvery node created via `malloc(sizeof(struct Book))` is registered in the list. During termination, `freeLibrary()` safely traverses the chain with a temporary pointer to guarantee zero memory leaks.",
           "code_snippet": "// Library Management System Headers\nstruct Book* addBook(struct Book *head, int id, const char *title, const char *author, int year);\nstruct Book* searchBook(struct Book *head, int id);\nint          issueBook(struct Book *head, int bookId, int userId);\nint          returnBook(struct Book *head, int bookId);\nstruct Book* deleteBook(struct Book *head, int bookId);\nvoid         displayCatalog(const struct Book *head);\nvoid         freeLibrary(struct Book *head);",

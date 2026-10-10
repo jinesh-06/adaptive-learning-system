@@ -23,6 +23,7 @@ class AskAiRequest(BaseModel):
     tutor_mode: Optional[str] = None
     level: Optional[str] = None
     code_context: Optional[str] = None
+    history: Optional[list] = None
 
 
 class ProgressiveHintRequest(BaseModel):
@@ -49,7 +50,8 @@ async def ask_ai_assistant(payload: AskAiRequest, request: Request):
         section_content=payload.section_content,
         level=payload.level,
         tutor_mode=payload.tutor_mode,
-        code_context=payload.code_context
+        code_context=payload.code_context,
+        history=payload.history
     )
 
     # Record telemetry

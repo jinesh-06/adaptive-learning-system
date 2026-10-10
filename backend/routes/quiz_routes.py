@@ -1,10 +1,11 @@
-"""Quiz routes for retrieving and grading topic quizzes with cognitive load evaluation."""
+"""Quiz routes for retrieving, generating, and grading 10-question topic quizzes with cognitive load evaluation and adaptive feedback."""
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Query
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 
 from backend.services.curriculum_service import curriculum_service
+from backend.services.quiz_service import quiz_service
 from backend.services.ml_service import ml_service
 from backend.services.state_store import state_store
 from backend.routes.auth_routes import get_current_user_id
@@ -19,23 +20,38 @@ class QuizSubmission(BaseModel):
 
 
 @router.get("/topics/{topic_id}/quiz")
-async def get_topic_quiz(topic_id: str):
-    return curriculum_service.get_topic_quiz(topic_id)
+async def get_topic_quiz(
+    topic_id: str,
+    refresh: bool = Query(default=False, description="Force regenerate 10 quiz questions")
+):
+    """Retrieve exactly 10 questions for any lesson, generating dynamically or retrieving from verified cache."""
+    return quiz_service.get_quiz_for_topic(topic_id, force_regenerate=refresh)
+
+
+@router.post("/topics/{topic_id}/quiz/regenerate")
+async def regenerate_topic_quiz(topic_id: str):
+    """Force regenerate exactly 10 questions for the topic."""
+    return quiz_service.get_quiz_for_topic(topic_id, force_regenerate=True)
 
 
 @router.post("/topics/{topic_id}/quiz/submit")
 async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Request):
+    """Grade 10-question quiz submission, evaluate cognitive load signals, persist attempt, and generate adaptive feedback."""
     user_id = get_current_user_id(request)
-    quiz_data = curriculum_service.get_topic_quiz(topic_id)
+    quiz_data = quiz_service.get_quiz_for_topic(topic_id)
     questions = quiz_data.get("questions", [])
 
     correct_count = 0
     feedback = []
     review = []
 
-    for q in questions:
+    for idx, q in enumerate(questions):
         q_id = str(q.get("id"))
+        # Support answers keyed by question ID or 0-indexed position
         user_answer = payload.answers.get(q_id)
+        if user_answer is None:
+            user_answer = payload.answers.get(str(idx))
+
         is_correct = user_answer is not None and user_answer == q.get("correct_index")
         if is_correct:
             correct_count += 1
@@ -59,9 +75,9 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "user_choice": user_answer
         })
 
-    total = len(questions) if len(questions) > 0 else 1
+    total = len(questions) if len(questions) > 0 else 10
     percentage = round((correct_count / total) * 100)
-    passed = percentage >= 60
+    passed = percentage >= 70
 
     # Trigger ML cognitive evaluation based on real learning signals
     ml_eval = ml_service.evaluate({
@@ -70,15 +86,41 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "accuracy": percentage,
         "quiz_attempts": 1,
         "backtracking": 0 if passed else 2,
-        "hesitation_time_seconds": max(2.0, payload.time_spent / total)
+        "hesitation_time_seconds": max(2.0, (payload.time_spent or 60.0) / total)
     })
+
+    # Generate personalized adaptive feedback based on missed concepts and learning signals
+    topic_title = quiz_data.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
+    adaptive_feedback = quiz_service.generate_adaptive_feedback(
+        topic_title=topic_title,
+        topic_id=topic_id,
+        questions=questions,
+        review=review,
+        score=correct_count,
+        percentage=percentage,
+        ml_eval=ml_eval
+    )
 
     # Record in history and telemetry
     state_store.record_adaptive_evaluation(user_id, topic_id, ml_eval)
     state_store.record_telemetry(user_id, topic_id, "QUIZ_SUBMIT", payload.time_spent, {
         "percentage": percentage,
+        "correct_count": correct_count,
+        "total_questions": total,
         "passed": passed,
         "cognitive_load": ml_eval.get("cognitive_load")
+    })
+
+    # Save quiz attempt record to SQLite
+    attempt_id = state_store.save_quiz_attempt(user_id, topic_id, {
+        "score": correct_count,
+        "percentage": percentage,
+        "correct_count": correct_count,
+        "total_questions": total,
+        "answers": payload.answers,
+        "review": review,
+        "adaptive_feedback": adaptive_feedback,
+        "time_spent": payload.time_spent or 0.0
     })
 
     # Persist topic progress into SQLite user_progress table
@@ -101,21 +143,12 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         time_spent_delta=payload.time_spent or 0.0
     )
 
-    adaptive_feedback = {
-        "cognitive_level": ml_eval.get("cognitive_level"),
-        "cognitive_load": ml_eval.get("cognitive_load"),
-        "confidence": ml_eval.get("confidence"),
-        "content_mode": ml_eval.get("content_mode"),
-        "recommended_action": ml_eval.get("recommended_action"),
-        "reason": ml_eval.get("reason"),
-        "contributing_factors": ml_eval.get("contributing_factors"),
-        "unusual_completion": ml_eval.get("unusual_completion")
-    }
-
     return {
+        "attempt_id": attempt_id,
         "score": percentage,
         "correct_count": correct_count,
-        "total_questions": len(questions),
+        "incorrect_count": total - correct_count,
+        "total_questions": total,
         "total": total,
         "percentage": percentage,
         "passed": passed,

@@ -30,6 +30,7 @@ import {
 import { BookmarkButton } from '../components/BookmarkButton';
 import { QuickNoteModal } from '../components/QuickNoteModal';
 import { TopicLearningStepper } from '../components/TopicLearningStepper';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 
 interface CodingStudioProps {
   topicId?: string;
@@ -527,8 +528,8 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
               Close
             </button>
           </div>
-          <div className="text-xs text-slate-200 leading-relaxed whitespace-pre-line font-sans">
-            {aiActionResult.content}
+          <div className="text-xs text-slate-200 leading-relaxed font-sans">
+            <MarkdownRenderer content={aiActionResult.content} />
           </div>
         </div>
       )}
@@ -962,8 +963,8 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
                   Unlocking pedagogical hint...
                 </div>
               ) : (
-                <div className="whitespace-pre-line">
-                  {hintContent}
+                <div className="text-xs text-slate-300 leading-relaxed font-sans">
+                  <MarkdownRenderer content={hintContent || ''} />
                 </div>
               )}
             </div>

@@ -67,6 +67,7 @@ import { TryYourselfSandbox } from '../components/lesson/TryYourselfSandbox';
 import { InLessonQuiz } from '../components/lesson/InLessonQuiz';
 import { InLessonCodingChallenge } from '../components/lesson/InLessonCodingChallenge';
 import { LessonSummaryCard } from '../components/lesson/LessonSummaryCard';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 
 export interface TopicLessonPageProps {
   topicId: string;
@@ -1116,8 +1117,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                     <span>Copy</span>
                   </button>
                 </div>
-                <div className="whitespace-pre-line leading-relaxed text-slate-300 light-theme:text-slate-700 text-xs sm:text-sm">
-                  {aiTutorResponse.answer}
+                <div className="leading-relaxed text-slate-300 light-theme:text-slate-700 text-xs sm:text-sm">
+                  <MarkdownRenderer content={aiTutorResponse.answer} />
                 </div>
               </div>
             )}

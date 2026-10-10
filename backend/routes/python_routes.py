@@ -519,152 +519,54 @@ async def analyze_learning_signals(payload: AnalyzeSignalsPayload, request: Requ
 
 @router.post("/adaptation/generate")
 async def generate_adapted_lesson(payload: GenerateAdaptationPayload, request: Request):
-    """Generate a dedicated AI-adapted lesson grounded in verified curriculum RAG context."""
+    """Generate a dedicated AI-adapted lesson grounded in verified curriculum context."""
+    from backend.services.adapted_lesson_service import adapted_lesson_service
     user_id = get_current_user_id(request)
-    t_id = payload.topic_id
-
-    # 1. Check if an adaptation was already cached for this user & topic
-    if not payload.force_refresh:
-        cached = state_store.get_adapted_lesson(user_id, t_id)
-        if cached and cached.get("lesson_data"):
-            return {
-                "success": True,
-                "cached": True,
-                "topic_id": t_id,
-                "strategy": cached.get("adaptation_strategy", "SIMPLIFY"),
-                "adapted_lesson": cached["lesson_data"]
-            }
-
-    # Find topic title
-    is_advanced = t_id.startswith("top-py-adv-")
-    is_intermediate = t_id.startswith("top-py-int-")
-    course_id = "py-adv" if is_advanced else ("py-int" if is_intermediate else "py-beg")
-    level = "advanced" if is_advanced else ("intermediate" if is_intermediate else "beginner")
-
-    topic_meta = next((m for m in ADVANCED_TOPIC_METADATA if m["id"] == t_id), None)
-    if not topic_meta:
-        topic_meta = next((m for m in INTERMEDIATE_TOPIC_METADATA if m["id"] == t_id), None)
-    if not topic_meta:
-        topic_meta = next((m for m in TOPIC_METADATA if m["id"] == t_id), TOPIC_METADATA[0])
-
-    topic_title = topic_meta["title"]
-    strategy = payload.strategy or "SIMPLIFY"
-
-    # 2. Retrieve verified RAG curriculum context
-    rag_context = rag_service.get_formatted_context(
-        query=f"Python {topic_title} explanation step by step examples",
-        course="python",
-        topic=t_id,
-        level=level,
-        top_k=4
-    )
-
-    # 3. Call LLM Service / Gemini to generate structured adaptation
-    strategy_prompt = f"""
-Generate an AI-Adapted Lesson for the Python topic: '{topic_title}'.
-Adaptation Strategy: {strategy}.
-Signals observed: {json.dumps(payload.signals or {})}
-
-Follow these rules:
-1. Provide a completely fresh, more intuitive explanation.
-2. Break concepts into smaller, digestible micro-steps.
-3. Use a friendly analogy (e.g. labeled boxes, recipes, train cars).
-4. Provide clean beginner-friendly code examples with commentary.
-5. Provide a visual text-based diagram (ASCII or table).
-6. Provide 1 scaffolded guided practice problem.
-7. Provide a short 2-question knowledge check.
-"""
-    llm_resp = llm_service.generate_explanation(
-        question=strategy_prompt,
-        cognitive_load="HIGH" if strategy in ("SIMPLIFY", "STEP_BY_STEP", "VISUAL") else "LOW",
-        course="python",
-        topic=topic_title,
-        topic_id=t_id
-    )
-
-    generated_text = llm_resp.get("answer", "")
-
-    # Structured adapted lesson payload
-    adapted_lesson_data = {
-        "topic_id": t_id,
-        "topic_title": topic_title,
-        "topic_number": topic_meta["numberDisplay"],
-        "adaptation_strategy": strategy,
-        "strategy_label": "Simplified + Step-by-Step" if strategy == "SIMPLIFY" else "Accelerated + Deep Dive" if strategy == "INCREASE_DIFFICULTY" else "Visual + Interactive",
-        "header_note": f"Based on your recent learning signals, this version provides a more guided, step-by-step explanation.",
-        "concept_analogy": f"Let's visualize {topic_title} using a clear everyday analogy: think of it as structured labeled containers where each item has an explicit label and content.",
-        "detailed_explanation": generated_text or f"In this adapted edition of {topic_title}, we break the fundamentals down into smaller, clear conceptual steps without overwhelming syntax.",
-        "steps": [
-            {"step": 1, "title": "Identify the Core Need", "description": f"Understand why {topic_title} exists in Python and how it solves real programming challenges."},
-            {"step": 2, "title": "Inspect the Simplest Form", "description": "Look at the minimal code required to see the concept in action."},
-            {"step": 3, "title": "Experiment in the Sandbox", "description": "Modify values and observe immediate console output."}
-        ],
-        "guided_code": f"# Adapted Step-by-Step Example for {topic_title}\n# Step 1: Initialize cleanly\nname = \"Jinesh\"\nscore = 100\n\n# Step 2: Output clearly\nprint(f\"Learner: {{name}}, Score: {{score}}\")\n",
-        "expected_output": "Learner: Jinesh, Score: 100",
-        "guided_practice": {
-            "prompt": f"Write an adapted, simplified snippet demonstrating {topic_title} with print().",
-            "starterCode": f"# Adapted Practice: {topic_title}\n\n",
-            "expectedOutputMatcher": "Success",
-            "hint": "Create your variable and use print('Success').",
-            "solution": "print('Success')"
-        },
-        "knowledge_check": [
-            {
-                "id": f"kc-{t_id}-1",
-                "question": f"What is the primary benefit of this adapted step-by-step approach to {topic_title}?",
-                "options": [
-                    "Breaks complex mechanics into manageable micro-steps",
-                    "Changes the core Python programming language syntax",
-                    "Requires reading an entire textbook first",
-                    "Disables the code runner"
-                ],
-                "correctIndex": 0,
-                "explanation": "Adapted lessons reduce cognitive friction by isolating concepts into step-by-step milestones."
-            }
-        ],
-        "summary": [
-            f"You reviewed an AI-adapted edition of {topic_title}.",
-            "Mastery builds one clear concept at a time.",
-            "You are ready to proceed with practice or advance to the next topic."
-        ]
-    }
-
-    # 4. Save to persistent SQLite cache
-    state_store.save_adapted_lesson(
+    strat = (payload.strategy or "").upper()
+    mode = "SIMPLIFIED" if strat in ("SIMPLIFY", "STEP_BY_STEP", "VISUAL") else "DETAILED" if strat in ("INCREASE_DIFFICULTY", "DETAILED") else "STANDARD"
+    
+    res = adapted_lesson_service.generate_adapted_lesson(
         user_id=user_id,
-        topic_id=t_id,
-        adaptation_strategy=strategy,
-        lesson_data=adapted_lesson_data,
-        signals=payload.signals
+        topic_id=payload.topic_id,
+        detail_level=mode,
+        signals=payload.signals,
+        force_refresh=bool(payload.force_refresh)
     )
-
-    # 5. Mark status in user_progress
-    state_store.save_topic_progress(
-        user_id=user_id,
-        course_id=course_id,
-        topic_id=t_id,
-        status="ADAPTATION_AVAILABLE"
-    )
-
+    lesson = res.get("lesson", {})
     return {
         "success": True,
-        "cached": False,
-        "topic_id": t_id,
-        "strategy": strategy,
-        "adapted_lesson": adapted_lesson_data
+        "cached": res.get("cached", False),
+        "topic_id": payload.topic_id,
+        "strategy": payload.strategy or "SIMPLIFY",
+        "adapted_lesson": lesson,
+        "lesson_data": lesson
     }
 
 
 @router.get("/adapted/{topic_id}")
 async def get_adapted_lesson_by_topic(topic_id: str, request: Request):
     """Retrieve an existing generated adapted lesson for a topic."""
+    from backend.services.adapted_lesson_service import adapted_lesson_service
     user_id = get_current_user_id(request)
     cached = state_store.get_adapted_lesson(user_id, topic_id)
     if not cached or not cached.get("lesson_data"):
-        raise HTTPException(status_code=404, detail="No adapted lesson found for this topic.")
+        res = adapted_lesson_service.generate_adapted_lesson(
+            user_id=user_id,
+            topic_id=topic_id,
+            detail_level="STANDARD"
+        )
+        lesson = res.get("lesson", {})
+        return {
+            "success": True,
+            "topic_id": topic_id,
+            "strategy": "STANDARD",
+            "adapted_lesson": lesson,
+            "lesson_data": lesson
+        }
     return {
         "success": True,
         "topic_id": topic_id,
         "strategy": cached.get("adaptation_strategy", "SIMPLIFY"),
-        "adapted_lesson": cached["lesson_data"]
+        "adapted_lesson": cached["lesson_data"],
+        "lesson_data": cached["lesson_data"]
     }

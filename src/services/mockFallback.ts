@@ -19,6 +19,7 @@ import { JAVA_FUNDAMENTALS_TOPICS, JAVA_MODULES } from '../data/javaFundamentals
 import { JAVA_OOP_TOPICS, JAVA_OOP_MODULES } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS, JAVA_ADV_MODULES } from '../data/javaAdvData';
 import { C_ADVANCED_TOPICS, C_ADVANCED_MODULES } from '../data/cAdvancedData';
+import allTopicQuizzes from '../data/allTopicQuizzes.json';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
   window.location.hostname.includes('github.io') ||
@@ -2209,6 +2210,15 @@ PYTHON_INTERMEDIATE_TOPICS.forEach((pyIntTopic) => {
   }
 });
 
+// Ensure authoritative 10-question quizzes for all topics across all courses
+if (allTopicQuizzes && typeof allTopicQuizzes === 'object') {
+  Object.entries(allTopicQuizzes as Record<string, any[]>).forEach(([tid, qList]) => {
+    if (Array.isArray(qList) && qList.length === 10) {
+      mockQuizzes[tid] = qList;
+    }
+  });
+}
+
 
 
 export const mockDiagnosticQuestions = [
@@ -2584,29 +2594,69 @@ export const mockHandlers = {
   },
 
   getTopicQuiz: async (topicId: string) => {
+    const rawList = mockQuizzes[topicId] || (allTopicQuizzes as Record<string, any[]>)[topicId] || mockQuizzes['top-py-loops'];
+    const qList = (rawList && rawList.length >= 10) ? rawList.slice(0, 10) : rawList;
     return {
+      topic_id: topicId,
+      title: `Mini Quiz: ${mockTopicDetails[topicId]?.title || topicId}`,
       target_difficulty: 'standard',
-      adaptive_note: 'Standard calibrated quiz based on your active mastery.',
-      questions: mockQuizzes[topicId] || mockQuizzes['top-py-loops']
+      adaptive_note: 'Standard calibrated 10-question quiz based on your active mastery.',
+      questions: qList
     };
   },
 
   submitTopicQuiz: async (topicId: string, answers: Record<string, number>, timeSpent: number) => {
-    const qList = mockQuizzes[topicId] || mockQuizzes['top-py-loops'];
+    const rawList = mockQuizzes[topicId] || (allTopicQuizzes as Record<string, any[]>)[topicId] || mockQuizzes['top-py-loops'];
+    const qList = (rawList && rawList.length >= 10) ? rawList.slice(0, 10) : rawList;
     let correct = 0;
-    const review = qList.map(q => {
-      const userAns = answers[q.id];
-      const isCorrect = userAns === q.correct_index;
+    const review = qList.map((q: any, idx: number) => {
+      const qId = String(q.id);
+      const userAns = answers[qId] !== undefined ? answers[qId] : answers[String(idx)];
+      const cIdx = q.correct_index !== undefined ? q.correct_index : q.correctIndex;
+      const isCorrect = userAns !== undefined && userAns === cIdx;
       if (isCorrect) correct++;
       return {
         ...q,
+        correct_index: cIdx,
+        correctIndex: cIdx,
         is_correct: isCorrect,
         user_choice: userAns
       };
     });
-    const score = Math.round((correct / qList.length) * 100);
+    const total = qList.length || 10;
+    const score = Math.round((correct / total) * 100);
     const passed = score >= 70;
     const cognitiveLevel = score < 60 ? 'HIGH' : score >= 85 ? 'LOW' : 'MEDIUM';
+
+    const missed = review.filter((r: any) => !r.is_correct);
+    const recommendedMode = score < 60 ? 'SIMPLIFIED' : score >= 90 ? 'DETAILED' : 'STANDARD';
+    const missedConcepts = missed.map((m: any) => {
+      const qText = m.question || '';
+      return qText.split('?')[0].split(':')[0].trim().slice(0, 50);
+    }).slice(0, 3);
+
+    const adaptiveFeedback = {
+      cognitive_level: cognitiveLevel,
+      cognitive_load: cognitiveLevel,
+      confidence: 0.88,
+      score: score,
+      passed: passed,
+      recommended_mode: recommendedMode,
+      mode_rationale: score < 60
+        ? 'We recommend switching to Simplified mode for everyday analogies and step-by-step guidance.'
+        : score >= 90
+        ? 'Outstanding score! Detailed mode provides deep architectural mechanics.'
+        : 'Good understanding. Continue with standard pacing.',
+      revision_concepts: missedConcepts.length > 0 ? missedConcepts : ['Mastery verified for all topic checkpoints'],
+      personalized_summary: passed
+        ? `Great job! You answered ${correct} of ${total} questions correctly.`
+        : `You scored ${score}% (${correct} of ${total} correct). Focus your revision on: ${missedConcepts.join(', ')}.`,
+      suggested_actions: [
+        { action: 'MODE_SWITCH', mode: recommendedMode, label: `Switch to ${recommendedMode.toLowerCase()} Mode` },
+        { action: 'SANDBOX_PRACTICE', label: 'Practice in Interactive Sandbox' },
+        { action: 'RETAKE_QUIZ', label: 'Retake Quiz' }
+      ]
+    };
 
     // Store in history
     const history = getStoredArray(MOCK_STORAGE_KEYS.HISTORY, []);
@@ -2615,7 +2665,7 @@ export const mockHandlers = {
       timestamp: new Date().toISOString(),
       topic_id: topicId,
       topic_title: mockTopicDetails[topicId]?.title || 'Practice Session',
-      language: 'python',
+      language: topicId.startsWith('top-c-') ? 'c' : topicId.startsWith('top-cpp-') ? 'cpp' : topicId.startsWith('top-java-') ? 'java' : 'python',
       quiz_score: score,
       coding_score: passed ? 100 : 40,
       time_spent: timeSpent,
@@ -2648,18 +2698,23 @@ export const mockHandlers = {
     }
 
     return {
-      score,
+      score: score,
+      percentage: score,
       correct_count: correct,
-      total_questions: qList.length,
-      passed,
-      review,
-      adaptive_feedback: {
-        cognitive_level: cognitiveLevel,
-        recommended_action: passed ? 'CONTINUE' : 'REVISE',
-        reason: passed
-          ? 'Great job! You demonstrated solid mastery. Proceeding to coding challenge.'
-          : 'High cognitive load detected. Reviewing simplified analogies and micro-steps.'
-      }
+      incorrect_count: total - correct,
+      total_questions: total,
+      total: total,
+      passed: passed,
+      review: review,
+      results: review.map((r: any) => ({
+        question_id: r.id,
+        correct: r.is_correct,
+        user_answer: r.user_choice,
+        correct_answer: r.correct_index,
+        explanation: r.explanation
+      })),
+      adaptive_feedback: adaptiveFeedback,
+      cognitive_insight: adaptiveFeedback
     };
   },
 
@@ -2865,21 +2920,30 @@ export const mockHandlers = {
   },
 
   askAiAssistant: async (payload: any) => {
-    const topic = payload.section_title || payload.topic || 'Programming';
-    const mode = payload.tutor_mode || 'EXPLAIN';
-    const load = payload.cognitive_load || 'MEDIUM';
-    const lang = payload.language || 'python';
-    const langName = lang.toUpperCase();
+    const topic = payload.section_title || payload.topic || 'Programming Concepts';
+    const mode = (payload.tutor_mode || 'EXPLAIN').toUpperCase();
+    const load = (payload.cognitive_load || 'MEDIUM').toUpperCase();
+    const lang = (payload.language || 'python').toUpperCase();
+    const q = (payload.question || '').toLowerCase();
 
-    const answers: Record<string, string> = {
-      SIMPLIFY: `### 🌱 Simplified Analogy: ${topic}\n\nThink of a **Function** like a **Vending Machine**: you put in money and select a code (arguments/parameters), the machine processes your request internally (execution logic), and it dispenses your drink (return value).\n\nYou don't need to know the gears inside the vending machine to get your soda—just like callers don't need to know internal variables to use the function!`,
-      DEBUG: `### 🛠️ Common Bug Diagnostic: ${topic}\n\n1. **Mutable Default Arguments**: Be careful with default arguments.\n2. **Off-By-One Errors**: Remember index bounds and loop conditions.\n3. **Shadowing Variables**: Keep parameter names distinct from outer globals.`,
-      EXPLAIN: `### 💡 Architectural Deep Dive: ${topic}\n\nIn ${langName}, code execution depends on the platform and runtime. When a function executes, its local symbol table handles scope resolution.`
-    };
+    let answer = '';
+    if (mode === 'SIMPLIFY' || q.includes('analogy') || q.includes('simpler')) {
+      answer = `### 🎈 Intuitive Analogy: ${topic}\n\nThink of **${topic}** in ${lang} like following a recipe in a busy kitchen:\n\n• **Ingredients & Items**: Your data values and types.\n• **Labels on Containers**: Your variable names pointing to where each item sits.\n• **Step Instructions**: Statements executed one by one in structured order.\n\n**Takeaway**: You don't need to overthink memory addresses; you just refer to values by name and execute steps sequentially!`;
+    } else if (mode === 'DEBUG' || q.includes('pitfall') || q.includes('bug') || q.includes('common error')) {
+      answer = `### ⚠️ Common Pitfalls & Traps: ${topic}\n\nHere are the top traps learners hit with **${topic}** in ${lang}:\n\n1. **Boundary & Condition Glitches**: Watch comparison operators (\`<\` vs \`<=\`) and off-by-one errors.\n2. **Type Coercion & Assumptions**: Ensure values match expected types before executing operations.\n3. **Scope & Shadowing**: Keep variable names distinctive so local variables do not accidentally shadow outer identifiers.\n\n*Pro-tip: Print intermediate values whenever behavior seems counter-intuitive!*`;
+    } else if (q.includes('micro-step') || load === 'HIGH') {
+      answer = `### 🌱 Step-by-Step Micro-Breakdown: ${topic}\n\nLet's take this one bite-sized piece at a time:\n\n1. **Identify the Goal**: What exact value or output do you need to produce?\n2. **Initialize State**: Set up your starting variable or container.\n3. **Execute One Transformation**: Apply the core operation or check.\n4. **Inspect the Result**: Verify each step before moving forward to build confidence.\n\nTake it steady—mastering each micro-step makes complex programs feel natural!`;
+    } else if (mode === 'EXAMPLE' || q.includes('example') || q.includes('code')) {
+      answer = `### 💻 Practical ${lang} Code Example: ${topic}\n\nHere is a clean demonstration of **${topic}**:\n\n\`\`\`${lang.toLowerCase()}\n# Working with ${topic}\nvalue = 42\nitems = [10, 20, 30]\n\nfor item in items:\n    result = item * 2\n    print(f"Computed: {result}")\n\`\`\`\n\n**Key Observation**: Notice how each variable has a clear purpose and transforms predictable data.`;
+    } else if (mode === 'QUIZ' || q.includes('quiz')) {
+      answer = `### ❓ Quick Check: ${topic}\n\n**Question**: In ${lang}, what happens when you evaluate an expression with **${topic}**?\n\nA) The program terminates immediately\nB) The expression evaluates to a concrete value or reference\nC) All variables are automatically cleared\nD) Memory allocation is permanently locked\n\n**Correct Answer**: **B** — Expressions compute results that can be assigned or passed to functions!`;
+    } else {
+      answer = `### 💡 Guided Concept: ${topic}\n\nIn **${lang}**, understanding **${topic}** is fundamental to writing reliable software.\n\n• **Core Role**: Manages state and program flow clearly.\n• **Execution Paradigm**: Evaluated systematically step-by-step.\n• **Best Practice**: Keep logic modular and use meaningful identifiers.\n\nFeel free to ask a follow-up or request an everyday analogy!`;
+    }
 
     return {
-      answer: answers[mode] || answers.EXPLAIN,
-      sources: [`Knowledge Base: ${lang}/${topic.toLowerCase().replace(/\s+/g, '_')}.json`],
+      answer,
+      sources: [`Knowledge Base: ${lang.toLowerCase()}/${topic.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md`],
       cognitive_mode_applied: load
     };
   },

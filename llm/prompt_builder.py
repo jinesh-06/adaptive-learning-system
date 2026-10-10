@@ -65,6 +65,7 @@ def build_adaptive_prompt(
     topic: Optional[str] = None,
     tutor_mode: Optional[str] = None,
     lesson_context: Optional[str] = None,
+    conversation_history: Optional[list] = None,
 ) -> str:
     """Construct an adaptive educational prompt for the Gemini model.
 
@@ -75,6 +76,7 @@ def build_adaptive_prompt(
         topic: Optional domain or topic name.
         tutor_mode: Optional 8-contextual mode (EXPLAIN, SIMPLIFY, EXAMPLE, DEBUG, HINT, QUIZ, REVISE, ADVANCED).
         lesson_context: Optional active lesson and section content snippet.
+        conversation_history: Optional recent conversation messages for chat continuity.
 
     Returns:
         str: Fully formatted prompt text.
@@ -96,17 +98,30 @@ def build_adaptive_prompt(
 
     lesson_section = f"CURRENT LESSON MATERIAL:\n{lesson_context.strip()}\n\n" if lesson_context and lesson_context.strip() else ""
 
-    prompt = f"""You are an expert Adaptive Educational AI Tutor helping a student learn Python 3. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
+    history_section = ""
+    if conversation_history:
+        history_lines = []
+        for msg in conversation_history[-6:]:
+            if isinstance(msg, dict):
+                role = "Student" if msg.get("sender") == "user" else "AI Tutor"
+                text = str(msg.get("text", "")).strip()
+                if text:
+                    history_lines.append(f"{role}: {text[:280]}")
+        if history_lines:
+            history_section = "RECENT CONVERSATION HISTORY:\n" + "\n".join(history_lines) + "\n\n"
+
+    prompt = f"""You are an expert Adaptive Educational AI Tutor helping a student learn programming. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
 
 STRICT GROUNDING & RUNTIME RULES:
-1. Ground your explanation primarily on the RETRIEVED CONTEXT and CURRENT LESSON MATERIAL provided below.
-2. The runtime environment is strictly Python 3 (standard CPython 3). Never reference Jython, JPython, or Java-based Python.
+1. Ground your explanation primarily on the RETRIEVED CONTEXT and CURRENT LESSON MATERIAL provided below whenever relevant.
+2. The runtime environment is strictly standard modern programming practices (e.g. standard CPython 3, C11, C++17, Java 17).
 3. Tailor your response directly to the student's active inquiry and requested TUTOR MODE.
-4. Only if the retrieved context and lesson material are completely empty or completely unrelated should you inform the student: "The available learning material is insufficient and does not contain enough information to address this question."
+4. If the retrieved context is minimal or does not directly cover the student's question, provide an accurate, clear, and pedagogically sound programming answer tailored to their cognitive load level.
+5. Keep explanations direct, conversational, and helpful. Use clear markdown formatting (bolding, concise bullet points, and syntax-highlighted code blocks).
 
 {adaptation_instructions}
 
-{mode_section}{topic_line}{lesson_section}STUDENT QUESTION / ACTION:
+{mode_section}{topic_line}{lesson_section}{history_section}STUDENT QUESTION / ACTION:
 {question.strip()}
 
 RETRIEVED KNOWLEDGE BASE CONTEXT:
@@ -116,6 +131,6 @@ COGNITIVE LOAD LEVEL:
 {level.value}
 
 INSTRUCTION:
-Generate an adaptive explanation in Python 3 that strictly follows the active tutor mode, adaptation profile, and grounding rules above.
+Generate an adaptive explanation that strictly follows the active tutor mode, adaptation profile, and grounding rules above.
 """
     return prompt

@@ -51,6 +51,7 @@ def generate_adaptive_explanation(
     topic: Optional[str] = None,
     tutor_mode: Optional[str] = None,
     lesson_context: Optional[str] = None,
+    conversation_history: Optional[list] = None,
     client: Optional[genai.Client] = None,
 ) -> Dict[str, Any]:
     """Generate an explanation adapted to the learner's cognitive load level using Gemini.
@@ -62,6 +63,7 @@ def generate_adaptive_explanation(
         topic: Optional domain or topic classification.
         tutor_mode: Optional 8 contextual modes (EXPLAIN, SIMPLIFY, etc.).
         lesson_context: Optional active lesson and section content.
+        conversation_history: Optional recent conversation messages for chat continuity.
         client: Optional pre-configured Google GenAI client (for testing/customization).
 
     Returns:
@@ -76,6 +78,7 @@ def generate_adaptive_explanation(
             topic=topic,
             tutor_mode=tutor_mode,
             lesson_context=lesson_context,
+            conversation_history=conversation_history,
         )
     except (ValidationError, ValueError) as val_err:
         error_msg = str(val_err)
@@ -91,7 +94,11 @@ def generate_adaptive_explanation(
     adaptation_meta = _get_adaptation_metadata(req.cognitive_load)
 
     # 2. Handle empty or insufficient RAG context without hallucinating
-    if not req.retrieved_context.strip() and not (req.lesson_context and req.lesson_context.strip()):
+    if (
+        not req.retrieved_context.strip()
+        and not (req.lesson_context and req.lesson_context.strip())
+        and not (req.conversation_history and len(req.conversation_history) > 0)
+    ):
         logger.info("Empty RAG context provided for question: '%s'", req.question)
         return AdaptiveResponse(
             success=True,
@@ -109,6 +116,7 @@ def generate_adaptive_explanation(
         topic=req.topic,
         tutor_mode=req.tutor_mode,
         lesson_context=req.lesson_context,
+        conversation_history=req.conversation_history,
     )
 
     # 4. Resolve Gemini Client
@@ -121,38 +129,60 @@ def generate_adaptive_explanation(
             error=str(config_err),
         ).model_dump(exclude_none=True)
 
-    # 5. Call Gemini API
-    model_name = get_model_name()
-    try:
-        response = genai_client.models.generate_content(
-            model=model_name,
-            contents=prompt,
-        )
-        explanation_text = response.text.strip() if response.text else ""
+    # 5. Call Gemini API with automatic candidate model fallback
+    primary_model = get_model_name()
+    candidate_models = [primary_model]
+    for m in [
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+        "gemini-3.7-flash",
+        "gemini-3.6-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
+    ]:
+        if m not in candidate_models:
+            candidate_models.append(m)
 
-        if not explanation_text:
+    last_error: Optional[str] = None
+    for model_name in candidate_models:
+        try:
+            response = genai_client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+            )
+            explanation_text = response.text.strip() if response.text else ""
+
+            if not explanation_text:
+                if client is not None:
+                    return AdaptiveResponse(
+                        success=False,
+                        error="The model generated an empty response.",
+                    ).model_dump(exclude_none=True)
+                continue
+
             return AdaptiveResponse(
-                success=False,
-                error="The model generated an empty response.",
+                success=True,
+                cognitive_load=req.cognitive_load.value,
+                question=req.question,
+                explanation=explanation_text,
+                adaptation=adaptation_meta,
             ).model_dump(exclude_none=True)
 
-        return AdaptiveResponse(
-            success=True,
-            cognitive_load=req.cognitive_load.value,
-            question=req.question,
-            explanation=explanation_text,
-            adaptation=adaptation_meta,
-        ).model_dump(exclude_none=True)
+        except genai_errors.APIError as api_err:
+            msg = api_err.message if hasattr(api_err, "message") else str(api_err)
+            last_error = f"Gemini API error ({model_name}): {msg}"
+            logger.warning("Gemini model '%s' failed: %s. Trying fallback model...", model_name, msg)
+            if client is not None:
+                # If explicit test client provided, break out
+                break
+        except Exception as err:
+            last_error = f"Gemini error ({model_name}): {str(err)}"
+            logger.warning("Gemini model '%s' encountered error: %s. Trying fallback model...", model_name, err)
+            if client is not None:
+                break
 
-    except genai_errors.APIError as api_err:
-        logger.error("Gemini API Error: %s", api_err.message if hasattr(api_err, "message") else str(api_err))
-        return AdaptiveResponse(
-            success=False,
-            error=f"Gemini API error: {api_err.message if hasattr(api_err, 'message') else 'Request failed'}",
-        ).model_dump(exclude_none=True)
-    except Exception as err:
-        logger.error("Unexpected error during adaptive explanation generation: %s", type(err).__name__)
-        return AdaptiveResponse(
-            success=False,
-            error="Unable to generate explanation due to an unexpected error.",
-        ).model_dump(exclude_none=True)
+    return AdaptiveResponse(
+        success=False,
+        error=last_error or "Unable to generate explanation due to an unexpected error.",
+    ).model_dump(exclude_none=True)
