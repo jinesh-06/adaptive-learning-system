@@ -36,6 +36,7 @@ class LLMService:
         level: Optional[str] = None,
         tutor_mode: Optional[str] = None,
         code_context: Optional[str] = None,
+        history: Optional[list] = None,
     ) -> Dict[str, Any]:
         """
         Generate cognitive-load-adapted explanation grounded in verified RAG knowledge.
@@ -81,7 +82,8 @@ class LLMService:
             cognitive_load=cognitive_load,
             topic=topic or course,
             tutor_mode=tutor_mode,
-            lesson_context=lesson_context_str
+            lesson_context=lesson_context_str,
+            conversation_history=history
         )
 
         # 5. If Gemini succeeds, return standard response
@@ -132,10 +134,20 @@ class LLMService:
     ) -> Dict[str, Any]:
         """
         Generate progressive, multi-tier hint conditioned on cognitive load.
-        Level 1: Conceptual nudge / underlying principle
-        Level 2: Structural pseudocode / logical flow
-        Level 3: Exact syntax snippet / target correction
+        Tier 1: Conceptual clue / underlying principle
+        Tier 2: Algorithmic strategy / step-by-step logical approach
+        Tier 3: Pseudocode blueprint / structural outline
+        Tier 4: Partial code skeleton with comments
         """
+        stage_names = [
+            "Conceptual Clue",
+            "Algorithmic Strategy",
+            "Pseudocode Blueprint",
+            "Code Skeleton"
+        ]
+        stage_idx = max(0, min(hint_level - 1, len(stage_names) - 1))
+        stage_title = stage_names[stage_idx]
+
         retrieved_context = rag_service.get_formatted_context(
             query=f"{topic or ''} {question}".strip(),
             course=language,
@@ -144,13 +156,16 @@ class LLMService:
         )
 
         hint_prompt = (
-            f"Provide a Level {hint_level} pedagogical hint for the following problem:\n"
+            f"Provide a Tier {hint_level} pedagogical hint ({stage_title}) for the following coding challenge:\n"
             f"Problem: {question}\n"
-            f"Code: {code_snippet or 'None'}\n"
-            f"Level 1: Intuition nudge only, no syntax.\n"
-            f"Level 2: Structural pseudocode and logic.\n"
-            f"Level 3: Clear concrete syntax and fix example.\n"
-            f"Current Learner Cognitive Load: {cognitive_load.upper()}.\n"
+            f"Current Code: {code_snippet or 'None'}\n"
+            f"Tier 1: Conceptual clue & intuition only, zero code/syntax.\n"
+            f"Tier 2: Algorithmic strategy & high-level logical approach.\n"
+            f"Tier 3: Pseudocode blueprint showing logic structure.\n"
+            f"Tier 4: Partial code skeleton with fill-in-the-blank comments.\n"
+            f"Active Tier to provide: Tier {hint_level} ({stage_title}).\n"
+            f"Cognitive Load: {cognitive_load.upper()}.\n"
+            f"Format clearly in concise markdown."
         )
 
         res = generate_adaptive_explanation(
@@ -164,18 +179,23 @@ class LLMService:
             hint_text = res.get("explanation", "")
         else:
             if hint_level == 1:
-                hint_text = f"💡 Level 1 Conceptual Nudge: Focus on the base logic of {topic or 'the task'}. Check your loop termination condition or variable assignments."
+                hint_text = f"💡 **Tier 1 — Conceptual Clue**: Focus on the core objective in {topic or 'the task'}. Clarify what data structure or condition controls termination."
             elif hint_level == 2:
-                hint_text = f"🔍 Level 2 Structural Outline: 1. Initialize counter/accumulator. 2. Iterate across items. 3. Return or yield final evaluated result."
+                hint_text = f"🧭 **Tier 2 — Algorithmic Strategy**: 1. Initialize required accumulators or tracking pointers. 2. Iterate methodically over items. 3. Return or yield final evaluated result."
+            elif hint_level == 3:
+                hint_text = f"📝 **Tier 3 — Pseudocode Blueprint**:\n```text\nFUNCTION solve(data):\n    INITIALIZE result\n    FOR each element IN data:\n        IF condition(element) THEN\n            UPDATE result\n    RETURN result\n```"
             else:
-                hint_text = f"🚀 Level 3 Concrete Solution Guidance: Ensure variables match target types and review syntax:\n```python\nfor item in collection:\n    process(item)\n```"
+                hint_text = f"🧩 **Tier 4 — Code Skeleton**:\n```{language or 'python'}\ndef solution(items):\n    # 1. Base initialization\n    res = []\n    for x in items:\n        # 2. Apply logic here\n        pass\n    return res\n```"
 
         return {
             "success": True,
             "hint_level": hint_level,
             "hint": hint_text,
+            "hint_text": hint_text,
+            "stage": stage_title,
+            "next_hint_available": hint_level < 4,
             "cognitive_load": cognitive_load.upper(),
-            "max_levels": 3
+            "max_levels": 4
         }
 
     def _build_offline_adaptive_fallback(

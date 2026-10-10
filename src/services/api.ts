@@ -297,6 +297,7 @@ export const api = {
     tutor_mode?: string;
     level?: string;
     code_context?: string;
+    history?: Array<{ sender: 'user' | 'assistant'; text: string }>;
   }) => {
     try {
       const res = await fetch(`${API_BASE}/ai/ask`, {
@@ -304,8 +305,13 @@ export const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
-      if (res.ok) return await res.json();
-    } catch {}
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
+    } catch (err) {
+      console.warn('Backend AI query fallback:', err);
+    }
     return mockHandlers.askAiAssistant(payload);
   },
 
@@ -315,6 +321,7 @@ export const api = {
     hint_level: number;
     topic?: string;
     language?: string;
+    cognitive_load?: string;
   }) => {
     try {
       const res = await fetch(`${API_BASE}/ai/hint`, {
@@ -322,8 +329,16 @@ export const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
-      if (res.ok) return await res.json();
-    } catch {}
+      if (res.ok) {
+        const data = await res.json();
+        if (data.hint && !data.hint_text) {
+          data.hint_text = data.hint;
+        }
+        return data;
+      }
+    } catch (err) {
+      console.warn('Backend Hint query fallback:', err);
+    }
     return mockHandlers.requestProgressiveHint(payload);
   },
 
@@ -1302,12 +1317,57 @@ export const api = {
     return mockHandlers.analyzePythonSignals(payload);
   },
 
+  adaptLesson: async (payload: {
+    topic_id: string;
+    detail_level?: 'STANDARD' | 'DETAILED' | 'SIMPLIFIED';
+    signals?: any;
+    force_refresh?: boolean;
+    learner_feedback?: string;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/lessons/adapt`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    // Fallback to python adaptation generate if /lessons/adapt unavailable
+    try {
+      const legacyRes = await fetch(`${API_BASE}/python/adaptation/generate`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          topic_id: payload.topic_id,
+          strategy: payload.detail_level === 'SIMPLIFIED' ? 'SIMPLIFY' : payload.detail_level === 'DETAILED' ? 'INCREASE_DIFFICULTY' : 'STANDARD',
+          signals: payload.signals,
+          force_refresh: payload.force_refresh
+        })
+      });
+      if (legacyRes.ok) return await legacyRes.json();
+    } catch {}
+    return mockHandlers.generateAdaptedLesson(payload as any);
+  },
+
   generateAdaptedLesson: async (payload: {
     topic_id: string;
     strategy?: string;
     signals?: any;
     force_refresh?: boolean;
   }) => {
+    try {
+      const res = await fetch(`${API_BASE}/lessons/adapt`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          topic_id: payload.topic_id,
+          detail_level: payload.strategy === 'SIMPLIFY' ? 'SIMPLIFIED' : payload.strategy === 'INCREASE_DIFFICULTY' ? 'DETAILED' : 'STANDARD',
+          signals: payload.signals,
+          force_refresh: payload.force_refresh
+        })
+      });
+      if (res.ok) return await res.json();
+    } catch {}
     try {
       const res = await fetch(`${API_BASE}/python/adaptation/generate`, {
         method: 'POST',
@@ -1319,7 +1379,16 @@ export const api = {
     return mockHandlers.generateAdaptedLesson(payload);
   },
 
-  getAdaptedLesson: async (topicId: string) => {
+  getAdaptedLesson: async (topicId: string, detailLevel?: string) => {
+    try {
+      const url = detailLevel
+        ? `${API_BASE}/lessons/adapt/${topicId}?detail_level=${encodeURIComponent(detailLevel)}`
+        : `${API_BASE}/lessons/adapt/${topicId}`;
+      const res = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
     try {
       const res = await fetch(`${API_BASE}/python/adapted/${topicId}`, {
         headers: getAuthHeaders()
@@ -1327,6 +1396,76 @@ export const api = {
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getAdaptedLesson(topicId);
+  },
+
+  submitAdaptationFeedback: async (payload: {
+    topic_id: string;
+    detail_level: string;
+    helpful: boolean;
+    rating?: 'too_simple' | 'just_right' | 'too_complex';
+    comment?: string;
+    completed_practice?: boolean;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/lessons/adapt/feedback`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return { success: true };
   }
 };
+
+export interface AdaptedLessonSection {
+  id: string;
+  type: 'explanation' | 'analogy' | 'step_by_step' | 'visual_diagram' | 'code_example' | 'common_mistakes' | 'guided_practice' | 'quiz' | 'summary' | string;
+  title: string;
+  content?: string;
+  importance?: 'primary' | 'secondary' | 'advanced' | string;
+  language?: string;
+  code?: string;
+  code_explanation?: string;
+  line_by_line?: Array<{ line: string; explanation: string }>;
+  steps?: Array<{ step: number; title: string; description: string }>;
+  diagram_type?: 'flowchart' | 'ascii' | 'conceptual' | string;
+  diagram_content?: string;
+  diagram_caption?: string;
+  mistakes?: Array<{ mistake: string; why_wrong: string; fix: string }>;
+  practice?: {
+    prompt: string;
+    starter_code?: string;
+    expected_output?: string;
+    hint?: string;
+    solution?: string;
+  };
+  questions?: Array<{
+    id: string;
+    question: string;
+    options: string[];
+    correct_index: number;
+    explanation?: string;
+  }>;
+}
+
+export interface AdaptedLessonData {
+  title: string;
+  subject: string;
+  topic: string;
+  topic_id: string;
+  adaptation: {
+    strategy: string;
+    detail_level: 'standard' | 'detailed' | 'simplified' | string;
+    cognitive_load: 'LOW' | 'MEDIUM' | 'HIGH' | string;
+    confidence: number;
+    reason: string;
+    signals_used: string[];
+  };
+  learning_objectives: string[];
+  introduction: string;
+  sections: AdaptedLessonSection[];
+  key_takeaways: string[];
+  next_step?: string;
+}
 
