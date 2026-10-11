@@ -716,6 +716,8 @@ const AppContent: React.FC = () => {
                 />
               }
             />
+            <Route path="/python-fundamentals" element={<Navigate to="/python-dashboard" replace />} />
+            <Route path="/python-fundamentals-dashboard" element={<Navigate to="/python-dashboard" replace />} />
 
             <Route
               path="/python-intermediate-dashboard"
@@ -769,6 +771,7 @@ const AppContent: React.FC = () => {
               }
             />
             <Route path="/c-foundations-dashboard" element={<Navigate to="/c-dashboard" replace />} />
+            <Route path="/c-foundations" element={<Navigate to="/c-dashboard" replace />} />
 
             <Route
               path="/c-intermediate-dashboard"
@@ -783,6 +786,7 @@ const AppContent: React.FC = () => {
                 />
               }
             />
+            <Route path="/c-pointers" element={<Navigate to="/c-intermediate-dashboard" replace />} />
 
             <Route
               path="/c-advanced-systems-dashboard"
