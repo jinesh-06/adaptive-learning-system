@@ -52,14 +52,23 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { currentLoad, confidence, contentMode } = useCognitive();
   const { theme, setTheme, reducedMotion, toggleReducedMotion } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [streakDays, setStreakDays] = useState<number>(3);
+  const [streakDays, setStreakDays] = useState<number>(0);
 
   useEffect(() => {
+    if (!user) {
+      setStreakDays(0);
+      return;
+    }
     api.getUserSnapshot().then(res => {
-      if (res && res.snapshot && typeof res.snapshot.streak_days === 'number') {
-        setStreakDays(res.snapshot.streak_days);
+      const streak = res?.streak_days ?? res?.snapshot?.streak_days ?? res?.current_streak_days;
+      if (typeof streak === 'number') {
+        setStreakDays(streak);
+      } else {
+        setStreakDays(0);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setStreakDays(0);
+    });
   }, [user]);
 
   const languages = [

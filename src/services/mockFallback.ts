@@ -2884,23 +2884,40 @@ export const mockHandlers = {
     return {
       success: true,
       user: { name: 'Learner', email: 'learner@cognitive.edu' },
-      streak_days: 3,
+      streak_days: 0,
       learning_snapshot: {
-        overall_progress: 35,
-        topics_completed: 4,
-        total_topics: 12,
-        quiz_accuracy: 88,
-        challenges_solved: 3
+        overall_progress: 0,
+        topics_completed: history.length,
+        total_topics: 238,
+        quiz_accuracy: 0,
+        coding_accuracy: 0,
+        learning_time_minutes: 0,
+        challenges_solved: 0
       },
+      language_progress: {
+        python: 0,
+        c: 0,
+        cpp: 0,
+        java: 0
+      },
+      current_course: 'Python Fundamentals',
+      current_topic_id: 'top-py-intro',
+      current_topic_title: 'Python Syntax & Dynamic Typing',
+      topic_progress: 0,
       cognitive_state: {
-        current_load: 'LOW',
-        trajectory: 'IMPROVING',
+        current_load: 'MEDIUM',
+        trajectory: 'STABLE',
         recent_average_load: 'MEDIUM'
       },
       ai_recommendation: {
-        action: 'CONTINUE',
-        target_topic_id: 'top-py-functions',
-        reason: 'Optimal pace observed. Ready to advance to Functions and Modular Scopes.'
+        action: 'START',
+        target_topic_id: 'top-py-intro',
+        reason: 'Welcome to your learning journey! Begin with Python Fundamentals.'
+      },
+      cognitive_trend: [],
+      achievements: {
+        all: [],
+        unlocked: []
       },
       recent_activity: history.slice(0, 5)
     };
@@ -3183,42 +3200,35 @@ export const mockHandlers = {
 
   // Learning History
   getLearningHistory: async () => {
-    const history = getStoredArray(MOCK_STORAGE_KEYS.HISTORY, [
-      {
-        id: 'hist-seed-1',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        topic_id: 'top-py-intro',
-        topic_title: 'Python Syntax & Dynamic Typing',
-        language: 'python',
-        quiz_score: 90,
-        coding_score: 100,
-        time_spent: 240,
-        cognitive_load: 'LOW',
-        adaptive_action: 'CONTINUE'
-      },
-      {
-        id: 'hist-seed-2',
-        timestamp: new Date(Date.now() - 43200000).toISOString(),
-        topic_id: 'top-py-loops',
-        topic_title: 'Loops and Iteration Constructs',
-        language: 'python',
-        quiz_score: 75,
-        coding_score: 80,
-        time_spent: 310,
-        cognitive_load: 'MEDIUM',
-        adaptive_action: 'PRACTICE'
-      }
-    ]);
+    const history = getStoredArray(MOCK_STORAGE_KEYS.HISTORY, []);
+    const validQuizzes = history.filter((h: any) => typeof h.quiz_score === 'number');
+    const validCoding = history.filter((h: any) => typeof h.coding_score === 'number');
+    const totalTimeSec = history.reduce((acc: number, h: any) => acc + (h.time_spent || h.time_spent_seconds || 0), 0);
+    const avgQuiz = validQuizzes.length > 0
+      ? Math.round(validQuizzes.reduce((acc: number, h: any) => acc + h.quiz_score, 0) / validQuizzes.length)
+      : 0;
+    const avgCode = validCoding.length > 0
+      ? Math.round(validCoding.reduce((acc: number, h: any) => acc + h.coding_score, 0) / validCoding.length)
+      : 0;
+
     return {
       success: true,
       history,
+      recent_events: history,
+      insights: {
+        avg_quiz_score: avgQuiz,
+        avg_coding_score: avgCode,
+        total_time_minutes: Math.round(totalTimeSec / 60),
+        improvement_delta: 0,
+        adaptive_efficiency_rate: history.length > 0 ? '100%' : '0%'
+      },
       summary_stats: {
         total_sessions: history.length,
-        avg_quiz_score: 85,
-        avg_coding_score: 90,
-        total_time_spent: 550
+        avg_quiz_score: avgQuiz,
+        avg_coding_score: avgCode,
+        total_time_spent: totalTimeSec
       },
-      cognitive_trajectory: ['HIGH', 'MEDIUM', 'LOW']
+      cognitive_trajectory: []
     };
   },
 

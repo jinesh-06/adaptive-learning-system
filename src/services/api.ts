@@ -438,7 +438,10 @@ export const api = {
       });
       if (res.ok) return await res.json();
     } catch {}
-    return mockHandlers.getDashboardSnapshot();
+    if (isGitHubPages) {
+      return mockHandlers.getDashboardSnapshot();
+    }
+    return null;
   },
 
   getUserSnapshot: async () => {
@@ -448,13 +451,18 @@ export const api = {
       });
       if (res.ok) return await res.json();
     } catch {}
-    return mockHandlers.getDashboardSnapshot();
+    if (isGitHubPages) {
+      return mockHandlers.getDashboardSnapshot();
+    }
+    return null;
   },
 
   // Visual Roadmap (Section 46)
   getLanguageRoadmap: async (language: string) => {
     try {
-      const res = await fetch(`${API_BASE}/dashboard/roadmap/${language}`);
+      const res = await fetch(`${API_BASE}/dashboard/roadmap/${language}`, {
+        headers: getAuthHeaders()
+      });
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getLanguageRoadmap(language);
@@ -699,7 +707,10 @@ export const api = {
       });
       if (res.ok) return await res.json();
     } catch {}
-    return mockHandlers.getLearningHistory();
+    if (isGitHubPages) {
+      return mockHandlers.getLearningHistory();
+    }
+    return null;
   },
 
   // C Programming Foundations Flow

@@ -6,6 +6,7 @@ import sqlite3
 import threading
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from datetime import datetime, date, timedelta
 
 from backend.config import DB_PATH, PLATFORM_DATA_PATH
 
@@ -449,17 +450,19 @@ class StateStore:
         try:
             conn = self.get_connection()
             cur = conn.cursor()
+            row = None
             if course_id:
                 cur.execute(
                     "SELECT status FROM user_progress WHERE topic_id = ? AND user_id = ? AND course_id = ? ORDER BY updated_at DESC LIMIT 1",
                     (topic_id, user_id, course_id)
                 )
-            else:
+                row = cur.fetchone()
+            if not row:
                 cur.execute(
                     "SELECT status FROM user_progress WHERE topic_id = ? AND user_id = ? ORDER BY updated_at DESC LIMIT 1",
                     (topic_id, user_id)
                 )
-            row = cur.fetchone()
+                row = cur.fetchone()
             conn.close()
             if row and row["status"]:
                 return row["status"]
@@ -754,6 +757,406 @@ class StateStore:
         except Exception as e:
             print(f"[StateStore] get_quiz_attempts error: {e}")
             return []
+
+    def update_topic_progress(self, topic_id: str, status: str, time_spent: float = 0.0, user_id: str = "guest-learner", course_id: str = "course-py-fund"):
+        return self.save_topic_progress(user_id=user_id, course_id=course_id, topic_id=topic_id, status=status, time_spent_delta=time_spent)
+
+    def record_telemetry_event(self, user_id: str, topic_id: Optional[str], event_type: str, duration: float, metadata: Optional[Dict[str, Any]] = None):
+        return self.record_telemetry(user_id=user_id, topic_id=topic_id, event_type=event_type, duration=duration, metadata=metadata or {})
+
+    def record_quiz_attempt(self, user_id: str, topic_id: str, score: float, total_questions: int = 10, time_spent: float = 60.0):
+        percentage = score if score > 10 else (score / total_questions) * 100
+        return self.save_quiz_attempt(user_id=user_id, topic_id=topic_id, attempt_data={
+            "score": score,
+            "percentage": percentage,
+            "correct_count": int(score) if score <= total_questions else int(round((score / 100) * total_questions)),
+            "total_questions": total_questions,
+            "time_spent": time_spent
+        })
+
+    # --- Consecutive Active Days (Streak) ---
+    def get_user_streak(self, user_id: Optional[str]) -> int:
+        """
+        Calculate consecutive active learning days up to today (or yesterday).
+        Rule: An active day is any calendar day with at least one recorded event
+        in telemetry_events, quiz_attempts, or user_progress.
+        A streak remains active if the most recent activity occurred today or yesterday.
+        Returns 0 if no recent activity or if user has no records.
+        """
+        safe_uid = str(user_id or "").strip()
+        if not safe_uid:
+            return 0
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT DISTINCT substr(timestamp, 1, 10) as act_date FROM telemetry_events WHERE user_id = ?
+                UNION
+                SELECT DISTINCT substr(created_at, 1, 10) as act_date FROM quiz_attempts WHERE user_id = ?
+                UNION
+                SELECT DISTINCT substr(updated_at, 1, 10) as act_date FROM user_progress
+                WHERE user_id = ? AND (time_spent_seconds > 0 OR completion_pct > 0 OR status = 'COMPLETED')
+            """, (safe_uid, safe_uid, safe_uid))
+            rows = cur.fetchall()
+            conn.close()
+
+            raw_dates = []
+            for r in rows:
+                val = r["act_date"]
+                if val and len(val) >= 10:
+                    try:
+                        raw_dates.append(date.fromisoformat(val[:10]))
+                    except Exception:
+                        pass
+
+            if not raw_dates:
+                return 0
+
+            dates = sorted(set(raw_dates), reverse=True)
+            today = date.today()
+            if dates[0] < today - timedelta(days=1):
+                return 0
+
+            streak = 1
+            curr = dates[0]
+            for d in dates[1:]:
+                if d == curr - timedelta(days=1):
+                    streak += 1
+                    curr = d
+                elif d == curr:
+                    continue
+                else:
+                    break
+            return streak
+        except Exception as e:
+            print(f"[StateStore] get_user_streak error: {e}")
+            return 0
+
+    # --- Learner Dashboard Analytics Aggregator ---
+    def get_learner_dashboard_stats(self, user_id: Optional[str]) -> Dict[str, Any]:
+        """
+        Aggregate genuine learner statistics from SQLite database records for user_id.
+        Avoids division by zero, avoids invented statistics, and returns genuine zero-state
+        for newly registered or inactive learners.
+        """
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+
+            # 1. User Name
+            cur.execute("SELECT name FROM users WHERE id = ?", (safe_uid,))
+            user_row = cur.fetchone()
+            user_name = user_row["name"] if user_row and user_row["name"] else "Learner"
+
+            # 2. Completed Topics & Curriculum Progress
+            cur.execute("""
+                SELECT COUNT(DISTINCT topic_id) as comp_cnt
+                FROM user_progress
+                WHERE user_id = ? AND (status = 'COMPLETED' OR completion_pct >= 95.0)
+            """, (safe_uid,))
+            row = cur.fetchone()
+            completed_topics = int(row["comp_cnt"] or 0) if row else 0
+
+            total_curriculum_topics = 238
+            overall_progress = round((completed_topics / total_curriculum_topics) * 100) if total_curriculum_topics > 0 else 0
+
+            # 3. Quiz Attempts & Average Score
+            cur.execute("""
+                SELECT COUNT(*) as attempt_cnt, AVG(percentage) as avg_pct
+                FROM quiz_attempts
+                WHERE user_id = ?
+            """, (safe_uid,))
+            q_row = cur.fetchone()
+            quiz_count = int(q_row["attempt_cnt"] or 0) if q_row else 0
+            quiz_avg = float(q_row["avg_pct"] or 0.0) if q_row and q_row["avg_pct"] is not None else 0.0
+            if quiz_count == 0:
+                cur.execute("SELECT COUNT(*), AVG(quiz_score) FROM user_progress WHERE user_id = ? AND quiz_score > 0", (safe_uid,))
+                up_q = cur.fetchone()
+                if up_q and up_q[0] > 0:
+                    quiz_count = int(up_q[0])
+                    quiz_avg = float(up_q[1] or 0.0)
+
+            # 4. Coding Accuracy
+            cur.execute("""
+                SELECT metadata_json
+                FROM telemetry_events
+                WHERE user_id = ? AND event_type = 'CODE_SUBMIT'
+            """, (safe_uid,))
+            code_events = cur.fetchall()
+            if code_events:
+                code_scores = []
+                for ev in code_events:
+                    try:
+                        meta = json.loads(ev["metadata_json"] or "{}")
+                        if "accuracy" in meta and meta["accuracy"] is not None:
+                            code_scores.append(float(meta["accuracy"]))
+                        elif "score" in meta and meta["score"] is not None:
+                            code_scores.append(float(meta["score"]))
+                        elif meta.get("passed") is True:
+                            code_scores.append(100.0)
+                        elif meta.get("passed") is False:
+                            code_scores.append(0.0)
+                    except Exception:
+                        pass
+                coding_accuracy = round(sum(code_scores) / len(code_scores)) if code_scores else None
+            else:
+                coding_accuracy = None
+
+            # 5. Study Time (Minutes)
+            # Avoid double-counting: telemetry_events and user_progress both receive duration on code submissions
+            # and topic sessions. We aggregate per topic taking the maximum recorded duration between
+            # telemetry and topic progress, plus any non-topic telemetry events.
+            cur.execute("""
+                SELECT topic_id, SUM(duration) as dur
+                FROM telemetry_events
+                WHERE user_id = ? AND topic_id IS NOT NULL AND topic_id != ''
+                GROUP BY topic_id
+            """, (safe_uid,))
+            te_by_topic = {r["topic_id"]: float(r["dur"] or 0.0) for r in cur.fetchall()}
+
+            cur.execute("""
+                SELECT topic_id, SUM(time_spent_seconds) as dur
+                FROM user_progress
+                WHERE user_id = ? AND topic_id IS NOT NULL AND topic_id != ''
+                GROUP BY topic_id
+            """, (safe_uid,))
+            up_by_topic = {r["topic_id"]: float(r["dur"] or 0.0) for r in cur.fetchall()}
+
+            all_topic_ids = set(te_by_topic.keys()).union(set(up_by_topic.keys()))
+            total_topic_duration = sum(max(te_by_topic.get(t, 0.0), up_by_topic.get(t, 0.0)) for t in all_topic_ids)
+
+            cur.execute("""
+                SELECT COALESCE(SUM(duration), 0.0)
+                FROM telemetry_events
+                WHERE user_id = ? AND (topic_id IS NULL OR topic_id = '')
+            """, (safe_uid,))
+            non_topic_te = float(cur.fetchone()[0] or 0.0)
+
+            total_duration = total_topic_duration + non_topic_te
+            study_time_minutes = round(total_duration / 60.0)
+
+            # 6. Streak
+            streak_days = self.get_user_streak(safe_uid)
+
+            # 7. Language Progress
+            cur.execute("""
+                SELECT DISTINCT topic_id FROM user_progress
+                WHERE user_id = ? AND (status = 'COMPLETED' OR completion_pct >= 95.0)
+            """, (safe_uid,))
+            comp_topic_rows = cur.fetchall()
+            comp_set = {r["topic_id"] for r in comp_topic_rows if r["topic_id"]}
+
+            py_comp = sum(1 for t in comp_set if t.startswith("top-py-"))
+            c_comp = sum(1 for t in comp_set if t.startswith("top-c-") and not t.startswith("top-cpp-"))
+            cpp_comp = sum(1 for t in comp_set if t.startswith("top-cpp-"))
+            java_comp = sum(1 for t in comp_set if t.startswith("top-java-"))
+
+            lang_progress = {
+                "python": round((py_comp / 24.0) * 100) if py_comp else 0,
+                "c": round((c_comp / 48.0) * 100) if c_comp else 0,
+                "cpp": round((cpp_comp / 73.0) * 100) if cpp_comp else 0,
+                "java": round((java_comp / 93.0) * 100) if java_comp else 0
+            }
+
+            # 8. User Preferences & Active Focus Topic
+            cur.execute("SELECT selected_language, current_level FROM user_preferences WHERE user_id = ?", (safe_uid,))
+            pref = cur.fetchone()
+            sel_lang = pref["selected_language"].lower() if pref and pref["selected_language"] else "python"
+
+            course_titles = {
+                "python": "Python Fundamentals",
+                "c": "C Programming Foundations",
+                "cpp": "Modern C++ Fundamentals",
+                "java": "Java Architecture Basics"
+            }
+            default_topics = {
+                "python": ("top-py-fundamentals", "Python Fundamentals"),
+                "c": ("top-c-intro", "C Language Foundations"),
+                "cpp": ("top-cpp-intro", "Modern C++ Syntax & Setup"),
+                "java": ("top-java-intro", "Java Environment & JVM Architecture")
+            }
+            current_course = course_titles.get(sel_lang, "Python Fundamentals")
+
+            cur.execute("""
+                SELECT topic_id, completion_pct, status FROM user_progress
+                WHERE user_id = ? AND status != 'COMPLETED'
+                ORDER BY updated_at DESC LIMIT 1
+            """, (safe_uid,))
+            active_p = cur.fetchone()
+            if active_p and active_p["topic_id"]:
+                current_topic_id = active_p["topic_id"]
+                topic_progress = round(float(active_p["completion_pct"] or 0.0))
+            else:
+                def_id, _ = default_topics.get(sel_lang, ("top-py-fundamentals", "Python Fundamentals"))
+                current_topic_id = def_id
+                topic_progress = 0
+
+            current_topic_title = (
+                current_topic_id.replace("top-py-", "")
+                .replace("top-c-", "")
+                .replace("top-cpp-", "")
+                .replace("top-java-", "")
+                .replace("-", " ")
+                .title()
+            )
+
+            # 9. Adaptive State & Cognitive Trend
+            cur.execute("""
+                SELECT cognitive_load, topic_id
+                FROM adaptive_history
+                WHERE user_id = ?
+                ORDER BY id DESC LIMIT 7
+            """, (safe_uid,))
+            ah_rows = cur.fetchall()
+            if ah_rows:
+                current_load = ah_rows[0]["cognitive_load"] or "MEDIUM"
+                cognitive_trend = [
+                    {"state": r["cognitive_load"] or "MEDIUM", "label": r["topic_id"] or "Topic"}
+                    for r in reversed(ah_rows)
+                ]
+            else:
+                current_load = "MEDIUM"
+                cognitive_trend = []
+
+            content_mode = "SIMPLIFIED" if current_load == "HIGH" else "CONCISE" if current_load == "LOW" else "BALANCED"
+
+            # 10. AI Recommendation
+            cur.execute("""
+                SELECT recommended_action, reason, topic_id
+                FROM adaptive_history
+                WHERE user_id = ?
+                ORDER BY id DESC LIMIT 1
+            """, (safe_uid,))
+            latest_rec = cur.fetchone()
+            if latest_rec and latest_rec["reason"]:
+                rec_action = latest_rec["recommended_action"] or "CONTINUE"
+                rec_reason = latest_rec["reason"]
+                rec_topic_id = latest_rec["topic_id"] or current_topic_id
+            elif completed_topics > 0:
+                rec_action = "CONTINUE"
+                rec_reason = f"Steady progress detected. Continue with {current_topic_title}."
+                rec_topic_id = current_topic_id
+            else:
+                rec_action = "START"
+                rec_reason = f"Welcome to the adaptive engine. Start your first lesson on {current_topic_title}."
+                rec_topic_id = current_topic_id
+
+            ai_recommendation = {
+                "action": rec_action,
+                "topic_id": rec_topic_id,
+                "reason": rec_reason
+            }
+
+            # 11. Achievements
+            all_achievements = self.platform_data.get("achievements", [])
+            unlocked = []
+            if coding_accuracy is not None and coding_accuracy > 0:
+                unlocked.append({"achievement_code": "FIRST_CODE", "unlocked_at": "Active"})
+            if completed_topics >= 1:
+                unlocked.append({"achievement_code": "FIRST_TOPIC", "unlocked_at": "Active"})
+            if quiz_avg >= 90.0 and quiz_count > 0:
+                unlocked.append({"achievement_code": "QUIZ_MASTER", "unlocked_at": "Active"})
+            if streak_days >= 7:
+                unlocked.append({"achievement_code": "SEVEN_DAY_LEARNER", "unlocked_at": "Active"})
+            if py_comp >= 3:
+                unlocked.append({"achievement_code": "PYTHON_APPRENTICE", "unlocked_at": "Active"})
+
+            for ua in self.platform_data.get("user_achievements", []):
+                if ua.get("user_id") == safe_uid and not any(u["achievement_code"] == ua.get("achievement_code") for u in unlocked):
+                    unlocked.append({"achievement_code": ua.get("achievement_code"), "unlocked_at": ua.get("unlocked_at", "")})
+
+            achievements = {
+                "all": all_achievements,
+                "unlocked": unlocked
+            }
+
+            # 12. Recent Activity
+            recent_activity = []
+            cur.execute("""
+                SELECT topic_id, percentage, created_at as dt
+                FROM quiz_attempts WHERE user_id = ?
+                ORDER BY created_at DESC LIMIT 3
+            """, (safe_uid,))
+            for qr in cur.fetchall():
+                recent_activity.append({
+                    "type": "QUIZ",
+                    "title": f"Knowledge Check: {qr['topic_id']}",
+                    "score": f"{round(qr['percentage'])}%",
+                    "date": qr["dt"][:10] if qr["dt"] else "Recent"
+                })
+            cur.execute("""
+                SELECT topic_id, duration, timestamp as dt
+                FROM telemetry_events WHERE user_id = ?
+                ORDER BY id DESC LIMIT 3
+            """, (safe_uid,))
+            for te in cur.fetchall():
+                recent_activity.append({
+                    "type": "LESSON",
+                    "title": f"Lesson Activity: {te['topic_id']}",
+                    "date": te["dt"][:10] if te["dt"] else "Recent"
+                })
+
+            conn.close()
+
+            return {
+                "success": True,
+                "user_id": safe_uid,
+                "user_name": user_name,
+                "streak_days": streak_days,
+                "snapshot": {
+                    "streak_days": streak_days
+                },
+                "learning_snapshot": {
+                    "overall_progress": overall_progress,
+                    "quiz_accuracy": round(quiz_avg),
+                    "coding_accuracy": round(coding_accuracy) if coding_accuracy is not None else None,
+                    "learning_time_minutes": study_time_minutes,
+                    "topics_completed": completed_topics
+                },
+                "language_progress": lang_progress,
+                "current_course": current_course,
+                "current_topic_id": current_topic_id,
+                "current_topic_title": current_topic_title,
+                "topic_progress": topic_progress,
+                "ai_recommendation": ai_recommendation,
+                "cognitive_trend": cognitive_trend,
+                "achievements": achievements,
+                "recent_activity": recent_activity,
+                # Legacy flat fields for backward compatibility:
+                "overall_progress": overall_progress,
+                "quiz_accuracy": round(quiz_avg),
+                "coding_accuracy": round(coding_accuracy) if coding_accuracy is not None else None,
+                "learning_time_minutes": study_time_minutes,
+                "quiz_attempts_count": quiz_count,
+                "current_streak_days": streak_days,
+                "topics_completed": completed_topics,
+                "total_quizzes_taken": quiz_count,
+                "average_quiz_score": round(quiz_avg),
+                "current_cognitive_load": current_load,
+                "current_content_mode": content_mode,
+                "recommended_next_topic": current_topic_id,
+                "recommended_next_topic_title": current_topic_title
+            }
+        except Exception as e:
+            print(f"[StateStore] get_learner_dashboard_stats error: {e}")
+            return {
+                "success": False,
+                "user_id": safe_uid,
+                "streak_days": 0,
+                "snapshot": {"streak_days": 0},
+                "learning_snapshot": {
+                    "overall_progress": 0,
+                    "quiz_accuracy": 0,
+                    "coding_accuracy": None,
+                    "learning_time_minutes": 0,
+                    "topics_completed": 0
+                },
+                "language_progress": {"python": 0, "c": 0, "cpp": 0, "java": 0},
+                "cognitive_trend": [],
+                "achievements": {"all": [], "unlocked": []},
+                "recent_activity": []
+            }
 
 
 state_store = StateStore()

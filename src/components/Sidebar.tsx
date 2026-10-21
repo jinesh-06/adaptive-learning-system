@@ -87,15 +87,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [isMobileOpen, setIsMobileOpen]);
 
   const [profileOpen, setProfileOpen] = useState(false);
-  const [streakDays, setStreakDays] = useState<number>(3);
+  const [streakDays, setStreakDays] = useState<number>(0);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      setStreakDays(0);
+      return;
+    }
     api.getUserSnapshot().then(res => {
-      if (res && res.snapshot && typeof res.snapshot.streak_days === 'number') {
-        setStreakDays(res.snapshot.streak_days);
+      const streak = res?.streak_days ?? res?.snapshot?.streak_days ?? res?.current_streak_days;
+      if (typeof streak === 'number') {
+        setStreakDays(streak);
+      } else {
+        setStreakDays(0);
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setStreakDays(0);
+    });
   }, [user]);
 
   const languages = [

@@ -107,7 +107,12 @@ async def submit_diagnostic(language: str, payload: DiagnosticSubmission, reques
         "revisits": 1
     })
 
-    predicted_load = ml_eval.get("predicted_cognitive_load", "MEDIUM")
+    predicted_load = "MEDIUM"
+    for key in ("cognitive_load", "cognitive_level", "predicted_cognitive_load"):
+        val = ml_eval.get(key)
+        if val is not None and str(val).strip():
+            predicted_load = str(val).strip().upper()
+            break
     confidence = ml_eval.get("confidence", 0.88)
     contributing_factors = ml_eval.get("contributing_factors", [])
 

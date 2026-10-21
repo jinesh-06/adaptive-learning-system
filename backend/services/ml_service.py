@@ -122,6 +122,7 @@ class MLService:
         return {
             "cognitive_load": prediction,
             "cognitive_level": prediction,
+            "predicted_cognitive_load": prediction,
             "confidence": confidence,
             "content_mode": content_mode,
             "recommended_action": recommended_action,

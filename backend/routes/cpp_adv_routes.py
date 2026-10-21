@@ -240,7 +240,7 @@ async def get_cpp_adv_dashboard(request: Request):
         "quizzes_completed": quiz_completed_count,
         "overall_progress": overall_progress,
         "current_topic_id": current_topic_id,
-        "streak_days": 5,
+        "streak_days": state_store.get_user_streak(user_id),
         "estimated_remaining_minutes": remaining_minutes,
         "total_duration_hours": 14,
         "learning_signals_status": "Cognitive Engine Calibrated & Active",
