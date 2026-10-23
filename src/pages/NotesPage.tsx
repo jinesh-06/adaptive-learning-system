@@ -43,9 +43,18 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
     setLoading(true);
     try {
       const data = await api.getNotes(searchQuery, selectedLanguage);
-      if (data && data.notes) {
-        setNotes(data.notes);
-      }
+      const list = Array.isArray(data) ? data : (data?.notes || []);
+      // Guarantee unique valid IDs across all loaded notes
+      const seen = new Set<string>();
+      const sanitized = list.filter((n: any) => {
+        if (!n) return false;
+        const validId = n.id || `note_${Math.random().toString(36).slice(2, 9)}`;
+        n.id = validId;
+        if (seen.has(validId)) return false;
+        seen.add(validId);
+        return true;
+      });
+      setNotes(sanitized);
     } catch (err) {
       console.error('Failed to load notes:', err);
     } finally {
@@ -67,12 +76,13 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
 
   const handleOpenEdit = (note: any, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!note || !note.id) return;
     setEditingNoteId(note.id);
     setNoteForm({
-      title: note.title,
-      content: note.content,
+      title: note.title || '',
+      content: note.content || '',
       language: note.language || 'python',
-      topic_id: note.topic_id,
+      topic_id: note.topic_id || 'top-py-loops',
       subtopic_title: note.subtopic_title || ''
     });
     setModalOpen(true);
@@ -82,21 +92,43 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
     if (!noteForm.title.trim() || !noteForm.content.trim()) return;
     try {
       if (editingNoteId) {
-        const updated = await api.updateNote(editingNoteId, {
-          title: noteForm.title,
-          content: noteForm.content,
-          subtopic_title: noteForm.subtopic_title
+        // Update existing note in place
+        await api.updateNote(editingNoteId, {
+          title: noteForm.title.trim(),
+          content: noteForm.content.trim(),
+          subtopic_title: noteForm.subtopic_title,
+          language: noteForm.language,
+          topic_id: noteForm.topic_id
         });
-        if (updated && updated.note) {
-          setNotes(prev => prev.map(n => n.id === editingNoteId ? updated.note : n));
-        }
+        setNotes(prev => prev.map(n => n.id === editingNoteId ? {
+          ...n,
+          title: noteForm.title.trim(),
+          content: noteForm.content.trim(),
+          subtopic_title: noteForm.subtopic_title,
+          language: noteForm.language,
+          updated_at: new Date().toISOString()
+        } : n));
       } else {
-        const res = await api.createNote(noteForm);
-        if (res && res.note) {
-          setNotes(prev => [res.note, ...prev]);
-        }
+        // Create new note
+        const res = await api.createNote({
+          ...noteForm,
+          title: noteForm.title.trim(),
+          content: noteForm.content.trim()
+        });
+        const newId = res?.id || res?.note?.id || `note_${Date.now()}`;
+        const createdNote = {
+          ...noteForm,
+          title: noteForm.title.trim(),
+          content: noteForm.content.trim(),
+          id: newId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setNotes(prev => [createdNote, ...prev]);
       }
       setModalOpen(false);
+      setEditingNoteId(null);
+      await loadNotes();
     } catch (err) {
       console.error('Save note error:', err);
     }
@@ -104,9 +136,11 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
 
   const handleDeleteNote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!id) return;
     try {
       await api.deleteNote(id);
       setNotes(prev => prev.filter(n => n.id !== id));
+      await loadNotes();
     } catch (err) {
       console.error('Delete note error:', err);
     }
@@ -264,9 +298,21 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">
-                {editingNoteId ? 'Edit Personal Note' : 'Create New Note'}
-              </h3>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>{editingNoteId ? 'Edit Personal Note' : 'Create New Note'}</span>
+                  {editingNoteId && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      Editing
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {editingNoteId
+                    ? 'Changes will update this note directly without creating another duplicate.'
+                    : 'Add a new personal note to your learning repository.'}
+                </p>
+              </div>
               <button
                 onClick={() => setModalOpen(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white"
@@ -325,21 +371,41 @@ export const NotesPage: React.FC<NotesPageProps> = ({ onSelectTopic }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveNote}
-                disabled={!noteForm.title.trim() || !noteForm.content.trim()}
-                className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Save Note</span>
-              </button>
+            <div className="flex items-center justify-between pt-2">
+              <div>
+                {editingNoteId && (
+                  <button
+                    type="button"
+                    onClick={e => {
+                      handleDeleteNote(editingNoteId, e);
+                      setModalOpen(false);
+                    }}
+                    className="px-3.5 py-2 rounded-xl border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Note</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={!noteForm.title.trim() || !noteForm.content.trim()}
+                  className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 text-slate-950 font-bold text-xs transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{editingNoteId ? 'Update Note' : 'Save Note'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

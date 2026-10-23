@@ -3147,7 +3147,7 @@ export const mockHandlers = {
   },
 
   // Notes CRUD (localStorage)
-  getNotes: async (query?: string, language?: string) => {
+  getNotes: async (query?: string, language?: string, topicId?: string) => {
     let all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, [
       {
         id: 'note-default-1',
@@ -3160,10 +3160,13 @@ export const mockHandlers = {
       }
     ]);
     if (query) {
-      all = all.filter(n => n.title.toLowerCase().includes(query.toLowerCase()) || n.content.toLowerCase().includes(query.toLowerCase()));
+      all = all.filter(n => (n.title || '').toLowerCase().includes(query.toLowerCase()) || (n.content || '').toLowerCase().includes(query.toLowerCase()));
     }
     if (language && language !== 'all') {
       all = all.filter(n => n.language === language);
+    }
+    if (topicId && topicId !== 'all') {
+      all = all.filter(n => n.topic_id === topicId);
     }
     return { success: true, total: all.length, notes: all };
   },
@@ -3171,25 +3174,26 @@ export const mockHandlers = {
   createNote: async (payload: any) => {
     const all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, []);
     const newNote = {
-      id: `note-${Date.now()}`,
+      id: payload.id || `note-${Date.now()}`,
       ...payload,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+    newNote.id = newNote.id || `note-${Date.now()}`;
     all.unshift(newNote);
     setStoredArray(MOCK_STORAGE_KEYS.NOTES, all);
-    return { success: true, note: newNote };
+    return { success: true, id: newNote.id, note: newNote };
   },
 
   updateNote: async (id: string, payload: any) => {
     const all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, []);
     const idx = all.findIndex(n => n.id === id);
     if (idx >= 0) {
-      all[idx] = { ...all[idx], ...payload, updated_at: new Date().toISOString() };
+      all[idx] = { ...all[idx], ...payload, id, updated_at: new Date().toISOString() };
       setStoredArray(MOCK_STORAGE_KEYS.NOTES, all);
-      return { success: true, note: all[idx] };
+      return { success: true, id, note: all[idx] };
     }
-    return { success: false };
+    return { success: false, id };
   },
 
   deleteNote: async (id: string) => {

@@ -652,9 +652,13 @@ export const api = {
       const res = await fetch(`${API_BASE}/notes?${params.toString()}`, {
         headers: getAuthHeaders()
       });
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data?.notes || []);
+        return { notes: list };
+      }
     } catch {}
-    return mockHandlers.getNotes(query, language);
+    return mockHandlers.getNotes(query, language, topicId);
   },
 
   createNote: async (payload: {
@@ -671,19 +675,43 @@ export const api = {
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        const noteId = data.id || (data.note && data.note.id) || `note_${Date.now()}`;
+        const noteObj = {
+          ...payload,
+          id: noteId,
+          ...(data.note || {})
+        };
+        noteObj.id = noteId;
+        return {
+          ...data,
+          id: noteId,
+          note: noteObj
+        };
+      }
     } catch {}
     return mockHandlers.createNote(payload);
   },
 
-  updateNote: async (id: string, payload: { title?: string; content?: string; subtopic_title?: string }) => {
+  updateNote: async (id: string, payload: { title?: string; content?: string; subtopic_title?: string; language?: string; topic_id?: string }) => {
     try {
       const res = await fetch(`${API_BASE}/notes/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
-      if (res.ok) return await res.json();
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          ...data,
+          id,
+          note: {
+            id,
+            ...payload
+          }
+        };
+      }
     } catch {}
     return mockHandlers.updateNote(id, payload);
   },
