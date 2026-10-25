@@ -74,6 +74,12 @@ class AdaptiveRequest(BaseModel):
     conversation_history: Optional[list] = Field(
         default=None, description="Recent conversation messages between student and AI copilot"
     )
+    language: Optional[str] = Field(
+        default="python", description="Target programming language (e.g., python, c, cpp, java)"
+    )
+    allow_general_knowledge: Optional[bool] = Field(
+        default=False, description="Whether to allow answering general programming questions without active lesson/RAG context"
+    )
 
     @field_validator("question", mode="before")
     @classmethod

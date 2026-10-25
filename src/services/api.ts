@@ -83,21 +83,36 @@ export const api = {
     };
   },
 
-  oauthLogin: async (payload: { provider: 'github' | 'google'; email?: string; name?: string; avatar_url?: string }) => {
+  oauthLogin: async (payload: { provider: 'github' | 'google'; idToken?: string; email?: string; name?: string; avatar_url?: string }) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (payload.idToken) {
+      headers['Authorization'] = `Bearer ${payload.idToken}`;
+    }
     const data = await fetchJson(`${API_BASE}/auth/oauth`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      headers,
+      body: JSON.stringify({
+        provider: payload.provider,
+        email: payload.email,
+        name: payload.name,
+        avatar_url: payload.avatar_url
+      })
     });
-    if (data) return data;
+    if (data) {
+      if (data.token) {
+        localStorage.setItem('cognitive_token', data.token);
+      }
+      return data;
+    }
     const providerName = payload.provider === 'github' ? 'GitHub' : 'Google';
     const email = payload.email || `${payload.provider}.learner@cognitive.edu`;
     const name = payload.name || `${providerName} Developer`;
+    const mockToken = payload.idToken || `mock_oauth_${payload.provider}_token`;
     const mockUser = { id: `oauth_${payload.provider}_${Date.now()}`, name, email, role: 'student', provider: payload.provider };
-    localStorage.setItem('cognitive_token', `mock_oauth_${payload.provider}_token`);
+    localStorage.setItem('cognitive_token', mockToken);
     return {
       success: true,
-      token: `mock_oauth_${payload.provider}_token`,
+      token: mockToken,
       user: mockUser,
       preferences: { selected_language: 'python', current_level: 'beginner', preferred_mode: 'adaptive' }
     };

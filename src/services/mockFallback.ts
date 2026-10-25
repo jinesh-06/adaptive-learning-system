@@ -2826,18 +2826,21 @@ export const mockHandlers = {
       details
     };
 
+    const adaptiveFeedback = {
+      cognitive_level: allPassed ? 'LOW' : 'MEDIUM',
+      recommended_action: allPassed ? 'CONTINUE_NEXT_TOPIC' : 'REVISE',
+      reason: allPassed
+        ? 'Solution executed cleanly with zero syntax errors. All test cases passed!'
+        : 'Some test cases did not match expected output. Review hint progression and check logic.'
+    };
+
     return {
       execution: execResult,
       is_passed: allPassed,
       status: allPassed ? 'PASSED' : 'FAILED',
       stdout: execResult.stdout,
-      adaptive_feedback: {
-        cognitive_level: allPassed ? 'LOW' : 'MEDIUM',
-        recommended_action: allPassed ? 'CONTINUE_NEXT_TOPIC' : 'REVISE',
-        reason: allPassed
-          ? 'Solution executed cleanly with zero syntax errors. All test cases passed!'
-          : 'Some test cases did not match expected output. Review hint progression and check logic.'
-      }
+      adaptive_feedback: adaptiveFeedback,
+      cognitive_insight: adaptiveFeedback
     };
   },
 

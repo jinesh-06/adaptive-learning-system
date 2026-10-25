@@ -233,8 +233,9 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
         confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
       }
 
-      if (res.adaptive_feedback) {
-        updateFromFeedback(res.adaptive_feedback);
+      const feedback = res?.adaptive_feedback || res?.cognitive_insight;
+      if (feedback) {
+        updateFromFeedback(feedback);
       }
     } catch (err: any) {
       setExecResult({

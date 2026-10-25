@@ -1,22 +1,16 @@
-"""Comprehensive test script validating Python 3 execution and RAG AI Tutor 8 modes."""
+from fastapi.testclient import TestClient
+from backend.main import app
+from backend.services.auth_service import auth_service
 
-import json
-import urllib.request
-import urllib.error
-
-BASE_URL = "http://127.0.0.1:5000/api"
+client = TestClient(app)
+_TEST_TOKEN = auth_service.create_internal_token("test-verifier", "verifier@cognitive.edu")
+_AUTH_HEADERS = {"Authorization": f"Bearer {_TEST_TOKEN}"}
 
 
 def make_post(endpoint: str, payload: dict) -> dict:
-    url = f"{BASE_URL}{endpoint}"
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={"Content-Type": "application/json"}
-    )
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    url = f"/api{endpoint}"
+    resp = client.post(url, json=payload, headers=_AUTH_HEADERS)
+    return resp.json()
 
 
 def test_python3_execution():
@@ -118,10 +112,8 @@ def test_quiz_station_flow():
     print("=" * 60)
 
     # 1. Fetch Quiz for topic
-    quiz_url = f"{BASE_URL}/topics/top-py-fundamentals/quiz"
-    req = urllib.request.Request(quiz_url)
-    with urllib.request.urlopen(req) as resp:
-        quiz_data = json.loads(resp.read().decode("utf-8"))
+    resp = client.get("/api/topics/top-py-fundamentals/quiz", headers=_AUTH_HEADERS)
+    quiz_data = resp.json()
 
     print("1. GET /topics/top-py-fundamentals/quiz:")
     assert "questions" in quiz_data, "Quiz data missing 'questions' key"

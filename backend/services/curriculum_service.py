@@ -410,6 +410,52 @@ class CurriculumService:
                 return c
         return None
 
+    def get_course_id_for_topic(self, topic_id: str) -> str:
+        """
+        Resolve the authoritative curriculum course_id for a given topic_id.
+        Ensures consistent course progress tracking across quizzes, coding exercises,
+        and course dashboards.
+        """
+        if not topic_id:
+            return "py-beg"
+
+        t_id = str(topic_id).strip()
+
+        # 1. C Topics
+        # Check C Advanced first (e.g. top-c-preprocessor is in c_advanced_topics_data.json)
+        if hasattr(self, "c_adv_topics") and t_id in self.c_adv_topics:
+            return "c-advanced-systems"
+        if hasattr(self, "c_int_topics") and t_id in self.c_int_topics:
+            return "c-int"
+        if t_id.startswith("top-c-"):
+            return "c-beg"
+
+        # 2. C++ Topics
+        if t_id.startswith("top-cpp-adv-"):
+            return "cpp-adv"
+        if t_id.startswith("top-cpp-oop-"):
+            return "cpp-int"
+        if t_id.startswith("top-cpp-"):
+            return "cpp-beg"
+
+        # 3. Java Topics
+        if t_id.startswith("top-java-adv-"):
+            return "java-adv"
+        if t_id.startswith("top-java-oop-"):
+            return "java-oop"
+        if t_id.startswith("top-java-"):
+            return "java-basics"
+
+        # 4. Python Topics
+        if t_id.startswith("top-py-adv-"):
+            return "py-adv"
+        if t_id.startswith("top-py-int-"):
+            return "py-int"
+        if t_id.startswith("top-py-"):
+            return "py-beg"
+
+        return "py-beg"
+
     def get_topic_detail(self, topic_id: str) -> Optional[Dict[str, Any]]:
         # 1. Check C Topics
         if topic_id in self.c_topics:
@@ -1067,3 +1113,8 @@ class CurriculumService:
 
 
 curriculum_service = CurriculumService()
+
+
+def resolve_course_id(topic_id: str) -> str:
+    """Convenience helper resolving course_id for a given topic_id."""
+    return curriculum_service.get_course_id_for_topic(topic_id)

@@ -31,4 +31,5 @@ dist-ssr/
 __pycache__/
 *.py[cod]
 *.db
-*.sqlite3
+*.db.backup_*
+*.sqlite3

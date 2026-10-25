@@ -34,7 +34,15 @@ class CodeSubmitRequest(BaseModel):
 
 @router.get("/topics/{topic_id}/coding")
 async def get_coding_challenge(topic_id: str, language: Optional[str] = Query("python")):
-    return curriculum_service.get_coding_challenge(topic_id, language)
+    challenge = curriculum_service.get_coding_challenge(topic_id, language)
+    if challenge and isinstance(challenge, dict) and "test_cases" in challenge:
+        client_challenge = dict(challenge)
+        client_challenge["test_cases"] = [
+            tc for tc in challenge.get("test_cases", [])
+            if not tc.get("is_hidden")
+        ]
+        return client_challenge
+    return challenge
 
 
 @router.post("/code/run")
@@ -55,14 +63,72 @@ async def run_code(payload: CodeRunRequest):
 async def submit_code(payload: CodeSubmitRequest, request: Request):
     user_id = get_current_user_id(request)
     challenge = curriculum_service.get_coding_challenge(payload.topicId, payload.language)
-    test_cases = challenge.get("test_cases", [])
+    test_cases = challenge.get("test_cases", []) if challenge else []
+
+    # Safeguard against empty or missing test cases: never pass, never mark completed
+    if not test_cases:
+        no_tests_insight = {
+            "cognitive_level": None,
+            "cognitive_load": None,
+            "confidence": None,
+            "content_mode": None,
+            "recommended_action": "No test cases configured.",
+            "reason": "Challenge has no configured test cases.",
+            "contributing_factors": []
+        }
+        return {
+            "success": False,
+            "is_passed": False,
+            "status": "NO_TEST_CASES",
+            "passed_tests": 0,
+            "total_tests": 0,
+            "test_results": [],
+            "details": [],
+            "stdout": "",
+            "error": "No test cases configured for this challenge.",
+            "runtime_error": None,
+            "compilation_error": None,
+            "execution_time_seconds": 0.0,
+            "execution_time_ms": 0,
+            "cognitive_insight": no_tests_insight,
+            "adaptive_feedback": no_tests_insight
+        }
 
     eval_result = code_executor.evaluate_test_cases(payload.code, payload.language, test_cases)
+
+    # Extra safety: if evaluate_test_cases reported NO_TEST_CASES
+    if eval_result.get("status") == "NO_TEST_CASES" or eval_result.get("total_tests", 0) == 0:
+        no_tests_insight = {
+            "cognitive_level": None,
+            "cognitive_load": None,
+            "confidence": None,
+            "content_mode": None,
+            "recommended_action": "No test cases configured.",
+            "reason": "Challenge has no configured test cases.",
+            "contributing_factors": []
+        }
+        return {
+            "success": False,
+            "is_passed": False,
+            "status": "NO_TEST_CASES",
+            "passed_tests": 0,
+            "total_tests": 0,
+            "test_results": [],
+            "details": [],
+            "stdout": "",
+            "error": "No test cases configured for this challenge.",
+            "runtime_error": None,
+            "compilation_error": None,
+            "execution_time_seconds": 0.0,
+            "execution_time_ms": 0,
+            "cognitive_insight": no_tests_insight,
+            "adaptive_feedback": no_tests_insight
+        }
 
     passed_tests = eval_result["passed_tests"]
     total_tests = eval_result["total_tests"]
     accuracy = round((passed_tests / total_tests) * 100) if total_tests > 0 else 0
-    is_overall_pass = eval_result["success"]
+    is_overall_pass = eval_result["success"] and total_tests > 0
 
     # ML Evaluation based on coding errors, duration, paste events, and accuracy
     coding_errors = 0 if is_overall_pass else 1
@@ -86,28 +152,8 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
     })
 
     # Persist topic progress into SQLite user_progress table
-    if payload.topicId in C_ADV_TOPIC_MAP:
-        course_id = "c-advanced-systems"
-    elif payload.topicId.startswith("top-java-adv-"):
-        course_id = "java-adv"
-    elif payload.topicId.startswith("top-java-oop-"):
-        course_id = "java-oop"
-    elif payload.topicId.startswith("top-cpp-adv-"):
-        course_id = "cpp-adv"
-    elif payload.topicId.startswith("top-cpp-oop-"):
-        course_id = "cpp-int"
-    elif payload.topicId.startswith("top-c-"):
-        course_id = "c-beg"
-    elif payload.topicId.startswith("top-py-adv-"):
-        course_id = "py-adv"
-    elif payload.topicId.startswith("top-py-int-"):
-        course_id = "py-int"
-    elif payload.topicId.startswith("top-cpp-"):
-        course_id = "cpp-beg"
-    elif payload.topicId.startswith("top-java-"):
-        course_id = "java-beg"
-    else:
-        course_id = "py-beg"
+    course_id = curriculum_service.get_course_id_for_topic(payload.topicId)
+
     if is_overall_pass:
         state_store.save_topic_progress(
             user_id=user_id,
@@ -129,9 +175,37 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
             time_spent_delta=payload.codingTimeSeconds or 0.0
         )
 
-    # Extract primary stdout / error
-    stdout_display = eval_result.get("output") or (eval_result["details"][0]["actual"] if eval_result.get("details") else "")
+    # Extract primary stdout / error without leaking hidden test output
+    visible_details = [d for d in eval_result.get("details", []) if not d.get("is_hidden")]
+    first_visible_actual = visible_details[0].get("actual", "") if visible_details else ""
+    stdout_display = eval_result.get("stdout") or first_visible_actual
     err_display = eval_result.get("error")
+
+    # Double-ensure hidden test inputs/outputs are never returned across the wire
+    sanitized_details = []
+    for d in eval_result.get("details", []):
+        if d.get("is_hidden"):
+            sanitized_details.append({
+                "test_case": d.get("test_case"),
+                "input": "[Hidden]",
+                "expected": "[Hidden]",
+                "actual": "[Hidden]",
+                "passed": d.get("passed", False),
+                "is_hidden": True,
+                "execution_time_ms": d.get("execution_time_ms", 0)
+            })
+        else:
+            sanitized_details.append(d)
+
+    cognitive_insight = {
+        "cognitive_level": ml_eval.get("cognitive_level"),
+        "cognitive_load": ml_eval.get("cognitive_load"),
+        "confidence": ml_eval.get("confidence"),
+        "content_mode": ml_eval.get("content_mode"),
+        "recommended_action": ml_eval.get("recommended_action"),
+        "reason": ml_eval.get("reason"),
+        "contributing_factors": ml_eval.get("contributing_factors")
+    }
 
     return {
         "success": is_overall_pass,
@@ -139,21 +213,14 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
         "status": eval_result["status"],
         "passed_tests": passed_tests,
         "total_tests": total_tests,
-        "test_results": eval_result["details"],
-        "details": eval_result["details"],
+        "test_results": sanitized_details,
+        "details": sanitized_details,
         "stdout": stdout_display,
         "error": err_display,
         "runtime_error": err_display if not is_overall_pass else None,
         "compilation_error": eval_result.get("compilation_error"),
-        "execution_time_seconds": eval_result.get("execution_time", 0.0),
+        "execution_time_seconds": eval_result.get("execution_time_seconds") or eval_result.get("execution_time", 0.0),
         "execution_time_ms": eval_result.get("execution_time_ms", 0),
-        "cognitive_insight": {
-            "cognitive_level": ml_eval.get("cognitive_level"),
-            "cognitive_load": ml_eval.get("cognitive_load"),
-            "confidence": ml_eval.get("confidence"),
-            "content_mode": ml_eval.get("content_mode"),
-            "recommended_action": ml_eval.get("recommended_action"),
-            "reason": ml_eval.get("reason"),
-            "contributing_factors": ml_eval.get("contributing_factors")
-        }
+        "cognitive_insight": cognitive_insight,
+        "adaptive_feedback": cognitive_insight
     }

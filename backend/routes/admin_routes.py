@@ -1,16 +1,17 @@
 """Admin & Analytics routes for monitoring and managing ML, RAG, and platform services."""
 
 import time
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 
 from backend.services.ml_service import ml_service
 from backend.services.rag_service import rag_service
 from backend.services.llm_service import llm_service
 from backend.services.state_store import state_store
+from backend.services.auth_service import auth_service
 from ml.cognitive_load import train_model
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(auth_service.require_admin)])
 
 
 @router.get("/analytics")

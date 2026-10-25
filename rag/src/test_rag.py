@@ -253,6 +253,29 @@ class TestRAGComprehensiveSuite(unittest.TestCase):
         res_invalid = retrieve_documents("pointers", course="invalid_lang_xyz")
         self.assertEqual(len(res_invalid), 0)
 
+    def test_11_explainable_ranking_adjustments(self):
+        """Verify explainable ranking adjustments: prerequisite demotion and lexical keyword boost."""
+        # 1. Prerequisite metadata demotion: instructional content prioritized over syllabus checklists
+        java_results = retrieve_documents(
+            "Explain Stream API, map, filter, and lambdas in Java",
+            top_k=3,
+            course="java",
+            config=self.config
+        )
+        self.assertGreater(len(java_results), 0)
+        self.assertEqual(java_results[0]["topic"], "advanced_topics")
+        self.assertNotIn("PREREQUISITES", java_results[0]["section"].upper())
+
+        # 2. Lexical keyword boost: exact standard library methods match canonical container topic
+        cpp_results = retrieve_documents(
+            "What is std::vector and how does push_back work?",
+            top_k=3,
+            course="cpp",
+            config=self.config
+        )
+        self.assertGreater(len(cpp_results), 0)
+        self.assertEqual(cpp_results[0]["topic"], "stl")
+
 
 def run_tests():
     """Run test suite and exit with code."""

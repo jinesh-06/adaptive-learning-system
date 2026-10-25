@@ -1088,14 +1088,39 @@ class CodeExecutor:
         """Grade submission across all test cases with LeetCode-style diff output."""
         lang = language.lower()
         test_results = []
+        raw_test_results = []
         passed_visible = 0
         total_visible = 0
         passed_hidden = 0
         total_hidden = 0
         total_execution_ms = 0
         compilation_error = None
-        first_stdout = ""
-        first_stderr = ""
+        first_visible_stdout = ""
+        first_visible_stderr = ""
+
+        # Reject empty test cases
+        if not test_cases:
+            return {
+                "success": False,
+                "is_passed": False,
+                "status": "NO_TEST_CASES",
+                "passed_tests": 0,
+                "total_tests": 0,
+                "passed_test_cases": 0,
+                "total_test_cases": 0,
+                "hidden_passed": 0,
+                "hidden_total": 0,
+                "test_results": [],
+                "details": [],
+                "stdout": "",
+                "stderr": "",
+                "error": "No test cases configured for this challenge.",
+                "runtime_error": None,
+                "compilation_error": None,
+                "execution_time_ms": 0,
+                "execution_time_seconds": 0.0,
+                "_internal_details": []
+            }
 
         # First run a syntax check
         if lang in ("python", "py"):
@@ -1109,11 +1134,18 @@ class CodeExecutor:
                     "compilation_error": syntax_err,
                     "passed_tests": 0,
                     "total_tests": len(test_cases),
+                    "passed_test_cases": 0,
+                    "total_test_cases": len(test_cases),
+                    "hidden_passed": 0,
+                    "hidden_total": 0,
                     "test_results": [],
                     "details": [],
                     "stdout": "",
+                    "stderr": syntax_err,
+                    "runtime_error": None,
                     "execution_time_ms": 0,
-                    "execution_time_seconds": 0.0
+                    "execution_time_seconds": 0.0,
+                    "_internal_details": []
                 }
         elif lang in ("c", "cpp"):
             c_err = cls.validate_c_code(code)
@@ -1126,11 +1158,18 @@ class CodeExecutor:
                     "compilation_error": c_err,
                     "passed_tests": 0,
                     "total_tests": len(test_cases),
+                    "passed_test_cases": 0,
+                    "total_test_cases": len(test_cases),
+                    "hidden_passed": 0,
+                    "hidden_total": 0,
                     "test_results": [],
                     "details": [],
                     "stdout": "",
+                    "stderr": c_err,
+                    "runtime_error": None,
                     "execution_time_ms": 0,
-                    "execution_time_seconds": 0.0
+                    "execution_time_seconds": 0.0,
+                    "_internal_details": []
                 }
 
         for idx, tc in enumerate(test_cases):
@@ -1151,9 +1190,11 @@ class CodeExecutor:
                 res = cls.execute_python(code, stdin_input=tc_input)
 
             total_execution_ms += res.get("execution_time_ms", 10)
-            if idx == 0:
-                first_stdout = res.get("output", "")
-                first_stderr = res.get("error", "")
+            if not is_hidden:
+                if not first_visible_stdout:
+                    first_visible_stdout = res.get("output", "")
+                if not first_visible_stderr:
+                    first_visible_stderr = res.get("error", "")
 
             # Normalize outputs
             actual_trimmed = res.get("output", "").strip()
@@ -1177,7 +1218,7 @@ class CodeExecutor:
                 else:
                     passed_visible += 1
 
-            test_results.append({
+            raw_test_results.append({
                 "test_case": idx + 1,
                 "input": tc_input,
                 "expected": tc_expected,
@@ -1187,28 +1228,50 @@ class CodeExecutor:
                 "execution_time_ms": res.get("execution_time_ms", 10)
             })
 
-        all_passed = (passed_visible == total_visible) and (passed_hidden == total_hidden)
+            test_results.append({
+                "test_case": idx + 1,
+                "input": "[Hidden]" if is_hidden else tc_input,
+                "expected": "[Hidden]" if is_hidden else tc_expected,
+                "actual": "[Hidden]" if is_hidden else actual_trimmed,
+                "passed": is_match,
+                "is_hidden": is_hidden,
+                "execution_time_ms": res.get("execution_time_ms", 10)
+            })
+
+        total_count = total_visible + total_hidden
+        all_passed = (total_count > 0) and (passed_visible == total_visible) and (passed_hidden == total_hidden)
         status = "PASSED" if all_passed else "FAILED"
+
+        safe_stdout = first_visible_stdout or ("All test cases passed!" if all_passed else "")
+        safe_stderr = first_visible_stderr if first_visible_stderr else ""
+        if not all_passed and not safe_stderr:
+            if passed_visible == total_visible and passed_hidden < total_hidden:
+                safe_err_msg = "Hidden test case(s) failed."
+            else:
+                safe_err_msg = "Some test cases failed."
+        else:
+            safe_err_msg = safe_stderr if not all_passed else None
 
         return {
             "success": all_passed,
             "is_passed": all_passed,
             "status": status,
             "passed_tests": passed_visible + passed_hidden,
-            "total_tests": len(test_cases),
+            "total_tests": total_count,
             "passed_test_cases": passed_visible,
             "total_test_cases": total_visible,
             "hidden_passed": passed_hidden,
             "hidden_total": total_hidden,
             "test_results": test_results,
             "details": test_results,
-            "stdout": first_stdout or ("All test cases passed!" if all_passed else ""),
-            "stderr": first_stderr,
-            "error": None if all_passed else (first_stderr or "Some test cases failed."),
-            "runtime_error": None if all_passed else first_stderr,
+            "stdout": safe_stdout,
+            "stderr": safe_stderr,
+            "error": safe_err_msg,
+            "runtime_error": safe_err_msg if not all_passed else None,
             "compilation_error": None,
             "execution_time_ms": total_execution_ms,
-            "execution_time_seconds": round(total_execution_ms / 1000.0, 3)
+            "execution_time_seconds": round(total_execution_ms / 1000.0, 3),
+            "_internal_details": raw_test_results
         }
 
 

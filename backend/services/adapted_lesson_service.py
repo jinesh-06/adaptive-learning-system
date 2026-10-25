@@ -101,11 +101,47 @@ class AdaptedLessonService:
 
         adaptive_history = state_store.get_adaptive_history(safe_user_id, limit=3)
 
-        # Evaluate Cognitive Load via ML model
-        ml_input = dict(telemetry_signals)
-        if "accuracy" not in ml_input and "recentQuizAccuracy" in telemetry_signals:
-            ml_input["accuracy"] = float(telemetry_signals["recentQuizAccuracy"])
+        # Extract the 7 model-compatible cognitive features from SQLite telemetry/quiz records
+        extracted_features = state_store.extract_cognitive_features(safe_user_id, topic_id)
 
+        # Build ml_input starting from extracted features (strictly preserving FEATURE_COLUMNS order)
+        ml_input = {
+            "time_spent_minutes": extracted_features["time_spent_minutes"],
+            "scroll_speed": extracted_features["scroll_speed"],
+            "rereads": extracted_features["rereads"],
+            "backtracking": extracted_features["backtracking"],
+            "quiz_attempts": extracted_features["quiz_attempts"],
+            "hesitation_time_seconds": extracted_features["hesitation_time_seconds"],
+            "accuracy": extracted_features["accuracy"],
+        }
+
+        # Allow explicit caller-provided telemetry signals to take precedence if supplied
+        if telemetry_signals:
+            for feature_col in ("time_spent_minutes", "scroll_speed", "rereads", "backtracking", "quiz_attempts", "hesitation_time_seconds", "accuracy"):
+                if feature_col in telemetry_signals and telemetry_signals[feature_col] is not None:
+                    try:
+                        ml_input[feature_col] = float(telemetry_signals[feature_col]) if feature_col not in ("rereads", "backtracking", "quiz_attempts") else int(telemetry_signals[feature_col])
+                    except (ValueError, TypeError):
+                        pass
+
+            # Legacy / alias parameter handling from API clients
+            if "recentQuizAccuracy" in telemetry_signals and "accuracy" not in telemetry_signals:
+                try:
+                    ml_input["accuracy"] = float(telemetry_signals["recentQuizAccuracy"])
+                except (ValueError, TypeError):
+                    pass
+            if "timeSpentSeconds" in telemetry_signals and "time_spent_minutes" not in telemetry_signals:
+                try:
+                    ml_input["time_spent_minutes"] = round(float(telemetry_signals["timeSpentSeconds"]) / 60.0, 2)
+                except (ValueError, TypeError):
+                    pass
+            if "codingErrorCount" in telemetry_signals and "backtracking" not in telemetry_signals:
+                try:
+                    ml_input["backtracking"] = int(telemetry_signals["codingErrorCount"])
+                except (ValueError, TypeError):
+                    pass
+
+        # Evaluate Cognitive Load via ML model
         ml_eval = ml_service.evaluate(ml_input)
         pred_load = ml_eval.get("cognitive_load", "MEDIUM")
         confidence = ml_eval.get("confidence", 0.85)
@@ -120,6 +156,18 @@ class AdaptedLessonService:
             signals_used.append(f"Code sandbox errors: {telemetry_signals['codingErrorCount']}")
         if learner_feedback:
             signals_used.append(f"Learner preference note: {learner_feedback}")
+
+        # Add genuine behavioral observations from extracted_features provenance
+        prov = extracted_features.get("feature_provenance", {})
+        if prov.get("accuracy", {}).get("nature") == "directly_observed":
+            acc_val = ml_input.get("accuracy", extracted_features["accuracy"])
+            signals_used.append(f"Observed assessment accuracy: {acc_val:.0f}%")
+        if prov.get("quiz_attempts", {}).get("nature") == "directly_observed" and extracted_features["quiz_attempts"] > 1:
+            signals_used.append(f"Quiz attempt count: {extracted_features['quiz_attempts']}")
+        if prov.get("rereads", {}).get("nature") == "directly_observed" and extracted_features["rereads"] > 1:
+            signals_used.append(f"Topic revisits: {extracted_features['rereads']}")
+        if prov.get("backtracking", {}).get("nature") == "estimated_proxy" and extracted_features["backtracking"] > 0:
+            signals_used.append(f"Code revision iterations: {extracted_features['backtracking']}")
 
         if not signals_used:
             signals_used = ["Calibrated baseline learning pace", "Continuous section telemetry"]
@@ -221,12 +269,17 @@ class AdaptedLessonService:
             )
 
         # 9. Save to SQLite cache
+        cached_signals = dict(telemetry_signals)
+        cached_signals["extracted_features"] = ml_input
+        cached_signals["cognitive_load_prediction"] = pred_load
+        cached_signals["confidence"] = confidence
+
         state_store.save_adapted_lesson(
             user_id=safe_user_id,
             topic_id=topic_id,
             adaptation_strategy=strategy,
             lesson_data=validated_lesson,
-            signals=telemetry_signals,
+            signals=cached_signals,
             detail_level=normalized_mode
         )
 

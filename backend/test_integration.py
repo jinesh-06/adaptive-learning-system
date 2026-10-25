@@ -8,7 +8,9 @@ Verifies:
 5. Backend REST APIs (Auth, Courses, Quizzes, Code Runner, Telemetry, Adaptive, Diagnostics)
 """
 
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -18,11 +20,20 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+# Establish isolated database environment BEFORE any backend imports
+_TEST_TEMP_DIR = tempfile.TemporaryDirectory()
+_DISPOSABLE_DB = Path(_TEST_TEMP_DIR.name) / "test_integration.db"
+os.environ["ADAPTIVE_LEARNING_DB_PATH"] = str(_DISPOSABLE_DB)
+os.environ["ENVIRONMENT"] = "test"
+os.environ["ALLOW_DEV_TEST_HEADERS"] = "true"
+os.environ["ENABLE_DEMO_ADMIN"] = "true"
+
 from fastapi.testclient import TestClient
 import sqlite3
 import uuid
 from datetime import datetime, timedelta
 import jwt
+import json
 
 from backend.main import app
 from backend.services.ml_service import ml_service
@@ -37,7 +48,16 @@ class TestFullIntegration(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        state_store.set_db_path(str(_DISPOSABLE_DB), init_schema=True)
         cls.client = TestClient(app)
+        cls.user_token = jwt.encode({"sub": "test_legacy_user", "email": "tester@adaptive.edu", "role": "student"}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        cls.auth_headers = {"Authorization": f"Bearer {cls.user_token}"}
+        cls.admin_token = jwt.encode({"sub": "test_legacy_admin", "email": "admin@adaptive.edu", "role": "admin"}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        cls.admin_headers = {"Authorization": f"Bearer {cls.admin_token}"}
+
+    @classmethod
+    def tearDownClass(cls):
+        _TEST_TEMP_DIR.cleanup()
 
     # ================= 1. ML Tests =================
     def test_01_ml_prediction(self):
@@ -180,7 +200,7 @@ class TestFullIntegration(unittest.TestCase):
         submit_res = self.client.post("/api/topics/top-py-loops/quiz/submit", json={
             "answers": {str(questions[0]["id"]): 0},
             "time_spent": 45.0
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(submit_res.status_code, 200)
         data = submit_res.json()
         self.assertIn("score", data)
@@ -208,7 +228,7 @@ class TestFullIntegration(unittest.TestCase):
             "codingTimeSeconds": 25.0,
             "keystrokes": 35,
             "pasteEvents": 0
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(submit_res.status_code, 200)
         self.assertIn("cognitive_insight", submit_res.json())
 
@@ -219,7 +239,7 @@ class TestFullIntegration(unittest.TestCase):
             "event_type": "PAGE_VIEW",
             "duration": 12.5,
             "metadata": {"scroll_depth": 0.8}
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.json().get("success"))
 
@@ -230,13 +250,13 @@ class TestFullIntegration(unittest.TestCase):
             "recentQuizAccuracy": 85.0,
             "codingErrorCount": 0,
             "timeSpentSeconds": 150.0
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(eval_res.status_code, 200)
         eval_data = eval_res.json()
         self.assertIn("cognitive_load", eval_data)
         self.assertIn("suggested_adaptation", eval_data)
 
-        hist_res = self.client.get("/api/adaptive/history")
+        hist_res = self.client.get("/api/adaptive/history", headers=self.auth_headers)
         self.assertEqual(hist_res.status_code, 200)
         self.assertIsInstance(hist_res.json(), list)
 
@@ -247,7 +267,7 @@ class TestFullIntegration(unittest.TestCase):
             "language": "python",
             "topic": "loops",
             "cognitive_load": "MEDIUM"
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(ai_res.status_code, 200)
         data = ai_res.json()
         self.assertTrue(data.get("success"))
@@ -259,13 +279,13 @@ class TestFullIntegration(unittest.TestCase):
             "hint_level": 1,
             "topic": "loops",
             "language": "python"
-        })
+        }, headers=self.auth_headers)
         self.assertEqual(hint_res.status_code, 200)
         self.assertTrue(hint_res.json().get("success"))
 
     def test_15_admin_and_diagnostics(self):
         """Test admin analytics and system diagnostics."""
-        diag_res = self.client.post("/api/admin/run-diagnostics")
+        diag_res = self.client.post("/api/admin/run-diagnostics", headers=self.admin_headers)
         self.assertEqual(diag_res.status_code, 200)
         data = diag_res.json()
         self.assertTrue(data.get("success"))
@@ -304,7 +324,7 @@ class TestFullIntegration(unittest.TestCase):
                     "avg_hesitation_seconds": 18.0
                 }
             }
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             data = res.json()
             self.assertTrue(data.get("success"))
@@ -345,7 +365,7 @@ class TestFullIntegration(unittest.TestCase):
                     "avg_hesitation_seconds": 2.0
                 }
             }
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             data = res.json()
             self.assertTrue(data.get("success"))
@@ -386,7 +406,7 @@ class TestFullIntegration(unittest.TestCase):
                     "avg_hesitation_seconds": 6.0
                 }
             }
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             data = res.json()
             self.assertTrue(data.get("success"))
@@ -415,7 +435,7 @@ class TestFullIntegration(unittest.TestCase):
 
         # Case 1: Empty dictionary returned from evaluate
         with patch.object(ml_service, "evaluate", return_value={}):
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             diag = res.json().get("diagnostic_result", {})
             self.assertEqual(diag.get("cognitive_load"), "MEDIUM")
@@ -428,7 +448,7 @@ class TestFullIntegration(unittest.TestCase):
             "predicted_cognitive_load": "   "
         }
         with patch.object(ml_service, "evaluate", return_value=mock_empty_keys):
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             diag = res.json().get("diagnostic_result", {})
             self.assertEqual(diag.get("cognitive_load"), "MEDIUM")
@@ -455,7 +475,7 @@ class TestFullIntegration(unittest.TestCase):
             "predicted_cognitive_load": "MEDIUM"
         }
         with patch.object(ml_service, "evaluate", return_value=mock_conflict_1):
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             diag = res.json().get("diagnostic_result", {})
             self.assertEqual(diag.get("cognitive_load"), "HIGH")
@@ -468,7 +488,7 @@ class TestFullIntegration(unittest.TestCase):
             "predicted_cognitive_load": "HIGH"
         }
         with patch.object(ml_service, "evaluate", return_value=mock_conflict_2):
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             diag = res.json().get("diagnostic_result", {})
             self.assertEqual(diag.get("cognitive_load"), "LOW")
@@ -481,7 +501,7 @@ class TestFullIntegration(unittest.TestCase):
             "predicted_cognitive_load": "HIGH"
         }
         with patch.object(ml_service, "evaluate", return_value=mock_conflict_3):
-            res = self.client.post("/api/diagnostic/python/submit", json=payload)
+            res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
             self.assertEqual(res.status_code, 200)
             diag = res.json().get("diagnostic_result", {})
             self.assertEqual(diag.get("cognitive_load"), "HIGH")
@@ -504,7 +524,7 @@ class TestFullIntegration(unittest.TestCase):
                 "avg_hesitation_seconds": 4.5
             }
         }
-        res = self.client.post("/api/diagnostic/python/submit", json=payload)
+        res = self.client.post("/api/diagnostic/python/submit", json=payload, headers=self.auth_headers)
         self.assertEqual(res.status_code, 200)
         data = res.json()
 
@@ -1072,6 +1092,174 @@ class TestFullIntegration(unittest.TestCase):
         # Total time must not double-count the matching QUIZ_SUBMIT event (120s + 60s = 180s = 3m)
         self.assertEqual(data["insights"]["total_time_minutes"], 3)
         self.assertEqual(data["total_time_minutes"], 3)
+
+    def test_40_code_executor_empty_test_cases(self):
+        """Test that code_executor.evaluate_test_cases safely rejects empty test-case lists."""
+        from backend.services.code_executor import code_executor
+        result = code_executor.evaluate_test_cases("print(42)", "python", [])
+        self.assertFalse(result["success"])
+        self.assertFalse(result["is_passed"])
+        self.assertEqual(result["status"], "NO_TEST_CASES")
+        self.assertEqual(result["passed_tests"], 0)
+        self.assertEqual(result["total_tests"], 0)
+        self.assertEqual(result["details"], [])
+        self.assertIn("error", result)
+
+    def test_41_code_executor_hidden_test_case_confidentiality(self):
+        """Test that code_executor masks hidden test inputs, outputs, and expected values in client details."""
+        from backend.services.code_executor import code_executor
+        code = "val = input()\nprint('PROCESSED_' + val)"
+        test_cases = [
+            {"input": "visible123", "expected_output": "PROCESSED_visible123", "is_hidden": False},
+            {"input": "SUPER_SECRET_TOKEN", "expected_output": "PROCESSED_SUPER_SECRET_TOKEN", "is_hidden": True}
+        ]
+        result = code_executor.evaluate_test_cases(code, "python", test_cases)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["status"], "PASSED")
+        self.assertEqual(result["passed_tests"], 2)
+        self.assertEqual(result["total_tests"], 2)
+
+        details = result["details"]
+        self.assertEqual(len(details), 2)
+
+        # Visible test case must retain full feedback
+        self.assertEqual(details[0]["input"], "visible123")
+        self.assertEqual(details[0]["expected"], "PROCESSED_visible123")
+        self.assertEqual(details[0]["actual"], "PROCESSED_visible123")
+        self.assertFalse(details[0]["is_hidden"])
+        self.assertTrue(details[0]["passed"])
+
+        # Hidden test case must NEVER leak secret input or output in client details
+        self.assertTrue(details[1]["is_hidden"])
+        self.assertTrue(details[1]["passed"])
+        self.assertEqual(details[1]["input"], "[Hidden]")
+        self.assertEqual(details[1]["expected"], "[Hidden]")
+        self.assertEqual(details[1]["actual"], "[Hidden]")
+        self.assertNotIn("SUPER_SECRET_TOKEN", str(details[1]))
+
+        # Backend internal details retain unmasked grading info
+        self.assertIn("_internal_details", result)
+        self.assertEqual(result["_internal_details"][1]["input"], "SUPER_SECRET_TOKEN")
+
+    def test_42_code_submit_api_empty_test_cases_rejected_and_no_progress(self):
+        """Test that /api/code/submit with empty test cases fails safely and NEVER marks a topic completed."""
+        user_id = f"test_empty_tc_{uuid.uuid4().hex[:8]}"
+        headers = {"X-User-Id": user_id}
+        topic_id = "top-py-empty-test"
+
+        # Ensure clean state
+        conn = state_store.get_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM user_progress WHERE user_id = ? AND topic_id = ?", (user_id, topic_id))
+        conn.commit()
+        conn.close()
+
+        with patch("backend.services.curriculum_service.curriculum_service.get_coding_challenge", return_value={"test_cases": []}):
+            res = self.client.post("/api/code/submit", json={
+                "topicId": topic_id,
+                "code": "print('Should not complete')",
+                "language": "python",
+                "codingTimeSeconds": 15.0
+            }, headers=headers)
+
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertFalse(data["success"])
+        self.assertFalse(data["is_passed"])
+        self.assertEqual(data["status"], "NO_TEST_CASES")
+        self.assertEqual(data["passed_tests"], 0)
+        self.assertEqual(data["total_tests"], 0)
+
+        # Verify progress was NEVER saved as COMPLETED
+        conn = state_store.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT status, completion_pct FROM user_progress WHERE user_id = ? AND topic_id = ?", (user_id, topic_id))
+        row = cur.fetchone()
+        conn.close()
+
+        if row:
+            self.assertNotEqual(row["status"], "COMPLETED")
+            self.assertNotEqual(row["completion_pct"], 100.0)
+
+    def test_43_code_submit_api_hidden_test_cases_masked_in_response(self):
+        """Test that /api/code/submit response contract preserves frontend compatibility while masking hidden tests."""
+        user_id = f"test_hidden_api_{uuid.uuid4().hex[:8]}"
+        headers = {"X-User-Id": user_id}
+        topic_id = "top-py-hidden-api-test"
+
+        mock_challenge = {
+            "id": "code-test",
+            "topic_id": topic_id,
+            "test_cases": [
+                {"input": "open_input", "expected_output": "ANSWER_open_input", "is_hidden": False},
+                {"input": "SECRET_DATA_XYZ", "expected_output": "ANSWER_SECRET_DATA_XYZ", "is_hidden": True}
+            ]
+        }
+
+        with patch("backend.services.curriculum_service.curriculum_service.get_coding_challenge", return_value=mock_challenge):
+            res = self.client.post("/api/code/submit", json={
+                "topicId": topic_id,
+                "code": "val = input()\nprint('ANSWER_' + val)",
+                "language": "python",
+                "codingTimeSeconds": 20.0
+            }, headers=headers)
+
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+
+        # Contract compatibility checks expected by CodingStudioPage
+        expected_keys = [
+            "success", "is_passed", "status", "passed_tests", "total_tests",
+            "test_results", "details", "stdout", "error", "runtime_error",
+            "compilation_error", "execution_time_seconds", "execution_time_ms", "cognitive_insight"
+        ]
+        for key in expected_keys:
+            self.assertIn(key, data, f"Missing required contract key: {key}")
+
+        self.assertTrue(data["success"])
+        self.assertEqual(data["passed_tests"], 2)
+        self.assertEqual(data["total_tests"], 2)
+
+        # Check details masking
+        details = data["details"]
+        self.assertEqual(len(details), 2)
+        self.assertEqual(details[0]["input"], "open_input")
+        self.assertEqual(details[0]["expected"], "ANSWER_open_input")
+        self.assertFalse(details[0]["is_hidden"])
+
+        self.assertEqual(details[1]["input"], "[Hidden]")
+        self.assertEqual(details[1]["expected"], "[Hidden]")
+        self.assertEqual(details[1]["actual"], "[Hidden]")
+        self.assertTrue(details[1]["is_hidden"])
+        self.assertNotIn("SECRET_DATA_XYZ", str(details[1]))
+
+        # Ensure primary stdout does NOT leak secret hidden data
+        self.assertNotIn("SECRET_DATA_XYZ", data.get("stdout", ""))
+
+    def test_44_get_coding_challenge_filters_hidden_test_cases(self):
+        """Test that GET /api/topics/{topic_id}/coding strips hidden test cases from the client payload."""
+        topic_id = "top-py-challenge-strip-test"
+        mock_challenge = {
+            "id": f"code-{topic_id}",
+            "topic_id": topic_id,
+            "title": "Challenge Title",
+            "starter_code": "def solution():\n    pass",
+            "test_cases": [
+                {"input": "visible_param", "expected_output": "visible_result", "is_hidden": False},
+                {"input": "SECRET_TEST_ARG", "expected_output": "SECRET_TEST_RESULT", "is_hidden": True}
+            ]
+        }
+
+        with patch("backend.services.curriculum_service.curriculum_service.get_coding_challenge", return_value=mock_challenge):
+            res = self.client.get(f"/api/topics/{topic_id}/coding")
+
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("test_cases", data)
+        # Client receives only visible test cases
+        self.assertEqual(len(data["test_cases"]), 1)
+        self.assertEqual(data["test_cases"][0]["input"], "visible_param")
+        self.assertNotIn("SECRET_TEST_ARG", json.dumps(data))
 
 
 if __name__ == "__main__":

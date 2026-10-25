@@ -124,14 +124,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
     })
 
     # Persist topic progress into SQLite user_progress table
-    course_id = (
-        "c-advanced-systems" if topic_id in C_ADV_TOPIC_MAP else
-        ("c-beg" if topic_id.startswith("top-c-") else
-         ("py-adv" if topic_id.startswith("top-py-adv-") else
-          ("py-int" if topic_id.startswith("top-py-int-") else
-           ("cpp-beg" if topic_id.startswith("top-cpp-") else
-            ("java-beg" if topic_id.startswith("top-java-") else "py-beg")))))
-    )
+    course_id = curriculum_service.get_course_id_for_topic(topic_id)
     state_store.save_topic_progress(
         user_id=user_id,
         course_id=course_id,

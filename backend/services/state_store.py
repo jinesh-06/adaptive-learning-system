@@ -4,22 +4,32 @@ import json
 import os
 import sqlite3
 import threading
+import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
-from backend.config import DB_PATH, PLATFORM_DATA_PATH
+from backend.config import DB_PATH, PLATFORM_DATA_PATH, PROJECT_ROOT, ENVIRONMENT
+
+logger = logging.getLogger(__name__)
 
 
 class StateStore:
     """Thread-safe persistent data store."""
 
-    _lock = threading.Lock()
+    _lock = threading.RLock()
 
     def __init__(self):
         self.db_path = str(DB_PATH)
         self._init_platform_data()
         self._init_sqlite()
+
+    def set_db_path(self, new_path: str, init_schema: bool = True):
+        """Thread-safely rebind active database path, with optional schema initialization."""
+        with self._lock:
+            self.db_path = str(new_path)
+        if init_schema:
+            self._init_sqlite()
 
     def _init_platform_data(self):
         """Load initial platform seed data."""
@@ -34,7 +44,7 @@ class StateStore:
     def _init_sqlite(self):
         """Create SQLite tables if they do not exist."""
         with self._lock:
-            conn = sqlite3.connect(self.db_path)
+            conn = self.get_connection()
             cur = conn.cursor()
 
             # Users table
@@ -45,8 +55,20 @@ class StateStore:
                     name TEXT,
                     password_hash TEXT,
                     role TEXT,
+                    firebase_uid TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            cur.execute("PRAGMA table_info(users)")
+            user_cols = [r[1] for r in cur.fetchall()]
+            if "firebase_uid" not in user_cols:
+                cur.execute("ALTER TABLE users ADD COLUMN firebase_uid TEXT")
+                conn.commit()
+
+            cur.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_users_firebase_uid
+                ON users(firebase_uid)
+                WHERE firebase_uid IS NOT NULL
             """)
 
             # User Preferences table
@@ -204,6 +226,15 @@ class StateStore:
             conn.close()
 
     def get_connection(self) -> sqlite3.Connection:
+        active_path = Path(self.db_path).resolve()
+        real_path = (PROJECT_ROOT / "backend" / "adaptive_learning.db").resolve()
+        if os.getenv("ENVIRONMENT") == "test" or os.getenv("ADAPTIVE_LEARNING_DB_PATH"):
+            if active_path == real_path:
+                raise RuntimeError(
+                    f"CRITICAL TEST ISOLATION GUARD: Attempted connection to real database "
+                    f"({real_path}) in test environment. Execution aborted immediately."
+                )
+
         conn = sqlite3.connect(self.db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         try:
@@ -421,10 +452,21 @@ class StateStore:
         try:
             conn = self.get_connection()
             cur = conn.cursor()
-            cur.execute(
-                "SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? ORDER BY topic_id ASC",
-                (safe_user_id, course_id)
-            )
+            if course_id in ("java-basics", "java-beg"):
+                cur.execute(
+                    "SELECT * FROM user_progress WHERE user_id = ? AND course_id IN ('java-basics', 'java-beg') ORDER BY topic_id ASC",
+                    (safe_user_id,)
+                )
+            elif course_id in ("c-int", "c-intermediate"):
+                cur.execute(
+                    "SELECT * FROM user_progress WHERE user_id = ? AND course_id IN ('c-int', 'c-intermediate') ORDER BY topic_id ASC",
+                    (safe_user_id,)
+                )
+            else:
+                cur.execute(
+                    "SELECT * FROM user_progress WHERE user_id = ? AND course_id = ? ORDER BY topic_id ASC",
+                    (safe_user_id, course_id)
+                )
             rows = [dict(r) for r in cur.fetchall()]
             conn.close()
             return rows
@@ -598,19 +640,18 @@ class StateStore:
                 rec_id = f"{safe_user_id}_{topic_id}_{mode_key}"
                 cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (rec_id,))
                 row = cur.fetchone()
-
-            if not row:
+            else:
                 legacy_id = f"{safe_user_id}_{topic_id}"
                 cur.execute("SELECT * FROM adapted_lessons WHERE id = ?", (legacy_id,))
                 row = cur.fetchone()
 
-            if not row:
-                # Try finding any adapted lesson for this user and topic
-                cur.execute(
-                    "SELECT * FROM adapted_lessons WHERE user_id = ? AND topic_id = ? ORDER BY created_at DESC LIMIT 1",
-                    (safe_user_id, topic_id)
-                )
-                row = cur.fetchone()
+                if not row:
+                    # Try finding any adapted lesson for this user and topic
+                    cur.execute(
+                        "SELECT * FROM adapted_lessons WHERE user_id = ? AND topic_id = ? ORDER BY created_at DESC LIMIT 1",
+                        (safe_user_id, topic_id)
+                    )
+                    row = cur.fetchone()
 
             conn.close()
             if not row:
@@ -773,6 +814,475 @@ class StateStore:
             "total_questions": total_questions,
             "time_spent": time_spent
         })
+
+    # --- Cognitive Load Telemetry-to-ML Feature Extractor ---
+    def extract_cognitive_features(self, user_id: str, topic_id: str) -> Dict[str, Any]:
+        """
+        Extract the seven bounded cognitive load features for (user_id, topic_id)
+        matching the Random Forest model expectations in ml/cognitive_load.py.
+
+        Features extracted:
+        1. time_spent_minutes: Deduplicated active learning duration (bounded 0.5 - 75.0, default 3.0).
+        2. scroll_speed: Reading traversal pace across sections (bounded 1.0 - 5.5, default 2.0).
+        3. rereads: Page revisit count on the topic (bounded 0 - 10, default 1).
+        4. backtracking: Code retry iterations / revisions (bounded 0 - 9, default 0).
+        5. quiz_attempts: Total quiz attempt count on the topic (bounded 1 - 5, default 1).
+        6. hesitation_time_seconds: Latency to first action in session (bounded 2.0 - 30.0, default 8.0).
+        7. accuracy: Percentage score from latest relevant assessment (bounded 0.0 - 100.0, default 75.0).
+        """
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        safe_tid = str(topic_id or "").strip()
+
+        # Cold-start baseline defaults
+        default_features = {
+            "time_spent_minutes": 3.0,
+            "scroll_speed": 2.0,
+            "rereads": 1,
+            "backtracking": 0,
+            "quiz_attempts": 1,
+            "hesitation_time_seconds": 8.0,
+            "accuracy": 75.0,
+        }
+
+        if not safe_tid:
+            return {
+                **default_features,
+                "topic_id": safe_tid,
+                "user_id": safe_uid,
+                "feature_provenance": {
+                    k: {
+                        "source": "cold_start_default",
+                        "nature": "default_fallback",
+                        "raw_value": v,
+                        "bounded_value": v,
+                        "notes": "No topic ID provided; safe baseline defaults returned."
+                    }
+                    for k, v in default_features.items()
+                },
+                "assessment_meta": {
+                    "assessment_type": "none_cold_start",
+                    "timestamp": None,
+                    "raw_score": 75.0
+                }
+            }
+
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+
+            # 1. Fetch Quiz Attempts for (user_id, topic_id)
+            cur.execute("""
+                SELECT id, score, percentage, time_spent, created_at
+                FROM quiz_attempts
+                WHERE user_id = ? AND topic_id = ?
+                ORDER BY created_at DESC, rowid DESC
+            """, (safe_uid, safe_tid))
+            quiz_rows = [dict(r) for r in cur.fetchall()]
+
+            # 2. Fetch User Progress record for (user_id, topic_id)
+            cur.execute("""
+                SELECT status, completion_pct, quiz_score, attempts, time_spent_seconds, updated_at
+                FROM user_progress
+                WHERE user_id = ? AND topic_id = ?
+                LIMIT 1
+            """, (safe_uid, safe_tid))
+            up_row = cur.fetchone()
+            progress_record = dict(up_row) if up_row else None
+
+            # 3. Fetch Telemetry Events for (user_id, topic_id)
+            cur.execute("""
+                SELECT id, event_type, duration, metadata_json, timestamp
+                FROM telemetry_events
+                WHERE user_id = ? AND topic_id = ?
+                ORDER BY id ASC
+            """, (safe_uid, safe_tid))
+            raw_te_rows = cur.fetchall()
+            conn.close()
+
+            te_events = []
+            for r in raw_te_rows:
+                ev = dict(r)
+                meta_raw = ev.get("metadata_json") or "{}"
+                try:
+                    ev["metadata"] = json.loads(meta_raw) if isinstance(meta_raw, str) else meta_raw
+                except Exception:
+                    ev["metadata"] = {}
+                try:
+                    dur = float(ev.get("duration") or 0.0)
+                    ev["duration"] = dur if dur >= 0.0 and dur == dur else 0.0
+                except (ValueError, TypeError):
+                    ev["duration"] = 0.0
+                te_events.append(ev)
+
+            provenance: Dict[str, Dict[str, Any]] = {}
+
+            # -------------------------------------------------------------
+            # FEATURE 1: Accuracy (Prefer latest relevant assessment)
+            # Rule: Do not combine quiz and coding accuracy using arbitrary weighted average.
+            # -------------------------------------------------------------
+            latest_quiz = quiz_rows[0] if quiz_rows else None
+
+            # Find latest CODE_SUBMIT in telemetry
+            code_submits = [e for e in te_events if e["event_type"] == "CODE_SUBMIT"]
+            latest_code = code_submits[-1] if code_submits else None
+
+            raw_accuracy = 75.0
+            acc_nature = "default_fallback"
+            acc_source = "cold_start_default"
+            acc_notes = "No quiz or coding submissions recorded for topic; baseline default 75.0 applied."
+            assessment_type = "none_cold_start"
+            assessment_ts = None
+
+            if latest_quiz and latest_code:
+                # Compare timestamps to prefer strictly the latest relevant assessment
+                q_ts = str(latest_quiz.get("created_at") or "")
+                c_ts = str(latest_code.get("timestamp") or "")
+                if q_ts >= c_ts:
+                    # Quiz was later or equal
+                    raw_accuracy = float(latest_quiz.get("percentage") or 0.0)
+                    acc_nature = "directly_observed"
+                    acc_source = "quiz_attempts.percentage"
+                    assessment_type = "quiz"
+                    assessment_ts = q_ts
+                    acc_notes = f"Selected latest quiz attempt from {q_ts} (score: {raw_accuracy}%)."
+                else:
+                    # Coding was later
+                    c_meta = latest_code.get("metadata") or {}
+                    if "accuracy" in c_meta and c_meta["accuracy"] is not None:
+                        raw_accuracy = float(c_meta["accuracy"])
+                    elif "score" in c_meta and c_meta["score"] is not None:
+                        raw_accuracy = float(c_meta["score"])
+                    elif c_meta.get("passed") is True:
+                        raw_accuracy = 100.0
+                    elif c_meta.get("passed") is False:
+                        raw_accuracy = 0.0
+                    else:
+                        raw_accuracy = 75.0
+                    acc_nature = "directly_observed"
+                    acc_source = "telemetry_events.CODE_SUBMIT"
+                    assessment_type = "coding"
+                    assessment_ts = c_ts
+                    acc_notes = f"Selected latest coding submission from {c_ts} (accuracy: {raw_accuracy}%)."
+            elif latest_quiz:
+                raw_accuracy = float(latest_quiz.get("percentage") or 0.0)
+                acc_nature = "directly_observed"
+                acc_source = "quiz_attempts.percentage"
+                assessment_type = "quiz"
+                assessment_ts = str(latest_quiz.get("created_at") or "")
+                acc_notes = f"Selected topic quiz attempt (score: {raw_accuracy}%)."
+            elif latest_code:
+                c_meta = latest_code.get("metadata") or {}
+                if "accuracy" in c_meta and c_meta["accuracy"] is not None:
+                    raw_accuracy = float(c_meta["accuracy"])
+                elif "score" in c_meta and c_meta["score"] is not None:
+                    raw_accuracy = float(c_meta["score"])
+                elif c_meta.get("passed") is True:
+                    raw_accuracy = 100.0
+                elif c_meta.get("passed") is False:
+                    raw_accuracy = 0.0
+                else:
+                    raw_accuracy = 75.0
+                acc_nature = "directly_observed"
+                acc_source = "telemetry_events.CODE_SUBMIT"
+                assessment_type = "coding"
+                assessment_ts = str(latest_code.get("timestamp") or "")
+                acc_notes = f"Selected topic coding submission (accuracy: {raw_accuracy}%)."
+            elif progress_record and (progress_record.get("quiz_score") or 0.0) > 0.0:
+                raw_accuracy = float(progress_record["quiz_score"])
+                acc_nature = "directly_observed"
+                acc_source = "user_progress.quiz_score"
+                assessment_type = "progress_record"
+                assessment_ts = str(progress_record.get("updated_at") or "")
+                acc_notes = f"Selected historical progress quiz score: {raw_accuracy}%."
+
+            # Sanitize & Clamp Accuracy [0.0, 100.0]
+            if raw_accuracy != raw_accuracy or raw_accuracy < 0.0:
+                raw_accuracy = 0.0
+            clamped_accuracy = max(0.0, min(100.0, round(float(raw_accuracy), 2)))
+
+            provenance["accuracy"] = {
+                "source": acc_source,
+                "nature": acc_nature,
+                "raw_value": raw_accuracy,
+                "bounded_value": clamped_accuracy,
+                "notes": acc_notes
+            }
+
+            assessment_meta = {
+                "assessment_type": assessment_type,
+                "timestamp": assessment_ts,
+                "raw_score": raw_accuracy
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 2: Quiz Attempts (Directly Observed)
+            # -------------------------------------------------------------
+            qa_count = len(quiz_rows)
+            up_attempts = int(progress_record.get("attempts") or 0) if progress_record else 0
+            te_quiz_count = sum(1 for e in te_events if e["event_type"] == "QUIZ_SUBMIT")
+
+            total_attempts = max(qa_count, up_attempts, te_quiz_count)
+            if total_attempts > 0:
+                raw_quiz_attempts = total_attempts
+                qa_nature = "directly_observed"
+                qa_source = "quiz_attempts COUNT" if qa_count >= up_attempts else "user_progress.attempts"
+                qa_notes = f"Found {total_attempts} recorded attempt(s) on this topic."
+            else:
+                raw_quiz_attempts = 1
+                qa_nature = "default_fallback"
+                qa_source = "cold_start_default"
+                qa_notes = "No prior quiz attempts recorded; first attempt baseline (1) used."
+
+            clamped_quiz_attempts = max(1, min(5, int(raw_quiz_attempts)))
+            provenance["quiz_attempts"] = {
+                "source": qa_source,
+                "nature": qa_nature,
+                "raw_value": raw_quiz_attempts,
+                "bounded_value": clamped_quiz_attempts,
+                "notes": qa_notes
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 3: Time Spent Minutes (Deduplicated Duration)
+            # Avoid double-counting between telemetry chunks and user_progress
+            # -------------------------------------------------------------
+            topic_complete_dur = sum(e["duration"] for e in te_events if e["event_type"] == "TOPIC_COMPLETE")
+            agg_scroll_dur = sum(e["duration"] for e in te_events if e["event_type"] == "AGGREGATED_BEHAVIOR")
+            quiz_submit_dur = sum(e["duration"] for e in te_events if e["event_type"] == "QUIZ_SUBMIT")
+            code_submit_dur = sum(e["duration"] for e in te_events if e["event_type"] == "CODE_SUBMIT")
+            other_dur = sum(e["duration"] for e in te_events if e["event_type"] not in ("TOPIC_COMPLETE", "AGGREGATED_BEHAVIOR", "QUIZ_SUBMIT", "CODE_SUBMIT"))
+
+            # Reading duration is TOPIC_COMPLETE if completed; else aggregated scroll bursts
+            reading_dur = topic_complete_dur if topic_complete_dur > 0 else agg_scroll_dur
+            quiz_att_dur = sum(float(q.get("time_spent") or 0.0) for q in quiz_rows)
+            effective_quiz_time = max(quiz_submit_dur, quiz_att_dur)
+
+            te_distinct_dur = reading_dur + effective_quiz_time + code_submit_dur + other_dur
+            up_dur = float(progress_record.get("time_spent_seconds") or 0.0) if progress_record else 0.0
+
+            deduped_seconds = max(te_distinct_dur, up_dur)
+            if deduped_seconds > 0.0:
+                raw_time_spent_min = round(deduped_seconds / 60.0, 2)
+                dur_nature = "directly_observed"
+                dur_source = "telemetry_events & user_progress (deduplicated MAX)"
+                dur_notes = f"Calculated {deduped_seconds:.1f}s total active engagement on topic."
+            else:
+                raw_time_spent_min = 3.0
+                dur_nature = "default_fallback"
+                dur_source = "cold_start_default"
+                dur_notes = "No duration recorded; baseline 3.0 minutes (180s) applied."
+
+            clamped_time_spent_min = max(0.5, min(75.0, round(float(raw_time_spent_min), 2)))
+            provenance["time_spent_minutes"] = {
+                "source": dur_source,
+                "nature": dur_nature,
+                "raw_value": raw_time_spent_min,
+                "bounded_value": clamped_time_spent_min,
+                "notes": dur_notes
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 4: Scroll Speed (Estimated Reading Traversal Rate)
+            # Physical pixel velocity unavailable; section traversal rate used as proxy
+            # -------------------------------------------------------------
+            total_scroll_sec = 0.0
+            sections_viewed_count = 0
+            for e in te_events:
+                meta = e.get("metadata") or {}
+                if e["event_type"] == "TOPIC_COMPLETE":
+                    total_scroll_sec = max(total_scroll_sec, float(meta.get("total_scroll_seconds") or e["duration"] or 0.0))
+                    sections_viewed_count = max(sections_viewed_count, int(meta.get("sections_viewed") or 0))
+                elif e["event_type"] == "AGGREGATED_BEHAVIOR":
+                    total_scroll_sec += float(meta.get("scroll_time") or e["duration"] or 0.0)
+                    sections_viewed_count = max(sections_viewed_count, int(meta.get("sections_viewed") or 0))
+
+            if total_scroll_sec > 0.0 and sections_viewed_count > 0:
+                calc_speed = (sections_viewed_count * 12.0) / max(1.0, total_scroll_sec)
+                raw_scroll_speed = round(calc_speed, 2)
+                ss_nature = "estimated_proxy"
+                ss_source = "telemetry_events (sections_viewed / scroll_seconds)"
+                ss_notes = f"Estimated reading pace from {sections_viewed_count} sections over {total_scroll_sec:.1f}s scroll duration."
+            else:
+                raw_scroll_speed = 2.0
+                ss_nature = "default_fallback"
+                ss_source = "cold_start_default"
+                ss_notes = "No scroll/reading telemetry recorded; standard reading pace (2.0) applied."
+
+            clamped_scroll_speed = max(1.0, min(5.5, round(float(raw_scroll_speed), 2)))
+            provenance["scroll_speed"] = {
+                "source": ss_source,
+                "nature": ss_nature,
+                "raw_value": raw_scroll_speed,
+                "bounded_value": clamped_scroll_speed,
+                "notes": ss_notes
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 5: Rereads (Directly Observed Page Revisits)
+            # Rule: Do not interpret hint requests as definite rereads
+            # -------------------------------------------------------------
+            page_revisits = sum(1 for e in te_events if e["event_type"] == "PAGE_REVISIT")
+            page_views = sum(1 for e in te_events if e["event_type"] == "PAGE_VIEW")
+
+            # Check for visit_count in metadata
+            meta_revisits = 0
+            for e in te_events:
+                meta = e.get("metadata") or {}
+                if "visit_count" in meta:
+                    meta_revisits = max(meta_revisits, int(meta["visit_count"] or 0) - 1)
+                elif "revisits" in meta:
+                    meta_revisits = max(meta_revisits, int(meta["revisits"] or 0))
+
+            detected_rereads = max(page_revisits, max(0, page_views - 1), meta_revisits)
+            if detected_rereads > 0 or page_views > 0:
+                raw_rereads = detected_rereads
+                rr_nature = "directly_observed"
+                rr_source = "telemetry_events.PAGE_REVISIT / PAGE_VIEW"
+                rr_notes = f"Directly observed {detected_rereads} topic revisit(s)."
+            else:
+                raw_rereads = 1
+                rr_nature = "default_fallback"
+                rr_source = "cold_start_default"
+                rr_notes = "Initial topic visit baseline (1 read) applied."
+
+            clamped_rereads = max(0, min(10, int(raw_rereads)))
+            provenance["rereads"] = {
+                "source": rr_source,
+                "nature": rr_nature,
+                "raw_value": raw_rereads,
+                "bounded_value": clamped_rereads,
+                "notes": rr_notes
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 6: Backtracking (Observed Code/Challenge Revision Iterations)
+            # Rule: Do not interpret code errors as definite cognitive struggle
+            # -------------------------------------------------------------
+            code_failed_submits = sum(1 for e in code_submits if (e.get("metadata") or {}).get("passed") is False)
+            challenge_submits = sum(1 for e in te_events if e["event_type"] == "CODING_CHALLENGE_SUBMIT")
+            challenge_successes = sum(1 for e in te_events if e["event_type"] == "CODING_CHALLENGE_SUCCESS")
+            challenge_retries = max(0, challenge_submits - challenge_successes)
+
+            total_revisions = code_failed_submits + challenge_retries
+            if total_revisions > 0:
+                raw_backtracking = total_revisions
+                bt_nature = "estimated_proxy"
+                bt_source = "telemetry_events (code submission & challenge retry count)"
+                bt_notes = f"Detected {total_revisions} code revision iteration(s) (not labeled as struggle)."
+            else:
+                raw_backtracking = 0
+                bt_nature = "default_fallback"
+                bt_source = "cold_start_default"
+                bt_notes = "Zero code retry iterations recorded; clean progression (0) applied."
+
+            clamped_backtracking = max(0, min(9, int(raw_backtracking)))
+            provenance["backtracking"] = {
+                "source": bt_source,
+                "nature": bt_nature,
+                "raw_value": raw_backtracking,
+                "bounded_value": clamped_backtracking,
+                "notes": bt_notes
+            }
+
+            # -------------------------------------------------------------
+            # FEATURE 7: Hesitation Time Seconds (Estimated Latency to First Action)
+            # Handle missing timestamps, multiple events in same second safely
+            # -------------------------------------------------------------
+            session_starts = [e for e in te_events if e["event_type"] in ("PAGE_VIEW", "CODE_START")]
+            interactive_events = [e for e in te_events if e["event_type"] in ("AGGREGATED_BEHAVIOR", "CODE_RUN_ATTEMPT", "CODING_CHALLENGE_SUBMIT", "IN_LESSON_QUIZ_ANSWER", "CODE_SUBMIT", "QUIZ_SUBMIT")]
+
+            raw_hesitation = 8.0
+            ht_nature = "default_fallback"
+            ht_source = "cold_start_default"
+            ht_notes = "No interaction latency measurable; baseline pause (8.0s) applied."
+
+            if session_starts and interactive_events:
+                first_start = session_starts[0]
+                first_action = interactive_events[0]
+                ts_start_str = first_start.get("timestamp")
+                ts_action_str = first_action.get("timestamp")
+
+                if ts_start_str and ts_action_str:
+                    try:
+                        s_str = str(ts_start_str).replace("T", " ")[:19]
+                        a_str = str(ts_action_str).replace("T", " ")[:19]
+                        dt_start = datetime.strptime(s_str, "%Y-%m-%d %H:%M:%S")
+                        dt_action = datetime.strptime(a_str, "%Y-%m-%d %H:%M:%S")
+                        delta = (dt_action - dt_start).total_seconds()
+
+                        if delta >= 0.0:
+                            calc_h = max(2.0, delta)
+                            if calc_h <= 120.0:
+                                raw_hesitation = round(calc_h, 1)
+                                ht_nature = "estimated_proxy"
+                                ht_source = "telemetry_events timestamp delta (start to first action)"
+                                ht_notes = f"Measured {raw_hesitation}s between session entry and first interaction."
+                    except Exception:
+                        pass
+
+            # Fallback: check duration on first question if IN_LESSON_QUIZ_ANSWER
+            if ht_nature == "default_fallback":
+                quiz_ans_events = [e for e in te_events if e["event_type"] == "IN_LESSON_QUIZ_ANSWER"]
+                if quiz_ans_events:
+                    q1_dur = quiz_ans_events[0].get("duration") or 0.0
+                    if 2.0 <= q1_dur <= 60.0:
+                        raw_hesitation = round(float(q1_dur), 1)
+                        ht_nature = "estimated_proxy"
+                        ht_source = "telemetry_events.IN_LESSON_QUIZ_ANSWER duration"
+                        ht_notes = f"Used first quiz question duration ({raw_hesitation}s) as hesitation proxy."
+
+            clamped_hesitation = max(2.0, min(30.0, round(float(raw_hesitation), 1)))
+            provenance["hesitation_time_seconds"] = {
+                "source": ht_source,
+                "nature": ht_nature,
+                "raw_value": raw_hesitation,
+                "bounded_value": clamped_hesitation,
+                "notes": ht_notes
+            }
+
+            return {
+                # Exact 7 features in FEATURE_COLUMNS order
+                "time_spent_minutes": clamped_time_spent_min,
+                "scroll_speed": clamped_scroll_speed,
+                "rereads": clamped_rereads,
+                "backtracking": clamped_backtracking,
+                "quiz_attempts": clamped_quiz_attempts,
+                "hesitation_time_seconds": clamped_hesitation,
+                "accuracy": clamped_accuracy,
+
+                # Provenance and Metadata
+                "topic_id": safe_tid,
+                "user_id": safe_uid,
+                "feature_provenance": provenance,
+                "assessment_meta": assessment_meta
+            }
+
+        except Exception as e:
+            logger.error(f"[StateStore] extract_cognitive_features error for user {safe_uid}, topic {safe_tid}: {e}", exc_info=True)
+            return {
+                **default_features,
+                "topic_id": safe_tid,
+                "user_id": safe_uid,
+                "feature_provenance": {
+                    k: {
+                        "source": "error_fallback",
+                        "nature": "default_fallback",
+                        "raw_value": v,
+                        "bounded_value": v,
+                        "notes": f"Exception encountered ({e}); safe baseline defaults returned."
+                    }
+                    for k, v in default_features.items()
+                },
+                "assessment_meta": {
+                    "assessment_type": "none_error",
+                    "timestamp": None,
+                    "raw_score": 75.0
+                }
+            }
+
+    def get_cognitive_features_for_topic(self, user_id: str, topic_id: str) -> Dict[str, Any]:
+        """Convenience alias for extract_cognitive_features."""
+        return self.extract_cognitive_features(user_id=user_id, topic_id=topic_id)
 
     # --- Consecutive Active Days (Streak) ---
     def get_user_streak(self, user_id: Optional[str]) -> int:
