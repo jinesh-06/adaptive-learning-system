@@ -32,7 +32,6 @@ from fastapi.testclient import TestClient
 import sqlite3
 import uuid
 from datetime import datetime, timedelta
-import jwt
 import json
 
 from backend.main import app
@@ -40,7 +39,7 @@ from backend.services.ml_service import ml_service
 from backend.services.rag_service import rag_service
 from backend.services.llm_service import llm_service
 from backend.services.state_store import state_store
-from backend.routes.auth_routes import JWT_SECRET, JWT_ALGORITHM
+from backend.services.auth_service import auth_service
 
 
 class TestFullIntegration(unittest.TestCase):
@@ -50,9 +49,9 @@ class TestFullIntegration(unittest.TestCase):
     def setUpClass(cls):
         state_store.set_db_path(str(_DISPOSABLE_DB), init_schema=True)
         cls.client = TestClient(app)
-        cls.user_token = jwt.encode({"sub": "test_legacy_user", "email": "tester@adaptive.edu", "role": "student"}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        cls.user_token = auth_service.create_internal_token("test_legacy_user", "tester@adaptive.edu", role="student")
         cls.auth_headers = {"Authorization": f"Bearer {cls.user_token}"}
-        cls.admin_token = jwt.encode({"sub": "test_legacy_admin", "email": "admin@adaptive.edu", "role": "admin"}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        cls.admin_token = auth_service.create_internal_token("test_legacy_admin", "admin@adaptive.edu", role="admin")
         cls.admin_headers = {"Authorization": f"Bearer {cls.admin_token}"}
 
     @classmethod
@@ -678,7 +677,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_26_learning_history_api_contract(self):
         """Verify /api/learning-history returns expected 'history', 'insights', and 'recent_events'."""
         user_id = f"test_user_hist_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Empty history
@@ -704,7 +703,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_27_roadmap_milestones_status(self):
         """Verify /api/dashboard/roadmap/{language} reflects progress and milestone fields."""
         user_id = f"test_user_road_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Initial state: first milestone is UNLOCKED, rest LOCKED
@@ -731,7 +730,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_28_course_routes_use_actual_streak(self):
         """Verify course dashboard routes (python, c, cpp, java) use dynamic streak calculation."""
         user_id = f"test_user_course_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # 0 streak for inactive user
@@ -799,11 +798,12 @@ class TestFullIntegration(unittest.TestCase):
     def test_32_roadmap_in_progress_does_not_unlock_next_milestone(self):
         """Fix 4: An IN_PROGRESS topic must NOT unlock its successor."""
         user_id = f"test_user_road_prog_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Topic 1 completed, Topic 2 IN_PROGRESS
         res = self.client.get("/api/dashboard/roadmap/python", headers=headers)
+        self.assertEqual(res.status_code, 200)
         milestones = res.json()["milestones"]
         t1_id = milestones[0]["topic_id"]
         t2_id = milestones[1]["topic_id"]
@@ -821,7 +821,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_33_learning_history_cognitive_and_adaptive_state_alignment(self):
         """Fix 5: /api/learning-history must include both cognitive_state and adaptive_state."""
         user_id = f"test_user_hist_align_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Record a quiz attempt and telemetry event
@@ -842,7 +842,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_34_learning_history_no_double_counting_quiz_duration(self):
         """Test A: Verify quiz duration is counted once when both quiz_attempts and QUIZ_SUBMIT telemetry exist."""
         user_id = f"test_user_hist_nodbl_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Another user to verify isolation
@@ -880,7 +880,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_35_learning_history_zero_duration_quiz(self):
         """Test B: Verify quiz duration of zero seconds reports 0s and does not inflate aggregate."""
         user_id = f"test_user_hist_zero_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         state_store.record_quiz_attempt(user_id, "top-py-intro", 90, 10, 0.0)
@@ -900,7 +900,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_36_learning_history_negative_improvement_delta(self):
         """Test C: Verify negative improvement_delta when newest quiz score is lower than previous."""
         user_id = f"test_user_hist_neg_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         earlier_ts = "2026-10-21 10:00:00"
@@ -945,7 +945,7 @@ class TestFullIntegration(unittest.TestCase):
         """Test D: Verify positive score delta and unchanged score delta."""
         # 1. Positive delta: 60 -> 75 = +15
         user_pos = f"test_user_hist_pos_{uuid.uuid4().hex[:8]}"
-        token_pos = jwt.encode({"sub": user_pos}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token_pos = auth_service.create_internal_token(user_pos, f"{user_pos}@test.edu")
         headers_pos = {"Authorization": f"Bearer {token_pos}"}
 
         earlier_ts = "2026-10-21 11:00:00"
@@ -967,7 +967,7 @@ class TestFullIntegration(unittest.TestCase):
 
         # 2. Unchanged delta: 80 -> 80 = 0
         user_eq = f"test_user_hist_eq_{uuid.uuid4().hex[:8]}"
-        token_eq = jwt.encode({"sub": user_eq}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token_eq = auth_service.create_internal_token(user_eq, f"{user_eq}@test.edu")
         headers_eq = {"Authorization": f"Bearer {token_eq}"}
 
         att_eq1 = state_store.save_quiz_attempt(user_eq, "top-py-intro", {"percentage": 80.0, "time_spent": 60})
@@ -986,7 +986,7 @@ class TestFullIntegration(unittest.TestCase):
 
         # 3. Only one attempt: delta = 0
         user_single = f"test_user_hist_single_{uuid.uuid4().hex[:8]}"
-        token_single = jwt.encode({"sub": user_single}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token_single = auth_service.create_internal_token(user_single, f"{user_single}@test.edu")
         headers_single = {"Authorization": f"Bearer {token_single}"}
         state_store.record_quiz_attempt(user_single, "top-py-intro", 80, 10, 60)
         res_single = self.client.get("/api/learning-history", headers=headers_single)
@@ -997,7 +997,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_38_learning_history_api_compatibility(self):
         """Test E: Verify all expected API keys, cognitive_state, and adaptive_state compatibility."""
         user_compat = f"test_user_hist_compat_{uuid.uuid4().hex[:8]}"
-        token_compat = jwt.encode({"sub": user_compat}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token_compat = auth_service.create_internal_token(user_compat, f"{user_compat}@test.edu")
         headers_compat = {"Authorization": f"Bearer {token_compat}"}
 
         state_store.record_quiz_attempt(user_compat, "top-py-intro", 80, 10, 60)
@@ -1041,7 +1041,7 @@ class TestFullIntegration(unittest.TestCase):
     def test_39_learning_history_mixed_timestamp_timezone_normalization(self):
         """Verify sorting and duplicate matching handle mixed timezone-aware and SQL-naive timestamps."""
         user_id = f"test_user_hist_tz_{uuid.uuid4().hex[:8]}"
-        token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        token = auth_service.create_internal_token(user_id, f"{user_id}@test.edu")
         headers = {"Authorization": f"Bearer {token}"}
 
         # Attempt 1: SQL-style timestamp without timezone (older: 80%)
