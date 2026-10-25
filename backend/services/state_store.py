@@ -328,7 +328,7 @@ class StateStore:
         with self._lock:
             conn = self.get_connection()
             cur = conn.cursor()
-            b_id = bookmark.get("id") or f"bm_{bookmark.get('item_type')}_{bookmark.get('item_id')}"
+            b_id = bookmark.get("id") or f"bm_{user_id}_{bookmark.get('item_type')}_{bookmark.get('item_id')}"
             cur.execute(
                 """INSERT OR REPLACE INTO bookmarks (id, user_id, item_type, item_id, title, snippet, language, topic_id)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",

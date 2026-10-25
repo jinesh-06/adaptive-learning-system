@@ -1,6 +1,6 @@
 """User personal workspace routes: bookmarks, notes, and learning history."""
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -36,8 +36,37 @@ async def add_bookmark(payload: BookmarkPayload, request: Request):
 @router.delete("/bookmarks/{bookmark_id}")
 async def delete_bookmark(bookmark_id: str, request: Request):
     user_id = get_current_user_id(request)
-    state_store.delete_bookmark(user_id, bookmark_id)
-    return {"success": True}
+    conn = state_store.get_connection()
+    cur = conn.cursor()
+
+    # 1. Check if authenticated user owns a matching bookmark (by bookmark ID or item_id)
+    cur.execute(
+        "SELECT id, user_id FROM bookmarks WHERE user_id = ? AND (id = ? OR item_id = ?)",
+        (user_id, bookmark_id, bookmark_id)
+    )
+    user_row = cur.fetchone()
+
+    if user_row:
+        conn.close()
+        state_store.delete_bookmark(user_id, bookmark_id)
+        return {"success": True}
+
+    # 2. Check if the bookmark exists belonging to another user
+    cur.execute(
+        "SELECT id, user_id FROM bookmarks WHERE id = ? OR item_id = ?",
+        (bookmark_id, bookmark_id)
+    )
+    other_row = cur.fetchone()
+    conn.close()
+
+    if other_row:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: You do not have permission to delete this bookmark."
+        )
+
+    # 3. Not found anywhere
+    raise HTTPException(status_code=404, detail="Bookmark not found.")
 
 
 @router.get("/bookmarks/check")
@@ -83,12 +112,32 @@ async def create_note(payload: CreateNotePayload, request: Request):
 @router.put("/notes/{note_id}")
 async def update_note(note_id: str, payload: UpdateNotePayload, request: Request):
     user_id = get_current_user_id(request)
+    conn = state_store.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, user_id FROM notes WHERE id = ?", (note_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Note not found.")
+    if row["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not have permission to modify this note.")
+
     return state_store.update_note(user_id, note_id, payload.model_dump(exclude_unset=True))
 
 
 @router.delete("/notes/{note_id}")
 async def delete_note(note_id: str, request: Request):
     user_id = get_current_user_id(request)
+    conn = state_store.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, user_id FROM notes WHERE id = ?", (note_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Note not found.")
+    if row["user_id"] != user_id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not have permission to delete this note.")
+
     state_store.delete_note(user_id, note_id)
     return {"success": True}
 

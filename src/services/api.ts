@@ -1,15 +1,32 @@
 import { mockHandlers, isGitHubPages } from './mockFallback';
 
 const VERCEL_BACKEND = 'https://learning-platform08-o7uub2ykr-aihack.vercel.app';
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+const rawApiUrl = import.meta.env.VITE_API_URL;
+
+if (import.meta.env.PROD && !rawApiUrl && !isGitHubPages) {
+  console.error(
+    '[Configuration Warning] VITE_API_URL is missing in production. ' +
+    'Frontend requests must target the active backend URL (e.g. on Render). ' +
+    'Configure VITE_API_URL in your Vercel deployment settings.'
+  );
+}
+
+const API_BASE = rawApiUrl
+  ? `${rawApiUrl.replace(/\/$/, '')}/api`
   : (isGitHubPages ? `${VERCEL_BACKEND}/api` : '/api');
 
 async function fetchJson<T = any>(url: string, options?: RequestInit): Promise<T | null> {
   try {
     const res = await fetch(url, options);
-    if (!res.ok) return null;
     const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html') && url.includes('/api/')) {
+      console.warn(
+        `[API Configuration Error] Request to '${url}' returned HTML instead of JSON. ` +
+        `Ensure VITE_API_URL is configured and points to your running backend.`
+      );
+      return null;
+    }
+    if (!res.ok) return null;
     if (!contentType.includes('application/json')) return null;
     return await res.json();
   } catch {

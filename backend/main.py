@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.config import HOST, PORT
+from backend.config import HOST, PORT, ALLOWED_ORIGINS, ENVIRONMENT
 from backend.routes.auth_routes import router as auth_router
 from backend.routes.curriculum_routes import router as curriculum_router
 from backend.routes.quiz_routes import router as quiz_router
@@ -43,13 +43,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Middleware (allows Vite frontend dev server at port 3000)
+# CORS Middleware (configured with explicit trusted origins, disallowing wildcard with credentials)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With", "X-User-Id"],
 )
 
 # API Sub-router mounting all routers under /api
@@ -107,5 +107,5 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    print(f"Starting Adaptive Learning System Backend on {HOST}:{PORT}...")
-    uvicorn.run("backend.main:app", host=HOST, port=PORT, reload=True)
+    print(f"Starting Adaptive Learning System Backend on {HOST}:{PORT} (env={ENVIRONMENT})...")
+    uvicorn.run("backend.main:app", host=HOST, port=PORT, reload=(ENVIRONMENT != "production"))
