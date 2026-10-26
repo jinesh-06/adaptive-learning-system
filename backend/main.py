@@ -36,6 +36,7 @@ from backend.routes.java_routes import router as java_router
 from backend.routes.java_oop_routes import router as java_oop_router
 from backend.routes.java_adv_routes import router as java_adv_router
 from backend.routes.lesson_routes import router as lesson_router
+from backend.routes.learning_outcomes_routes import router as learning_outcomes_router
 from backend.routes.mastery_routes import router as mastery_router
 
 app = FastAPI(
@@ -78,6 +79,7 @@ api_router.include_router(cpp_adv_router)
 api_router.include_router(java_router)
 api_router.include_router(java_oop_router)
 api_router.include_router(java_adv_router)
+api_router.include_router(learning_outcomes_router)
 api_router.include_router(mastery_router)
 
 # Mount the /api sub-application
