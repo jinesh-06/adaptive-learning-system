@@ -208,6 +208,42 @@ class StateStore:
                 )
             """)
 
+            # Learning Outcomes: Assessment Results (Pre and Post)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS assessment_results (
+                    id TEXT PRIMARY KEY,
+                    student_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    assessment_type TEXT NOT NULL,
+                    score REAL NOT NULL,
+                    total_marks REAL NOT NULL,
+                    correct_answers INTEGER NOT NULL,
+                    total_questions INTEGER NOT NULL,
+                    accuracy REAL NOT NULL,
+                    answers_json TEXT,
+                    review_json TEXT,
+                    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_assessment_student_topic ON assessment_results(student_id, topic_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_assessment_student ON assessment_results(student_id)")
+
+            # Learning Outcomes: Student Feedback (Ratings 1-5, Comments, Category)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS student_feedback (
+                    id TEXT PRIMARY KEY,
+                    student_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    feedback_type TEXT DEFAULT 'lesson',
+                    rating INTEGER NOT NULL,
+                    comments TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_student ON student_feedback(student_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_topic ON student_feedback(topic_id)")
+
             conn.commit()
 
             # Seed default guest user if missing
@@ -1667,6 +1703,240 @@ class StateStore:
                 "achievements": {"all": [], "unlocked": []},
                 "recent_activity": []
             }
+
+    # --- Learning Outcomes: Assessment Results ---
+    def save_assessment_result(
+        self,
+        student_id: str,
+        topic_id: str,
+        assessment_type: str,
+        score: float,
+        total_marks: float,
+        correct_answers: int,
+        total_questions: int,
+        accuracy: float,
+        answers: Optional[Dict[str, Any]] = None,
+        review: Optional[List[Dict[str, Any]]] = None,
+        assessment_id: Optional[str] = None
+    ) -> str:
+        import uuid
+        res_id = assessment_id or f"asmt-{uuid.uuid4().hex[:12]}"
+        safe_student_id = str(student_id or "").strip()
+        safe_topic_id = str(topic_id or "").strip()
+        safe_type = str(assessment_type or "pre").lower().strip()
+
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO assessment_results (
+                       id, student_id, topic_id, assessment_type,
+                       score, total_marks, correct_answers, total_questions, accuracy,
+                       answers_json, review_json, completed_at
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                (
+                    res_id,
+                    safe_student_id,
+                    safe_topic_id,
+                    safe_type,
+                    float(score),
+                    float(total_marks),
+                    int(correct_answers),
+                    int(total_questions),
+                    float(accuracy),
+                    json.dumps(answers or {}),
+                    json.dumps(review or [])
+                )
+            )
+            conn.commit()
+            conn.close()
+            return res_id
+
+    def get_assessment_results(
+        self,
+        student_id: str,
+        topic_id: Optional[str] = None,
+        assessment_type: Optional[str] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        safe_student_id = str(student_id or "").strip()
+        conn = self.get_connection()
+        cur = conn.cursor()
+        query = "SELECT * FROM assessment_results WHERE student_id = ?"
+        params: List[Any] = [safe_student_id]
+        if topic_id:
+            query += " AND topic_id = ?"
+            params.append(topic_id)
+        if assessment_type:
+            query += " AND assessment_type = ?"
+            params.append(str(assessment_type).lower().strip())
+        query += " ORDER BY completed_at DESC, id DESC LIMIT ?"
+        params.append(limit)
+
+        cur.execute(query, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+
+        for r in rows:
+            if r.get("answers_json"):
+                try:
+                    r["answers"] = json.loads(r["answers_json"])
+                except Exception:
+                    r["answers"] = {}
+            if r.get("review_json"):
+                try:
+                    r["review"] = json.loads(r["review_json"])
+                except Exception:
+                    r["review"] = []
+        return rows
+
+    def get_latest_assessment(
+        self,
+        student_id: str,
+        topic_id: str,
+        assessment_type: str
+    ) -> Optional[Dict[str, Any]]:
+        results = self.get_assessment_results(
+            student_id=student_id,
+            topic_id=topic_id,
+            assessment_type=assessment_type,
+            limit=1
+        )
+        return results[0] if results else None
+
+    # --- Learning Outcomes: Student Feedback ---
+    def save_student_feedback(
+        self,
+        student_id: str,
+        topic_id: str,
+        rating: int,
+        comments: Optional[str] = None,
+        feedback_type: str = "lesson",
+        feedback_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        import uuid
+        f_id = feedback_id or f"fb-{uuid.uuid4().hex[:12]}"
+        safe_student_id = str(student_id or "").strip()
+        safe_topic_id = str(topic_id or "").strip()
+        safe_type = str(feedback_type or "lesson").lower().strip()
+        clamped_rating = max(1, min(5, int(rating)))
+        safe_comments = str(comments or "").strip()
+
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """INSERT INTO student_feedback (
+                       id, student_id, topic_id, feedback_type, rating, comments, created_at, updated_at
+                   ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)""",
+                (f_id, safe_student_id, safe_topic_id, safe_type, clamped_rating, safe_comments)
+            )
+            conn.commit()
+            cur.execute("SELECT * FROM student_feedback WHERE id = ?", (f_id,))
+            row = cur.fetchone()
+            conn.close()
+            return dict(row) if row else {
+                "id": f_id,
+                "student_id": safe_student_id,
+                "topic_id": safe_topic_id,
+                "feedback_type": safe_type,
+                "rating": clamped_rating,
+                "comments": safe_comments
+            }
+
+    def get_student_feedbacks(
+        self,
+        student_id: str,
+        topic_id: Optional[str] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        safe_student_id = str(student_id or "").strip()
+        conn = self.get_connection()
+        cur = conn.cursor()
+        query = "SELECT * FROM student_feedback WHERE student_id = ?"
+        params: List[Any] = [safe_student_id]
+        if topic_id:
+            query += " AND topic_id = ?"
+            params.append(topic_id)
+        query += " ORDER BY updated_at DESC, id DESC LIMIT ?"
+        params.append(limit)
+
+        cur.execute(query, tuple(params))
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def get_student_feedback_by_id(self, feedback_id: str) -> Optional[Dict[str, Any]]:
+        conn = self.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,))
+        row = cur.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def update_student_feedback(
+        self,
+        feedback_id: str,
+        student_id: str,
+        rating: Optional[int] = None,
+        comments: Optional[str] = None,
+        feedback_type: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        safe_student_id = str(student_id or "").strip()
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,))
+            existing = cur.fetchone()
+            if not existing:
+                conn.close()
+                return None
+            if existing["student_id"] != safe_student_id:
+                conn.close()
+                raise PermissionError("Access forbidden: You can only edit your own feedback.")
+
+            updates = ["updated_at = CURRENT_TIMESTAMP"]
+            params: List[Any] = []
+            if rating is not None:
+                clamped_rating = max(1, min(5, int(rating)))
+                updates.append("rating = ?")
+                params.append(clamped_rating)
+            if comments is not None:
+                updates.append("comments = ?")
+                params.append(str(comments).strip())
+            if feedback_type is not None:
+                updates.append("feedback_type = ?")
+                params.append(str(feedback_type).lower().strip())
+
+            params.extend([feedback_id, safe_student_id])
+            cur.execute(
+                f"UPDATE student_feedback SET {', '.join(updates)} WHERE id = ? AND student_id = ?",
+                tuple(params)
+            )
+            conn.commit()
+            cur.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,))
+            updated_row = cur.fetchone()
+            conn.close()
+            return dict(updated_row) if updated_row else None
+
+    def delete_student_feedback(self, feedback_id: str, student_id: str) -> bool:
+        safe_student_id = str(student_id or "").strip()
+        with self._lock:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT * FROM student_feedback WHERE id = ?", (feedback_id,))
+            existing = cur.fetchone()
+            if not existing:
+                conn.close()
+                return False
+            if existing["student_id"] != safe_student_id:
+                conn.close()
+                raise PermissionError("Access forbidden: You can only delete your own feedback.")
+
+            cur.execute("DELETE FROM student_feedback WHERE id = ? AND student_id = ?", (feedback_id, safe_student_id))
+            conn.commit()
+            conn.close()
+            return True
 
 
 state_store = StateStore()

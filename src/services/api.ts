@@ -1469,6 +1469,113 @@ export const api = {
       if (res.ok) return await res.json();
     } catch {}
     return { success: true };
+  },
+
+  // --- Learning Outcomes & Assessments (Member 4) ---
+  getAssessmentQuestions: async (topicId: string, type: 'pre' | 'post' = 'pre') => {
+    try {
+      const res = await fetch(`${API_BASE}/assessments/${topicId}/questions?type=${type}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getAssessmentQuestions(topicId, type);
+  },
+
+  submitAssessment: async (topicId: string, payload: {
+    assessment_type: 'pre' | 'post';
+    answers: Record<string, number>;
+    time_spent?: number;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/assessments/${topicId}/submit`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.submitAssessment(topicId, payload);
+  },
+
+  getAssessmentResults: async (topicId?: string, type?: 'pre' | 'post') => {
+    try {
+      const url = new URL(`${window.location.origin}${API_BASE}/assessments/results`);
+      if (topicId) url.searchParams.append('topic_id', topicId);
+      if (type) url.searchParams.append('assessment_type', type);
+      const res = await fetch(url.toString(), {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return { success: true, count: 0, results: [] };
+  },
+
+  getLearningOutcomes: async (topicId?: string): Promise<LearningOutcomesData | null> => {
+    try {
+      const query = topicId ? `?topic_id=${encodeURIComponent(topicId)}` : '';
+      const res = await fetch(`${API_BASE}/learning-outcomes${query}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getLearningOutcomes(topicId);
+  },
+
+  // --- Student Feedback (Member 4) ---
+  submitStudentFeedback: async (payload: {
+    topic_id: string;
+    rating: number;
+    comments: string;
+    feedback_type?: string;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/student-feedback`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.submitStudentFeedback(payload);
+  },
+
+  getStudentFeedbackList: async (topicId?: string) => {
+    try {
+      const query = topicId ? `?topic_id=${encodeURIComponent(topicId)}` : '';
+      const res = await fetch(`${API_BASE}/student-feedback${query}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.getStudentFeedbackList(topicId);
+  },
+
+  updateStudentFeedback: async (feedbackId: string, payload: {
+    rating?: number;
+    comments?: string;
+    feedback_type?: string;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/student-feedback/${feedbackId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.updateStudentFeedback(feedbackId, payload);
+  },
+
+  deleteStudentFeedback: async (feedbackId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/student-feedback/${feedbackId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return mockHandlers.deleteStudentFeedback(feedbackId);
   }
 };
 
@@ -1522,4 +1629,120 @@ export interface AdaptedLessonData {
   key_takeaways: string[];
   next_step?: string;
 }
+
+// --- Member 4: Learning Outcomes & Feedback Types ---
+export interface AssessmentQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  difficulty: 'easy' | 'medium' | 'hard' | string;
+  order?: number;
+}
+
+export interface AssessmentReviewItem {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  user_choice: number | null;
+  is_correct: boolean;
+  explanation: string;
+  difficulty: string;
+}
+
+export interface AssessmentComparison {
+  has_pre_assessment: boolean;
+  pre_score: number | null;
+  pre_total_marks: number | null;
+  pre_accuracy: number | null;
+  pre_completed_at?: string;
+  post_score?: number;
+  post_total_marks?: number;
+  post_accuracy?: number;
+  score_improvement: number | null;
+  percentage_point_improvement: number | null;
+  improved: boolean | null;
+  summary_text: string;
+}
+
+export interface AssessmentSubmissionResult {
+  success: boolean;
+  assessment_id: string;
+  student_id: string;
+  topic_id: string;
+  topic_title: string;
+  assessment_type: 'pre' | 'post';
+  score: number;
+  total_marks: number;
+  correct_answers: number;
+  total_questions: number;
+  accuracy: number;
+  time_spent: number;
+  review: AssessmentReviewItem[];
+  comparison?: AssessmentComparison | null;
+}
+
+export interface TopicLearningOutcome {
+  topic_id: string;
+  topic_title: string;
+  language: string;
+  status: 'COMPLETED' | 'PRE_ASSESSED_ONLY' | 'POST_ASSESSED_ONLY' | 'NOT_STARTED' | string;
+  has_pre_assessment: boolean;
+  has_post_assessment: boolean;
+  pre_assessment?: {
+    score: number;
+    total_marks: number;
+    accuracy: number;
+    completed_at?: string;
+  } | null;
+  post_assessment?: {
+    score: number;
+    total_marks: number;
+    accuracy: number;
+    completed_at?: string;
+  } | null;
+  score_improvement: number | null;
+  percentage_point_improvement: number | null;
+  total_attempts: number;
+}
+
+export interface LearningOutcomesData {
+  student_id: string;
+  summary: {
+    number_of_completed_assessments: number;
+    number_of_assigned_assessments: number;
+    assessment_completion_rate: number;
+    accuracy_percentage: number;
+    average_score_improvement: number;
+    average_percentage_point_improvement: number;
+    topics_assessed_count: number;
+    fully_assessed_topics_count: number;
+  };
+  topic_outcomes: TopicLearningOutcome[];
+  recent_assessments: Array<{
+    id: string;
+    topic_id: string;
+    topic_title: string;
+    assessment_type: 'pre' | 'post';
+    score: number;
+    total_marks: number;
+    accuracy: number;
+    correct_answers: number;
+    total_questions: number;
+    completed_at: string;
+  }>;
+}
+
+export interface StudentFeedbackItem {
+  id: string;
+  student_id: string;
+  topic_id: string;
+  topic_title?: string;
+  feedback_type: 'lesson' | 'quiz' | 'recommendation' | 'general' | string;
+  rating: number; // 1-5
+  comments: string;
+  created_at: string;
+  updated_at: string;
+}
+
 

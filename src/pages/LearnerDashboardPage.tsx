@@ -27,6 +27,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { LearningOutcomesSection } from '../components/dashboard/LearningOutcomesSection';
 
 interface LearnerDashboardProps {
   onSelectTopic: (topicId: string) => void;
@@ -307,7 +308,10 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
         </div>
       </div>
 
-      {/* 5. GAMIFICATION & ACHIEVEMENTS (Section 68, 69) */}
+      {/* 5. LEARNING OUTCOMES & STUDENT FEEDBACK (Member 4 Module) */}
+      <LearningOutcomesSection onSelectTopic={onSelectTopic} />
+
+      {/* 6. GAMIFICATION & ACHIEVEMENTS (Section 68, 69) */}
       <div>
         <h2 className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4 flex items-center gap-2">
           <Award className="w-4 h-4 text-amber-400" />
