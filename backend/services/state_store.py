@@ -244,6 +244,60 @@ class StateStore:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_student ON student_feedback(student_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_topic ON student_feedback(topic_id)")
 
+            # Student Topic Mastery table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS student_topic_mastery (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    subject_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    total_attempts INTEGER DEFAULT 0,
+                    completed_assessments INTEGER DEFAULT 0,
+                    quiz_attempts INTEGER DEFAULT 0,
+                    quiz_correct_answers INTEGER DEFAULT 0,
+                    quiz_incorrect_answers INTEGER DEFAULT 0,
+                    quiz_accuracy REAL DEFAULT NULL,
+                    best_quiz_accuracy REAL DEFAULT NULL,
+                    coding_attempts INTEGER DEFAULT 0,
+                    coding_passed_tests INTEGER DEFAULT 0,
+                    coding_total_tests INTEGER DEFAULT 0,
+                    coding_score REAL DEFAULT NULL,
+                    best_coding_score REAL DEFAULT NULL,
+                    current_mastery REAL DEFAULT NULL,
+                    previous_mastery REAL DEFAULT NULL,
+                    mastery_status TEXT DEFAULT 'NOT_ASSESSED',
+                    last_activity_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    UNIQUE(user_id, topic_id)
+                )
+            """)
+
+            # Mastery History table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS mastery_history (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    subject_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    assessment_id TEXT UNIQUE,
+                    assessment_type TEXT NOT NULL,
+                    score REAL NOT NULL,
+                    previous_mastery REAL DEFAULT NULL,
+                    new_mastery REAL DEFAULT NULL,
+                    change_delta REAL DEFAULT NULL,
+                    metadata_json TEXT DEFAULT '{}',
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_topic_mastery_user ON student_topic_mastery(user_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_topic_mastery_user_subject ON student_topic_mastery(user_id, subject_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_mastery_history_user ON mastery_history(user_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_mastery_history_user_topic ON mastery_history(user_id, topic_id)")
+
             conn.commit()
 
             # Seed default guest user if missing
@@ -364,7 +418,7 @@ class StateStore:
         with self._lock:
             conn = self.get_connection()
             cur = conn.cursor()
-            b_id = bookmark.get("id") or f"bm_{bookmark.get('item_type')}_{bookmark.get('item_id')}"
+            b_id = bookmark.get("id") or f"bm_{user_id}_{bookmark.get('item_type')}_{bookmark.get('item_id')}"
             cur.execute(
                 """INSERT OR REPLACE INTO bookmarks (id, user_id, item_type, item_id, title, snippet, language, topic_id)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",

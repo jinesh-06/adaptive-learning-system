@@ -1,15 +1,32 @@
 import { mockHandlers, isGitHubPages } from './mockFallback';
 
 const VERCEL_BACKEND = 'https://learning-platform08-o7uub2ykr-aihack.vercel.app';
-const API_BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+const rawApiUrl = import.meta.env.VITE_API_URL;
+
+if (import.meta.env.PROD && !rawApiUrl && !isGitHubPages) {
+  console.error(
+    '[Configuration Warning] VITE_API_URL is missing in production. ' +
+    'Frontend requests must target the active backend URL (e.g. on Render). ' +
+    'Configure VITE_API_URL in your Vercel deployment settings.'
+  );
+}
+
+const API_BASE = rawApiUrl
+  ? `${rawApiUrl.replace(/\/$/, '')}/api`
   : (isGitHubPages ? `${VERCEL_BACKEND}/api` : '/api');
 
 async function fetchJson<T = any>(url: string, options?: RequestInit): Promise<T | null> {
   try {
     const res = await fetch(url, options);
-    if (!res.ok) return null;
     const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html') && url.includes('/api/')) {
+      console.warn(
+        `[API Configuration Error] Request to '${url}' returned HTML instead of JSON. ` +
+        `Ensure VITE_API_URL is configured and points to your running backend.`
+      );
+      return null;
+    }
+    if (!res.ok) return null;
     if (!contentType.includes('application/json')) return null;
     return await res.json();
   } catch {
@@ -469,6 +486,71 @@ export const api = {
     if (isGitHubPages) {
       return mockHandlers.getDashboardSnapshot();
     }
+    return null;
+  },
+
+  // --- Student-Specific Mastery API ---
+  getMyMastery: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/me`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getSubjectMastery: async (subjectId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/subjects/${encodeURIComponent(subjectId)}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getTopicMastery: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/topics/${encodeURIComponent(topicId)}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getMasteryHistory: async (params?: { topic_id?: string; subject_id?: string; limit?: number; offset?: number }) => {
+    try {
+      const q = new URLSearchParams();
+      if (params?.topic_id) q.append('topic_id', params.topic_id);
+      if (params?.subject_id) q.append('subject_id', params.subject_id);
+      if (params?.limit) q.append('limit', String(params.limit));
+      if (params?.offset) q.append('offset', String(params.offset));
+      const res = await fetch(`${API_BASE}/mastery/history?${q.toString()}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return { success: false, data: [] };
+  },
+
+  recordAssessmentResult: async (payload: {
+    topic_id: string;
+    assessment_type: 'quiz' | 'coding';
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/assessment-result`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
     return null;
   },
 
