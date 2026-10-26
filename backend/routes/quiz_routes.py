@@ -136,6 +136,28 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         time_spent_delta=payload.time_spent or 0.0
     )
 
+    # Recalculate and update student-specific topic mastery
+    mastery_snapshot = None
+    try:
+        from backend.services.mastery_service import mastery_service
+        mastery_snapshot = mastery_service.process_assessment_result(
+            user_id=user_id,
+            topic_id=topic_id,
+            subject_id=course_id,
+            assessment_type="quiz",
+            score=float(percentage),
+            assessment_id=f"quiz_attempt_{attempt_id}",
+            details={
+                "attempt_id": attempt_id,
+                "correct_count": correct_count,
+                "total_questions": total,
+                "passed": passed,
+                "time_spent": payload.time_spent or 0.0
+            }
+        )
+    except Exception as e:
+        print(f"[MasteryIntegration] Failed to process quiz mastery: {e}")
+
     return {
         "attempt_id": attempt_id,
         "score": percentage,
@@ -148,5 +170,6 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "review": review,
         "results": feedback,
         "adaptive_feedback": adaptive_feedback,
-        "cognitive_insight": adaptive_feedback
+        "cognitive_insight": adaptive_feedback,
+        "mastery": mastery_snapshot
     }

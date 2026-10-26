@@ -472,6 +472,71 @@ export const api = {
     return null;
   },
 
+  // --- Student-Specific Mastery API ---
+  getMyMastery: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/me`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getSubjectMastery: async (subjectId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/subjects/${encodeURIComponent(subjectId)}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getTopicMastery: async (topicId: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/topics/${encodeURIComponent(topicId)}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getMasteryHistory: async (params?: { topic_id?: string; subject_id?: string; limit?: number; offset?: number }) => {
+    try {
+      const q = new URLSearchParams();
+      if (params?.topic_id) q.append('topic_id', params.topic_id);
+      if (params?.subject_id) q.append('subject_id', params.subject_id);
+      if (params?.limit) q.append('limit', String(params.limit));
+      if (params?.offset) q.append('offset', String(params.offset));
+      const res = await fetch(`${API_BASE}/mastery/history?${q.toString()}`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return { success: false, data: [] };
+  },
+
+  recordAssessmentResult: async (payload: {
+    topic_id: string;
+    assessment_type: 'quiz' | 'coding';
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/assessment-result`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
   // Visual Roadmap (Section 46)
   getLanguageRoadmap: async (language: string) => {
     try {
