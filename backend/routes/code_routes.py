@@ -175,6 +175,29 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
             time_spent_delta=payload.codingTimeSeconds or 0.0
         )
 
+    # Recalculate and update student-specific topic mastery
+    mastery_snapshot = None
+    try:
+        from backend.services.mastery_service import mastery_service
+        code_assessment_id = f"code_submit_{user_id}_{payload.topicId}_{int(time.time() * 1000)}"
+        mastery_snapshot = mastery_service.process_assessment_result(
+            user_id=user_id,
+            topic_id=payload.topicId,
+            subject_id=course_id,
+            assessment_type="coding",
+            score=float(accuracy),
+            assessment_id=code_assessment_id,
+            details={
+                "passed_tests": passed_tests,
+                "total_tests": total_tests,
+                "success": is_overall_pass,
+                "status": eval_result.get("status"),
+                "codingTimeSeconds": payload.codingTimeSeconds or 0.0
+            }
+        )
+    except Exception as e:
+        print(f"[MasteryIntegration] Failed to process coding mastery: {e}")
+
     # Extract primary stdout / error without leaking hidden test output
     visible_details = [d for d in eval_result.get("details", []) if not d.get("is_hidden")]
     first_visible_actual = visible_details[0].get("actual", "") if visible_details else ""
@@ -222,5 +245,6 @@ async def submit_code(payload: CodeSubmitRequest, request: Request):
         "execution_time_seconds": eval_result.get("execution_time_seconds") or eval_result.get("execution_time", 0.0),
         "execution_time_ms": eval_result.get("execution_time_ms", 0),
         "cognitive_insight": cognitive_insight,
-        "adaptive_feedback": cognitive_insight
+        "adaptive_feedback": cognitive_insight,
+        "mastery": mastery_snapshot
     }
