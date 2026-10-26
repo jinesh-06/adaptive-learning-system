@@ -1,0 +1,14 @@
+# ==============================================================================
+# Docker Compose configuration for Adaptive Learning Sandbox Engine
+# ==============================================================================
+version: "3.8"
+
+services:
+  sandbox-image-builder:
+    build:
+      context: ./backend/sandbox
+      dockerfile: Dockerfile
+    image: adaptive-learning-sandbox:latest
+    container_name: adaptive-learning-sandbox-builder
+    restart: "no"
+    command: ["sh", "-c", "python3 --version && javac -version && java -version"]

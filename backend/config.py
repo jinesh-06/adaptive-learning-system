@@ -48,3 +48,8 @@ JWT_ALGORITHM = "HS256"
 # SQLite DB Path for persistence (supports environment override for test isolation)
 _env_db_path = os.getenv("ADAPTIVE_LEARNING_DB_PATH")
 DB_PATH = Path(_env_db_path).resolve() if _env_db_path else PROJECT_ROOT / "backend" / "adaptive_learning.db"
+
+# Secure Code Sandbox Configuration
+SANDBOX_CONTAINER_RUNTIME = os.getenv("SANDBOX_CONTAINER_RUNTIME", "docker").strip().lower()
+SANDBOX_CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "adaptive-learning-sandbox:latest").strip()
+ALLOW_TEST_CONTAINER_MOCK = os.getenv("ALLOW_TEST_CONTAINER_MOCK", "false").strip().lower() == "true"
