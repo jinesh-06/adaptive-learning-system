@@ -26,7 +26,7 @@ from rag.src.document_loader import load_documents, normalize_course_name
 from rag.src.text_chunker import chunk_documents
 from rag.src.embeddings import get_embedding_model, embed_query, embed_documents
 from rag.src.vector_store import get_vector_store
-from rag.src.retriever import retrieve_documents
+from rag.src.retriever import retrieve_documents, retrieve_with_status
 from rag.src.context_formatter import format_context, format_rag_prompt
 from rag.src.ingest import run_ingestion
 
@@ -275,6 +275,44 @@ class TestRAGComprehensiveSuite(unittest.TestCase):
         )
         self.assertGreater(len(cpp_results), 0)
         self.assertEqual(cpp_results[0]["topic"], "stl")
+
+    def test_12_embedding_model_availability_and_fallback(self):
+        """Verify model availability flag and structured exception on embedding failure."""
+        model = get_embedding_model(config=self.config)
+        self.assertTrue(model.is_available())
+        self.assertIsNone(model.load_error)
+
+        # Verify embed_single works when available
+        emb = model.embed_single("Test query")
+        self.assertIsInstance(emb, list)
+        self.assertEqual(len(emb), 384)
+
+    def test_13_retrieval_safe_degradation_when_embeddings_unavailable(self):
+        """Verify retrieve_documents returns empty list without crashing when embeddings are offline."""
+        from unittest.mock import patch
+        with patch("rag.src.retriever.embed_query", side_effect=RuntimeError("Model unavailable")):
+            results = retrieve_documents("What is a pointer?", course="c", config=self.config)
+            self.assertEqual(results, [])
+
+    def test_14_retrieve_with_status_distinguishes_embedding_failure(self):
+        """Verify retrieve_with_status explicitly differentiates model offline error from empty search."""
+        from unittest.mock import patch
+
+        # 1. Embedding failure case
+        with patch("rag.src.retriever.embed_query", side_effect=RuntimeError("PyTorch runtime offline")):
+            res = retrieve_with_status("What is a pointer?", course="c", config=self.config)
+            self.assertFalse(res["success"])
+            self.assertEqual(res["status"], "EMBEDDING_UNAVAILABLE")
+            self.assertEqual(res["documents"], [])
+            self.assertIn("PyTorch runtime offline", res["error"])
+
+        # 2. Empty result case (query returns no matching documents)
+        with patch("rag.src.retriever._retrieve_from_embedding", return_value=[]):
+            res = retrieve_with_status("Nonexistent concept", course="c", config=self.config)
+            self.assertTrue(res["success"])
+            self.assertEqual(res["status"], "EMPTY_RESULT")
+            self.assertEqual(res["documents"], [])
+            self.assertIsNone(res["error"])
 
 
 def run_tests():

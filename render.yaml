@@ -1,3 +1,18 @@
+# ==============================================================================
+# Adaptive Learning System - Backend Web Service (Render Manifest)
+# NOTE ON SANDBOX COMPATIBILITY:
+# Render native Python Web Services (`env: python`) do not support Docker daemon
+# access. In production (`ENVIRONMENT=production`), the code sandbox engine
+# fail-closed architecture returns `status: EXECUTOR_UNAVAILABLE` to disallow
+# uncontained host execution.
+# To support live isolated code execution in production/staging:
+# - Option 1 (Recommended): Decoupled runner - keep API on Render, route code
+#   execution to a dedicated, isolated Linux sandbox worker or VM (e.g., AWS ECS,
+#   Fly.io Machine, or DigitalOcean Droplet) with live Docker daemon support.
+# - Option 2: Container platform deployment with native unprivileged container
+#   isolation on a dedicated Linux host. Privileged Docker-in-Docker (DinD)
+#   is strictly discouraged due to severe container escape risks.
+# ==============================================================================
 services:
   - type: web
     name: adaptive-learning-backend

@@ -1,10 +1,10 @@
-﻿# Security and Deployment Architecture Specification
+# Security and Deployment Architecture Specification
 
-**Role:** Member 1 â€” Security and Deployment Engineer
+**Role:** Member 1 — Security and Deployment Engineer
 **System:** Adaptive Learning System
 **Repository:** `jinesh-06/adaptive-learning-system`
-**Branch:** `feature/security-deployment`
-**Base:** `feature/full-integration`
+**Branch:** `feature/learning-outcomes`
+**Target Integration Branch:** `feature/full-integration`
 
 ---
 
@@ -117,6 +117,14 @@ All user-specific routes (`/api/bookmarks`, `/api/notes`, `/api/learning-history
 - **Dependencies**: All runtime dependencies (`fastapi`, `uvicorn`, `pyjwt`, `bcrypt`, `google-auth`, `pydantic`, `python-dotenv`, `google-genai`, `chromadb`, `pandas`, `scikit-learn`, `joblib`) are declared in `requirements.txt`.
 - **Uvicorn Reload**: In production, `reload` is automatically disabled (`reload=(ENVIRONMENT != "production")`).
 - **Admin Configuration**: `PRODUCTION_ADMIN_EMAILS` is configured with `sync: false`, requiring the operator to specify the real administrator email.
+- **Sandbox Limitation on Render Native Python Service**:
+  - Render native Python Web Services (`env: python`) run in unprivileged container environments without access to the host Docker daemon (`/var/run/docker.sock`).
+  - **Fail-Closed Behavior**: When deployed to Render with `ENVIRONMENT=production`, the sandbox engine detects that the Docker daemon is offline (`is_available() == False`) and strictly **fails closed**, returning `HTTP 200` with `status: EXECUTOR_UNAVAILABLE`. Arbitrary host command execution is strictly prevented.
+  - **Production Architecture Options for Code Execution**:
+    1. **Decoupled Sandbox Runner (Recommended)**: Keep the FastAPI web API, auth, and database on Render (or similar PaaS), and route `/api/code/execute` to a hardened, isolated sandbox worker service running on a dedicated Linux VPS / VM (e.g., Fly.io Machine, AWS ECS, or DigitalOcean Droplet) with live Docker daemon support.
+    2. **Dedicated Isolated Host**: Deploy the code execution engine on a dedicated Linux host or virtual machine with rootless container support. Privileged Docker-in-Docker (DinD) is strictly prohibited as a production solution due to root-equivalent host privileges and container-breakout vulnerabilities.
+    3. **Dedicated Staging Host**: Validate live container sandbox execution on a standalone Linux staging server running `docker compose -f docker-compose.sandbox.yml up` prior to committing to production infrastructure changes.
+
 
 ### 5.2 Frontend Deployment (Vercel)
 - **Manifest**: `vercel.json`
@@ -145,6 +153,11 @@ All user-specific routes (`/api/bookmarks`, `/api/notes`, `/api/learning-history
 | `PRODUCTION_ADMIN_EMAILS`| Production | Backend | **Yes (explicit)** | Comma-separated admin emails (`admin@institution.edu`) |
 | `GEMINI_API_KEY` | All | Backend | Yes (for AI) | Google AI Studio Gemini API key |
 | `GEMINI_MODEL` | All | Backend | No | LLM model identifier (default `gemini-2.5-flash`) |
+| `MASTERY_QUIZ_WEIGHT` | All | Backend | No | Weight assigned to quiz accuracy in topic mastery formula (default `0.6`). Must be non-negative |
+| `MASTERY_CODING_WEIGHT` | All | Backend | No | Weight assigned to coding score in topic mastery formula (default `0.4`). Must be non-negative |
+| `SANDBOX_CONTAINER_RUNTIME` | All | Backend | No | Container CLI binary for sandbox execution (default `docker`, fallback `podman`) |
+| `SANDBOX_CONTAINER_IMAGE` | All | Backend | No | Tagged Linux container image for sandbox execution (default `adaptive-learning-sandbox:latest`) |
+| `ALLOW_TEST_CONTAINER_MOCK` | Test only | Backend | **No (STRICTLY PROHIBITED in prod)** | Test-only mock execution bypass (default `false`). Must NOT be enabled in production to preserve container isolation boundaries |
 | `VITE_API_URL` | All | Frontend | **Yes** | Base URL pointing to FastAPI backend API root |
 | `VITE_FIREBASE_API_KEY` | All | Frontend | Yes | Firebase Web Client API key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | All | Frontend | Yes | `project.firebaseapp.com` |
