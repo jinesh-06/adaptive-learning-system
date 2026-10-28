@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Code,
   Play,
@@ -17,6 +17,8 @@ import confetti from 'canvas-confetti';
 import { api } from '../../services/api';
 import { executeCodeInBrowser } from '../../services/pythonRunner';
 import { telemetry } from '../../services/telemetry';
+import { C_INTERMEDIATE_TOPICS } from '../../data/cIntermediateData';
+import { C_ADVANCED_TOPICS } from '../../data/cAdvancedData';
 
 export interface TestCase {
   input: string;
@@ -43,6 +45,43 @@ export interface InLessonCodingChallengeProps {
   onOpenFullStudio?: () => void;
 }
 
+const isTopicCAdv = (id: string) => C_ADVANCED_TOPICS.some(t => t.id === id);
+const isTopicCInt = (id: string) => C_INTERMEDIATE_TOPICS.some(t => t.id === id);
+
+export const persistChallengeProgress = async (topicId: string): Promise<any> => {
+  const payload = {
+    topic_id: topicId,
+    status: 'COMPLETED',
+    completion_pct: 100,
+    attempts_delta: 1,
+    time_spent_delta: 60
+  };
+
+  if (isTopicCAdv(topicId)) {
+    return await api.updateCAdvProgress(payload);
+  } else if (isTopicCInt(topicId)) {
+    return await api.updateCIntermediateProgress(payload);
+  } else if (topicId.startsWith('top-c-')) {
+    return await api.updateCProgress(payload);
+  } else if (topicId.startsWith('top-cpp-adv-')) {
+    return await api.updateCppAdvProgress(payload);
+  } else if (topicId.startsWith('top-cpp-oop-')) {
+    return await api.updateCppOopProgress(payload);
+  } else if (topicId.startsWith('top-cpp-')) {
+    return await api.updateCppProgress(payload);
+  } else if (topicId.startsWith('top-java-adv-')) {
+    return await api.updateJavaAdvProgress(payload);
+  } else if (topicId.startsWith('top-java-oop-')) {
+    return await api.updateJavaOopProgress(payload);
+  } else if (topicId.startsWith('top-java-')) {
+    return await api.updateJavaProgress(payload);
+  } else if (topicId.startsWith('top-py-')) {
+    return await api.updatePythonProgress(payload);
+  } else {
+    return await api.updatePythonProgress(payload);
+  }
+};
+
 export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = ({
   topicId,
   initialChallenge,
@@ -52,6 +91,8 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
   const [loading, setLoading] = useState<boolean>(!initialChallenge);
   const [code, setCode] = useState<string>('');
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const lastSavedTopicRef = useRef<string | null>(null);
   const [testResults, setTestResults] = useState<{
     input: string;
     expected: string;
@@ -70,6 +111,11 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
     if (!data?.starter_code) return '';
     return data.starter_code[lang] || data.starter_code.python || (typeof data.starter_code === 'object' ? Object.values(data.starter_code)[0] : '') || '';
   };
+
+  useEffect(() => {
+    lastSavedTopicRef.current = null;
+    setSaveStatus('idle');
+  }, [topicId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -118,7 +164,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
   }, [topicId, initialChallenge]);
 
   const handleRunAllTests = async () => {
-    if (!challenge) return;
+    if (!challenge || isRunning) return;
     setIsRunning(true);
     setTestResults(null);
     setAllPassed(false);
@@ -129,6 +175,14 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
       challenge_id: challenge.id
     });
 
+    const hasTestCases = Array.isArray(challenge.test_cases) && challenge.test_cases.length > 0;
+    if (!hasTestCases) {
+      setIsRunning(false);
+      setTestResults([]);
+      setAllPassed(false);
+      return;
+    }
+
     const results: { input: string; expected: string; actual: string; passed: boolean }[] = [];
     let everyPassed = true;
 
@@ -136,7 +190,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
       try {
         const res = await executeCodeInBrowser(code, activeLang, tc.input);
         const cleanActual = (res.stdout || '').trim();
-        const cleanExpected = tc.expected_output.trim();
+        const cleanExpected = (tc.expected_output || '').trim();
         const passed = cleanActual === cleanExpected;
         if (!passed) everyPassed = false;
 
@@ -150,7 +204,7 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         everyPassed = false;
         results.push({
           input: tc.input,
-          expected: tc.expected_output.trim(),
+          expected: (tc.expected_output || '').trim(),
           actual: `Execution Exception: ${err.message || ''}`,
           passed: false
         });
@@ -173,25 +227,24 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         topic_id: topicId,
         challenge_id: challenge.id
       });
-      localStorage.setItem(`topic_challenge_passed_${topicId}`, 'true');
 
-      // Persist progress to backend
-      if (topicId.startsWith('top-c-')) {
-        api.updateCProgress({
-          topic_id: topicId,
-          status: 'COMPLETED',
-          completion_pct: 100,
-          attempts_delta: 1,
-          time_spent_delta: 60
-        }).catch(err => console.warn('Could not save C code challenge progress:', err));
-      } else if (topicId.startsWith('top-py-')) {
-        api.updatePythonProgress({
-          topic_id: topicId,
-          status: 'COMPLETED',
-          completion_pct: 100,
-          attempts_delta: 1,
-          time_spent_delta: 60
-        }).catch(err => console.warn('Could not save Python code challenge progress:', err));
+      // Avoid duplicate progress submissions if already saved for this topic in this session
+      if (lastSavedTopicRef.current === topicId) {
+        return;
+      }
+
+      setSaveStatus('saving');
+      try {
+        const resp = await persistChallengeProgress(topicId);
+        if (resp && resp.success === false) {
+          throw new Error(resp.message || 'Progress update rejected');
+        }
+        lastSavedTopicRef.current = topicId;
+        localStorage.setItem(`topic_challenge_passed_${topicId}`, 'true');
+        setSaveStatus('saved');
+      } catch (err) {
+        console.warn('Could not save coding challenge progress to backend:', err);
+        setSaveStatus('error');
       }
     }
   };
@@ -365,15 +418,32 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
               <span className="text-xs font-bold text-slate-300 light-theme:text-slate-800">
                 Evaluation Results:
               </span>
-              <span
-                className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                  allPassed
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                }`}
-              >
-                {allPassed ? '✔ All Tests Passed!' : '✖ Some Tests Failed'}
-              </span>
+              <div className="flex items-center gap-2">
+                {allPassed && saveStatus === 'saved' && (
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    • Progress saved
+                  </span>
+                )}
+                {allPassed && saveStatus === 'saving' && (
+                  <span className="text-[10px] text-cyan-400 font-mono animate-pulse">
+                    • Saving progress...
+                  </span>
+                )}
+                {allPassed && saveStatus === 'error' && (
+                  <span className="text-[10px] text-amber-400 font-mono">
+                    • Offline (could not sync progress)
+                  </span>
+                )}
+                <span
+                  className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                    allPassed
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                  }`}
+                >
+                  {allPassed ? '✔ All Tests Passed!' : '✖ Some Tests Failed'}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2">

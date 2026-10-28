@@ -130,7 +130,7 @@ async def get_c_fundamentals_dashboard(request: Request):
         "quizzes_completed": quiz_completed_count,
         "overall_progress": overall_progress,
         "current_topic_id": current_topic_id,
-        "streak_days": 4,
+        "streak_days": state_store.get_user_streak(user_id),
         "estimated_remaining_minutes": remaining_minutes,
         "learning_signals_status": "Cognitive Engine Calibrated & Active",
         "topics": topics_output

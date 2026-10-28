@@ -182,6 +182,7 @@ export const firebaseAuth = {
     try {
       await api.oauthLogin({
         provider: 'google',
+        idToken,
         email: result.user.email || undefined,
         name: result.user.displayName || undefined,
         avatar_url: result.user.photoURL || undefined
@@ -213,6 +214,7 @@ export const firebaseAuth = {
     try {
       await api.oauthLogin({
         provider: 'github',
+        idToken,
         email: result.user.email || undefined,
         name: result.user.displayName || undefined,
         avatar_url: result.user.photoURL || undefined

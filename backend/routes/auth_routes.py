@@ -1,61 +1,26 @@
 """Authentication routes."""
 
 import time
-import jwt
+import bcrypt
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, Any
 
+from backend.config import JWT_SECRET, JWT_ALGORITHM
 from backend.services.state_store import state_store
+from backend.services.auth_service import auth_service, AuthIdentity
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-JWT_SECRET = "cognitive-adaptive-secret-key-2026"
-JWT_ALGORITHM = "HS256"
 
 
-def create_token(user_id: str, email: str) -> str:
-    payload = {
-        "sub": user_id,
-        "email": email,
-        "exp": int(time.time()) + 86400 * 30  # 30 days
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+def create_token(user_id: str, email: str, role: str = "student") -> str:
+    """Create internal JWT token."""
+    return auth_service.create_internal_token(user_id, email, role)
 
 
 def get_current_user_id(request: Request) -> str:
-    try:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:].strip()
-            # 1. Try decoding as backend HS256 JWT
-            try:
-                payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-                uid = payload.get("sub")
-                if uid and isinstance(uid, str) and uid.strip():
-                    return uid.strip()
-            except Exception:
-                pass
-
-            # 2. Try decoding as Firebase ID token claims
-            try:
-                claims = jwt.decode(token, options={"verify_signature": False})
-                uid = claims.get("user_id") or claims.get("sub")
-                if uid and isinstance(uid, str) and uid.strip():
-                    return uid.strip()
-            except Exception:
-                pass
-
-        header_uid = request.headers.get("X-User-Id")
-        if header_uid and isinstance(header_uid, str) and header_uid.strip():
-            return header_uid.strip()
-
-        query_uid = request.query_params.get("user_id")
-        if query_uid and isinstance(query_uid, str) and query_uid.strip():
-            return query_uid.strip()
-    except Exception as e:
-        print(f"[auth_routes] get_current_user_id exception: {e}")
-
-    return "guest-learner"
+    """Strictly authenticate request and return verified user_id."""
+    return auth_service.get_current_user_id(request)
 
 
 class RegisterPayload(BaseModel):
@@ -70,38 +35,58 @@ class LoginPayload(BaseModel):
     password: str
 
 
+class LinkAccountPayload(BaseModel):
+    password: Optional[str] = None
+
+
+class OAuthPayload(BaseModel):
+    provider: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 @router.post("/register")
 async def register(payload: RegisterPayload):
-    user_id = f"user_{int(time.time() * 1000)}"
     conn = state_store.get_connection()
     cur = conn.cursor()
+    cur.execute("SELECT id FROM users WHERE email = ?", (payload.email,))
+    existing = cur.fetchone()
+    if existing:
+        conn.close()
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+
+    user_id = f"user_{int(time.time() * 1000)}"
+    # Store bcrypt hash
+    hashed_password = bcrypt.hashpw(payload.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    # Public self-registration strictly assigns the default 'student' role to prevent privilege escalation
+    role = "student"
+
     try:
         cur.execute(
             "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-            (user_id, payload.email, payload.name, payload.password, payload.role)
+            (user_id, payload.email, payload.name, hashed_password, role)
         )
         cur.execute(
             "INSERT INTO user_preferences (user_id, selected_language, current_level, preferred_mode) VALUES (?, ?, ?, ?)",
             (user_id, "python", "beginner", "adaptive")
         )
         conn.commit()
-    except Exception:
-        # User already exists or error
-        pass
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
     finally:
         conn.close()
 
-    token = create_token(user_id, payload.email)
-    user_data = {
-        "id": user_id,
-        "name": payload.name,
-        "email": payload.email,
-        "role": payload.role
-    }
+    token = create_token(user_id, payload.email, role)
     return {
         "success": True,
         "token": token,
-        "user": user_data,
+        "user": {
+            "id": user_id,
+            "name": payload.name,
+            "email": payload.email,
+            "role": role
+        },
         "preferences": {
             "selected_language": "python",
             "current_level": "beginner",
@@ -114,31 +99,33 @@ async def register(payload: RegisterPayload):
 async def login(payload: LoginPayload):
     conn = state_store.get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, email, name, role FROM users WHERE email = ?", (payload.email,))
+    cur.execute("SELECT id, email, name, password_hash, role FROM users WHERE email = ?", (payload.email,))
     row = cur.fetchone()
 
-    if row:
-        user_id = row["id"]
-        name = row["name"]
-        role = row["role"]
-    else:
-        # Create user dynamically on first login
-        user_id = f"user_{int(time.time() * 1000)}"
-        name = payload.email.split("@")[0].capitalize()
-        role = "student"
-        cur.execute(
-            "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-            (user_id, payload.email, name, payload.password, role)
-        )
-        cur.execute(
-            "INSERT INTO user_preferences (user_id, selected_language, current_level, preferred_mode) VALUES (?, ?, ?, ?)",
-            (user_id, "python", "beginner", "adaptive")
-        )
-        conn.commit()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    user_id = row["id"]
+    name = row["name"]
+    role = row["role"]
+    stored_hash = row["password_hash"] or ""
     conn.close()
 
-    token = create_token(user_id, payload.email)
+    # Password check: bcrypt hash or legacy plaintext match
+    pwd_ok = False
+    if stored_hash.startswith(("$2b$", "$2a$", "$2y$")):
+        try:
+            pwd_ok = bcrypt.checkpw(payload.password.encode("utf-8"), stored_hash.encode("utf-8"))
+        except Exception:
+            pwd_ok = False
+    else:
+        pwd_ok = (stored_hash == payload.password)
+
+    if not pwd_ok:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_token(user_id, payload.email, role)
     return {
         "success": True,
         "token": token,
@@ -156,28 +143,97 @@ async def login(payload: LoginPayload):
     }
 
 
+@router.post("/oauth")
+async def oauth_login(payload: OAuthPayload, request: Request):
+    """Verify Firebase ID token from Authorization header and safely provision/link account."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Authorization Bearer token containing verified Firebase ID token is required"
+        )
+
+    raw_token = auth_header[7:].strip()
+    claims = auth_service.verify_firebase_id_token(raw_token)
+
+    firebase_identity = AuthIdentity(
+        user_id=claims["sub"],
+        email=claims.get("email"),
+        name=claims.get("name") or payload.name,
+        role="student",
+        token_type="firebase",
+        claims=claims
+    )
+
+    # Link or provision account
+    link_result = auth_service.link_account(firebase_identity)
+    effective_user_id = link_result["user_id"]
+
+    conn = state_store.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, email, name, role FROM users WHERE id = ?", (effective_user_id,))
+    user_row = cur.fetchone()
+    conn.close()
+
+    return {
+        "success": True,
+        "token": raw_token,
+        "user": {
+            "id": effective_user_id,
+            "name": user_row["name"] if user_row else firebase_identity.name,
+            "email": user_row["email"] if user_row else firebase_identity.email,
+            "role": user_row["role"] if user_row else "student",
+            "provider": payload.provider
+        },
+        "preferences": {
+            "selected_language": "python",
+            "current_level": "beginner",
+            "preferred_mode": "adaptive"
+        }
+    }
+
+
+@router.post("/link-account")
+async def link_account_endpoint(payload: LinkAccountPayload, request: Request):
+    """Link an existing local account to a Firebase ID token by providing the local account password."""
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Bearer token required")
+
+    raw_token = auth_header[7:].strip()
+    claims = auth_service.verify_firebase_id_token(raw_token)
+
+    firebase_identity = AuthIdentity(
+        user_id=claims["sub"],
+        email=claims.get("email"),
+        name=claims.get("name"),
+        role="student",
+        token_type="firebase",
+        claims=claims
+    )
+
+    result = auth_service.link_account(firebase_identity, local_password=payload.password)
+    return result
+
+
 @router.get("/me")
 async def get_me(request: Request):
-    user_id = get_current_user_id(request)
+    identity = auth_service.verify_request(request)
+    if not identity:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    user_id = identity.user_id
     conn = state_store.get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id, email, name, role FROM users WHERE id = ?", (user_id,))
     row = cur.fetchone()
 
-    if not row:
-        email = "learner@cognitive.edu"
-        name = "Learner"
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            try:
-                claims = jwt.decode(auth_header[7:].strip(), options={"verify_signature": False})
-                email = claims.get("email", email)
-                name = claims.get("name") or email.split("@")[0].capitalize()
-            except Exception:
-                pass
-        user = {"id": user_id, "name": name, "email": email, "role": "student"}
-    else:
-        user = dict(row)
+    user = dict(row) if row else {
+        "id": user_id,
+        "name": identity.name or "Learner",
+        "email": identity.email or "learner@cognitive.edu",
+        "role": identity.role
+    }
 
     cur.execute("SELECT selected_language, current_level, preferred_mode FROM user_preferences WHERE user_id = ?", (user_id,))
     pref_row = cur.fetchone()
@@ -215,70 +271,12 @@ async def update_preferences(request: Request, payload: Dict[str, Any]):
     return {"success": True, "preferences": payload}
 
 
-class OAuthPayload(BaseModel):
-    provider: str
-    email: Optional[str] = None
-    name: Optional[str] = None
-    avatar_url: Optional[str] = None
-
-
-@router.post("/oauth")
-async def oauth_login(payload: OAuthPayload):
-    provider = payload.provider.lower()
-    email = payload.email or f"{provider}.developer@cognitive.edu"
-    name = payload.name or (f"GitHub Developer" if provider == "github" else "Google Learner")
-    
-    conn = state_store.get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, email, name, role FROM users WHERE email = ?", (email,))
-    row = cur.fetchone()
-
-    if row:
-        user_id = row["id"]
-        name = row["name"]
-        role = row["role"]
-    else:
-        user_id = f"oauth_{provider}_{int(time.time() * 1000)}"
-        role = "student"
-        cur.execute(
-            "INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-            (user_id, email, name, f"oauth_{provider}_token", role)
-        )
-        cur.execute(
-            "INSERT INTO user_preferences (user_id, selected_language, current_level, preferred_mode) VALUES (?, ?, ?, ?)",
-            (user_id, "python", "beginner", "adaptive")
-        )
-        conn.commit()
-
-    conn.close()
-
-    token = create_token(user_id, email)
-    return {
-        "success": True,
-        "token": token,
-        "user": {
-            "id": user_id,
-            "name": name,
-            "email": email,
-            "role": role,
-            "provider": provider,
-            "avatar_url": payload.avatar_url
-        },
-        "preferences": {
-            "selected_language": "python",
-            "current_level": "beginner",
-            "preferred_mode": "adaptive"
-        }
-    }
-
-
 class ForgotPasswordPayload(BaseModel):
     email: str
 
 
 @router.post("/forgot-password")
 async def forgot_password(payload: ForgotPasswordPayload):
-    # Check if user exists or simulate reset email dispatched
     conn = state_store.get_connection()
     cur = conn.cursor()
     cur.execute("SELECT id, email FROM users WHERE email = ?", (payload.email,))

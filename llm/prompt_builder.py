@@ -46,15 +46,47 @@ CRITICAL: The learner is currently cognitively overloaded and struggling. Your g
 """
 
 
+def normalize_language_display(raw_lang: Optional[str]) -> str:
+    """Normalize language identifier to clear human/runtime label."""
+    if not raw_lang or not str(raw_lang).strip():
+        return "Python 3"
+    cleaned = str(raw_lang).strip().lower()
+    if "cpp" in cleaned or "c++" in cleaned or "cplusplus" in cleaned:
+        return "C++17"
+    if cleaned == "c" or cleaned.startswith("c ") or cleaned.startswith("c_"):
+        return "C11"
+    if "java" in cleaned:
+        return "Java 17"
+    if "python" in cleaned or "py" in cleaned:
+        return "Python 3"
+    return str(raw_lang).strip().capitalize()
+
+
+def get_tutor_mode_directive(mode_key: str, language_display: str) -> str:
+    """Return language-parameterized tutor mode directive."""
+    key = mode_key.upper().strip()
+    directives = {
+        "EXPLAIN": f"MODE [Explain this]: Provide a balanced, intuitive, and crystal-clear explanation of the core concept in {language_display}. Ground it directly in the lesson material.",
+        "SIMPLIFY": f"MODE [Make it simpler]: Break down this concept into its simplest form using a friendly real-world analogy appropriate for {language_display}. Avoid complex technical jargon.",
+        "EXAMPLE": f"MODE [Give an example]: Provide clean, self-contained, and well-commented {language_display} code examples directly illustrating this concept.",
+        "DEBUG": f"MODE [Why is this wrong?]: Detail the most common bugs, syntax errors, and edge-case pitfalls students encounter with this topic in {language_display}, along with how to fix them.",
+        "HINT": f"MODE [Show a hint]: Give a focused pedagogical hint or conceptual nudge for {language_display} that helps the learner reason through the concept without spoiling the complete answer.",
+        "QUIZ": f"MODE [Quiz me]: Generate 1 conceptual practice multiple-choice question (with options A, B, C, D) testing this {language_display} concept, followed by an explanation of the correct choice.",
+        "REVISE": f"MODE [Summarize]: Provide a high-impact summary checklist of key takeaways, {language_display} syntax patterns, and rules from this lesson.",
+        "ADVANCED": f"MODE [Advanced deep dive]: Provide an advanced, rigorous technical breakdown detailing {language_display} internal mechanics, memory model, and performance characteristics.",
+    }
+    return directives.get(key, "")
+
+
 _TUTOR_MODE_DIRECTIVES = {
     "EXPLAIN": "MODE [Explain this]: Provide a balanced, intuitive, and crystal-clear explanation of the core concept. Ground it directly in the lesson material.",
     "SIMPLIFY": "MODE [Make it simpler]: Break down this concept into its simplest form using a friendly real-world analogy. Avoid complex technical jargon.",
-    "EXAMPLE": "MODE [Give an example]: Provide clean, self-contained, and well-commented Python 3 code examples directly illustrating this concept.",
+    "EXAMPLE": "MODE [Give an example]: Provide clean, self-contained, and well-commented code examples directly illustrating this concept.",
     "DEBUG": "MODE [Why is this wrong?]: Detail the most common bugs, syntax errors, and edge-case pitfalls students encounter with this topic, along with how to fix them.",
     "HINT": "MODE [Show a hint]: Give a focused pedagogical hint or conceptual nudge that helps the learner reason through the concept without spoiling the complete answer.",
     "QUIZ": "MODE [Quiz me]: Generate 1 conceptual practice multiple-choice question (with options A, B, C, D) testing this concept, followed by an explanation of the correct choice.",
     "REVISE": "MODE [Summarize]: Provide a high-impact summary checklist of key takeaways, syntax patterns, and rules from this lesson.",
-    "ADVANCED": "MODE [Advanced deep dive]: Provide an advanced, rigorous technical breakdown detailing Python 3 internal mechanics, memory model, and performance characteristics."
+    "ADVANCED": "MODE [Advanced deep dive]: Provide an advanced, rigorous technical breakdown detailing internal mechanics, memory model, and performance characteristics."
 }
 
 
@@ -66,6 +98,7 @@ def build_adaptive_prompt(
     tutor_mode: Optional[str] = None,
     lesson_context: Optional[str] = None,
     conversation_history: Optional[list] = None,
+    language: Optional[str] = None,
 ) -> str:
     """Construct an adaptive educational prompt for the Gemini model.
 
@@ -77,11 +110,13 @@ def build_adaptive_prompt(
         tutor_mode: Optional 8-contextual mode (EXPLAIN, SIMPLIFY, EXAMPLE, DEBUG, HINT, QUIZ, REVISE, ADVANCED).
         lesson_context: Optional active lesson and section content snippet.
         conversation_history: Optional recent conversation messages for chat continuity.
+        language: Optional target programming language (e.g. python, c, cpp, java).
 
     Returns:
         str: Fully formatted prompt text.
     """
     level = normalize_cognitive_load(cognitive_load)
+    lang_display = normalize_language_display(language)
 
     if level == CognitiveLoadLevel.LOW:
         adaptation_instructions = _LOW_COGNITIVE_LOAD_INSTRUCTIONS
@@ -90,10 +125,13 @@ def build_adaptive_prompt(
     else:
         adaptation_instructions = _HIGH_COGNITIVE_LOAD_INSTRUCTIONS
 
+    lang_line = f"PROGRAMMING LANGUAGE: {lang_display}\n"
     topic_line = f"TOPIC / DOMAIN: {topic.strip()}\n" if topic and topic.strip() else ""
 
     mode_key = tutor_mode.strip().upper() if tutor_mode else ""
-    mode_directive = _TUTOR_MODE_DIRECTIVES.get(mode_key, "")
+    mode_directive = get_tutor_mode_directive(mode_key, lang_display)
+    if not mode_directive and mode_key in _TUTOR_MODE_DIRECTIVES:
+        mode_directive = _TUTOR_MODE_DIRECTIVES[mode_key]
     mode_section = f"ACTIVE TUTOR MODE:\n{mode_directive}\n" if mode_directive else ""
 
     lesson_section = f"CURRENT LESSON MATERIAL:\n{lesson_context.strip()}\n\n" if lesson_context and lesson_context.strip() else ""
@@ -110,18 +148,18 @@ def build_adaptive_prompt(
         if history_lines:
             history_section = "RECENT CONVERSATION HISTORY:\n" + "\n".join(history_lines) + "\n\n"
 
-    prompt = f"""You are an expert Adaptive Educational AI Tutor helping a student learn programming. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
+    prompt = f"""You are an expert Adaptive Educational AI Tutor helping a student learn {lang_display}. Your primary responsibility is to teach concepts to students by adapting your explanation style, complexity, length, structure, and vocabulary according to the student's current cognitive load.
 
 STRICT GROUNDING & RUNTIME RULES:
 1. Ground your explanation primarily on the RETRIEVED CONTEXT and CURRENT LESSON MATERIAL provided below whenever relevant.
-2. The runtime environment is strictly standard modern programming practices (e.g. standard CPython 3, C11, C++17, Java 17).
-3. Tailor your response directly to the student's active inquiry and requested TUTOR MODE.
-4. If the retrieved context is minimal or does not directly cover the student's question, provide an accurate, clear, and pedagogically sound programming answer tailored to their cognitive load level.
+2. The runtime environment is strictly standard modern {lang_display} programming practices.
+3. Tailor your response directly to the student's active inquiry, requested TUTOR MODE, and {lang_display} idioms.
+4. If the retrieved context is minimal or does not directly cover the student's question, provide an accurate, clear, and pedagogically sound {lang_display} answer tailored to their cognitive load level.
 5. Keep explanations direct, conversational, and helpful. Use clear markdown formatting (bolding, concise bullet points, and syntax-highlighted code blocks).
 
 {adaptation_instructions}
 
-{mode_section}{topic_line}{lesson_section}{history_section}STUDENT QUESTION / ACTION:
+{mode_section}{lang_line}{topic_line}{lesson_section}{history_section}STUDENT QUESTION / ACTION:
 {question.strip()}
 
 RETRIEVED KNOWLEDGE BASE CONTEXT:

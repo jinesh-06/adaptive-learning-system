@@ -53,6 +53,8 @@ def generate_adaptive_explanation(
     lesson_context: Optional[str] = None,
     conversation_history: Optional[list] = None,
     client: Optional[genai.Client] = None,
+    language: Optional[str] = None,
+    allow_general_knowledge: Optional[bool] = False,
 ) -> Dict[str, Any]:
     """Generate an explanation adapted to the learner's cognitive load level using Gemini.
 
@@ -65,6 +67,8 @@ def generate_adaptive_explanation(
         lesson_context: Optional active lesson and section content.
         conversation_history: Optional recent conversation messages for chat continuity.
         client: Optional pre-configured Google GenAI client (for testing/customization).
+        language: Optional target programming language (e.g., python, c, cpp, java).
+        allow_general_knowledge: If True, allow answering general programming questions without active lesson material.
 
     Returns:
         Dict[str, Any]: Structured output conforming to AdaptiveResponse
@@ -79,6 +83,8 @@ def generate_adaptive_explanation(
             tutor_mode=tutor_mode,
             lesson_context=lesson_context,
             conversation_history=conversation_history,
+            language=language,
+            allow_general_knowledge=allow_general_knowledge,
         )
     except (ValidationError, ValueError) as val_err:
         error_msg = str(val_err)
@@ -94,19 +100,22 @@ def generate_adaptive_explanation(
     adaptation_meta = _get_adaptation_metadata(req.cognitive_load)
 
     # 2. Handle empty or insufficient RAG context without hallucinating
-    if (
-        not req.retrieved_context.strip()
-        and not (req.lesson_context and req.lesson_context.strip())
-        and not (req.conversation_history and len(req.conversation_history) > 0)
-    ):
-        logger.info("Empty RAG context provided for question: '%s'", req.question)
-        return AdaptiveResponse(
-            success=True,
-            cognitive_load=req.cognitive_load.value,
-            question=req.question,
-            explanation=INSUFFICIENT_CONTEXT_MESSAGE,
-            adaptation=adaptation_meta,
-        ).model_dump(exclude_none=True)
+    has_retrieved_context = bool(req.retrieved_context and req.retrieved_context.strip())
+    has_lesson_context = bool(req.lesson_context and req.lesson_context.strip())
+    has_history = bool(req.conversation_history and len(req.conversation_history) > 0)
+    has_context = has_retrieved_context or has_lesson_context or has_history
+
+    if not has_context:
+        # If general knowledge is not explicitly enabled, enforce strict grounding
+        if not req.allow_general_knowledge:
+            logger.info("Empty RAG context provided for question: '%s'", req.question)
+            return AdaptiveResponse(
+                success=True,
+                cognitive_load=req.cognitive_load.value,
+                question=req.question,
+                explanation=INSUFFICIENT_CONTEXT_MESSAGE,
+                adaptation=adaptation_meta,
+            ).model_dump(exclude_none=True)
 
     # 3. Build adaptive prompt
     prompt = build_adaptive_prompt(
@@ -117,6 +126,7 @@ def generate_adaptive_explanation(
         tutor_mode=req.tutor_mode,
         lesson_context=req.lesson_context,
         conversation_history=req.conversation_history,
+        language=req.language,
     )
 
     # 4. Resolve Gemini Client
@@ -175,6 +185,9 @@ def generate_adaptive_explanation(
             logger.warning("Gemini model '%s' failed: %s. Trying fallback model...", model_name, msg)
             if client is not None:
                 # If explicit test client provided, break out
+                break
+            # If account quota is exhausted, candidate models on the same key will also fail; break to allow instant fallback
+            if "quota" in msg.lower() or "429" in str(msg) or "resource_exhausted" in msg.lower():
                 break
         except Exception as err:
             last_error = f"Gemini error ({model_name}): {str(err)}"

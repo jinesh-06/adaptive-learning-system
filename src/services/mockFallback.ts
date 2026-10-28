@@ -2826,18 +2826,21 @@ export const mockHandlers = {
       details
     };
 
+    const adaptiveFeedback = {
+      cognitive_level: allPassed ? 'LOW' : 'MEDIUM',
+      recommended_action: allPassed ? 'CONTINUE_NEXT_TOPIC' : 'REVISE',
+      reason: allPassed
+        ? 'Solution executed cleanly with zero syntax errors. All test cases passed!'
+        : 'Some test cases did not match expected output. Review hint progression and check logic.'
+    };
+
     return {
       execution: execResult,
       is_passed: allPassed,
       status: allPassed ? 'PASSED' : 'FAILED',
       stdout: execResult.stdout,
-      adaptive_feedback: {
-        cognitive_level: allPassed ? 'LOW' : 'MEDIUM',
-        recommended_action: allPassed ? 'CONTINUE_NEXT_TOPIC' : 'REVISE',
-        reason: allPassed
-          ? 'Solution executed cleanly with zero syntax errors. All test cases passed!'
-          : 'Some test cases did not match expected output. Review hint progression and check logic.'
-      }
+      adaptive_feedback: adaptiveFeedback,
+      cognitive_insight: adaptiveFeedback
     };
   },
 
@@ -2884,23 +2887,40 @@ export const mockHandlers = {
     return {
       success: true,
       user: { name: 'Learner', email: 'learner@cognitive.edu' },
-      streak_days: 3,
+      streak_days: 0,
       learning_snapshot: {
-        overall_progress: 35,
-        topics_completed: 4,
-        total_topics: 12,
-        quiz_accuracy: 88,
-        challenges_solved: 3
+        overall_progress: 0,
+        topics_completed: history.length,
+        total_topics: 238,
+        quiz_accuracy: 0,
+        coding_accuracy: 0,
+        learning_time_minutes: 0,
+        challenges_solved: 0
       },
+      language_progress: {
+        python: 0,
+        c: 0,
+        cpp: 0,
+        java: 0
+      },
+      current_course: 'Python Fundamentals',
+      current_topic_id: 'top-py-intro',
+      current_topic_title: 'Python Syntax & Dynamic Typing',
+      topic_progress: 0,
       cognitive_state: {
-        current_load: 'LOW',
-        trajectory: 'IMPROVING',
+        current_load: 'MEDIUM',
+        trajectory: 'STABLE',
         recent_average_load: 'MEDIUM'
       },
       ai_recommendation: {
-        action: 'CONTINUE',
-        target_topic_id: 'top-py-functions',
-        reason: 'Optimal pace observed. Ready to advance to Functions and Modular Scopes.'
+        action: 'START',
+        target_topic_id: 'top-py-intro',
+        reason: 'Welcome to your learning journey! Begin with Python Fundamentals.'
+      },
+      cognitive_trend: [],
+      achievements: {
+        all: [],
+        unlocked: []
       },
       recent_activity: history.slice(0, 5)
     };
@@ -3130,7 +3150,7 @@ export const mockHandlers = {
   },
 
   // Notes CRUD (localStorage)
-  getNotes: async (query?: string, language?: string) => {
+  getNotes: async (query?: string, language?: string, topicId?: string) => {
     let all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, [
       {
         id: 'note-default-1',
@@ -3143,10 +3163,13 @@ export const mockHandlers = {
       }
     ]);
     if (query) {
-      all = all.filter(n => n.title.toLowerCase().includes(query.toLowerCase()) || n.content.toLowerCase().includes(query.toLowerCase()));
+      all = all.filter(n => (n.title || '').toLowerCase().includes(query.toLowerCase()) || (n.content || '').toLowerCase().includes(query.toLowerCase()));
     }
     if (language && language !== 'all') {
       all = all.filter(n => n.language === language);
+    }
+    if (topicId && topicId !== 'all') {
+      all = all.filter(n => n.topic_id === topicId);
     }
     return { success: true, total: all.length, notes: all };
   },
@@ -3154,25 +3177,26 @@ export const mockHandlers = {
   createNote: async (payload: any) => {
     const all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, []);
     const newNote = {
-      id: `note-${Date.now()}`,
+      id: payload.id || `note-${Date.now()}`,
       ...payload,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+    newNote.id = newNote.id || `note-${Date.now()}`;
     all.unshift(newNote);
     setStoredArray(MOCK_STORAGE_KEYS.NOTES, all);
-    return { success: true, note: newNote };
+    return { success: true, id: newNote.id, note: newNote };
   },
 
   updateNote: async (id: string, payload: any) => {
     const all = getStoredArray(MOCK_STORAGE_KEYS.NOTES, []);
     const idx = all.findIndex(n => n.id === id);
     if (idx >= 0) {
-      all[idx] = { ...all[idx], ...payload, updated_at: new Date().toISOString() };
+      all[idx] = { ...all[idx], ...payload, id, updated_at: new Date().toISOString() };
       setStoredArray(MOCK_STORAGE_KEYS.NOTES, all);
-      return { success: true, note: all[idx] };
+      return { success: true, id, note: all[idx] };
     }
-    return { success: false };
+    return { success: false, id };
   },
 
   deleteNote: async (id: string) => {
@@ -3183,42 +3207,35 @@ export const mockHandlers = {
 
   // Learning History
   getLearningHistory: async () => {
-    const history = getStoredArray(MOCK_STORAGE_KEYS.HISTORY, [
-      {
-        id: 'hist-seed-1',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        topic_id: 'top-py-intro',
-        topic_title: 'Python Syntax & Dynamic Typing',
-        language: 'python',
-        quiz_score: 90,
-        coding_score: 100,
-        time_spent: 240,
-        cognitive_load: 'LOW',
-        adaptive_action: 'CONTINUE'
-      },
-      {
-        id: 'hist-seed-2',
-        timestamp: new Date(Date.now() - 43200000).toISOString(),
-        topic_id: 'top-py-loops',
-        topic_title: 'Loops and Iteration Constructs',
-        language: 'python',
-        quiz_score: 75,
-        coding_score: 80,
-        time_spent: 310,
-        cognitive_load: 'MEDIUM',
-        adaptive_action: 'PRACTICE'
-      }
-    ]);
+    const history = getStoredArray(MOCK_STORAGE_KEYS.HISTORY, []);
+    const validQuizzes = history.filter((h: any) => typeof h.quiz_score === 'number');
+    const validCoding = history.filter((h: any) => typeof h.coding_score === 'number');
+    const totalTimeSec = history.reduce((acc: number, h: any) => acc + (h.time_spent || h.time_spent_seconds || 0), 0);
+    const avgQuiz = validQuizzes.length > 0
+      ? Math.round(validQuizzes.reduce((acc: number, h: any) => acc + h.quiz_score, 0) / validQuizzes.length)
+      : 0;
+    const avgCode = validCoding.length > 0
+      ? Math.round(validCoding.reduce((acc: number, h: any) => acc + h.coding_score, 0) / validCoding.length)
+      : 0;
+
     return {
       success: true,
       history,
+      recent_events: history,
+      insights: {
+        avg_quiz_score: avgQuiz,
+        avg_coding_score: avgCode,
+        total_time_minutes: Math.round(totalTimeSec / 60),
+        improvement_delta: 0,
+        adaptive_efficiency_rate: history.length > 0 ? '100%' : '0%'
+      },
       summary_stats: {
         total_sessions: history.length,
-        avg_quiz_score: 85,
-        avg_coding_score: 90,
-        total_time_spent: 550
+        avg_quiz_score: avgQuiz,
+        avg_coding_score: avgCode,
+        total_time_spent: totalTimeSec
       },
-      cognitive_trajectory: ['HIGH', 'MEDIUM', 'LOW']
+      cognitive_trajectory: []
     };
   },
 
@@ -5037,5 +5054,275 @@ export const mockHandlers = {
     }
     // If not found in storage, generate one on the fly
     return await mockHandlers.generateAdaptedLesson({ topic_id: topicId });
+  },
+
+  // Learning Outcomes & Assessments (Member 4 Fallbacks)
+  getAssessmentQuestions: async (topicId: string, type: 'pre' | 'post' = 'pre') => {
+    return {
+      topic_id: topicId,
+      topic_title: topicId.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      assessment_type: type,
+      label: type === 'pre' ? 'Pre-Assessment (Initial Baseline)' : 'Post-Assessment (Topic Mastery)',
+      description: type === 'pre'
+        ? 'Diagnostic assessment measuring baseline understanding before learning this topic.'
+        : 'Mastery assessment measuring concept retention and learning gain after completion.',
+      total_questions: 5,
+      questions: [
+        {
+          id: `q-${type}-1`,
+          question: `What is the core conceptual mechanism of ${topicId.replace('top-', '').replace(/-/g, ' ')}?`,
+          options: ['Primary syntactic construct', 'Alternative implementation variant', 'System library interface', 'Runtime memory manager'],
+          difficulty: 'medium',
+          order: 1
+        },
+        {
+          id: `q-${type}-2`,
+          question: `Which architectural principle is best applied when utilizing ${topicId.replace('top-', '').replace(/-/g, ' ')}?`,
+          options: ['Structured boundary separation', 'Direct global manipulation', 'Unchecked dynamic dispatch', 'Synchronous blocking calls'],
+          difficulty: 'medium',
+          order: 2
+        },
+        {
+          id: `q-${type}-3`,
+          question: `What is a common edge condition to guard against in this topic?`,
+          options: ['Null references and index bounds', 'Compiler optimization levels', 'Terminal color formatting', 'Hardware clock drift'],
+          difficulty: 'easy',
+          order: 3
+        },
+        {
+          id: `q-${type}-4`,
+          question: `How does mastering this topic impact algorithm runtime efficiency?`,
+          options: ['Predictable execution flow and minimal overhead', 'Completely replaces standard libraries', 'Disables CPU caching', 'Forces single-threaded execution'],
+          difficulty: 'hard',
+          order: 4
+        },
+        {
+          id: `q-${type}-5`,
+          question: `What is the primary debugging approach if unexpected behavior occurs?`,
+          options: ['Trace variable state and execution breakpoints', 'Delete unit tests', 'Disable static analysis', 'Bypass type checking'],
+          difficulty: 'medium',
+          order: 5
+        }
+      ]
+    };
+  },
+
+  submitAssessment: async (topicId: string, payload: any) => {
+    const atype = payload.assessment_type || 'pre';
+    const answers = payload.answers || {};
+    const totalQ = 5;
+    let correctCount = 0;
+    const review = [];
+
+    for (let i = 1; i <= totalQ; i++) {
+      const qid = `q-${atype}-${i}`;
+      const userChoice = answers[qid] !== undefined ? answers[qid] : 0;
+      const isCorrect = userChoice === 0; // index 0 is designated correct in mock
+      if (isCorrect) correctCount++;
+      review.push({
+        id: qid,
+        question: `Sample question ${i} for ${topicId}`,
+        options: ['Correct choice', 'Alternative A', 'Alternative B', 'Alternative C'],
+        correct_index: 0,
+        user_choice: userChoice,
+        is_correct: isCorrect,
+        explanation: 'Accurate architectural pattern for this concept.',
+        difficulty: 'medium'
+      });
+    }
+
+    const accuracy = Math.round((correctCount / totalQ) * 100);
+    const score = correctCount;
+
+    // Store in localStorage for offline mock persistence
+    const storedAssessments = getStoredArray('cog_mock_assessments', []);
+    const asmtId = `asmt-${Date.now()}`;
+    const newRecord = {
+      id: asmtId,
+      topic_id: topicId,
+      assessment_type: atype,
+      score,
+      total_marks: totalQ,
+      correct_answers: correctCount,
+      total_questions: totalQ,
+      accuracy,
+      completed_at: new Date().toISOString()
+    };
+    storedAssessments.push(newRecord);
+    try {
+      localStorage.setItem('cog_mock_assessments', JSON.stringify(storedAssessments));
+    } catch {}
+
+    let comparison = null;
+    if (atype === 'post') {
+      const preRecord = storedAssessments
+        .filter((a: any) => a.topic_id === topicId && a.assessment_type === 'pre')
+        .pop();
+
+      if (preRecord) {
+        const scoreImp = score - preRecord.score;
+        const pctImp = accuracy - preRecord.accuracy;
+        comparison = {
+          has_pre_assessment: true,
+          pre_score: preRecord.score,
+          pre_total_marks: preRecord.total_marks,
+          pre_accuracy: preRecord.accuracy,
+          post_score: score,
+          post_total_marks: totalQ,
+          post_accuracy: accuracy,
+          score_improvement: scoreImp,
+          percentage_point_improvement: pctImp,
+          improved: scoreImp > 0,
+          summary_text: `Score improved by ${scoreImp > 0 ? '+' : ''}${scoreImp} marks (${pctImp > 0 ? '+' : ''}${pctImp}% points) compared to your pre-assessment.`
+        };
+      } else {
+        comparison = {
+          has_pre_assessment: false,
+          pre_score: null,
+          pre_total_marks: null,
+          pre_accuracy: null,
+          score_improvement: null,
+          percentage_point_improvement: null,
+          improved: null,
+          summary_text: 'Post-assessment recorded. No prior pre-assessment was found for this topic.'
+        };
+      }
+    }
+
+    return {
+      success: true,
+      assessment_id: asmtId,
+      student_id: 'mock_student',
+      topic_id: topicId,
+      topic_title: topicId.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      assessment_type: atype,
+      score,
+      total_marks: totalQ,
+      correct_answers: correctCount,
+      total_questions: totalQ,
+      accuracy,
+      time_spent: payload.time_spent || 45,
+      review,
+      comparison
+    };
+  },
+
+  getLearningOutcomes: async (topicId?: string) => {
+    const stored = getStoredArray('cog_mock_assessments', []);
+    const topicsMap: Record<string, any> = {};
+
+    for (const a of stored) {
+      if (!topicsMap[a.topic_id]) {
+        topicsMap[a.topic_id] = {
+          topic_id: a.topic_id,
+          topic_title: a.topic_id.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+          language: a.topic_id.includes('c-') ? 'c' : a.topic_id.includes('cpp') ? 'cpp' : a.topic_id.includes('java') ? 'java' : 'python',
+          pre: null,
+          post: null,
+          attempts: 0
+        };
+      }
+      topicsMap[a.topic_id].attempts++;
+      if (a.assessment_type === 'pre' && !topicsMap[a.topic_id].pre) {
+        topicsMap[a.topic_id].pre = a;
+      }
+      if (a.assessment_type === 'post' && !topicsMap[a.topic_id].post) {
+        topicsMap[a.topic_id].post = a;
+      }
+    }
+
+    const topicOutcomes = Object.values(topicsMap).map((t: any) => {
+      const hasPre = !!t.pre;
+      const hasPost = !!t.post;
+      const scoreImp = (hasPre && hasPost) ? (t.post.score - t.pre.score) : null;
+      const pctImp = (hasPre && hasPost) ? (t.post.accuracy - t.pre.accuracy) : null;
+
+      return {
+        topic_id: t.topic_id,
+        topic_title: t.topic_title,
+        language: t.language,
+        status: (hasPre && hasPost) ? 'COMPLETED' : hasPost ? 'POST_ASSESSED_ONLY' : hasPre ? 'PRE_ASSESSED_ONLY' : 'NOT_STARTED',
+        has_pre_assessment: hasPre,
+        has_post_assessment: hasPost,
+        pre_assessment: hasPre ? { score: t.pre.score, total_marks: t.pre.total_marks, accuracy: t.pre.accuracy, completed_at: t.pre.completed_at } : null,
+        post_assessment: hasPost ? { score: t.post.score, total_marks: t.post.total_marks, accuracy: t.post.accuracy, completed_at: t.post.completed_at } : null,
+        score_improvement: scoreImp,
+        percentage_point_improvement: pctImp,
+        total_attempts: t.attempts
+      };
+    });
+
+    const completedCount = stored.length;
+    const assignedCount = Math.max(Object.keys(topicsMap).length * 2, completedCount, 2);
+    const completionRate = assignedCount > 0 ? Math.round((completedCount / assignedCount) * 100) : 0;
+    const totalCorrect = stored.reduce((sum: number, a: any) => sum + (a.correct_answers || 0), 0);
+    const totalQ = stored.reduce((sum: number, a: any) => sum + (a.total_questions || 0), 0);
+    const accuracy = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
+
+    return {
+      student_id: 'mock_student',
+      summary: {
+        number_of_completed_assessments: completedCount,
+        number_of_assigned_assessments: assignedCount,
+        assessment_completion_rate: completionRate,
+        accuracy_percentage: accuracy,
+        average_score_improvement: 1.5,
+        average_percentage_point_improvement: 30.0,
+        topics_assessed_count: Object.keys(topicsMap).length,
+        fully_assessed_topics_count: topicOutcomes.filter(t => t.has_pre_assessment && t.has_post_assessment).length
+      },
+      topic_outcomes: topicOutcomes,
+      recent_assessments: stored.slice(-10).reverse()
+    };
+  },
+
+  submitStudentFeedback: async (payload: any) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const item = {
+      id: `fb-${Date.now()}`,
+      student_id: 'mock_student',
+      topic_id: payload.topic_id,
+      topic_title: payload.topic_id.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      rating: payload.rating,
+      comments: payload.comments,
+      feedback_type: payload.feedback_type || 'lesson',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    list.unshift(item);
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback submitted successfully.', feedback: item };
+  },
+
+  getStudentFeedbackList: async (topicId?: string) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const filtered = topicId ? list.filter((f: any) => f.topic_id === topicId) : list;
+    return { success: true, count: filtered.length, feedback: filtered };
+  },
+
+  updateStudentFeedback: async (feedbackId: string, payload: any) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const target = list.find((f: any) => f.id === feedbackId);
+    if (!target) return { success: false, message: 'Not found' };
+    if (payload.rating !== undefined) target.rating = payload.rating;
+    if (payload.comments !== undefined) target.comments = payload.comments;
+    if (payload.feedback_type !== undefined) target.feedback_type = payload.feedback_type;
+    target.updated_at = new Date().toISOString();
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback updated successfully.', feedback: target };
+  },
+
+  deleteStudentFeedback: async (feedbackId: string) => {
+    let list = getStoredArray('cog_mock_student_feedback', []);
+    list = list.filter((f: any) => f.id !== feedbackId);
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback deleted successfully.', id: feedbackId };
   }
 };
+

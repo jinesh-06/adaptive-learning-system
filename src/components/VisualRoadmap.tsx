@@ -11,12 +11,15 @@ import {
 } from 'lucide-react';
 
 interface RoadmapNode {
-  topic_id: string;
+  id?: string;
+  topic_id?: string;
   title: string;
-  module_title: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  status: 'COMPLETED' | 'CURRENT' | 'LOCKED' | 'RECOMMENDED' | 'REVISION_REQUIRED';
-  order_index: number;
+  module?: string;
+  module_title?: string;
+  level: string;
+  status: 'COMPLETED' | 'CURRENT' | 'LOCKED' | 'RECOMMENDED' | 'REVISION_REQUIRED' | 'IN_PROGRESS' | 'UNLOCKED' | string;
+  order?: number;
+  order_index?: number;
   prerequisite_id?: string;
 }
 
@@ -36,7 +39,8 @@ export const VisualRoadmap: React.FC<VisualRoadmapProps> = ({
     setLoading(true);
     api.getLanguageRoadmap(language)
       .then(data => {
-        if (Array.isArray(data)) setNodes(data);
+        const list = Array.isArray(data) ? data : (data?.milestones || data?.roadmap || []);
+        setNodes(list);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -67,15 +71,17 @@ export const VisualRoadmap: React.FC<VisualRoadmapProps> = ({
           </span>
         );
       case 'CURRENT':
+      case 'IN_PROGRESS':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-400 border border-cyan-500/40 shadow-sm shadow-cyan-500/20 animate-pulse">
             <PlayCircle className="w-3.5 h-3.5" /> Current
           </span>
         );
       case 'RECOMMENDED':
+      case 'UNLOCKED':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-400 border border-amber-500/30">
-            <Sparkles className="w-3.5 h-3.5" /> Recommended Next
+            <Sparkles className="w-3.5 h-3.5" /> Ready
           </span>
         );
       case 'REVISION_REQUIRED':
@@ -106,20 +112,22 @@ export const VisualRoadmap: React.FC<VisualRoadmapProps> = ({
 
       <div className="flex flex-col items-center space-y-4 relative">
         {nodes.map((node, idx) => {
-          const isClickable = node.status !== 'LOCKED';
+          const topicId = node.topic_id || node.id || '';
+          const moduleTitle = node.module_title || node.module || '';
+          const isClickable = node.status !== 'LOCKED' && !!topicId;
 
           return (
-            <React.Fragment key={node.topic_id}>
+            <React.Fragment key={topicId || idx}>
               <div
-                onClick={() => isClickable && onSelectTopic(node.topic_id)}
+                onClick={() => isClickable && onSelectTopic(topicId)}
                 className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
-                  node.status === 'CURRENT'
+                  node.status === 'CURRENT' || node.status === 'IN_PROGRESS'
                     ? 'border-cyan-500/50 bg-gradient-to-r from-cyan-950/30 to-slate-900/80 shadow-lg shadow-cyan-500/10 cursor-pointer hover:border-cyan-400'
                     : node.status === 'REVISION_REQUIRED'
                     ? 'border-rose-500/50 bg-gradient-to-r from-rose-950/30 to-slate-900/80 cursor-pointer hover:border-rose-400'
                     : node.status === 'COMPLETED'
                     ? 'border-slate-800 bg-slate-900/60 cursor-pointer hover:border-emerald-500/40'
-                    : node.status === 'RECOMMENDED'
+                    : node.status === 'RECOMMENDED' || node.status === 'UNLOCKED'
                     ? 'border-amber-500/40 bg-slate-900/80 cursor-pointer hover:border-amber-400'
                     : 'border-slate-800/60 bg-slate-950/40 opacity-50 cursor-not-allowed'
                 }`}
@@ -127,7 +135,7 @@ export const VisualRoadmap: React.FC<VisualRoadmapProps> = ({
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                     node.status === 'COMPLETED' ? 'bg-emerald-500/20 text-emerald-400' :
-                    node.status === 'CURRENT' ? 'bg-cyan-500 text-slate-950' :
+                    node.status === 'CURRENT' || node.status === 'IN_PROGRESS' ? 'bg-cyan-500 text-slate-950' :
                     node.status === 'REVISION_REQUIRED' ? 'bg-rose-500/20 text-rose-400' :
                     'bg-slate-800 text-slate-400'
                   }`}>
@@ -138,7 +146,7 @@ export const VisualRoadmap: React.FC<VisualRoadmapProps> = ({
                       {node.title}
                     </h4>
                     <p className="text-xs text-slate-400">
-                      {node.module_title} • <span className="capitalize">{node.level}</span>
+                      {moduleTitle} • <span className="capitalize">{node.level}</span>
                     </p>
                   </div>
                 </div>

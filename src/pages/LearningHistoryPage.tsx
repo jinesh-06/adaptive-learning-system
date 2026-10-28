@@ -23,6 +23,7 @@ interface LearningHistoryPageProps {
 export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSelectTopic }) => {
   const [historyData, setHistoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [languageFilter, setLanguageFilter] = useState<string>('all');
 
   useEffect(() => {
@@ -31,13 +32,17 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
 
   const loadHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.getLearningHistory();
       if (data) {
         setHistoryData(data);
+      } else {
+        setError('Unable to load learning history records.');
       }
     } catch (err) {
       console.error('Failed to load learning history:', err);
+      setError('Unable to load learning history records.');
     } finally {
       setLoading(false);
     }
@@ -49,11 +54,11 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
   );
 
   const insights = historyData?.insights || {
-    avg_quiz_score: 82,
-    avg_coding_score: 88,
-    total_time_minutes: 45,
-    improvement_delta: 25,
-    adaptive_efficiency_rate: '92%'
+    avg_quiz_score: 0,
+    avg_coding_score: 0,
+    total_time_minutes: 0,
+    improvement_delta: 0,
+    adaptive_efficiency_rate: '0%'
   };
 
   const getLoadBadge = (state: string) => {
@@ -157,7 +162,7 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
             <span>Improvement</span>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono">
-            +{insights.improvement_delta}%
+            {insights.improvement_delta > 0 ? `+${insights.improvement_delta}%` : `${insights.improvement_delta}%`}
           </div>
           <div className="text-[10px] text-slate-500 mt-1">Repeat score delta</div>
         </div>
@@ -179,6 +184,17 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
           <div className="py-20 text-center text-slate-400 text-xs">
             <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             Aggregating historical learning telemetry...
+          </div>
+        ) : error && !historyData ? (
+          <div className="py-16 text-center text-slate-400 text-xs">
+            <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto mb-2" />
+            <p className="text-slate-300 font-semibold mb-3">{error}</p>
+            <button
+              onClick={loadHistory}
+              className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition-all inline-flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Retry
+            </button>
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="py-16 text-center text-slate-500 text-xs">
@@ -208,7 +224,7 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
                     className="hover:bg-slate-800/40 cursor-pointer transition-colors group"
                   >
                     <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">
-                      {new Date(r.date).toLocaleDateString()} {new Date(r.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {r.date ? `${new Date(r.date).toLocaleDateString()} ${new Date(r.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '—'}
                     </td>
                     <td className="py-3.5 px-4">
                       <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] uppercase bg-slate-800 text-slate-300">
@@ -240,8 +256,8 @@ export const LearningHistoryPage: React.FC<LearningHistoryPageProps> = ({ onSele
                       {r.time_spent_seconds}s
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getLoadBadge(r.cognitive_state)}`}>
-                        {r.cognitive_state} ({Math.round((r.confidence || 0.85) * 100)}%)
+                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getLoadBadge(r.cognitive_state || r.adaptive_state || 'MEDIUM')}`}>
+                        {r.cognitive_state || r.adaptive_state || 'MEDIUM'} ({Math.round((r.confidence || 0.85) * 100)}%)
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-400 text-[11px] max-w-xs truncate">

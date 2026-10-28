@@ -14,6 +14,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 class AskAiRequest(BaseModel):
     question: str
     language: Optional[str] = "python"
+    course: Optional[str] = None
     topic: Optional[str] = None
     topic_id: Optional[str] = None
     section_id: Optional[str] = None
@@ -31,6 +32,8 @@ class ProgressiveHintRequest(BaseModel):
     code_snippet: Optional[str] = None
     hint_level: int = 1
     topic: Optional[str] = None
+    topic_id: Optional[str] = None
+    course: Optional[str] = None
     language: Optional[str] = "python"
     cognitive_load: Optional[str] = "MEDIUM"
 
@@ -39,10 +42,13 @@ class ProgressiveHintRequest(BaseModel):
 async def ask_ai_assistant(payload: AskAiRequest, request: Request):
     user_id = get_current_user_id(request)
 
+    # Precedence rule: explicit non-empty course takes precedence over language
+    effective_course = (payload.course.strip() if payload.course and payload.course.strip() else None) or payload.language
+
     response = llm_service.generate_explanation(
         question=payload.question,
         cognitive_load=payload.cognitive_load or "MEDIUM",
-        course=payload.language,
+        course=effective_course,
         topic=payload.topic,
         topic_id=payload.topic_id,
         section_id=payload.section_id,
@@ -55,7 +61,7 @@ async def ask_ai_assistant(payload: AskAiRequest, request: Request):
     )
 
     # Record telemetry
-    state_store.record_telemetry(user_id, payload.topic, "AI_ASSISTANT_QUERY", 0.0, {
+    state_store.record_telemetry(user_id, payload.topic or payload.topic_id, "AI_ASSISTANT_QUERY", 0.0, {
         "question": payload.question[:100],
         "mode": payload.tutor_mode,
         "cognitive_load": payload.cognitive_load
@@ -68,18 +74,23 @@ async def ask_ai_assistant(payload: AskAiRequest, request: Request):
 async def request_progressive_hint(payload: ProgressiveHintRequest, request: Request):
     user_id = get_current_user_id(request)
 
+    # Precedence rule: explicit non-empty course takes precedence over language
+    effective_course = (payload.course.strip() if payload.course and payload.course.strip() else None) or payload.language
+
     response = llm_service.generate_hint(
         question=payload.question,
         hint_level=payload.hint_level,
         code_snippet=payload.code_snippet,
         cognitive_load=payload.cognitive_load or "MEDIUM",
         topic=payload.topic,
+        topic_id=payload.topic_id,
+        course=effective_course,
         language=payload.language
     )
 
-    state_store.record_telemetry(user_id, payload.topic, "HINT_REQUEST", 0.0, {
+    state_store.record_telemetry(user_id, payload.topic or payload.topic_id, "HINT_REQUEST", 0.0, {
         "hint_level": payload.hint_level,
-        "topic": payload.topic
+        "topic": payload.topic or payload.topic_id
     })
 
     return response

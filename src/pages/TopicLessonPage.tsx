@@ -137,6 +137,23 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   // Quick note modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [hasPersonalNote, setHasPersonalNote] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const checkPersonalNote = async () => {
+      try {
+        const res = await api.getNotes(undefined, topic?.language || 'python', topicId);
+        const list = Array.isArray(res) ? res : (res?.notes || []);
+        const exists = list.some((n: any) => n.topic_id === topicId);
+        if (active) setHasPersonalNote(exists);
+      } catch {
+        if (active) setHasPersonalNote(false);
+      }
+    };
+    checkPersonalNote();
+    return () => { active = false; };
+  }, [topicId, topic?.language]);
 
   // Feedback state
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
@@ -639,11 +656,14 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             {/* Personal Notes button */}
             <button
               onClick={() => setNoteModalOpen(true)}
-              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/60 light-theme:bg-slate-100 hover:bg-slate-800 light-theme:hover:bg-slate-200 text-slate-300 light-theme:text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5"
-              title="Add personal note"
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/60 light-theme:bg-slate-100 hover:bg-slate-800 light-theme:hover:bg-slate-200 text-slate-300 light-theme:text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5 relative"
+              title={hasPersonalNote ? "View or edit personal note" : "Add personal note"}
             >
-              <FileText className="w-3.5 h-3.5 text-cyan-400 light-theme:text-blue-600" />
-              <span className="hidden md:inline">Note</span>
+              <FileText className={`w-3.5 h-3.5 ${hasPersonalNote ? 'text-emerald-400' : 'text-cyan-400'} light-theme:text-blue-600`} />
+              <span className="hidden md:inline">{hasPersonalNote ? 'My Note' : 'Note'}</span>
+              {hasPersonalNote && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 absolute top-1 right-1" />
+              )}
             </button>
 
             {/* AI Assistant drawer trigger */}
@@ -1182,6 +1202,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
         topicId={topic.id}
         subtopicTitle={topic.title}
         defaultTitle={`${topic.title} - Personal Notes`}
+        onNoteSaved={() => setHasPersonalNote(true)}
+        onNoteDeleted={() => setHasPersonalNote(false)}
       />
     </div>
   );

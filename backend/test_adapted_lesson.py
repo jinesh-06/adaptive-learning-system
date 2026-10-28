@@ -1,12 +1,50 @@
 """Integration tests for AI-Generated Personalized Adapted Lesson feature."""
 
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+# Establish isolated database environment BEFORE any backend imports
+_TEST_TEMP_DIR = tempfile.TemporaryDirectory()
+_DISPOSABLE_DB = Path(_TEST_TEMP_DIR.name) / "test_adapted_lesson.db"
+os.environ["ADAPTIVE_LEARNING_DB_PATH"] = str(_DISPOSABLE_DB)
+os.environ["ENVIRONMENT"] = "test"
+
+# Add project root to sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.services.adapted_lesson_service import adapted_lesson_service
+from backend.services.rag_service import rag_service
 from backend.services.state_store import state_store
+from backend.services.auth_service import auth_service, set_firebase_verifier_for_testing
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def isolate_external_dependencies():
+    """Ensure tests run deterministically and fast without external network dependencies."""
+    def _mock_firebase_verifier(token: str):
+        raise ValueError("Offline test mode: token is not a Firebase token")
+
+    set_firebase_verifier_for_testing(_mock_firebase_verifier)
+    with patch.object(adapted_lesson_service, "_generate_with_gemini", return_value=None), \
+         patch.object(rag_service, "get_formatted_context", return_value="Sample curriculum context for tests."):
+        yield
+    set_firebase_verifier_for_testing(None)
+
+
+def _auth_headers(user_id: str) -> dict:
+    """Generate authenticated Bearer token headers for test user."""
+    token = auth_service.create_internal_token(user_id=user_id, email=f"{user_id}@cognitive.edu")
+    return {"Authorization": f"Bearer {token}"}
 
 
 def test_adapt_lesson_endpoint_simplified():
@@ -21,7 +59,7 @@ def test_adapt_lesson_endpoint_simplified():
             "timeSpentSeconds": 240.0
         }
     }
-    response = client.post("/api/lessons/adapt", json=payload, headers={"X-User-Id": "test-learner-1"})
+    response = client.post("/api/lessons/adapt", json=payload, headers=_auth_headers("test-learner-1"))
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -50,7 +88,7 @@ def test_adapt_lesson_endpoint_detailed():
             "timeSpentSeconds": 60.0
         }
     }
-    response = client.post("/api/lessons/adapt", json=payload, headers={"X-User-Id": "test-learner-1"})
+    response = client.post("/api/lessons/adapt", json=payload, headers=_auth_headers("test-learner-1"))
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -68,7 +106,7 @@ def test_two_users_independent_personalization():
         "force_refresh": True,
         "signals": {"recentQuizAccuracy": 35.0, "codingErrorCount": 4}
     }
-    r1 = client.post("/api/lessons/adapt", json=p1, headers={"X-User-Id": "user-struggling"})
+    r1 = client.post("/api/lessons/adapt", json=p1, headers=_auth_headers("user-struggling"))
     assert r1.status_code == 200
     lesson1 = r1.json()["lesson"]
 
@@ -79,7 +117,7 @@ def test_two_users_independent_personalization():
         "force_refresh": True,
         "signals": {"recentQuizAccuracy": 100.0, "codingErrorCount": 0}
     }
-    r2 = client.post("/api/lessons/adapt", json=p2, headers={"X-User-Id": "user-advanced"})
+    r2 = client.post("/api/lessons/adapt", json=p2, headers=_auth_headers("user-advanced"))
     assert r2.status_code == 200
     lesson2 = r2.json()["lesson"]
 
@@ -95,7 +133,7 @@ def test_missing_history_does_not_break_generation():
         "detail_level": "STANDARD",
         "force_refresh": True
     }
-    response = client.post("/api/lessons/adapt", json=payload, headers={"X-User-Id": "brand-new-user-999"})
+    response = client.post("/api/lessons/adapt", json=payload, headers=_auth_headers("brand-new-user-999"))
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -106,9 +144,9 @@ def test_missing_history_does_not_break_generation():
 def test_get_cached_adapted_lesson():
     """Test retrieving cached lesson via GET /api/lessons/adapt/{topic_id}."""
     # Ensure lesson is cached
-    client.post("/api/lessons/adapt", json={"topic_id": "top-py-fundamentals", "detail_level": "STANDARD"}, headers={"X-User-Id": "cache-tester"})
+    client.post("/api/lessons/adapt", json={"topic_id": "top-py-fundamentals", "detail_level": "STANDARD"}, headers=_auth_headers("cache-tester"))
     
-    response = client.get("/api/lessons/adapt/top-py-fundamentals?detail_level=STANDARD", headers={"X-User-Id": "cache-tester"})
+    response = client.get("/api/lessons/adapt/top-py-fundamentals?detail_level=STANDARD", headers=_auth_headers("cache-tester"))
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
@@ -125,7 +163,7 @@ def test_adaptation_feedback_endpoint():
         "comment": "The analogy made memory labels crystal clear!",
         "completed_practice": True
     }
-    response = client.post("/api/lessons/adapt/feedback", json=payload, headers={"X-User-Id": "feedback-tester"})
+    response = client.post("/api/lessons/adapt/feedback", json=payload, headers=_auth_headers("feedback-tester"))
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True

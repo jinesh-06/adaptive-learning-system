@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from rag.src.retriever import retrieve_documents
+from rag.src.retriever import retrieve_documents, retrieve_with_status
 from rag.src.context_formatter import format_context, format_rag_prompt
 from rag.src.ingest import run_ingestion
 from rag.src.vector_store import get_vector_store
@@ -34,6 +34,26 @@ class RAGService:
         if not query or not query.strip():
             return []
         return retrieve_documents(
+            query=query,
+            top_k=top_k,
+            course=course,
+            topic=topic,
+            level=level,
+            learner_level=learner_level,
+            vector_store=self.vector_store
+        )
+
+    def retrieve_with_status(
+        self,
+        query: str,
+        course: Optional[str] = None,
+        topic: Optional[str] = None,
+        level: Optional[str] = None,
+        top_k: int = 4,
+        learner_level: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Retrieve knowledge chunks with explicit error and status distinguishing embedding failures."""
+        return retrieve_with_status(
             query=query,
             top_k=top_k,
             course=course,

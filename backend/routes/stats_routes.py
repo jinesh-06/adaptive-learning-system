@@ -32,48 +32,52 @@ async def get_platform_stats():
 @router.get("/dashboard/snapshot")
 async def get_dashboard_snapshot(request: Request):
     user_id = get_current_user_id(request)
-    recent_evals = state_store.get_adaptive_history(user_id, limit=1)
-    current_load = recent_evals[0].get("cognitive_load", "MEDIUM") if recent_evals else "MEDIUM"
-    content_mode = "SIMPLIFIED" if current_load == "HIGH" else "CONCISE" if current_load == "LOW" else "BALANCED"
-
-    return {
-        "user_id": user_id,
-        "current_streak_days": 4,
-        "topics_completed": 7,
-        "total_quizzes_taken": 12,
-        "average_quiz_score": 86,
-        "current_cognitive_load": current_load,
-        "current_content_mode": content_mode,
-        "recommended_next_topic": "top-py-loops",
-        "recommended_next_topic_title": "Loops and Iteration Constructs",
-        "recent_activity": [
-            {"type": "LESSON", "title": "Loops and Iteration Constructs", "date": "Today"},
-            {"type": "QUIZ", "title": "Knowledge Check: Loops", "score": "90%", "date": "Yesterday"}
-        ]
-    }
+    return state_store.get_learner_dashboard_stats(user_id)
 
 
 @router.get("/dashboard/roadmap/{language}")
-async def get_language_roadmap(language: str):
+async def get_language_roadmap(language: str, request: Request):
+    user_id = get_current_user_id(request)
     courses = curriculum_service.get_courses(language=language)
     nodes = []
     order = 1
+    prev_unlocked_or_done = True
     for c in courses:
         for m in c.get("modules", []):
             for t in m.get("topics", []):
+                t_id = t.get("id")
+                prog_status = state_store.get_topic_progress(t_id, user_id=user_id, course_id=c.get("id"))
+                if prog_status == "COMPLETED":
+                    status = "COMPLETED"
+                    prev_unlocked_or_done = True
+                elif prog_status == "IN_PROGRESS":
+                    status = "IN_PROGRESS"
+                    prev_unlocked_or_done = False
+                elif order == 1 or prev_unlocked_or_done:
+                    status = "UNLOCKED"
+                    prev_unlocked_or_done = False
+                else:
+                    status = "LOCKED"
+
                 nodes.append({
-                    "id": t.get("id"),
+                    "id": t_id,
+                    "topic_id": t_id,
                     "title": t.get("title"),
                     "module": m.get("title"),
+                    "module_title": m.get("title"),
                     "level": t.get("level"),
                     "order": order,
-                    "status": t.get("status", "LOCKED")
+                    "order_index": order,
+                    "status": status,
+                    "load": "MEDIUM"
                 })
                 order += 1
     return {
+        "success": True,
         "language": language,
         "total_milestones": len(nodes),
-        "milestones": nodes
+        "milestones": nodes,
+        "roadmap": nodes
     }
 
 

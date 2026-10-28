@@ -31,4 +31,14 @@ dist-ssr/
 __pycache__/
 *.py[cod]
 *.db
-*.sqlite3
+*.db.backup_*
+*.sqlite3
+
+# Secrets, private keys, and service account credentials
+*.pem
+*.key
+*.cert
+*.crt
+*serviceAccount*.json
+*credentials*.json
+firebase-adminsdk*.json
