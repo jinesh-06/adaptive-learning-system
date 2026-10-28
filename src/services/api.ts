@@ -1582,7 +1582,8 @@ export const api = {
 
   getAssessmentResults: async (topicId?: string, type?: 'pre' | 'post') => {
     try {
-      const url = new URL(`${window.location.origin}${API_BASE}/assessments/results`);
+      const base = API_BASE.startsWith('http') ? API_BASE : `${window.location.origin}${API_BASE}`;
+      const url = new URL(`${base}/assessments/results`);
       if (topicId) url.searchParams.append('topic_id', topicId);
       if (type) url.searchParams.append('assessment_type', type);
       const res = await fetch(url.toString(), {
