@@ -28,6 +28,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { LearningOutcomesSection } from '../components/dashboard/LearningOutcomesSection';
+import { StudentMasteryCard } from '../components/dashboard/StudentMasteryCard';
 
 interface LearnerDashboardProps {
   onSelectTopic: (topicId: string) => void;
@@ -307,6 +308,9 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
           </div>
         </div>
       </div>
+
+      {/* 4.5. STUDENT MASTERY PROFILE (Member 3 Module) */}
+      <StudentMasteryCard />
 
       {/* 5. LEARNING OUTCOMES & STUDENT FEEDBACK (Member 4 Module) */}
       <LearningOutcomesSection onSelectTopic={onSelectTopic} />

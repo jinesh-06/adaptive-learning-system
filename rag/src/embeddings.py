@@ -30,6 +30,8 @@ class EmbeddingModel:
         self.model_name = model_name or cfg.embedding_model_name
         self.device = device or cfg.embedding_device
         self._model = None
+        self._available = False
+        self._load_error: Optional[str] = None
         self._load_model()
         self._initialized = True
 
@@ -39,11 +41,21 @@ class EmbeddingModel:
             from sentence_transformers import SentenceTransformer
             # print(f"[EmbeddingModel] Loading sentence-transformer model: '{self.model_name}' on device '{self.device}'...")
             self._model = SentenceTransformer(self.model_name, device=self.device)
+            self._available = True
+            self._load_error = None
         except Exception as e:
-            raise RuntimeError(
-                f"[EmbeddingModel] Failed to load sentence-transformers model '{self.model_name}': {e}\n"
-                f"Please ensure sentence-transformers and PyTorch are installed."
-            ) from e
+            self._model = None
+            self._available = False
+            self._load_error = str(e)
+
+    def is_available(self) -> bool:
+        """Return True if the underlying embedding model is loaded and ready."""
+        return self._available and self._model is not None
+
+    @property
+    def load_error(self) -> Optional[str]:
+        """Return the error message if the model failed to load, else None."""
+        return self._load_error
 
     def embed_texts(self, texts: List[str], batch_size: int = 32, normalize_embeddings: bool = True) -> List[List[float]]:
         """
@@ -57,6 +69,12 @@ class EmbeddingModel:
         Returns:
             List[List[float]]: List of float embedding vectors.
         """
+        if not self.is_available():
+            raise RuntimeError(
+                f"[EmbeddingModel] SentenceTransformer model '{self.model_name}' is not available: {self._load_error}. "
+                "Ensure sentence-transformers and PyTorch are installed."
+            )
+
         if not texts:
             return []
 
@@ -83,6 +101,12 @@ class EmbeddingModel:
         Returns:
             List[float]: Single embedding vector.
         """
+        if not self.is_available():
+            raise RuntimeError(
+                f"[EmbeddingModel] SentenceTransformer model '{self.model_name}' is not available: {self._load_error}. "
+                "Ensure sentence-transformers and PyTorch are installed."
+            )
+
         if not text or not text.strip():
             # Return zero vector of appropriate dimension if text is empty
             dim = getattr(self._model, "get_sentence_embedding_dimension", lambda: 384)()

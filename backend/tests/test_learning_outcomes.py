@@ -393,6 +393,60 @@ class TestLearningOutcomesAndFeedback(unittest.TestCase):
         bob_summary = res_bob_outcomes.json()["summary"]
         self.assertEqual(bob_summary["number_of_completed_assessments"], 0)
 
+    # --- 10. Assessment-to-Mastery Integration ---
+    def test_10_post_assessment_updates_mastery_and_pre_does_not(self):
+        """Pre-assessments remain diagnostic baselines, while post-assessments update topic mastery."""
+        test_topic = "top-py-intro"
+
+        # 1. Submit pre-assessment for Alice
+        pre_res = self.client.post(
+            f"/api/assessments/{test_topic}/submit",
+            json={
+                "assessment_type": "pre",
+                "answers": {"0": 0, "1": 0},
+                "time_spent": 12.0
+            },
+            headers=self.headers_alice
+        )
+        self.assertEqual(pre_res.status_code, 200)
+        self.assertTrue(pre_res.json()["success"])
+
+        # Check topic mastery for Alice - should NOT exist for this topic yet
+        topic_m_before = self.client.get(f"/api/mastery/topics/{test_topic}", headers=self.headers_alice)
+        self.assertEqual(topic_m_before.status_code, 200)
+        before_data = topic_m_before.json()["data"]
+        self.assertIsNone(before_data["current_mastery"])
+        self.assertEqual(before_data["mastery_status"], "NOT_ASSESSED")
+
+        # 2. Submit post-assessment for Alice
+        post_res = self.client.post(
+            f"/api/assessments/{test_topic}/submit",
+            json={
+                "assessment_type": "post",
+                "answers": {"0": 0, "1": 1, "2": 2, "3": 0, "4": 1},
+                "time_spent": 30.0
+            },
+            headers=self.headers_alice
+        )
+        self.assertEqual(post_res.status_code, 200)
+        self.assertTrue(post_res.json()["success"])
+
+        # Check topic mastery for Alice - must now be updated
+        topic_m_after = self.client.get(f"/api/mastery/topics/{test_topic}", headers=self.headers_alice)
+        self.assertEqual(topic_m_after.status_code, 200)
+        after_data = topic_m_after.json()["data"]
+        self.assertIsNotNone(after_data["current_mastery"])
+        self.assertNotEqual(after_data["mastery_status"], "NOT_ASSESSED")
+        self.assertGreaterEqual(after_data["quiz_performance"]["attempts"], 1)
+        self.assertGreaterEqual(after_data["total_attempts"], 1)
+
+        # 3. Verify Bob cannot see Alice's mastery
+        bob_m = self.client.get(f"/api/mastery/topics/{test_topic}", headers=self.headers_bob)
+        self.assertEqual(bob_m.status_code, 200)
+        bob_data = bob_m.json()["data"]
+        self.assertIsNone(bob_data["current_mastery"])
+        self.assertEqual(bob_data["mastery_status"], "NOT_ASSESSED")
+
 
 if __name__ == "__main__":
     unittest.main()

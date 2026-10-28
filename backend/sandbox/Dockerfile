@@ -1,6 +1,6 @@
 # ==============================================================================
 # Adaptive Learning System - Hardened Multi-Language Code Sandbox
-# Supports Python 3 and OpenJDK 17 in unprivileged, isolated Linux containers.
+# Supports Python 3, OpenJDK 17, GCC, and G++ in unprivileged, isolated Linux containers.
 # ==============================================================================
 
 FROM debian:bookworm-slim
@@ -14,11 +14,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
     PATH="/usr/lib/jvm/java-17-openjdk-amd64/bin:${PATH}"
 
-# Install minimal, verified runtimes for Python 3 and OpenJDK 17
+# Install minimal, verified runtimes for Python 3, OpenJDK 17, GCC, and G++
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-minimal \
     openjdk-17-jdk-headless \
+    gcc \
+    g++ \
     ca-certificates \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

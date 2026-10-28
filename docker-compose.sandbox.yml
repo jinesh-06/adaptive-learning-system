@@ -11,4 +11,4 @@ services:
     image: adaptive-learning-sandbox:latest
     container_name: adaptive-learning-sandbox-builder
     restart: "no"
-    command: ["sh", "-c", "python3 --version && javac -version && java -version"]
+    command: ["sh", "-c", "python3 --version && javac -version && java -version && gcc --version && g++ --version"]

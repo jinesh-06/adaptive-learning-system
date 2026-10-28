@@ -12,14 +12,18 @@ import re
 import time
 import uuid
 import shutil
+import atexit
 import tempfile
 import threading
 import subprocess
+import logging
 from enum import Enum
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Tuple
 from collections import defaultdict
+
+logger = logging.getLogger("sandbox_service")
 
 # -----------------------------------------------------------------------------
 # Execution Status Model
@@ -109,7 +113,7 @@ RATE_LIMIT_PER_MINUTE = int(os.getenv("SANDBOX_RATE_LIMIT_PER_MIN", "30"))
 MAX_CONCURRENT_EXECUTIONS = int(os.getenv("SANDBOX_MAX_CONCURRENCY", "8"))
 
 # Language allowlist
-SUPPORTED_LANGUAGES = {"python", "py", "java", "c", "cpp"}
+SUPPORTED_LANGUAGES = {"python", "py", "java", "c", "cpp", "c++"}
 
 
 # -----------------------------------------------------------------------------
@@ -189,6 +193,107 @@ class BaseSandboxDriver:
 # -----------------------------------------------------------------------------
 # Docker / Container Hardened Sandbox Driver
 # -----------------------------------------------------------------------------
+
+_SANDBOX_BASE_DIR: Optional[str] = None
+_SANDBOX_BASE_DIR_PID: Optional[int] = None
+_SANDBOX_BASE_DIR_LOCK = threading.Lock()
+
+def _cleanup_sandbox_base_dir() -> None:
+    """Clean up private sandbox base directory upon process exit, only if owned by this process."""
+    global _SANDBOX_BASE_DIR, _SANDBOX_BASE_DIR_PID
+    current_pid = os.getpid()
+    if _SANDBOX_BASE_DIR and _SANDBOX_BASE_DIR_PID == current_pid:
+        if os.path.exists(_SANDBOX_BASE_DIR):
+            shutil.rmtree(_SANDBOX_BASE_DIR, ignore_errors=True)
+        _SANDBOX_BASE_DIR = None
+        _SANDBOX_BASE_DIR_PID = None
+
+atexit.register(_cleanup_sandbox_base_dir)
+
+if hasattr(os, "register_at_fork"):
+    def _reset_sandbox_in_child() -> None:
+        global _SANDBOX_BASE_DIR, _SANDBOX_BASE_DIR_PID, _SANDBOX_BASE_DIR_LOCK
+        _SANDBOX_BASE_DIR = None
+        _SANDBOX_BASE_DIR_PID = None
+        _SANDBOX_BASE_DIR_LOCK = threading.Lock()
+    try:
+        os.register_at_fork(after_in_child=_reset_sandbox_in_child)
+    except Exception:
+        pass
+
+def get_sandbox_base_dir() -> str:
+    """Return an unpredictable, process-private base directory with strict 0o700 permissions.
+
+    Guarantees process ownership by binding the directory to the current PID.
+    Uses double-checked locking to ensure thread-safe initialization without leaks.
+    """
+    global _SANDBOX_BASE_DIR, _SANDBOX_BASE_DIR_PID
+    current_pid = os.getpid()
+    if _SANDBOX_BASE_DIR is None or _SANDBOX_BASE_DIR_PID != current_pid or not os.path.exists(_SANDBOX_BASE_DIR):
+        with _SANDBOX_BASE_DIR_LOCK:
+            if _SANDBOX_BASE_DIR is None or _SANDBOX_BASE_DIR_PID != current_pid or not os.path.exists(_SANDBOX_BASE_DIR):
+                base = tempfile.mkdtemp(prefix=f"adaptive_sandbox_base_p{current_pid}_")
+                try:
+                    os.chmod(base, 0o700)
+                except Exception:
+                    pass
+                _SANDBOX_BASE_DIR = base
+                _SANDBOX_BASE_DIR_PID = current_pid
+    return _SANDBOX_BASE_DIR
+
+
+def _strip_c_comments(code: str) -> str:
+    """Strip single-line and multi-line C/C++ comments while preserving line count."""
+    pattern = r'(//.*?$)|(/\*[\s\S]*?\*/)'
+    return re.sub(pattern, lambda m: '\n' * m.group(0).count('\n'), code, flags=re.MULTILINE)
+
+
+def _strip_c_comments_and_literals(code: str) -> str:
+    """Strip comments, string literals, and character literals for structural syntax analysis.
+
+    Preserves escaped quotes (\", \\) to accurately demarcate string boundaries.
+    """
+    pattern = r"""(//.*?$)|(/\*[\s\S]*?\*/)|("(?:\\.|[^"\\])*")|('(?:\\.|[^'\\])*')"""
+    return re.sub(pattern, lambda m: '\n' * m.group(0).count('\n'), code, flags=re.MULTILINE)
+
+
+def setup_sandbox_workspace(
+    tmpdir: str,
+    allow_container_write: bool = False,
+    uid: int = 10001,
+    gid: int = 10001
+) -> None:
+    """Configure restrictive permissions and ownership on the sandbox temporary workspace.
+
+    1. Enforces that workspace cannot be a symlink.
+    2. Attempts ownership transfer to the non-root container UID:GID (10001:10001).
+       If successful, applies strict owner-only permissions (0o700).
+    3. If chown is unavailable (e.g. unprivileged host user without CAP_CHOWN):
+       - Read-only workloads (Python): sets 0o755 (read/execute only, never world-writable).
+       - Compilation workloads (C, C++, Java): sets 0o1777 (sticky bit enabled to prevent
+         file manipulation or unlinking by third parties).
+    """
+    if os.path.islink(tmpdir):
+        raise ValueError("Security violation: Sandbox workspace cannot be a symlink.")
+
+    try:
+        os.chown(tmpdir, uid, gid)
+        os.chmod(tmpdir, 0o700)
+        return
+    except (AttributeError, PermissionError, OSError):
+        pass
+
+    if allow_container_write:
+        try:
+            os.chmod(tmpdir, 0o1777)
+        except Exception:
+            pass
+    else:
+        try:
+            os.chmod(tmpdir, 0o755)
+        except Exception:
+            pass
+
 
 class DockerSandboxDriver(BaseSandboxDriver):
     """Production-grade container isolation runner.
@@ -270,6 +375,10 @@ class DockerSandboxDriver(BaseSandboxDriver):
             return self._execute_python(code, stdin_input, timeout)
         elif lang in ("java",):
             return self._execute_java(code, stdin_input, timeout)
+        elif lang in ("c",):
+            return self._execute_c(code, stdin_input, timeout)
+        elif lang in ("cpp", "c++"):
+            return self._execute_cpp(code, stdin_input, timeout)
         else:
             return ExecutionResult(
                 success=False,
@@ -280,18 +389,28 @@ class DockerSandboxDriver(BaseSandboxDriver):
     def _execute_python(self, code: str, stdin_input: str, timeout: float) -> ExecutionResult:
         """Run Python script in isolated container."""
         container_id = f"sandbox_py_{uuid.uuid4().hex[:12]}"
-        tmpdir = tempfile.mkdtemp(prefix="sandbox_py_")
+        tmpdir = None
         start_time = time.time()
 
         try:
-            # 1. Write source and stdin
+            tmpdir = tempfile.mkdtemp(prefix="sandbox_py_", dir=get_sandbox_base_dir())
+            setup_sandbox_workspace(tmpdir, allow_container_write=False)
+            # 1. Write source and stdin with restrictive file permissions
             src_path = os.path.join(tmpdir, "main.py")
             with open(src_path, "w", encoding="utf-8") as f:
                 f.write(code)
+            try:
+                os.chmod(src_path, 0o644)
+            except Exception:
+                pass
 
             stdin_path = os.path.join(tmpdir, "input.txt")
             with open(stdin_path, "w", encoding="utf-8") as f:
                 f.write(stdin_input or "")
+            try:
+                os.chmod(stdin_path, 0o644)
+            except Exception:
+                pass
 
             # 2. Build hardened docker run argument list
             # Security Hardening Flags:
@@ -305,6 +424,7 @@ class DockerSandboxDriver(BaseSandboxDriver):
             # --security-opt no-new-privileges:true : privilege escalation block
             # --cap-drop ALL              : drop all Linux capabilities
             # --user 10001:10001          : unprivileged user
+            # -v {tmpdir}:/workspace:ro   : read-only workspace mount for script execution
             run_cmd = [
                 self.runtime, "run",
                 "--rm",
@@ -319,10 +439,10 @@ class DockerSandboxDriver(BaseSandboxDriver):
                 "--security-opt", "no-new-privileges:true",
                 "--cap-drop", "ALL",
                 "--user", "10001:10001",
-                "-v", f"{tmpdir}:/workspace:rw",
+                "-v", f"{tmpdir}:/workspace:ro",
                 "-w", "/workspace",
                 self.image,
-                "sh", "-c", "python3 main.py < input.txt"
+                "sh", "-c", "python3 -B main.py < input.txt"
             ]
 
             proc = subprocess.run(
@@ -404,13 +524,18 @@ class DockerSandboxDriver(BaseSandboxDriver):
             )
         finally:
             # Reliable cleanup
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            subprocess.run([self.runtime, "rm", "-f", container_id], capture_output=True)
+            if tmpdir:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            try:
+                subprocess.run([self.runtime, "rm", "-f", container_id], capture_output=True)
+            except Exception:
+                pass
 
     def _execute_java(self, code: str, stdin_input: str, timeout: float) -> ExecutionResult:
         """Compile and execute Java program inside container."""
         container_id = f"sandbox_java_{uuid.uuid4().hex[:12]}"
-        tmpdir = tempfile.mkdtemp(prefix="sandbox_java_")
+        compile_id = f"{container_id}_cmp"
+        tmpdir = None
         start_time = time.time()
 
         # Detect public class name (defaulting to Main)
@@ -418,19 +543,30 @@ class DockerSandboxDriver(BaseSandboxDriver):
         class_name = class_match.group(1) if class_match else "Main"
 
         try:
-            # 1. Write Java source and stdin
+            tmpdir = tempfile.mkdtemp(prefix="sandbox_java_", dir=get_sandbox_base_dir())
+            setup_sandbox_workspace(tmpdir, allow_container_write=True)
+            # 1. Write Java source and stdin with restrictive file permissions
             src_path = os.path.join(tmpdir, f"{class_name}.java")
             with open(src_path, "w", encoding="utf-8") as f:
                 f.write(code)
+            try:
+                os.chmod(src_path, 0o644)
+            except Exception:
+                pass
 
             stdin_path = os.path.join(tmpdir, "input.txt")
             with open(stdin_path, "w", encoding="utf-8") as f:
                 f.write(stdin_input or "")
+            try:
+                os.chmod(stdin_path, 0o644)
+            except Exception:
+                pass
 
             # 2. Compile step inside container
             compile_cmd = [
                 self.runtime, "run",
                 "--rm",
+                "--name", compile_id,
                 "--network", "none",
                 "--read-only",
                 "--tmpfs", "/tmp:rw,noexec,nosuid,size=32m",
@@ -546,6 +682,7 @@ class DockerSandboxDriver(BaseSandboxDriver):
         except subprocess.TimeoutExpired:
             elapsed = time.time() - start_time
             subprocess.run([self.runtime, "kill", container_id], capture_output=True)
+            subprocess.run([self.runtime, "kill", compile_id], capture_output=True)
             return ExecutionResult(
                 success=False,
                 status=ExecutionStatus.TIMEOUT,
@@ -568,8 +705,200 @@ class DockerSandboxDriver(BaseSandboxDriver):
                 execution_time_ms=int(elapsed * 1000)
             )
         finally:
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            subprocess.run([self.runtime, "rm", "-f", container_id], capture_output=True)
+            if tmpdir:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            try:
+                subprocess.run([self.runtime, "rm", "-f", container_id], capture_output=True)
+                subprocess.run([self.runtime, "rm", "-f", compile_id], capture_output=True)
+            except Exception:
+                pass
+
+    def _execute_c_cpp(self, code: str, stdin_input: str, timeout: float, is_cpp: bool = False) -> ExecutionResult:
+        """Compile and execute C/C++ program inside hardened container."""
+        lang_prefix = "cpp" if is_cpp else "c"
+        ext = "cpp" if is_cpp else "c"
+        compiler = "g++" if is_cpp else "gcc"
+        container_id = f"sandbox_{lang_prefix}_{uuid.uuid4().hex[:12]}"
+        compile_id = f"{container_id}_cmp"
+        tmpdir = None
+        start_time = time.time()
+
+        try:
+            tmpdir = tempfile.mkdtemp(prefix=f"sandbox_{lang_prefix}_", dir=get_sandbox_base_dir())
+            setup_sandbox_workspace(tmpdir, allow_container_write=True)
+            # 1. Write source and stdin with restrictive file permissions
+            src_path = os.path.join(tmpdir, f"solution.{ext}")
+            with open(src_path, "w", encoding="utf-8") as f:
+                f.write(code)
+            try:
+                os.chmod(src_path, 0o644)
+            except Exception:
+                pass
+
+            stdin_path = os.path.join(tmpdir, "input.txt")
+            with open(stdin_path, "w", encoding="utf-8") as f:
+                f.write(stdin_input or "")
+            try:
+                os.chmod(stdin_path, 0o644)
+            except Exception:
+                pass
+
+            # 2. Compile step inside container
+            compile_cmd = [
+                self.runtime, "run",
+                "--rm",
+                "--name", compile_id,
+                "--network", "none",
+                "--read-only",
+                "--tmpfs", "/tmp:rw,noexec,nosuid,size=32m",
+                "--cpus", SANDBOX_CPU_LIMIT,
+                "--memory", SANDBOX_MEMORY_LIMIT,
+                "--memory-swap", SANDBOX_MEMORY_LIMIT,
+                "--pids-limit", str(SANDBOX_PIDS_LIMIT),
+                "--security-opt", "no-new-privileges:true",
+                "--cap-drop", "ALL",
+                "--user", "10001:10001",
+                "-v", f"{tmpdir}:/workspace:rw",
+                "-w", "/workspace",
+                self.image,
+                compiler, "-O2", "-Wall", f"solution.{ext}", "-o", "solution"
+            ]
+
+            comp_proc = subprocess.run(
+                compile_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+
+            if comp_proc.returncode != 0:
+                elapsed = time.time() - start_time
+                clean_err = comp_proc.stderr.replace(f"solution.{ext}", f"main.{ext}")
+                return ExecutionResult(
+                    success=False,
+                    status=ExecutionStatus.COMPILE_ERROR,
+                    stdout="",
+                    stderr=clean_err,
+                    compilation_error=clean_err,
+                    output=clean_err,
+                    error=clean_err,
+                    exit_code=comp_proc.returncode,
+                    execution_time_seconds=elapsed,
+                    execution_time_ms=int(elapsed * 1000)
+                )
+
+            # 3. Execution step inside container
+            run_cmd = [
+                self.runtime, "run",
+                "--rm",
+                "--name", container_id,
+                "--network", "none",
+                "--read-only",
+                "--tmpfs", "/tmp:rw,noexec,nosuid,size=32m",
+                "--cpus", SANDBOX_CPU_LIMIT,
+                "--memory", SANDBOX_MEMORY_LIMIT,
+                "--memory-swap", SANDBOX_MEMORY_LIMIT,
+                "--pids-limit", str(SANDBOX_PIDS_LIMIT),
+                "--security-opt", "no-new-privileges:true",
+                "--cap-drop", "ALL",
+                "--user", "10001:10001",
+                "-v", f"{tmpdir}:/workspace:rw",
+                "-w", "/workspace",
+                self.image,
+                "sh", "-c", "./solution < input.txt"
+            ]
+
+            proc = subprocess.run(
+                run_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            elapsed = time.time() - start_time
+            stdout = proc.stdout or ""
+            stderr = proc.stderr or ""
+
+            # Check bounded output limits
+            if len(stdout.encode("utf-8")) > MAX_OUTPUT_BYTES or len(stderr.encode("utf-8")) > MAX_OUTPUT_BYTES:
+                return ExecutionResult(
+                    success=False,
+                    status=ExecutionStatus.OUTPUT_LIMIT_EXCEEDED,
+                    stdout=stdout[:MAX_OUTPUT_BYTES],
+                    stderr="Execution halted: Output limit exceeded (1 MiB maximum).",
+                    output=stdout[:MAX_OUTPUT_BYTES],
+                    error="OUTPUT_LIMIT_EXCEEDED",
+                    execution_time_seconds=elapsed,
+                    execution_time_ms=int(elapsed * 1000)
+                )
+
+            # Check OOM kill
+            if proc.returncode == 137 or "Killed" in stderr:
+                return ExecutionResult(
+                    success=False,
+                    status=ExecutionStatus.MEMORY_LIMIT_EXCEEDED,
+                    stdout=stdout,
+                    stderr=stderr or "Process killed: Memory limit exceeded.",
+                    output=stdout,
+                    error="MEMORY_LIMIT_EXCEEDED",
+                    execution_time_seconds=elapsed,
+                    execution_time_ms=int(elapsed * 1000)
+                )
+
+            success = (proc.returncode == 0)
+            status = ExecutionStatus.SUCCESS if success else ExecutionStatus.RUNTIME_ERROR
+
+            return ExecutionResult(
+                success=success,
+                status=status,
+                stdout=stdout,
+                stderr=stderr if not success else "",
+                exit_code=proc.returncode,
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000),
+                runtime_error=stderr if not success else None,
+                output=stdout,
+                error=stderr if not success else None
+            )
+
+        except subprocess.TimeoutExpired:
+            elapsed = time.time() - start_time
+            subprocess.run([self.runtime, "kill", container_id], capture_output=True)
+            subprocess.run([self.runtime, "kill", compile_id], capture_output=True)
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.TIMEOUT,
+                stdout="",
+                stderr=f"Execution timed out after {timeout} seconds.",
+                output=f"Time Limit Exceeded ({timeout}s limit)",
+                error=f"Time Limit Exceeded ({timeout}s limit)",
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+        except Exception as e:
+            elapsed = time.time() - start_time
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.INTERNAL_ERROR,
+                stdout="",
+                stderr=str(e),
+                error=str(e),
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+        finally:
+            if tmpdir:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            try:
+                subprocess.run([self.runtime, "rm", "-f", container_id], capture_output=True)
+                subprocess.run([self.runtime, "rm", "-f", compile_id], capture_output=True)
+            except Exception:
+                pass
+
+    def _execute_c(self, code: str, stdin_input: str, timeout: float) -> ExecutionResult:
+        return self._execute_c_cpp(code, stdin_input, timeout, is_cpp=False)
+
+    def _execute_cpp(self, code: str, stdin_input: str, timeout: float) -> ExecutionResult:
+        return self._execute_c_cpp(code, stdin_input, timeout, is_cpp=True)
 
 
 # -----------------------------------------------------------------------------
@@ -631,13 +960,15 @@ class MockSandboxDriver(BaseSandboxDriver):
             return self._mock_python(code, stdin_input, timeout, start)
         elif lang in ("java",):
             return self._mock_java(code, stdin_input, timeout, start)
+        elif lang in ("c",):
+            return self._mock_c(code, stdin_input, timeout, start)
+        elif lang in ("cpp", "c++"):
+            return self._mock_cpp(code, stdin_input, timeout, start)
         else:
-            # Fallback for C/C++ in mock mode
             return ExecutionResult(
-                success=True,
-                status=ExecutionStatus.SUCCESS,
-                stdout="C/C++ Mock Execution Succeeded",
-                execution_time_ms=10
+                success=False,
+                status=ExecutionStatus.UNSUPPORTED_LANGUAGE,
+                error=f"Unsupported language '{language}'."
             )
 
     def _mock_python(self, code: str, stdin_input: str, timeout: float, start: float) -> ExecutionResult:
@@ -884,6 +1215,189 @@ class MockSandboxDriver(BaseSandboxDriver):
             execution_time_seconds=elapsed,
             execution_time_ms=max(1, int(elapsed * 1000))
         )
+
+    def _mock_c_cpp(self, code: str, stdin_input: str, timeout: float, start: float, is_cpp: bool = False) -> ExecutionResult:
+        lang_name = "C++" if is_cpp else "C"
+        code_no_comments = _strip_c_comments(code)
+        code_clean = _strip_c_comments_and_literals(code)
+
+        # 1. Check security policy violations (defense-in-depth)
+        # Function calls checked on code_clean (strings masked so printf("system()") is not blocked)
+        restricted_calls = [
+            r'\bsystem\s*\(',
+            r'\bfork\s*\(',
+            r'\b(?:execl|execle|execlp|execv|execve|execvp|execvpe)\s*\(',
+            r'\bpopen\s*\(',
+            r'\bkill\s*\(',
+        ]
+        for pattern in restricted_calls:
+            if re.search(pattern, code_clean):
+                elapsed = time.time() - start
+                return ExecutionResult(
+                    success=False,
+                    status=ExecutionStatus.COMPILE_ERROR,
+                    stderr=f"Security Policy Violation: Disallowed system call or header detected in {lang_name} submission.",
+                    compilation_error=f"Security Policy Violation: Disallowed system call or header detected.",
+                    error=f"Security Policy Violation: Disallowed system call or header detected.",
+                    execution_time_seconds=elapsed,
+                    execution_time_ms=int(elapsed * 1000)
+                )
+
+        # Headers and filesystem paths checked on code_no_comments (comments stripped, string paths kept)
+        restricted_includes_and_files = [
+            r'#include\s*<sys/socket\.h>',
+            r'#include\s*<netinet/in\.h>',
+            r'#include\s*<arpa/inet\.h>',
+            r'#include\s*<unistd\.h>',
+            r'#include\s*<windows\.h>',
+            r"""fopen\s*\(\s*['"][^'"]*(\.env|passwd|shadow|hosts)""",
+        ]
+        for pattern in restricted_includes_and_files:
+            if re.search(pattern, code_no_comments):
+                elapsed = time.time() - start
+                return ExecutionResult(
+                    success=False,
+                    status=ExecutionStatus.COMPILE_ERROR,
+                    stderr=f"Security Policy Violation: Disallowed system call or header detected in {lang_name} submission.",
+                    compilation_error=f"Security Policy Violation: Disallowed system call or header detected.",
+                    error=f"Security Policy Violation: Disallowed system call or header detected.",
+                    execution_time_seconds=elapsed,
+                    execution_time_ms=int(elapsed * 1000)
+                )
+
+        # 2. Syntax check: Unmatched braces or parentheses on code_clean
+        open_b = code_clean.count('{')
+        close_b = code_clean.count('}')
+        if open_b != close_b:
+            elapsed = time.time() - start
+            err = f"Compiler Error: Unmatched curly braces ({open_b} '{{' vs {close_b} '}}')"
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.COMPILE_ERROR,
+                stderr=err,
+                compilation_error=err,
+                error=err,
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+
+        open_p = code_clean.count('(')
+        close_p = code_clean.count(')')
+        if open_p != close_p:
+            elapsed = time.time() - start
+            err = f"Compiler Error: Unmatched parentheses ({open_p} '(' vs {close_p} ')')"
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.COMPILE_ERROR,
+                stderr=err,
+                compilation_error=err,
+                error=err,
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+
+        if "main" not in code_clean:
+            elapsed = time.time() - start
+            err = f"Compiler Error: Expected function 'main' in {lang_name} program."
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.COMPILE_ERROR,
+                stderr=err,
+                compilation_error=err,
+                error=err,
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+
+        # 3. Check infinite loops
+        if "while (1)" in code or "while(1)" in code or "while (true)" in code or "while(true)" in code or "for (;;)" in code:
+            elapsed = timeout
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.TIMEOUT,
+                stderr=f"Time Limit Exceeded ({timeout}s limit)",
+                error=f"Time Limit Exceeded ({timeout}s limit)",
+                output=f"Time Limit Exceeded ({timeout}s limit)",
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+
+        # 4. Check division by zero or runtime error
+        if "1 / 0" in code or "1/0" in code:
+            elapsed = time.time() - start
+            err = "Floating point exception (core dumped)"
+            return ExecutionResult(
+                success=False,
+                status=ExecutionStatus.RUNTIME_ERROR,
+                stderr=err,
+                runtime_error=err,
+                error=err,
+                execution_time_seconds=elapsed,
+                execution_time_ms=int(elapsed * 1000)
+            )
+
+        # 5. Extract output (printf / cout or input-based arithmetic)
+        out = ""
+        # Check standard printf
+        printf_matches = re.findall(r'printf\s*\(\s*["\']([^"\'\\]*(?:\\.[^"\'\\]*)*)["\']\s*(?:,\s*([^)]*))?\)', code)
+        if printf_matches:
+            lines = []
+            for fmt, args in printf_matches:
+                clean_fmt = fmt.replace(r'\n', '\n').replace(r'\t', '\t')
+                if not args:
+                    lines.append(clean_fmt)
+                else:
+                    arg_vals = [a.strip() for a in args.split(',') if a.strip()]
+                    try:
+                        # Attempt to format
+                        formatted = clean_fmt
+                        for a in arg_vals:
+                            formatted = re.sub(r'%[0-9]*[.]?[0-9]*[a-zA-Z]', a, formatted, count=1)
+                        lines.append(formatted)
+                    except Exception:
+                        lines.append(clean_fmt)
+            out = "".join(lines)
+
+        # Check cout
+        if not out and is_cpp and "cout" in code:
+            cout_strs = re.findall(r'cout\s*<<\s*["\']([^"\']*)["\']', code)
+            if cout_strs:
+                out = "\n".join(cout_strs) + "\n"
+
+        # Check stdin arithmetic simulation if input provided
+        if stdin_input and not out:
+            tokens = stdin_input.split()
+            if len(tokens) >= 2:
+                try:
+                    nums = [int(t) for t in tokens]
+                    if "+" in code or "sum" in code:
+                        out = f"{sum(nums)}\n"
+                    elif "*" in code or "product" in code:
+                        import math
+                        out = f"{math.prod(nums)}\n"
+                    else:
+                        out = f"{nums[0]}\n"
+                except Exception:
+                    out = f"{tokens[0]}\n"
+
+        if not out:
+            out = f"Hello from {lang_name} Sandbox!\n"
+
+        elapsed = time.time() - start
+        return ExecutionResult(
+            success=True,
+            status=ExecutionStatus.SUCCESS,
+            stdout=out,
+            output=out,
+            execution_time_seconds=elapsed,
+            execution_time_ms=max(1, int(elapsed * 1000))
+        )
+
+    def _mock_c(self, code: str, stdin_input: str, timeout: float, start: float) -> ExecutionResult:
+        return self._mock_c_cpp(code, stdin_input, timeout, start, is_cpp=False)
+
+    def _mock_cpp(self, code: str, stdin_input: str, timeout: float, start: float) -> ExecutionResult:
+        return self._mock_c_cpp(code, stdin_input, timeout, start, is_cpp=True)
 
 
 # -----------------------------------------------------------------------------

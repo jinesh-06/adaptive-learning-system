@@ -220,6 +220,25 @@ class LearningOutcomesService:
             }
         )
 
+        # Update topic mastery on post-assessment (pre-assessments serve purely as diagnostic baselines)
+        if safe_type == "post":
+            try:
+                from backend.services.mastery_service import mastery_service
+                mastery_service.record_assessment_result(
+                    user_id=safe_student_id,
+                    topic_id=safe_topic_id,
+                    assessment_type="quiz",
+                    score=accuracy,
+                    assessment_id=f"post_{assessment_id}",
+                    metadata={
+                        "correct_count": correct_count,
+                        "total_questions": total_questions,
+                        "source": "post_assessment"
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Could not update mastery for post-assessment {assessment_id}: {e}")
+
         # Build comparison if post-assessment
         comparison: Optional[Dict[str, Any]] = None
         if safe_type == "post":
