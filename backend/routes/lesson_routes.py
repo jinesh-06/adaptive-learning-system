@@ -35,7 +35,8 @@ async def adapt_lesson(payload: AdaptedLessonRequest, request: Request):
 async def get_adapted_lesson_by_topic(
     topic_id: str,
     request: Request,
-    detail_level: Optional[str] = Query(default=None)
+    detail_level: Optional[str] = Query(default=None),
+    refresh: bool = Query(default=False)
 ):
     """Retrieve an existing generated adapted lesson for the authenticated learner, refreshing if new quiz evidence exists."""
     user_id = get_current_user_id(request)
@@ -43,7 +44,7 @@ async def get_adapted_lesson_by_topic(
         user_id=user_id,
         topic_id=topic_id,
         detail_level=detail_level or "STANDARD",
-        force_refresh=False
+        force_refresh=refresh
     )
 
 

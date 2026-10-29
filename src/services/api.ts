@@ -1515,11 +1515,13 @@ export const api = {
     return mockHandlers.generateAdaptedLesson(payload);
   },
 
-  getAdaptedLesson: async (topicId: string, detailLevel?: string) => {
+  getAdaptedLesson: async (topicId: string, detailLevel?: string, forceRefresh?: boolean) => {
     try {
-      const url = detailLevel
-        ? `${API_BASE}/lessons/adapt/${topicId}?detail_level=${encodeURIComponent(detailLevel)}`
-        : `${API_BASE}/lessons/adapt/${topicId}`;
+      const params = new URLSearchParams();
+      if (detailLevel) params.append('detail_level', detailLevel);
+      if (forceRefresh) params.append('refresh', 'true');
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const url = `${API_BASE}/lessons/adapt/${topicId}${qs}`;
       const res = await fetch(url, {
         headers: getAuthHeaders()
       });
@@ -1705,6 +1707,9 @@ export interface AdaptedLessonData {
     confidence: number;
     reason: string;
     signals_used: string[];
+    specific_learning_gaps?: string[];
+    target_concepts?: string[];
+    quiz_performance_summary?: any;
   };
   learning_objectives: string[];
   introduction: string;

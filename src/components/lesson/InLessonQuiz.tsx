@@ -34,11 +34,13 @@ export interface QuizQuestion {
 export interface InLessonQuizProps {
   topicId: string;
   initialQuestions?: QuizQuestion[];
+  onQuizSubmitted?: () => void;
 }
 
 export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   topicId,
-  initialQuestions
+  initialQuestions,
+  onQuizSubmitted
 }) => {
   const { updateFromFeedback, setContentModeManually } = useCognitive();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -65,7 +67,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     setStartTime(Date.now());
 
     // 1. If initialQuestions has exactly 10 questions, use it directly
-    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length === 10) {
+    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setLoading(false);
       return;
@@ -189,6 +191,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       if (res && res.adaptive_feedback) {
         setAdaptiveFeedback(res.adaptive_feedback);
         updateFromFeedback(res.adaptive_feedback);
+      }
+      if (onQuizSubmitted) {
+        onQuizSubmitted();
       }
       const finalPct = Math.round((score / (questions.length || 10)) * 100);
       if (finalPct >= 70) {
