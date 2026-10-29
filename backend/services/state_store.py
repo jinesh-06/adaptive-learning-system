@@ -762,6 +762,22 @@ class StateStore:
             print(f"[StateStore] get_adapted_lesson error: {e}")
             return None
 
+    def invalidate_adapted_lessons(self, user_id: str, topic_id: str) -> None:
+        """Invalidate cached adapted lessons for a learner and topic when new assessment evidence arrives."""
+        safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            with self._lock:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    "DELETE FROM adapted_lessons WHERE user_id = ? AND topic_id = ?",
+                    (safe_user_id, topic_id)
+                )
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"[StateStore] invalidate_adapted_lessons error: {e}")
+
     def record_adaptation_feedback(
         self,
         user_id: str,
