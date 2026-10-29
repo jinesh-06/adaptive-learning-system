@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   HelpCircle,
@@ -55,18 +55,49 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   const [adaptiveFeedback, setAdaptiveFeedback] = useState<any | null>(null);
   const [showFullReview, setShowFullReview] = useState<boolean>(true);
 
-  // Load exactly 10 questions for the topic
+  const lastTopicIdRef = useRef<string>(topicId);
+  const isCompletedRef = useRef<boolean>(isCompleted);
+  isCompletedRef.current = isCompleted;
+  const isSubmittingRef = useRef<boolean>(isSubmittingFinal);
+  isSubmittingRef.current = isSubmittingFinal;
+  const selectedAnswersRef = useRef<Record<number, number>>(selectedAnswers);
+  selectedAnswersRef.current = selectedAnswers;
+  const questionsRef = useRef<QuizQuestion[]>(questions);
+  questionsRef.current = questions;
+
+  // Load questions and handle topic navigation without restarting on adapted lesson refresh
   useEffect(() => {
     let isMounted = true;
-    setCurrentIndex(0);
-    setSelectedAnswers({});
-    setSubmittedQuestions({});
-    setScore(0);
-    setIsCompleted(false);
-    setAdaptiveFeedback(null);
-    setStartTime(Date.now());
+    const isTopicChange = lastTopicIdRef.current !== topicId;
 
-    // 1. If initialQuestions has exactly 10 questions, use it directly
+    if (isTopicChange) {
+      // User navigated to a new topic -> cleanly reset all quiz state
+      lastTopicIdRef.current = topicId;
+      setCurrentIndex(0);
+      setSelectedAnswers({});
+      setSubmittedQuestions({});
+      setScore(0);
+      setIsCompleted(false);
+      setAdaptiveFeedback(null);
+      setStartTime(Date.now());
+      setQuestions([]);
+      setLoading(true);
+    } else {
+      // Same topic: NEVER reset if quiz is already completed or submission is in progress
+      if (isCompletedRef.current || isSubmittingRef.current) {
+        return;
+      }
+      // Also never reset if user has already started answering questions
+      if (Object.keys(selectedAnswersRef.current).length > 0) {
+        return;
+      }
+      // If questions are already initialized and valid, do not reload
+      if (questionsRef.current.length > 0) {
+        return;
+      }
+    }
+
+    // 1. If initialQuestions has questions, use it directly
     if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setLoading(false);
@@ -88,7 +119,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
         const qList = Array.isArray(data)
           ? data
           : (data && Array.isArray(data.questions) ? data.questions : []);
-        if (isMounted) {
+        if (isMounted && !isCompletedRef.current && !isSubmittingRef.current) {
           if (qList.length === 10) {
             setQuestions(qList);
           } else if (qList.length > 0 && (!staticQuiz || staticQuiz.length < 10)) {
@@ -174,6 +205,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   };
 
   const handleFinishQuiz = async () => {
+    if (isSubmittingFinal) return; // Prevent duplicate submissions
     setIsSubmittingFinal(true);
     const timeSpent = Math.max(1, Math.round((Date.now() - startTime) / 1000));
 
@@ -192,6 +224,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
         setAdaptiveFeedback(res.adaptive_feedback);
         updateFromFeedback(res.adaptive_feedback);
       }
+      setIsCompleted(true);
       if (onQuizSubmitted) {
         onQuizSubmitted();
       }
@@ -205,9 +238,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       }
     } catch (err) {
       console.warn('Could not submit quiz results to backend API:', err);
+      setIsCompleted(true);
     } finally {
       setIsSubmittingFinal(false);
-      setIsCompleted(true);
     }
   };
 
@@ -219,6 +252,11 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     setIsCompleted(false);
     setAdaptiveFeedback(null);
     setStartTime(Date.now());
+    // On intentional retake, adopt the latest calibrated questions if available
+    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
+      setQuestions(initialQuestions);
+      setLoading(false);
+    }
   };
 
   if (loading) {

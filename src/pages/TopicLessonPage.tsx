@@ -163,6 +163,86 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     return () => { active = false; };
   }, [topicId, topic?.language]);
 
+  // Individual Adaptation Selectors
+  const isPersonalized = useMemo(() => {
+    return Boolean(
+      adaptedLesson?.adaptation?.strategy &&
+      adaptedLesson.adaptation.strategy !== 'baseline_orientation'
+    );
+  }, [adaptedLesson]);
+
+  const adaptedExplanation = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'explanation');
+  }, [adaptedLesson]);
+
+  const adaptedAnalogy = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'analogy');
+  }, [adaptedLesson]);
+
+  const adaptedDiagram = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'visual_diagram');
+  }, [adaptedLesson]);
+
+  const adaptedStepByStep = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'step_by_step');
+  }, [adaptedLesson]);
+
+  const adaptedCodeExample = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'code_example');
+  }, [adaptedLesson]);
+
+  const adaptedMistakes = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'common_mistakes');
+  }, [adaptedLesson]);
+
+  const adaptedPractice = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'guided_practice');
+  }, [adaptedLesson]);
+
+  const adaptedQuiz = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'quiz');
+  }, [adaptedLesson]);
+
+  const quizInitialQuestions = useMemo(() => {
+    if (isPersonalized && adaptedQuiz?.questions && adaptedQuiz.questions.length > 0) {
+      return adaptedQuiz.questions as any;
+    }
+    return topic?.quiz;
+  }, [isPersonalized, adaptedQuiz?.questions, topic?.quiz]);
+
+  const summaryItems = useMemo(() => {
+    if (isPersonalized && adaptedLesson?.key_takeaways && adaptedLesson.key_takeaways.length > 0) {
+      return adaptedLesson.key_takeaways;
+    }
+    return topic?.summary || [
+      'Master fundamental syntax and language paradigms',
+      'Understand memory layout and runtime execution boundaries',
+      'Write clean, well-tested code that prevents common anti-patterns'
+    ];
+  }, [isPersonalized, adaptedLesson, topic?.summary]);
+
+  const displayMistakes = useMemo(() => {
+    if (isPersonalized && adaptedMistakes?.mistakes && adaptedMistakes.mistakes.length > 0) {
+      return adaptedMistakes.mistakes.map(m => ({
+        mistake: m.mistake,
+        codeSnippet: undefined,
+        correction: m.fix,
+        explanation: m.why_wrong
+      }));
+    }
+    if (topic?.commonMistakes && topic.commonMistakes.length > 0) {
+      return topic.commonMistakes;
+    }
+    return [
+      {
+        mistake: 'Syntax and Type Mismatch',
+        codeSnippet: '// Invalid syntax or mismatched type assignment',
+        correction: 'Declare exact type matches and verify function prototypes.',
+        explanation: 'Statically typed languages catch these errors during compilation.'
+      }
+    ];
+  }, [isPersonalized, adaptedMistakes, topic?.commonMistakes]);
+
   // Feedback state
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
   const [completedLocally, setCompletedLocally] = useState<boolean>(false);
@@ -227,6 +307,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       }
     }
   }, [topicId, activeMode]);
+
+  const handleQuizSubmitted = useCallback(() => {
+    loadTopicAndAdaptation(topicId, true);
+  }, [topicId, loadTopicAndAdaptation]);
 
   useEffect(() => {
     setActiveTopicId(topicId);
@@ -526,78 +610,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const moduleName = curriculumSequence[currentIndex]?.moduleTitle || 'Core Fundamentals';
   const progressPercent = Math.min(100, Math.round(((currentIndex + 1) / (curriculumSequence.length || 1)) * 100));
 
-  // Individual Adaptation Selectors
-  const isPersonalized = useMemo(() => {
-    return Boolean(
-      adaptedLesson?.adaptation?.strategy &&
-      adaptedLesson.adaptation.strategy !== 'baseline_orientation'
-    );
-  }, [adaptedLesson]);
 
-  const adaptedExplanation = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'explanation');
-  }, [adaptedLesson]);
-
-  const adaptedAnalogy = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'analogy');
-  }, [adaptedLesson]);
-
-  const adaptedDiagram = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'visual_diagram');
-  }, [adaptedLesson]);
-
-  const adaptedStepByStep = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'step_by_step');
-  }, [adaptedLesson]);
-
-  const adaptedCodeExample = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'code_example');
-  }, [adaptedLesson]);
-
-  const adaptedMistakes = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'common_mistakes');
-  }, [adaptedLesson]);
-
-  const adaptedPractice = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'guided_practice');
-  }, [adaptedLesson]);
-
-  const adaptedQuiz = useMemo(() => {
-    return adaptedLesson?.sections?.find(s => s.type === 'quiz');
-  }, [adaptedLesson]);
-
-  const summaryItems = useMemo(() => {
-    if (isPersonalized && adaptedLesson?.key_takeaways && adaptedLesson.key_takeaways.length > 0) {
-      return adaptedLesson.key_takeaways;
-    }
-    return topic.summary || [
-      'Master fundamental syntax and language paradigms',
-      'Understand memory layout and runtime execution boundaries',
-      'Write clean, well-tested code that prevents common anti-patterns'
-    ];
-  }, [isPersonalized, adaptedLesson, topic.summary]);
-
-  const displayMistakes = useMemo(() => {
-    if (isPersonalized && adaptedMistakes?.mistakes && adaptedMistakes.mistakes.length > 0) {
-      return adaptedMistakes.mistakes.map(m => ({
-        mistake: m.mistake,
-        codeSnippet: undefined,
-        correction: m.fix,
-        explanation: m.why_wrong
-      }));
-    }
-    if (topic.commonMistakes && topic.commonMistakes.length > 0) {
-      return topic.commonMistakes;
-    }
-    return [
-      {
-        mistake: 'Syntax and Type Mismatch',
-        codeSnippet: '// Invalid syntax or mismatched type assignment',
-        correction: 'Declare exact type matches and verify function prototypes.',
-        explanation: 'Statically typed languages catch these errors during compilation.'
-      }
-    ];
-  }, [isPersonalized, adaptedMistakes, topic.commonMistakes]);
 
   return (
     <div ref={containerRef} className="min-h-screen bg-[#030712] light-theme:bg-[#F7F8FA] text-slate-100 light-theme:text-slate-900 transition-colors">
@@ -1294,14 +1307,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
           {/* SECTION 12: IN-LESSON MINI QUIZ */}
           <InLessonQuiz
             topicId={topicId}
-            initialQuestions={
-              (isPersonalized && adaptedQuiz?.questions && adaptedQuiz.questions.length > 0)
-                ? (adaptedQuiz.questions as any)
-                : topic.quiz
-            }
-            onQuizSubmitted={() => {
-              loadTopicAndAdaptation(topicId, true);
-            }}
+            initialQuestions={quizInitialQuestions}
+            onQuizSubmitted={handleQuizSubmitted}
           />
 
           {/* SECTION 13: IN-LESSON CODING CHALLENGE */}
