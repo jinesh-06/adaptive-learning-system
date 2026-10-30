@@ -481,6 +481,19 @@ class TestSecurityRegressionSuite(unittest.TestCase):
         self.assertEqual(res_allowed.headers.get("access-control-allow-origin"), "http://localhost:3000")
         self.assertEqual(res_allowed.headers.get("access-control-allow-credentials"), "true")
 
+        # Preflight from production Vercel origin
+        res_vercel = self.client.options(
+            "/api/auth/me",
+            headers={
+                "Origin": "https://adaptive-learning-system-sage.vercel.app",
+                "Access-Control-Request-Method": "GET",
+                "Access-Control-Request-Headers": "Authorization,Content-Type"
+            }
+        )
+        self.assertEqual(res_vercel.status_code, 200)
+        self.assertEqual(res_vercel.headers.get("access-control-allow-origin"), "https://adaptive-learning-system-sage.vercel.app")
+        self.assertEqual(res_vercel.headers.get("access-control-allow-credentials"), "true")
+
         # Request from untrusted origin
         res_untrusted = self.client.options(
             "/api/auth/me",
