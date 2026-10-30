@@ -115,6 +115,9 @@ export const QuizStationPage: React.FC<QuizStationProps> = ({
       };
 
       setResult(safeResult);
+      if (res && res.mastery) {
+        window.dispatchEvent(new CustomEvent('mastery_updated', { detail: res.mastery }));
+      }
 
       if (safeResult.adaptive_feedback) {
         updateFromFeedback(safeResult.adaptive_feedback);

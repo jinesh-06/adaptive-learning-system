@@ -190,6 +190,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
         setAdaptiveFeedback(res.adaptive_feedback);
         updateFromFeedback(res.adaptive_feedback);
       }
+      if (res && res.mastery) {
+        window.dispatchEvent(new CustomEvent('mastery_updated', { detail: res.mastery }));
+      }
       const finalPct = Math.round((score / (questions.length || 10)) * 100);
       if (finalPct >= 70) {
         confetti({

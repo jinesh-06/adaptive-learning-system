@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { StudentMasterySection } from '../components/dashboard/StudentMasterySection';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive } from '../context/CognitiveContext';
 import { api } from '../services/api';
@@ -203,7 +204,10 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
         </div>
       </div>
 
-      {/* 3. AI RECOMMENDATION (Section 44) */}
+      {/* 3. STUDENT-SPECIFIC MASTERY SECTION (Member 3) */}
+      <StudentMasterySection onSelectTopic={onSelectTopic} />
+
+      {/* 4. AI RECOMMENDATION (Section 44) */}
       <div className="p-5 sm:p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900/80 to-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">

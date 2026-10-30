@@ -1,14 +1,17 @@
-"""Integration tests for Student Mastery API Routes (Task 4, 5, 6).
+"""Integration tests for Student Mastery API Routes (Member 3).
 
 Verifies:
-- Authentication & data isolation between students
-- GET /api/mastery/me overall and topic breakdown
-- GET /api/mastery/subjects/{subject_id}
-- GET /api/mastery/topics/{topic_id}
-- GET /api/mastery/history with pagination
-- POST /api/mastery/assessment-result input validation and idempotency
-- Quiz submission integration (/api/topics/{topic_id}/quiz/submit)
-- Coding submission integration (/api/code/submit)
+1. Authentication & unauthorized data isolation between students
+2. Input validation, status codes, and error messages
+3. Operation 1: GET /api/mastery/me (student mastery profile)
+4. Operation 2: GET /api/mastery/subjects/{subject_id} (subject breakdown)
+5. Operation 3: GET /api/mastery/topics/{topic_id} (topic mastery & unassessed handling)
+6. Operation 4: POST /api/mastery/quiz-attempt (update mastery after quiz)
+7. Operation 5: POST /api/mastery/coding-submission (update mastery after coding)
+8. Operation 6: GET /api/mastery/statistics (progress & improvement statistics)
+9. Operation 7: GET /api/mastery/history (chronological history with pagination)
+10. End-to-end integration: /api/topics/{topic_id}/quiz/submit updates mastery
+11. End-to-end integration: /api/code/submit updates mastery
 """
 
 import os
@@ -37,7 +40,7 @@ class TestMasteryRoutes(unittest.TestCase):
         state_store.set_db_path(str(_DISPOSABLE_DB), init_schema=True)
         cls.client = TestClient(app)
 
-        # Seed two students
+        # Seed two students: Alice and Bob
         conn = state_store.get_connection()
         cur = conn.cursor()
         cur.execute("INSERT OR REPLACE INTO users (id, email, name, role) VALUES (?, ?, ?, ?)",
@@ -58,112 +61,136 @@ class TestMasteryRoutes(unittest.TestCase):
 
     # --- 1. Authentication & Route Protection ---
     def test_01_unauthenticated_access_denied(self):
-        """All mastery endpoints reject unauthenticated requests with 401."""
+        """All mastery endpoints reject unauthenticated requests with 401 Unauthorized."""
         endpoints = [
             ("GET", "/api/mastery/me"),
             ("GET", "/api/mastery/subjects/py-beg"),
             ("GET", "/api/mastery/topics/top-py-variables"),
+            ("GET", "/api/mastery/statistics"),
             ("GET", "/api/mastery/history"),
+            ("POST", "/api/mastery/quiz-attempt"),
+            ("POST", "/api/mastery/coding-submission"),
             ("POST", "/api/mastery/assessment-result")
         ]
         for method, url in endpoints:
             if method == "GET":
                 res = self.client.get(url)
+            elif "quiz" in url:
+                res = self.client.post(url, json={"topic_id": "top-py-variables", "score": 85.0})
+            elif "coding" in url:
+                res = self.client.post(url, json={"topic_id": "top-py-variables", "score": 90.0})
             else:
                 res = self.client.post(url, json={
                     "topic_id": "top-py-variables",
                     "assessment_type": "quiz",
                     "score": 85.0
                 })
-            self.assertEqual(res.status_code, 401, f"{method} {url} should require authentication.")
+            self.assertEqual(res.status_code, 401, f"{method} {url} must require authentication.")
 
-    # --- 2. POST /api/mastery/assessment-result Validation & Processing ---
-    def test_02_record_assessment_result_validation(self):
-        """Test input validation for assessment recording."""
-        # Invalid score > 100
-        res_high = self.client.post("/api/mastery/assessment-result", json={
+    # --- 2. Input Validation and Status Codes ---
+    def test_02_validation_and_error_handling(self):
+        """Test input validation for quiz and coding submissions."""
+        # Score > 100 -> 422
+        res_high = self.client.post("/api/mastery/quiz-attempt", json={
             "topic_id": "top-py-intro",
-            "assessment_type": "quiz",
-            "score": 150.0
+            "score": 125.0
         }, headers=self.alice_headers)
         self.assertEqual(res_high.status_code, 422)
 
-        # Invalid score < 0
-        res_low = self.client.post("/api/mastery/assessment-result", json={
+        # Score < 0 -> 422
+        res_low = self.client.post("/api/mastery/coding-submission", json={
             "topic_id": "top-py-intro",
-            "assessment_type": "quiz",
-            "score": -10.0
+            "score": -5.0
         }, headers=self.alice_headers)
         self.assertEqual(res_low.status_code, 422)
 
-        # Invalid assessment_type
-        res_type = self.client.post("/api/mastery/assessment-result", json={
-            "topic_id": "top-py-intro",
-            "assessment_type": "essay",
+        # Empty topic_id -> 400
+        res_empty_topic = self.client.post("/api/mastery/quiz-attempt", json={
+            "topic_id": "   ",
             "score": 80.0
         }, headers=self.alice_headers)
-        self.assertEqual(res_type.status_code, 422)
+        self.assertEqual(res_empty_topic.status_code, 400)
 
-    def test_03_record_assessment_result_success(self):
-        """Test successful assessment ingestion and recalculation."""
+        # Empty subject_id -> 400
+        res_empty_subject = self.client.get("/api/mastery/subjects/%20", headers=self.alice_headers)
+        self.assertEqual(res_empty_subject.status_code, 400)
+
+    # --- 3. Operation 4: POST /api/mastery/quiz-attempt ---
+    def test_03_update_mastery_quiz_attempt(self):
+        """Operation 4: Updating mastery after a quiz attempt."""
         payload = {
             "topic_id": "top-py-syntax",
             "subject_id": "py-beg",
-            "assessment_type": "quiz",
             "score": 80.0,
-            "assessment_id": "api_test_quiz_01",
-            "details": {"correct_count": 8, "total_questions": 10}
+            "assessment_id": "quiz_api_attempt_101",
+            "correct_count": 8,
+            "total_questions": 10,
+            "time_spent": 40.0
         }
-        res = self.client.post("/api/mastery/assessment-result", json=payload, headers=self.alice_headers)
+        res = self.client.post("/api/mastery/quiz-attempt", json=payload, headers=self.alice_headers)
         self.assertEqual(res.status_code, 200)
-        data = res.json()
-        self.assertTrue(data.get("success"))
-        topic_data = data["data"]
-        self.assertEqual(topic_data["topic_id"], "top-py-syntax")
-        self.assertEqual(topic_data["current_mastery"], 80.0)
-        self.assertEqual(topic_data["mastery_status"], "PROFICIENT")
-        self.assertTrue(topic_data["provisional"])
+        body = res.json()
+        self.assertTrue(body["success"])
 
-        # Now submit coding assessment for the same topic
-        payload_code = {
+        data = body["data"]
+        self.assertEqual(data["student_id"], "student-alice")
+        self.assertEqual(data["topic_id"], "top-py-syntax")
+        self.assertEqual(data["mastery_score"], 80.0)
+        self.assertEqual(data["current_mastery"], 80.0)
+        self.assertEqual(data["total_attempts"], 1)
+        self.assertEqual(data["correct_attempts"], 8)
+        self.assertEqual(data["mastery_status"], "PROFICIENT")
+        self.assertTrue(data["provisional"])
+        self.assertEqual(data["missing_components"], ["coding"])
+
+    # --- 4. Operation 5: POST /api/mastery/coding-submission ---
+    def test_04_update_mastery_coding_submission(self):
+        """Operation 5: Updating mastery after a coding submission creates hybrid score."""
+        payload = {
             "topic_id": "top-py-syntax",
             "subject_id": "py-beg",
-            "assessment_type": "coding",
             "score": 90.0,
-            "assessment_id": "api_test_code_01",
-            "details": {"passed_tests": 9, "total_tests": 10}
+            "assessment_id": "coding_api_attempt_101",
+            "passed_tests": 9,
+            "total_tests": 10,
+            "coding_time_seconds": 35.0
         }
-        res_code = self.client.post("/api/mastery/assessment-result", json=payload_code, headers=self.alice_headers)
-        self.assertEqual(res_code.status_code, 200)
-        updated_data = res_code.json()["data"]
-        # Expected: 80 * 0.6 + 90 * 0.4 = 48 + 36 = 84.0
-        self.assertEqual(updated_data["current_mastery"], 84.0)
-        self.assertEqual(updated_data["previous_mastery"], 80.0)
-        self.assertFalse(updated_data["provisional"])
-        self.assertEqual(updated_data["total_attempts"], 2)
+        res = self.client.post("/api/mastery/coding-submission", json=payload, headers=self.alice_headers)
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
 
-    # --- 3. GET /api/mastery/me and Data Isolation ---
-    def test_04_get_mastery_me_and_data_isolation(self):
-        """Alice's data is isolated from Bob."""
-        # Alice requests her profile
+        # Expected: 80 * 0.6 + 90 * 0.4 = 48 + 36 = 84.0
+        self.assertEqual(data["current_mastery"], 84.0)
+        self.assertEqual(data["previous_mastery"], 80.0)
+        self.assertEqual(data["improvement"], 4.0)
+        self.assertEqual(data["total_attempts"], 2)
+        self.assertEqual(data["correct_attempts"], 17)  # 8 quiz + 9 code
+        self.assertFalse(data["provisional"])
+        self.assertEqual(data["assessment_mode"], "HYBRID")
+
+    # --- 5. Operation 1: GET /api/mastery/me & Security Isolation ---
+    def test_05_get_mastery_me_and_security_isolation(self):
+        """Operation 1: Student accesses only their own mastery; Bob cannot see Alice's data."""
+        # Alice requests her mastery
         res_alice = self.client.get("/api/mastery/me", headers=self.alice_headers)
         self.assertEqual(res_alice.status_code, 200)
         alice_data = res_alice.json()["data"]
-        self.assertEqual(alice_data["user_id"], "student-alice")
+        self.assertEqual(alice_data["student_id"], "student-alice")
         self.assertGreaterEqual(alice_data["total_assessed_topics"], 1)
+        self.assertEqual(alice_data["overall_mastery"], 84.0)
 
-        # Bob requests his profile -> completely empty
+        # Bob requests his mastery -> 0 assessed topics, isolated from Alice
         res_bob = self.client.get("/api/mastery/me", headers=self.bob_headers)
         self.assertEqual(res_bob.status_code, 200)
         bob_data = res_bob.json()["data"]
-        self.assertEqual(bob_data["user_id"], "student-bob")
+        self.assertEqual(bob_data["student_id"], "student-bob")
         self.assertEqual(bob_data["total_assessed_topics"], 0)
         self.assertIsNone(bob_data["overall_mastery"])
         self.assertEqual(bob_data["mastery_display"], "Not assessed")
 
-    # --- 4. GET /api/mastery/subjects/{subject_id} ---
-    def test_05_get_subject_mastery(self):
-        """Retrieve subject mastery and topic breakdown."""
+    # --- 6. Operation 2: GET /api/mastery/subjects/{subject_id} ---
+    def test_06_get_subject_mastery(self):
+        """Operation 2: Retrieve subject-level mastery progress."""
         res = self.client.get("/api/mastery/subjects/py-beg", headers=self.alice_headers)
         self.assertEqual(res.status_code, 200)
         data = res.json()["data"]
@@ -171,40 +198,61 @@ class TestMasteryRoutes(unittest.TestCase):
         self.assertGreaterEqual(data["total_topics_assessed"], 1)
         self.assertIsNotNone(data["current_mastery"])
         self.assertTrue(len(data["topics"]) > 0)
+        self.assertIn("breakdown", data)
 
-    # --- 5. GET /api/mastery/topics/{topic_id} ---
-    def test_06_get_topic_mastery(self):
-        """Retrieve individual topic mastery."""
+    # --- 7. Operation 3: GET /api/mastery/topics/{topic_id} ---
+    def test_07_get_topic_mastery(self):
+        """Operation 3: Retrieve individual topic mastery (assessed vs unassessed)."""
         # Assessed topic
         res = self.client.get("/api/mastery/topics/top-py-syntax", headers=self.alice_headers)
         self.assertEqual(res.status_code, 200)
         topic_data = res.json()["data"]
         self.assertEqual(topic_data["topic_id"], "top-py-syntax")
         self.assertEqual(topic_data["current_mastery"], 84.0)
+        self.assertEqual(topic_data["correct_attempts"], 17)
+        self.assertEqual(topic_data["improvement"], 4.0)
 
-        # Unassessed topic -> clean "Not assessed"
-        res_unassessed = self.client.get("/api/mastery/topics/top-py-unassessed-xyz", headers=self.alice_headers)
+        # Unassessed topic -> clean 'Not assessed' structure
+        res_unassessed = self.client.get("/api/mastery/topics/top-py-unassessed-topic", headers=self.alice_headers)
         self.assertEqual(res_unassessed.status_code, 200)
         unassessed_data = res_unassessed.json()["data"]
         self.assertIsNone(unassessed_data["current_mastery"])
         self.assertEqual(unassessed_data["mastery_display"], "Not assessed")
         self.assertEqual(unassessed_data["mastery_status"], "NOT_ASSESSED")
+        self.assertEqual(unassessed_data["total_attempts"], 0)
+        self.assertEqual(unassessed_data["correct_attempts"], 0)
 
-    # --- 6. GET /api/mastery/history ---
-    def test_07_get_mastery_history(self):
-        """Retrieve chronological history with pagination."""
+    # --- 8. Operation 6: GET /api/mastery/statistics ---
+    def test_08_get_mastery_statistics(self):
+        """Operation 6: Retrieve overall student progress, accuracy, and improvement metrics."""
+        res = self.client.get("/api/mastery/statistics", headers=self.alice_headers)
+        self.assertEqual(res.status_code, 200)
+        stats = res.json()["data"]
+
+        self.assertEqual(stats["student_id"], "student-alice")
+        self.assertGreaterEqual(stats["total_assessed_topics"], 1)
+        self.assertGreaterEqual(stats["total_attempts"], 2)
+        self.assertIsNotNone(stats["overall_mastery"])
+        self.assertIsNotNone(stats["average_accuracy"])
+        self.assertIn(stats["improvement_trend"], ["IMPROVING", "DECLINING", "STEADY", "NO_DATA"])
+        self.assertIn("status_distribution", stats)
+        self.assertIn("subjects", stats)
+
+    # --- 9. Operation 7: GET /api/mastery/history ---
+    def test_09_get_mastery_history(self):
+        """Operation 7: Chronological history of mastery updates with pagination."""
         res = self.client.get("/api/mastery/history?limit=10", headers=self.alice_headers)
         self.assertEqual(res.status_code, 200)
         history = res.json()["data"]
         self.assertGreaterEqual(len(history), 2)
-        # Verify first entry is latest (coding assessment)
+        # Verify latest entry is coding assessment
         self.assertEqual(history[0]["assessment_type"], "coding")
         self.assertEqual(history[0]["previous_mastery"], 80.0)
         self.assertEqual(history[0]["new_mastery"], 84.0)
         self.assertEqual(history[0]["change_delta"], 4.0)
 
-    # --- 7. End-to-End Quiz Submission Integration ---
-    def test_08_quiz_submission_updates_mastery(self):
+    # --- 10. End-to-End Quiz Submission Integration ---
+    def test_10_quiz_submission_updates_mastery(self):
         """Submitting a quiz via /api/topics/{topic_id}/quiz/submit updates student mastery."""
         topic_id = "top-py-intro"
         payload = {
@@ -217,11 +265,11 @@ class TestMasteryRoutes(unittest.TestCase):
         self.assertIn("mastery", res_json)
         self.assertIsNotNone(res_json["mastery"])
         self.assertEqual(res_json["mastery"]["topic_id"], topic_id)
-        self.assertEqual(res_json["mastery"]["user_id"], "student-bob")
+        self.assertEqual(res_json["mastery"]["student_id"], "student-bob")
         self.assertEqual(res_json["mastery"]["quiz_performance"]["attempts"], 1)
 
-    # --- 8. End-to-End Coding Submission Integration ---
-    def test_09_code_submission_updates_mastery(self):
+    # --- 11. End-to-End Coding Submission Integration ---
+    def test_11_code_submission_updates_mastery(self):
         """Submitting code via /api/code/submit updates student mastery."""
         topic_id = "top-py-intro"
         payload = {
@@ -236,7 +284,7 @@ class TestMasteryRoutes(unittest.TestCase):
         self.assertIn("mastery", res_json)
         if res_json["mastery"]:
             self.assertEqual(res_json["mastery"]["topic_id"], topic_id)
-            self.assertEqual(res_json["mastery"]["user_id"], "student-bob")
+            self.assertEqual(res_json["mastery"]["student_id"], "student-bob")
             self.assertEqual(res_json["mastery"]["coding_performance"]["attempts"], 1)
 
 

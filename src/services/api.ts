@@ -537,6 +537,58 @@ export const api = {
     return null;
   },
 
+  getMasteryStatistics: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/statistics`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  updateQuizMastery: async (payload: {
+    topic_id: string;
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    correct_count?: number;
+    total_questions?: number;
+    time_spent?: number;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/quiz-attempt`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  updateCodingMastery: async (payload: {
+    topic_id: string;
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    passed_tests?: number;
+    total_tests?: number;
+    coding_time_seconds?: number;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/coding-submission`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
   // Visual Roadmap (Section 46)
   getLanguageRoadmap: async (language: string) => {
     try {
