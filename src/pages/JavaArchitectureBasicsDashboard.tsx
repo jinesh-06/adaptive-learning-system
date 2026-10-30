@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { getMockUserStreak } from '../utils/streakCalculator';
+import { resetModuleProgress } from '../utils/moduleProgress';
 import { api } from '../services/api';
 import { JAVA_FUNDAMENTALS_TOPICS, JAVA_MODULES, JavaTopic } from '../data/javaFundamentalsData';
 import {
@@ -23,7 +25,9 @@ import {
   Terminal,
   Cpu,
   HelpCircle,
-  Coffee
+  Coffee,
+  Trophy,
+  RotateCcw
 } from 'lucide-react';
 
 export interface JavaDashboardProps {
@@ -50,6 +54,16 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
 
   useEffect(() => {
     loadDashboard();
+    const handleStreak = () => {
+      setDashboardData((prev: any) => prev ? { ...prev, streak_days: getMockUserStreak() } : prev);
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    const handleProgress = () => { loadDashboard(); };
+    window.addEventListener('progress:updated', handleProgress);
+    return () => {
+      window.removeEventListener('streak:updated', handleStreak);
+      window.removeEventListener('progress:updated', handleProgress);
+    };
   }, []);
 
   const loadDashboard = async () => {
@@ -128,7 +142,7 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
         ...topic,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -142,11 +156,13 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
       .filter(t => t.status !== 'COMPLETED')
       .reduce((acc, t) => acc + t.estimatedMinutes, 0);
 
-    // Calculate completed modules out of 3
-    const mod1Completed = topicsOutput.slice(0, 6).every(t => t.status === 'COMPLETED');
-    const mod2Completed = topicsOutput.slice(6, 17).every(t => t.status === 'COMPLETED');
-    const mod3Completed = topicsOutput.slice(17, 28).every(t => t.status === 'COMPLETED');
-    const completedModulesCount = (mod1Completed ? 1 : 0) + (mod2Completed ? 1 : 0) + (mod3Completed ? 1 : 0);
+    // Calculate completed modules dynamically
+    const completedModulesCount = JAVA_MODULES.filter(m =>
+      m.topics.every(t => {
+        const p = progressMap[t.id];
+        return p && (p.status === 'COMPLETED' || Number(p.completion_pct || 0) >= 95);
+      })
+    ).length;
 
     setDashboardData({
       title: 'Java Core Architecture & Basics',
@@ -158,7 +174,7 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -184,6 +200,25 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
 
   const currentTopic = topicsList.find((t: any) => t.id === dashboardData?.current_topic_id) || topicsList[0];
 
+  const activeModule = JAVA_MODULES.find(m => m.id === activeModuleTab);
+  const isActiveModuleCompleted = activeModule
+    ? activeModule.topics.every((t: any) => {
+        const p = topicsList.find((tl: any) => tl.id === t.id);
+        return p && (p.status === 'COMPLETED' || p.completion_percentage >= 95);
+      })
+    : false;
+
+  const handleResetModule = (moduleObj: any) => {
+    const confirmReset = window.confirm(
+      `Are you sure you want to re-attempt ${moduleObj.title}? This will reset all lessons and quizzes in this module so you can practice again from the start.`
+    );
+    if (!confirmReset) return;
+
+    const topicIds = moduleObj.topics.map((t: any) => t.id);
+    resetModuleProgress('cog_java_progress', topicIds);
+    loadDashboard();
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-8">
       {/* Top Breadcrumb & Status */}
@@ -203,7 +238,7 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
       </div>
 
       {/* Hero Course Overview Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 p-6 sm:p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 light-theme:bg-white light-theme:shadow-sm p-6 sm:p-8 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -223,123 +258,222 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
               </p>
             </div>
 
-            {/* Overall Progress Circle/Stat */}
-            <div className="flex items-center gap-4 bg-slate-950/70 p-4 rounded-2xl border border-slate-800 shrink-0">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-500/20 border border-cyan-500/40 flex items-center justify-center font-mono font-black text-xl text-white">
-                {dashboardData?.overall_progress || 0}%
-              </div>
-              <div className="text-left">
-                <div className="text-xs text-slate-400 font-medium">Curriculum Progress</div>
-                <div className="text-sm font-bold text-white">
-                  {dashboardData?.completed_topics || 0} of {dashboardData?.total_topics || 28} Lessons Completed
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 font-mono text-xs">
-            <div className="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shrink-0">
-                <Layers className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-slate-400 text-[11px]">Completed Modules</div>
-                <div className="font-bold text-white text-sm">
-                  {dashboardData?.completed_modules || 0} of 3 Done
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-                <Award className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-slate-400 text-[11px]">Quizzes Cleared</div>
-                <div className="font-bold text-white text-sm">
-                  {dashboardData?.quizzes_completed || 0} Cleared
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <Flame className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-slate-400 text-[11px]">Current Streak</div>
-                <div className="font-bold text-white text-sm">{dashboardData?.streak_days || 4} Days</div>
-              </div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-950/50 border border-slate-800/80 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-slate-400 text-[11px]">Remaining</div>
-                <div className="font-bold text-white text-sm">
-                  {Math.round((dashboardData?.estimated_remaining_minutes || 480) / 60)} hrs remaining
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recommended Next Step Callout */}
-          {currentTopic && (
-            <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Recommended Next Step</span>
-                </div>
-                <div className="text-white font-bold text-base sm:text-lg">
-                  {currentTopic.numberDisplay}. {currentTopic.title}
-                </div>
-                <p className="text-xs text-slate-300 max-w-xl">
-                  {currentTopic.shortDescription || currentTopic.desc}
-                </p>
-              </div>
-
+            {/* Quick Resume CTA Button */}
+            {currentTopic && (
               <button
                 onClick={() => onSelectTopic(currentTopic.id)}
-                className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/20 shrink-0 cursor-pointer"
+                className="self-start md:self-auto px-5 py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 active:scale-95 transition-all flex items-center gap-2.5 shrink-0"
               >
-                <span>Continue Lesson</span>
-                <ArrowRight className="w-4 h-4" />
+                <Play className="w-4 h-4 fill-slate-950" />
+                <span>
+                  {dashboardData?.overall_progress > 0
+                    ? `Resume Lesson #${currentTopic.numberDisplay}`
+                    : 'Start First Lesson'}
+                </span>
+                <ChevronRight className="w-4 h-4" />
               </button>
+            )}
+          </div>
+
+          {/* 6 Key Course Metric Cards (Identical to C++) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                <span>Completion</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {dashboardData?.overall_progress || 0}%
+              </div>
             </div>
-          )}
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <Layers className="w-4 h-4 text-blue-400" />
+                <span>Modules</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {dashboardData?.completed_modules || 0}/{dashboardData?.total_modules || 3}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Lessons</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {dashboardData?.completed_topics || 0}/{dashboardData?.total_topics || 28}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <Award className="w-4 h-4 text-amber-400" />
+                <span>Quizzes</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {dashboardData?.quizzes_completed || 0}/{dashboardData?.total_topics || 28}
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <Flame className="w-4 h-4 text-orange-400" />
+                <span>Streak</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {dashboardData?.streak_days ?? 0} Days
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <Clock className="w-4 h-4 text-purple-400" />
+                <span>Remaining</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                {Math.round((dashboardData?.estimated_remaining_minutes || 480) / 60)}h
+              </div>
+            </div>
+          </div>
+
+          {/* Overall Completion Progress Line */}
+          <div className="space-y-1.5 pt-2">
+            <div className="flex justify-between text-xs font-mono text-slate-400">
+              <span>Overall Completion</span>
+              <span className="text-cyan-400 font-bold">{dashboardData?.overall_progress || 0}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                style={{ width: `${dashboardData?.overall_progress || 0}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Module Quick Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      {/* Recommended Next Lesson Banner */}
+      {currentTopic && (
+        <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center shrink-0 text-cyan-400 mt-0.5">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold">
+                Recommended Next Step • Module {currentTopic.moduleId?.includes('architecture') ? '01' : currentTopic.moduleId?.includes('control') ? '02' : '03'}
+              </div>
+              <h3 className="text-base font-bold text-white">
+                Lesson {currentTopic.numberDisplay}: {currentTopic.title}
+              </h3>
+              <p className="text-xs text-slate-300 line-clamp-1 mt-0.5">
+                {currentTopic.shortDescription || currentTopic.desc}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            {onStartQuiz && (
+              <button
+                onClick={() => onStartQuiz(currentTopic.id)}
+                className="px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span>Quiz</span>
+              </button>
+            )}
+            {onOpenCoding && (
+              <button
+                onClick={() => onOpenCoding(currentTopic.id)}
+                className="px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+              >
+                <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Code Studio</span>
+              </button>
+            )}
+            <button
+              onClick={() => onSelectTopic(currentTopic.id)}
+              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition-colors flex items-center gap-1.5"
+            >
+              <span>Open Lesson</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Module Selector Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveModuleTab('all')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
             activeModuleTab === 'all'
-              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-bold'
+              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
               : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
           }`}
         >
-          All 28 Lessons
+          All Modules (28 Lessons)
         </button>
-        {JAVA_MODULES.map(m => (
-          <button
-            key={m.id}
-            onClick={() => setActiveModuleTab(m.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              activeModuleTab === m.id
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20 font-bold'
-                : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            {m.title}
-          </button>
-        ))}
+        {JAVA_MODULES.map(m => {
+          const isModDone = m.topics.every((t: any) => {
+            const p = topicsList.find((tl: any) => tl.id === t.id);
+            return p && (p.status === 'COMPLETED' || p.completion_percentage >= 95);
+          });
+          return (
+            <button
+              key={m.id}
+              onClick={() => setActiveModuleTab(m.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                activeModuleTab === m.id
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Module {m.numberDisplay}: {m.title.split(':')[1] || m.title}</span>
+              <span className="text-[10px] opacity-75 font-mono">({m.topics.length})</span>
+              {isModDone && (
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/40">
+                  ✓ Done
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Module Completion & Re-attempt Banner */}
+      {activeModule && isActiveModuleCompleted && (
+        <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-slate-900/70 to-cyan-950/30 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl shadow-emerald-950/30 animate-fade-in">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 text-emerald-400 mt-0.5">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-2">
+                <span>Module {activeModule.numberDisplay} Completed</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] border border-emerald-500/30">100% Mastery</span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-0.5">
+                {activeModule.title}
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Outstanding! You have completed all lessons and quizzes in this module. You can re-attempt it at any time to refresh your skills.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => handleResetModule(activeModule)}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all flex items-center gap-2 shrink-0 active:scale-95 shadow-md"
+            title="Reset all lessons and quizzes in this module for another practice run"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Re-attempt Module</span>
+          </button>
+        </div>
+      )}
 
       {/* Search & Filters */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -460,72 +594,64 @@ export const JavaArchitectureBasicsDashboard: React.FC<JavaDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* Footer Info & Action */}
-                <div className="mt-5 pt-4 border-t border-slate-800/80 space-y-3">
-                  <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {topic.estimatedMinutes} min
-                    </span>
-                    <span className="text-cyan-400 font-semibold">{topic.difficulty}</span>
+                {/* Metadata: Time and Quiz Score */}
+                <div className="flex items-center gap-4 text-[11px] text-slate-400 mb-3 font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{topic.estimatedMinutes} min</span>
                   </div>
+                  {topic.quiz_score !== null && topic.quiz_score !== undefined && (
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Quiz: {Math.round(topic.quiz_score)}%</span>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isLocked) onSelectTopic(topic.id);
-                      }}
-                      disabled={isLocked}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                        isLocked
-                          ? 'bg-slate-900 text-slate-600 cursor-not-allowed'
-                          : isCompleted
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                          : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20'
+                {/* Progress Line */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 mb-1.5">
+                    <span>Progress</span>
+                    <span className="text-white font-bold">{topic.completion_percentage || 0}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isCompleted ? 'bg-emerald-500' : isInProgress ? 'bg-cyan-500' : 'bg-slate-700'
                       }`}
-                    >
-                      {isCompleted ? (
-                        <>
-                          <span>Review Topic</span>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        </>
-                      ) : (
-                        <>
-                          <span>{isInProgress ? 'Continue Topic' : 'Start Topic'}</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </>
-                      )}
-                    </button>
-
-                    {onStartQuiz && !isLocked && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStartQuiz(topic.id);
-                        }}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
-                        title="Take 5-Question Quiz"
-                      >
-                        <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
-                      </button>
-                    )}
-
-                    {onOpenCoding && !isLocked && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenCoding(topic.id);
-                        }}
-                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition-colors"
-                        title="Practice in Java Sandbox"
-                      >
-                        <Code className="w-3.5 h-3.5 text-cyan-400" />
-                      </button>
-                    )}
+                      style={{ width: `${topic.completion_percentage || 0}%` }}
+                    />
                   </div>
                 </div>
+
+              {/* Card CTA */}
+              <div className="mt-4">
+                {isLocked ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800/80 text-slate-500 font-medium text-xs flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Prerequisite Required</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onSelectTopic(topic.id)}
+                    className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 group/btn ${
+                      isCompleted
+                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                        : isInProgress
+                        ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20'
+                        : 'bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-white'
+                    }`}
+                  >
+                    <span>
+                      {isCompleted ? 'Review Topic' : isInProgress ? 'Continue Topic' : 'Start Topic'}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                  </button>
+                )}
+              </div>
               </div>
             );
           })}

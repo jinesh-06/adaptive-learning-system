@@ -242,6 +242,21 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         lastSavedTopicRef.current = topicId;
         localStorage.setItem(`topic_challenge_passed_${topicId}`, 'true');
         setSaveStatus('saved');
+        const passedCount = results.filter(r => r.passed).length;
+        const totalCount = results.length;
+        const codingScore = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 100;
+        try {
+          const mRes = await api.updateCodingMastery({
+            topic_id: topicId,
+            score: codingScore,
+            passed_tests: passedCount,
+            total_tests: totalCount,
+            assessment_id: `lesson_challenge_${topicId}_${Date.now()}`
+          });
+          if (mRes && mRes.data) {
+            window.dispatchEvent(new CustomEvent('mastery_updated', { detail: mRes.data }));
+          }
+        } catch {}
       } catch (err) {
         console.warn('Could not save coding challenge progress to backend:', err);
         setSaveStatus('error');
@@ -348,7 +363,9 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-white overflow-hidden">
           {/* Editor Header */}
           <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 light-theme:bg-slate-100 border-b border-slate-800 light-theme:border-slate-300 text-xs">
-            <span className="font-mono text-cyan-400 light-theme:text-blue-600 font-bold">solution.py</span>
+            <span className="font-mono text-cyan-400 light-theme:text-blue-600 font-bold">
+              {activeLang === 'java' ? 'Solution.java' : `solution.${activeLang === 'cpp' ? 'cpp' : activeLang === 'c' ? 'c' : 'py'}`}
+            </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyCode}

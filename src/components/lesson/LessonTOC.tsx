@@ -20,6 +20,7 @@ export const DEFAULT_TOC_ITEMS: TOCItem[] = [
   { id: 'section-real-world', label: 'Real-World Application' },
   { id: 'section-try-yourself', label: 'Try Yourself', badge: 'Practice' },
   { id: 'section-mini-quiz', label: 'Mini Quiz', badge: 'Quiz' },
+  { id: 'section-corrective-practice', label: 'Corrective Practice', badge: 'Targeted' },
   { id: 'section-challenge', label: 'Coding Challenge', badge: 'Challenge' },
   { id: 'section-summary', label: 'Lesson Summary' }
 ];

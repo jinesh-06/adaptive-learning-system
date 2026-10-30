@@ -540,6 +540,82 @@ def retrieve_documents(
     return res["documents"]
 
 
+def retrieve_context(
+    query: str,
+    language: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    topic: Optional[str] = None,
+    top_k: int = 5,
+    course: Optional[str] = None,
+    level: Optional[str] = None,
+    threshold: Optional[float] = None,
+    config: Optional[RAGConfig] = None,
+    vector_store: Optional[VectorStore] = None,
+    category: Optional[str] = None
+) -> Dict[str, Any]:
+    """Standard high-level RAG retrieval and context-formatting interface.
+
+    Retrieves educational documents based on student query, language, difficulty,
+    and returns a structured context string ready for LLM / AI explanation modules.
+
+    Example:
+        result = retrieve_context(
+            query="Explain pointers in C",
+            language="C",
+            difficulty="beginner",
+            top_k=5
+        )
+
+    Returns:
+        Dict[str, Any]:
+          - query (str): The search query.
+          - language (Optional[str]): Normalized language identifier.
+          - difficulty (Optional[str]): Target difficulty level.
+          - retrieved_context (str): Structured context block ready for AI prompt injection.
+          - sources (List[str]): Unique list of source documents retrieved.
+          - topics (List[str]): Unique list of topics retrieved.
+          - documents (List[Dict[str, Any]]): Retrieved chunk metadata, distances, and similarity scores.
+          - total (int): Number of chunks retrieved.
+          - success (bool): Whether retrieval executed successfully.
+    """
+    from rag.src.context_formatter import format_context
+
+    target_course = course or language or category
+    target_level = level or difficulty
+
+    status_res = retrieve_with_status(
+        query=query,
+        top_k=top_k,
+        course=target_course,
+        topic=topic,
+        level=target_level,
+        threshold=threshold,
+        learner_level=target_level,
+        config=config,
+        vector_store=vector_store,
+        category=category
+    )
+
+    documents = status_res.get("documents", [])
+    formatted_ctx = format_context(documents)
+
+    sources = sorted(list({doc.get("source") for doc in documents if doc.get("source")}))
+    topics = sorted(list({doc.get("topic") for doc in documents if doc.get("topic")}))
+    norm_lang = normalize_course_name(target_course) if target_course else None
+
+    return {
+        "query": query,
+        "language": norm_lang,
+        "difficulty": (target_level.lower() if target_level else None),
+        "retrieved_context": formatted_ctx,
+        "sources": sources,
+        "topics": topics,
+        "documents": documents,
+        "total": len(documents),
+        "success": status_res.get("success", False)
+    }
+
+
 if __name__ == "__main__":
     test_q = "What is a pointer in C?"
     print(f"Query: {test_q}")

@@ -251,7 +251,11 @@ class StateStore:
                     user_id TEXT NOT NULL,
                     subject_id TEXT NOT NULL,
                     topic_id TEXT NOT NULL,
+                    mastery_score REAL DEFAULT NULL,
                     total_attempts INTEGER DEFAULT 0,
+                    correct_attempts INTEGER DEFAULT 0,
+                    accuracy_percentage REAL DEFAULT NULL,
+                    improvement REAL DEFAULT NULL,
                     completed_assessments INTEGER DEFAULT 0,
                     quiz_attempts INTEGER DEFAULT 0,
                     quiz_correct_answers INTEGER DEFAULT 0,
@@ -273,6 +277,17 @@ class StateStore:
                     UNIQUE(user_id, topic_id)
                 )
             """)
+
+            cur.execute("PRAGMA table_info(student_topic_mastery)")
+            stm_cols = [r[1] for r in cur.fetchall()]
+            for col_name, col_def in [
+                ("mastery_score", "REAL DEFAULT NULL"),
+                ("correct_attempts", "INTEGER DEFAULT 0"),
+                ("accuracy_percentage", "REAL DEFAULT NULL"),
+                ("improvement", "REAL DEFAULT NULL"),
+            ]:
+                if col_name not in stm_cols:
+                    cur.execute(f"ALTER TABLE student_topic_mastery ADD COLUMN {col_name} {col_def}")
 
             # Mastery History table
             cur.execute("""
@@ -297,6 +312,102 @@ class StateStore:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_topic_mastery_user_subject ON student_topic_mastery(user_id, subject_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_mastery_history_user ON mastery_history(user_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_mastery_history_user_topic ON mastery_history(user_id, topic_id)")
+
+            # Non-destructive migration for student_concept_knowledge if legacy UNIQUE(user_id, concept_id) exists
+            cur.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='student_concept_knowledge'")
+            row_ck = cur.fetchone()
+            if row_ck and "UNIQUE(user_id, concept_id)" in row_ck[0]:
+                cur.execute("""
+                    CREATE TABLE student_concept_knowledge_migrated (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        concept_id TEXT NOT NULL,
+                        topic_id TEXT NOT NULL,
+                        knowledge_state TEXT NOT NULL DEFAULT 'NOT_ASSESSED',
+                        correct_count INTEGER DEFAULT 0,
+                        incorrect_count INTEGER DEFAULT 0,
+                        last_assessed_at TIMESTAMP DEFAULT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        UNIQUE(user_id, topic_id, concept_id)
+                    )
+                """)
+                cur.execute("""
+                    INSERT OR IGNORE INTO student_concept_knowledge_migrated
+                    SELECT id, user_id, concept_id, topic_id, knowledge_state, correct_count, incorrect_count, last_assessed_at, created_at, updated_at
+                    FROM student_concept_knowledge
+                """)
+                cur.execute("DROP TABLE student_concept_knowledge")
+                cur.execute("ALTER TABLE student_concept_knowledge_migrated RENAME TO student_concept_knowledge")
+
+            # Student Concept Knowledge table with topic-scoped uniqueness
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS student_concept_knowledge (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    concept_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    knowledge_state TEXT NOT NULL DEFAULT 'NOT_ASSESSED',
+                    correct_count INTEGER DEFAULT 0,
+                    incorrect_count INTEGER DEFAULT 0,
+                    last_assessed_at TIMESTAMP DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    UNIQUE(user_id, topic_id, concept_id)
+                )
+            """)
+
+            # Non-destructive migration for concept_evidence_log if legacy uniqueness exists
+            cur.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='concept_evidence_log'")
+            row_ev = cur.fetchone()
+            if row_ev and "UNIQUE(user_id, concept_id, evidence_id)" in row_ev[0]:
+                cur.execute("""
+                    CREATE TABLE concept_evidence_log_migrated (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        concept_id TEXT NOT NULL,
+                        topic_id TEXT NOT NULL,
+                        evidence_id TEXT NOT NULL,
+                        is_correct INTEGER NOT NULL,
+                        source TEXT DEFAULT 'assessment',
+                        metadata_json TEXT DEFAULT '{}',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                        UNIQUE(user_id, topic_id, concept_id, evidence_id)
+                    )
+                """)
+                cur.execute("""
+                    INSERT OR IGNORE INTO concept_evidence_log_migrated
+                    SELECT id, user_id, concept_id, topic_id, evidence_id, is_correct, source, metadata_json, created_at
+                    FROM concept_evidence_log
+                """)
+                cur.execute("DROP TABLE concept_evidence_log")
+                cur.execute("ALTER TABLE concept_evidence_log_migrated RENAME TO concept_evidence_log")
+
+            # Concept Evidence Log (for idempotency and assessment traceability)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS concept_evidence_log (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    concept_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    evidence_id TEXT NOT NULL,
+                    is_correct INTEGER NOT NULL,
+                    source TEXT DEFAULT 'assessment',
+                    metadata_json TEXT DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    UNIQUE(user_id, topic_id, concept_id, evidence_id)
+                )
+            """)
+
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_concept_knowledge_user ON student_concept_knowledge(user_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_concept_knowledge_user_topic ON student_concept_knowledge(user_id, topic_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_concept_knowledge_user_concept ON student_concept_knowledge(user_id, concept_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_concept_evidence_user_concept ON concept_evidence_log(user_id, concept_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_concept_evidence_user_topic ON concept_evidence_log(user_id, topic_id)")
 
             conn.commit()
 
@@ -330,6 +441,7 @@ class StateStore:
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA busy_timeout=30000;")
+            conn.execute("PRAGMA foreign_keys = ON;")
         except Exception:
             pass
         return conn
@@ -761,6 +873,22 @@ class StateStore:
         except Exception as e:
             print(f"[StateStore] get_adapted_lesson error: {e}")
             return None
+
+    def invalidate_adapted_lessons(self, user_id: str, topic_id: str) -> None:
+        """Invalidate cached adapted lessons for a learner and topic when new assessment evidence arrives."""
+        safe_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+        try:
+            with self._lock:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    "DELETE FROM adapted_lessons WHERE user_id = ? AND topic_id = ?",
+                    (safe_user_id, topic_id)
+                )
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"[StateStore] invalidate_adapted_lessons error: {e}")
 
     def record_adaptation_feedback(
         self,

@@ -228,7 +228,7 @@ const StackVisualizer: React.FC = () => {
   };
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
@@ -361,7 +361,7 @@ const QueueVisualizer: React.FC = () => {
   };
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
@@ -460,7 +460,7 @@ const LinkedListVisualizer: React.FC = () => {
   };
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
@@ -566,7 +566,7 @@ const BinarySearchVisualizer: React.FC = () => {
   };
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
@@ -701,7 +701,7 @@ const SortingVisualizer: React.FC = () => {
   };
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
@@ -770,7 +770,7 @@ const SortingVisualizer: React.FC = () => {
 // =================================================================
 const TreeVisualizer: React.FC = () => {
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
         <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
           <GitBranch className="w-4 h-4" />
@@ -832,7 +832,7 @@ const TreeVisualizer: React.FC = () => {
 const HeapVisualizer: React.FC = () => {
   const heap = [10, 20, 15, 30, 40, 50];
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
         <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
           <Layers className="w-4 h-4" />
@@ -887,7 +887,7 @@ const RecursionVisualizer: React.FC = () => {
   ];
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 sm:p-6 space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/50 light-theme:bg-white p-5 sm:p-6 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
@@ -960,7 +960,7 @@ const MemoryModelVisualizer: React.FC<{ topicId: string; language: string }> = (
   const currentStep = steps[step];
 
   return (
-    <div id="section-visual" className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 sm:p-6 shadow-sm space-y-4">
+    <div id="section-visual" className="rounded-2xl border border-slate-800 light-theme:border-slate-200 bg-slate-900/40 light-theme:bg-white p-5 sm:p-6 shadow-sm space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
@@ -994,12 +994,12 @@ const MemoryModelVisualizer: React.FC<{ topicId: string; language: string }> = (
         </div>
       </div>
 
-      <div className="p-3 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-xs leading-relaxed text-indigo-200">
+      <div className="p-3 rounded-xl bg-indigo-950/20 light-theme:bg-indigo-50 border border-indigo-500/20 light-theme:border-indigo-200 text-xs leading-relaxed text-indigo-200 light-theme:text-indigo-900">
         <strong className="block font-bold mb-0.5">{currentStep.title}</strong>
         {currentStep.description}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200">
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs font-mono font-bold text-slate-400 border-b border-slate-800 pb-1.5">
             <span>Namespace (Variables)</span>

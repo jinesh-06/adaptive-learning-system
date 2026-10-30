@@ -35,25 +35,17 @@ async def adapt_lesson(payload: AdaptedLessonRequest, request: Request):
 async def get_adapted_lesson_by_topic(
     topic_id: str,
     request: Request,
-    detail_level: Optional[str] = Query(default=None)
+    detail_level: Optional[str] = Query(default=None),
+    refresh: bool = Query(default=False)
 ):
-    """Retrieve an existing generated adapted lesson for the authenticated learner."""
+    """Retrieve an existing generated adapted lesson for the authenticated learner, refreshing if new quiz evidence exists."""
     user_id = get_current_user_id(request)
-    cached = state_store.get_adapted_lesson(user_id, topic_id, detail_level)
-    if not cached or not cached.get("lesson_data"):
-        # Auto-generate if missing so learner gets immediate content
-        return adapted_lesson_service.generate_adapted_lesson(
-            user_id=user_id,
-            topic_id=topic_id,
-            detail_level=detail_level or "STANDARD"
-        )
-    return {
-        "success": True,
-        "cached": True,
-        "topic_id": topic_id,
-        "detail_level": detail_level or cached.get("adaptation_strategy", "STANDARD"),
-        "lesson": cached["lesson_data"]
-    }
+    return adapted_lesson_service.generate_adapted_lesson(
+        user_id=user_id,
+        topic_id=topic_id,
+        detail_level=detail_level or "STANDARD",
+        force_refresh=refresh
+    )
 
 
 @router.post("/adapt/feedback")

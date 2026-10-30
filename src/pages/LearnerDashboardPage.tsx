@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { StudentMasterySection } from '../components/dashboard/StudentMasterySection';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive } from '../context/CognitiveContext';
 import { api } from '../services/api';
@@ -129,7 +130,7 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. TOP SECTION: COMMAND CENTER HERO (Section 44) */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 light-theme:bg-white light-theme:shadow-sm shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 mb-3">
@@ -205,7 +206,10 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
         </div>
       </div>
 
-      {/* 3. AI RECOMMENDATION (Section 44) */}
+      {/* 3. STUDENT-SPECIFIC MASTERY SECTION (Member 3) */}
+      <StudentMasterySection onSelectTopic={onSelectTopic} />
+
+      {/* 4. AI RECOMMENDATION (Section 44) */}
       <div className="p-5 sm:p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900/80 to-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">

@@ -1,6 +1,7 @@
 COURSE: C
 TOPIC: CONTROL FLOW
 LEVEL: BEGINNER → ADVANCED
+SOURCE: c_control_flow.txt
 PURPOSE: RAG KNOWLEDGE BASE
 SOURCE BASIS: ISO C concepts documented by GNU C Manual and cppreference
 

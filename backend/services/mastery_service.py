@@ -247,11 +247,17 @@ class MasteryService:
                         quiz_accuracy = valid_score
                         best_quiz_accuracy = max(best_quiz_accuracy or 0.0, valid_score)
                         if "correct_count" in metadata:
-                            quiz_correct += int(metadata.get("correct_count", 0))
-                        if "total_questions" in metadata:
-                            tot = int(metadata.get("total_questions", 0))
                             cor = int(metadata.get("correct_count", 0))
-                            quiz_incorrect += max(0, tot - cor)
+                            quiz_correct += cor
+                            if "total_questions" in metadata:
+                                tot = int(metadata.get("total_questions", 0))
+                                quiz_incorrect += max(0, tot - cor)
+                            else:
+                                quiz_incorrect += max(0, 10 - cor)
+                        else:
+                            cor = int(round(valid_score / 10.0)) if valid_score > 0 else 0
+                            quiz_correct += cor
+                            quiz_incorrect += max(0, 10 - cor)
 
                     elif clean_type == "coding":
                         coding_attempts += 1
@@ -259,18 +265,31 @@ class MasteryService:
                         best_coding_score = max(best_coding_score or 0.0, valid_score)
                         if "passed_tests" in metadata:
                             coding_passed += int(metadata.get("passed_tests", 0))
+                        else:
+                            coding_passed += int(round(valid_score / 10.0)) if valid_score > 0 else 0
                         if "total_tests" in metadata:
                             coding_total += int(metadata.get("total_tests", 0))
+                        else:
+                            coding_total += 10
 
                     # Recalculate mastery
                     calc = self.calculate_mastery(quiz_accuracy, coding_score)
                     new_mastery = calc["current_mastery"]
                     status = calc["status"]
 
+                    correct_attempts = (quiz_correct or 0) + (coding_passed or 0)
+                    total_items = (quiz_correct + quiz_incorrect) + coding_total
+                    accuracy_pct = round((correct_attempts / total_items) * 100, 2) if total_items > 0 else (quiz_accuracy if quiz_accuracy is not None else coding_score)
+                    improvement = round(new_mastery - previous_mastery, 2) if (previous_mastery is not None and new_mastery is not None) else None
+
                     cur.execute(
                         """UPDATE student_topic_mastery
                            SET subject_id = ?,
+                               mastery_score = ?,
                                total_attempts = ?,
+                               correct_attempts = ?,
+                               accuracy_percentage = ?,
+                               improvement = ?,
                                completed_assessments = ?,
                                quiz_attempts = ?,
                                quiz_correct_answers = ?,
@@ -290,7 +309,11 @@ class MasteryService:
                            WHERE user_id = ? AND topic_id = ?""",
                         (
                             subject_id,
+                            new_mastery,
                             total_attempts,
+                            correct_attempts,
+                            accuracy_pct,
+                            improvement,
                             completed_assessments,
                             quiz_attempts,
                             quiz_correct,
@@ -316,20 +339,24 @@ class MasteryService:
                     total_attempts = 1
                     completed_assessments = 1
                     previous_mastery = None
+                    improvement = None
 
                     if clean_type == "quiz":
                         quiz_attempts = 1
                         quiz_accuracy = valid_score
                         best_quiz_accuracy = valid_score
-                        quiz_correct = int(metadata.get("correct_count", 0))
-                        tot = int(metadata.get("total_questions", 0))
-                        quiz_incorrect = max(0, tot - quiz_correct)
+                        cor = int(metadata.get("correct_count", round(valid_score / 10.0) if valid_score > 0 else 0))
+                        tot = int(metadata.get("total_questions", 10))
+                        quiz_correct = cor
+                        quiz_incorrect = max(0, tot - cor)
 
                         coding_attempts = 0
                         coding_passed = 0
                         coding_total = 0
                         coding_score = None
                         best_coding_score = None
+                        correct_attempts = quiz_correct
+                        accuracy_pct = valid_score
                     else:
                         quiz_attempts = 0
                         quiz_correct = 0
@@ -340,8 +367,10 @@ class MasteryService:
                         coding_attempts = 1
                         coding_score = valid_score
                         best_coding_score = valid_score
-                        coding_passed = int(metadata.get("passed_tests", 0))
-                        coding_total = int(metadata.get("total_tests", 0))
+                        coding_passed = int(metadata.get("passed_tests", round(valid_score / 10.0) if valid_score > 0 else 0))
+                        coding_total = int(metadata.get("total_tests", 10))
+                        correct_attempts = coding_passed
+                        accuracy_pct = valid_score
 
                     calc = self.calculate_mastery(quiz_accuracy, coding_score)
                     new_mastery = calc["current_mastery"]
@@ -349,19 +378,24 @@ class MasteryService:
 
                     cur.execute(
                         """INSERT INTO student_topic_mastery (
-                               id, user_id, subject_id, topic_id, total_attempts, completed_assessments,
+                               id, user_id, subject_id, topic_id, mastery_score, total_attempts,
+                               correct_attempts, accuracy_percentage, improvement, completed_assessments,
                                quiz_attempts, quiz_correct_answers, quiz_incorrect_answers,
                                quiz_accuracy, best_quiz_accuracy, coding_attempts, coding_passed_tests,
                                coding_total_tests, coding_score, best_coding_score,
                                current_mastery, previous_mastery, mastery_status,
                                last_activity_at, created_at, updated_at
-                           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
                             rec_id,
                             user_id,
                             subject_id,
                             topic_id,
+                            new_mastery,
                             total_attempts,
+                            correct_attempts,
+                            accuracy_pct,
+                            improvement,
                             completed_assessments,
                             quiz_attempts,
                             quiz_correct,
@@ -448,14 +482,20 @@ class MasteryService:
             # Topic not assessed yet: return clean Not assessed structure
             subject_id = curriculum_service.get_course_id_for_topic(topic_id)
             return {
+                "id": f"{user_id}_{subject_id}_{topic_id}",
+                "student_id": user_id,
                 "user_id": user_id,
                 "subject_id": subject_id,
                 "topic_id": topic_id,
+                "mastery_score": None,
                 "current_mastery": None,
                 "mastery_display": "Not assessed",
                 "mastery_status": "NOT_ASSESSED",
                 "previous_mastery": None,
+                "improvement": None,
                 "total_attempts": 0,
+                "correct_attempts": 0,
+                "accuracy_percentage": None,
                 "completed_assessments": 0,
                 "quiz_performance": {
                     "attempts": 0,
@@ -503,12 +543,16 @@ class MasteryService:
         novice_count = sum(1 for t in topic_masteries if t["mastery_status"] == "NOVICE")
 
         return {
+            "student_id": user_id,
             "user_id": user_id,
             "subject_id": subject_id,
+            "mastery_score": avg_score,
             "current_mastery": avg_score,
             "mastery_display": f"{avg_score:.1f}%" if avg_score is not None else "Not assessed",
             "mastery_status": get_mastery_status(avg_score),
             "total_topics_assessed": len(assessed_scores),
+            "total_attempts": sum(t["total_attempts"] for t in topic_masteries),
+            "correct_attempts": sum(t["correct_attempts"] for t in topic_masteries),
             "breakdown": {
                 "mastered": mastered_count,
                 "proficient": proficient_count,
@@ -517,6 +561,150 @@ class MasteryService:
                 "not_assessed": len(topic_masteries) - len(assessed_scores)
             },
             "topics": topic_masteries
+        }
+
+    def get_student_statistics(self, user_id: str) -> Dict[str, Any]:
+        """
+        Calculate overall student progress and improvement statistics.
+        Provides:
+        - Overall mastery and accuracy metrics
+        - Total attempts and correct attempts across all subjects
+        - Aggregated and trend-based improvement over time
+        - Breakdown of mastered, proficient, progressing, and novice topics
+        - Subject-level performance summaries
+        """
+        if not user_id or not isinstance(user_id, str) or not user_id.strip():
+            raise ValueError("Valid student user_id is required.")
+
+        with state_store._lock:
+            conn = state_store.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT * FROM student_topic_mastery WHERE user_id = ? ORDER BY last_activity_at DESC",
+                (user_id,)
+            )
+            rows = cur.fetchall()
+
+            cur.execute(
+                "SELECT * FROM mastery_history WHERE user_id = ? ORDER BY timestamp DESC",
+                (user_id,)
+            )
+            hist_rows = cur.fetchall()
+            conn.close()
+
+        topic_masteries = [self._format_topic_mastery_row(r) for r in rows]
+
+        assessed_topics = [t for t in topic_masteries if t["current_mastery"] is not None]
+        assessed_scores = [t["current_mastery"] for t in assessed_topics]
+        overall_avg = round(sum(assessed_scores) / len(assessed_scores), 2) if assessed_scores else None
+
+        total_attempts = sum(t["total_attempts"] for t in topic_masteries)
+        total_correct = sum(t["correct_attempts"] for t in topic_masteries)
+        completed_assessments = sum(t["completed_assessments"] for t in topic_masteries)
+
+        accuracies = [t["accuracy_percentage"] for t in topic_masteries if t["accuracy_percentage"] is not None]
+        avg_accuracy = round(sum(accuracies) / len(accuracies), 2) if accuracies else None
+
+        # Improvement calculations from history
+        deltas = [r["change_delta"] for r in hist_rows if r["change_delta"] is not None]
+        positive_improvements = [d for d in deltas if d > 0]
+        declines = [d for d in deltas if d < 0]
+        steady = [d for d in deltas if d == 0]
+
+        total_pos_improvement = round(sum(positive_improvements), 2) if positive_improvements else 0.0
+        net_improvement = round(sum(deltas), 2) if deltas else 0.0
+        avg_improvement = round(sum(deltas) / len(deltas), 2) if deltas else 0.0
+
+        if not deltas:
+            trend = "NO_DATA"
+        elif net_improvement > 0:
+            trend = "IMPROVING"
+        elif net_improvement < 0:
+            trend = "DECLINING"
+        else:
+            trend = "STEADY"
+
+        # Categorical counts
+        mastered_count = sum(1 for t in topic_masteries if t["mastery_status"] == "MASTERED")
+        proficient_count = sum(1 for t in topic_masteries if t["mastery_status"] == "PROFICIENT")
+        progressing_count = sum(1 for t in topic_masteries if t["mastery_status"] == "PROGRESSING")
+        novice_count = sum(1 for t in topic_masteries if t["mastery_status"] == "NOVICE")
+
+        # Subject aggregation
+        subject_groups: Dict[str, List[Dict[str, Any]]] = {}
+        for t in topic_masteries:
+            s_id = t["subject_id"]
+            if s_id not in subject_groups:
+                subject_groups[s_id] = []
+            subject_groups[s_id].append(t)
+
+        subjects_summary = []
+        for s_id, t_list in subject_groups.items():
+            sub_scores = [item["current_mastery"] for item in t_list if item["current_mastery"] is not None]
+            sub_avg = round(sum(sub_scores) / len(sub_scores), 2) if sub_scores else None
+            sub_attempts = sum(item["total_attempts"] for item in t_list)
+            sub_correct = sum(item["correct_attempts"] for item in t_list)
+            subjects_summary.append({
+                "subject_id": s_id,
+                "current_mastery": sub_avg,
+                "mastery_score": sub_avg,
+                "mastery_display": f"{sub_avg:.1f}%" if sub_avg is not None else "Not assessed",
+                "mastery_status": get_mastery_status(sub_avg),
+                "topics_assessed": len(sub_scores),
+                "total_attempts": sub_attempts,
+                "correct_attempts": sub_correct
+            })
+
+        recent_history = []
+        for r in hist_rows[:10]:
+            recent_history.append({
+                "assessment_id": r["assessment_id"],
+                "topic_id": r["topic_id"],
+                "subject_id": r["subject_id"],
+                "assessment_type": r["assessment_type"],
+                "score": r["score"],
+                "previous_mastery": r["previous_mastery"],
+                "new_mastery": r["new_mastery"],
+                "change_delta": r["change_delta"],
+                "timestamp": r["timestamp"]
+            })
+
+        return {
+            "student_id": user_id,
+            "user_id": user_id,
+            "overall_mastery": overall_avg,
+            "mastery_score": overall_avg,
+            "mastery_display": f"{overall_avg:.1f}%" if overall_avg is not None else "Not assessed",
+            "mastery_status": get_mastery_status(overall_avg),
+            "total_assessed_topics": len(assessed_scores),
+            "total_completed_assessments": completed_assessments,
+            "total_attempts": total_attempts,
+            "total_correct_attempts": total_correct,
+            "average_accuracy": avg_accuracy,
+            "total_positive_improvement": total_pos_improvement,
+            "total_improvement": total_pos_improvement,
+            "net_improvement": net_improvement,
+            "average_improvement": avg_improvement,
+            "improvement_trend": trend,
+            "improvements_count": len(positive_improvements),
+            "declines_count": len(declines),
+            "steady_count": len(steady),
+            "status_distribution": {
+                "mastered": mastered_count,
+                "proficient": proficient_count,
+                "progressing": progressing_count,
+                "novice": novice_count,
+                "not_assessed": len(topic_masteries) - len(assessed_scores)
+            },
+            "breakdown": {
+                "mastered": mastered_count,
+                "proficient": proficient_count,
+                "progressing": progressing_count,
+                "novice": novice_count,
+                "not_assessed": len(topic_masteries) - len(assessed_scores)
+            },
+            "subjects": subjects_summary,
+            "recent_activity": recent_history
         }
 
     def get_student_overall_mastery(self, user_id: str) -> Dict[str, Any]:
@@ -551,19 +739,32 @@ class MasteryService:
             subjects_summary.append({
                 "subject_id": s_id,
                 "current_mastery": sub_avg,
+                "mastery_score": sub_avg,
                 "mastery_display": f"{sub_avg:.1f}%" if sub_avg is not None else "Not assessed",
                 "mastery_status": get_mastery_status(sub_avg),
                 "topics_assessed": len(sub_scores),
-                "total_attempts": sum(item["total_attempts"] for item in t_list)
+                "total_attempts": sum(item["total_attempts"] for item in t_list),
+                "correct_attempts": sum(item["correct_attempts"] for item in t_list)
             })
 
+        # Calculate statistics
+        stats = self.get_student_statistics(user_id)
+
         return {
+            "student_id": user_id,
             "user_id": user_id,
             "overall_mastery": overall_avg,
+            "mastery_score": overall_avg,
             "mastery_display": f"{overall_avg:.1f}%" if overall_avg is not None else "Not assessed",
             "mastery_status": get_mastery_status(overall_avg),
             "total_assessed_topics": len(assessed_scores),
             "total_completed_assessments": sum(t["completed_assessments"] for t in topic_masteries),
+            "total_attempts": sum(t["total_attempts"] for t in topic_masteries),
+            "total_correct_attempts": sum(t["correct_attempts"] for t in topic_masteries),
+            "average_accuracy": stats["average_accuracy"],
+            "net_improvement": stats["net_improvement"],
+            "total_improvement": stats["total_improvement"],
+            "improvement_trend": stats["improvement_trend"],
             "breakdown": {
                 "mastered": sum(1 for t in topic_masteries if t["mastery_status"] == "MASTERED"),
                 "proficient": sum(1 for t in topic_masteries if t["mastery_status"] == "PROFICIENT"),
@@ -615,6 +816,7 @@ class MasteryService:
 
             history.append({
                 "id": r["id"],
+                "student_id": r["user_id"],
                 "user_id": r["user_id"],
                 "subject_id": r["subject_id"],
                 "topic_id": r["topic_id"],
@@ -624,6 +826,7 @@ class MasteryService:
                 "previous_mastery": r["previous_mastery"],
                 "new_mastery": r["new_mastery"],
                 "change_delta": r["change_delta"],
+                "improvement": r["change_delta"],
                 "metadata": meta,
                 "timestamp": r["timestamp"]
             })
@@ -636,17 +839,33 @@ class MasteryService:
 
         cur_score = row["current_mastery"]
         calc = self.calculate_mastery(row["quiz_accuracy"], row["coding_score"])
+        row_keys = row.keys() if hasattr(row, "keys") else []
+
+        cor_att = row["correct_attempts"] if "correct_attempts" in row_keys and row["correct_attempts"] is not None else ((row["quiz_correct_answers"] or 0) + (row["coding_passed_tests"] or 0))
+        acc_pct = row["accuracy_percentage"] if "accuracy_percentage" in row_keys and row["accuracy_percentage"] is not None else (row["quiz_accuracy"] if row["quiz_accuracy"] is not None else row["coding_score"])
+        prev_m = row["previous_mastery"]
+        if "improvement" in row_keys and row["improvement"] is not None:
+            imp = row["improvement"]
+        elif cur_score is not None and prev_m is not None:
+            imp = round(cur_score - prev_m, 2)
+        else:
+            imp = None
 
         res = {
             "id": row["id"],
+            "student_id": row["user_id"],
             "user_id": row["user_id"],
             "subject_id": row["subject_id"],
             "topic_id": row["topic_id"],
+            "mastery_score": cur_score,
             "current_mastery": cur_score,
             "mastery_display": f"{cur_score:.1f}%" if cur_score is not None else "Not assessed",
             "mastery_status": row["mastery_status"] or get_mastery_status(cur_score),
-            "previous_mastery": row["previous_mastery"],
+            "previous_mastery": prev_m,
+            "improvement": imp,
             "total_attempts": row["total_attempts"] or 0,
+            "correct_attempts": cor_att,
+            "accuracy_percentage": acc_pct,
             "completed_assessments": row["completed_assessments"] or 0,
             "quiz_performance": {
                 "attempts": row["quiz_attempts"] or 0,

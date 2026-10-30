@@ -232,6 +232,9 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
 
       const execution = res.execution || res;
       setExecResult(execution);
+      if (res && res.mastery) {
+        window.dispatchEvent(new CustomEvent('mastery_updated', { detail: res.mastery }));
+      }
       const passed = res.is_passed !== undefined ? res.is_passed : (execution?.status === 'PASSED');
       setIsPassed(!!passed);
 
@@ -673,7 +676,7 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
               </div>
 
               <span className="font-mono text-cyan-400 text-xs hidden sm:inline">
-                solution.{currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : currentLang === 'cpp' ? 'cpp' : 'java'}
+                {currentLang === 'java' ? 'Solution.java' : `solution.${currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : 'cpp'}`}
               </span>
             </div>
 

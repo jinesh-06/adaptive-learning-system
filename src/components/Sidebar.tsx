@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { user, preferences, updateLanguage, logout } = useAuth();
   const { currentLoad, confidence } = useCognitive();
-  const { theme, setTheme, reducedMotion, toggleReducedMotion } = useTheme();
+  const { theme, effectiveTheme, setTheme, reducedMotion, toggleReducedMotion } = useTheme();
 
   // Escape key closes mobile sidebar
   useEffect(() => {
@@ -105,6 +105,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }).catch(() => {
       setStreakDays(0);
     });
+
+    const handleStreak = (e: any) => {
+      if (typeof e?.detail?.streak === 'number') {
+        setStreakDays(e.detail.streak);
+      }
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    return () => window.removeEventListener('streak:updated', handleStreak);
   }, [user]);
 
   const languages = [
@@ -342,7 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         aria-label={isDesktopOpen ? "Collapse curriculum sidebar" : "Expand curriculum sidebar"}
         aria-expanded={isDesktopOpen}
         title={isDesktopOpen ? "Collapse curriculum sidebar (Ctrl+B)" : "Expand curriculum sidebar (Ctrl+B)"}
-        className={`hidden lg:flex fixed top-20 z-50 items-center justify-center w-6 h-10 rounded-r-xl border border-l-0 border-slate-800 bg-slate-950/95 hover:bg-slate-900 text-slate-400 hover:text-cyan-400 shadow-xl transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none cursor-pointer ${
+        className={`hidden lg:flex fixed top-20 z-50 items-center justify-center w-6 h-10 rounded-r-xl border border-l-0 border-slate-800 light-theme:border-slate-300 bg-slate-950/95 light-theme:bg-white hover:bg-slate-900 light-theme:hover:bg-slate-100 text-slate-400 light-theme:text-slate-600 hover:text-cyan-400 shadow-xl transition-all duration-300 ease-in-out focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none cursor-pointer ${
           isDesktopOpen ? 'left-[260px]' : 'left-0'
         }`}
       >
@@ -372,7 +380,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Brain className="w-5 h-5 text-white animate-pulse" />
               </div>
               <div>
-                <span className="text-base font-bold bg-gradient-to-r from-white via-slate-100 to-cyan-400 bg-clip-text text-transparent">
+                <span className="text-base font-bold text-slate-900 dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-slate-100 dark:to-cyan-400 dark:bg-clip-text light-theme:text-slate-900">
                   Cognitive<span className="text-cyan-400">Load</span>
                 </span>
                 <span className="block text-[9px] text-cyan-400/80 font-mono tracking-wider uppercase">
@@ -477,8 +485,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNavItemClick(item)}
                   className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-slate-800/90 border border-slate-700/80 text-cyan-400 shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-cyan-400'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                      ? 'bg-slate-800/90 light-theme:bg-cyan-50 border border-slate-700/80 light-theme:border-cyan-200 text-cyan-400 light-theme:text-cyan-700 shadow-sm before:absolute before:left-1 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-cyan-400'
+                      : 'text-slate-400 light-theme:text-slate-600 hover:text-slate-200 light-theme:hover:text-slate-900 hover:bg-slate-900/60 light-theme:hover:bg-slate-100'
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
@@ -564,11 +572,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
 
               <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                onClick={() => setTheme(effectiveTheme === 'dark' ? 'light' : 'dark')}
                 className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-colors"
-                title="Toggle Theme"
+                title={`Switch to ${effectiveTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
-                {theme === 'dark' ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
+                {effectiveTheme === 'dark' ? <Moon className="w-3 h-3 text-cyan-400" /> : <Sun className="w-3 h-3 text-amber-500" />}
               </button>
             </div>
           </div>

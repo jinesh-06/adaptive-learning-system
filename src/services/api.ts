@@ -1,9 +1,9 @@
 import { mockHandlers, isGitHubPages } from './mockFallback';
 
 const VERCEL_BACKEND = 'https://learning-platform08-o7uub2ykr-aihack.vercel.app';
-const rawApiUrl = import.meta.env.VITE_API_URL;
+const rawApiUrl = import.meta.env?.VITE_API_URL;
 
-if (import.meta.env.PROD && !rawApiUrl && !isGitHubPages) {
+if (import.meta.env?.PROD && !rawApiUrl && !isGitHubPages) {
   console.error(
     '[Configuration Warning] VITE_API_URL is missing in production. ' +
     'Frontend requests must target the active backend URL (e.g. on Render). ' +
@@ -207,6 +207,28 @@ export const api = {
     });
     if (data) return data;
     return mockHandlers.submitTopicQuiz(topicId, answers, timeSpentSeconds);
+  },
+
+  getLatestQuizAttempt: async (topicId: string): Promise<LatestQuizAttemptResponse | null> => {
+    const data = await fetchJson<LatestQuizAttemptResponse>(`${API_BASE}/topics/${topicId}/quiz/attempts/latest`, {
+      headers: getAuthHeaders()
+    });
+    if (data) return data;
+    return mockHandlers.getLatestQuizAttempt(topicId);
+  },
+
+  submitCorrectivePractice: async (payload: CorrectivePracticeSubmission): Promise<CorrectivePracticeResult | null> => {
+    const data = await fetchJson<CorrectivePracticeResult>(`${API_BASE}/topics/${payload.topic_id}/quiz/practice/submit`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        answers: payload.answers,
+        original_attempt_id: payload.original_attempt_id,
+        time_spent: payload.time_spent_seconds
+      })
+    });
+    if (data) return data;
+    return mockHandlers.submitCorrectivePractice(payload);
   },
 
   // Code Sandbox
@@ -545,6 +567,58 @@ export const api = {
   }) => {
     try {
       const res = await fetch(`${API_BASE}/mastery/assessment-result`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  getMasteryStatistics: async () => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/statistics`, {
+        headers: getAuthHeaders()
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  updateQuizMastery: async (payload: {
+    topic_id: string;
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    correct_count?: number;
+    total_questions?: number;
+    time_spent?: number;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/quiz-attempt`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return await res.json();
+    } catch {}
+    return null;
+  },
+
+  updateCodingMastery: async (payload: {
+    topic_id: string;
+    score: number;
+    subject_id?: string;
+    assessment_id?: string;
+    passed_tests?: number;
+    total_tests?: number;
+    coding_time_seconds?: number;
+    details?: Record<string, any>;
+  }) => {
+    try {
+      const res = await fetch(`${API_BASE}/mastery/coding-submission`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
@@ -1515,11 +1589,13 @@ export const api = {
     return mockHandlers.generateAdaptedLesson(payload);
   },
 
-  getAdaptedLesson: async (topicId: string, detailLevel?: string) => {
+  getAdaptedLesson: async (topicId: string, detailLevel?: string, forceRefresh?: boolean) => {
     try {
-      const url = detailLevel
-        ? `${API_BASE}/lessons/adapt/${topicId}?detail_level=${encodeURIComponent(detailLevel)}`
-        : `${API_BASE}/lessons/adapt/${topicId}`;
+      const params = new URLSearchParams();
+      if (detailLevel) params.append('detail_level', detailLevel);
+      if (forceRefresh) params.append('refresh', 'true');
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      const url = `${API_BASE}/lessons/adapt/${topicId}${qs}`;
       const res = await fetch(url, {
         headers: getAuthHeaders()
       });
@@ -1705,12 +1781,75 @@ export interface AdaptedLessonData {
     confidence: number;
     reason: string;
     signals_used: string[];
+    specific_learning_gaps?: string[];
+    target_concepts?: string[];
+    quiz_performance_summary?: any;
   };
   learning_objectives: string[];
   introduction: string;
   sections: AdaptedLessonSection[];
   key_takeaways: string[];
   next_step?: string;
+}
+
+// --- Member 4: Corrective Practice Interfaces ---
+export interface CorrectivePracticeQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  user_choice: number | null;
+  is_correct: boolean;
+  explanation: string;
+  concept?: string;
+  difficulty?: string;
+}
+
+export interface CorrectivePracticeSubmission {
+  topic_id: string;
+  original_attempt_id?: string;
+  answers: Record<string, number>;
+  time_spent_seconds: number;
+}
+
+export interface CorrectivePracticeReviewItem {
+  question_id: string;
+  is_correct: boolean;
+  user_choice: number;
+  correct_index: number;
+  explanation: string;
+}
+
+export interface CorrectivePracticeResult {
+  success: boolean;
+  topic_id: string;
+  original_attempt_id?: string;
+  practice_score: number;
+  practice_percentage: number;
+  total_practice_questions: number;
+  resolved_questions: string[];
+  unresolved_questions: string[];
+  practice_review: CorrectivePracticeReviewItem[];
+  timestamp: string;
+}
+
+export interface LatestQuizAttemptResponse {
+  has_attempt: boolean;
+  attempt?: {
+    id: string;
+    score: number;
+    percentage: number;
+    correct_count: number;
+    incorrect_count: number;
+    total_questions: number;
+    passed: boolean;
+    time_spent: number;
+    created_at?: string;
+    review: CorrectivePracticeQuestion[];
+    answers: Record<string, number>;
+    adaptive_feedback?: any;
+    incorrect_questions: CorrectivePracticeQuestion[];
+  } | null;
 }
 
 // --- Member 4: Learning Outcomes & Feedback Types ---

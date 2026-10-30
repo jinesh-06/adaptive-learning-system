@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   HelpCircle,
@@ -16,8 +16,10 @@ import {
   Zap,
   BarChart3
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, CorrectivePracticeQuestion } from '../../services/api';
+import { CorrectivePracticeSection } from './CorrectivePracticeSection';
 import { telemetry } from '../../services/telemetry';
+import { renderFormattedText } from '../../utils/textFormatter';
 import { useCognitive } from '../../context/CognitiveContext';
 import allTopicQuizzes from '../../data/allTopicQuizzes.json';
 
@@ -34,11 +36,13 @@ export interface QuizQuestion {
 export interface InLessonQuizProps {
   topicId: string;
   initialQuestions?: QuizQuestion[];
+  onQuizSubmitted?: () => void;
 }
 
 export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   topicId,
-  initialQuestions
+  initialQuestions,
+  onQuizSubmitted
 }) => {
   const { updateFromFeedback, setContentModeManually } = useCognitive();
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -52,20 +56,53 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   const [isSubmittingFinal, setIsSubmittingFinal] = useState<boolean>(false);
   const [adaptiveFeedback, setAdaptiveFeedback] = useState<any | null>(null);
   const [showFullReview, setShowFullReview] = useState<boolean>(true);
+  const [submissionResult, setSubmissionResult] = useState<any | null>(null);
 
-  // Load exactly 10 questions for the topic
+  const lastTopicIdRef = useRef<string>(topicId);
+  const isCompletedRef = useRef<boolean>(isCompleted);
+  isCompletedRef.current = isCompleted;
+  const isSubmittingRef = useRef<boolean>(isSubmittingFinal);
+  isSubmittingRef.current = isSubmittingFinal;
+  const selectedAnswersRef = useRef<Record<number, number>>(selectedAnswers);
+  selectedAnswersRef.current = selectedAnswers;
+  const questionsRef = useRef<QuizQuestion[]>(questions);
+  questionsRef.current = questions;
+
+  // Load questions and handle topic navigation without restarting on adapted lesson refresh
   useEffect(() => {
     let isMounted = true;
-    setCurrentIndex(0);
-    setSelectedAnswers({});
-    setSubmittedQuestions({});
-    setScore(0);
-    setIsCompleted(false);
-    setAdaptiveFeedback(null);
-    setStartTime(Date.now());
+    const isTopicChange = lastTopicIdRef.current !== topicId;
 
-    // 1. If initialQuestions has exactly 10 questions, use it directly
-    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length === 10) {
+    if (isTopicChange) {
+      // User navigated to a new topic -> cleanly reset all quiz state
+      lastTopicIdRef.current = topicId;
+      setCurrentIndex(0);
+      setSelectedAnswers({});
+      setSubmittedQuestions({});
+      setScore(0);
+      setIsCompleted(false);
+      setAdaptiveFeedback(null);
+    setSubmissionResult(null);
+      setStartTime(Date.now());
+      setQuestions([]);
+      setLoading(true);
+    } else {
+      // Same topic: NEVER reset if quiz is already completed or submission is in progress
+      if (isCompletedRef.current || isSubmittingRef.current) {
+        return;
+      }
+      // Also never reset if user has already started answering questions
+      if (Object.keys(selectedAnswersRef.current).length > 0) {
+        return;
+      }
+      // If questions are already initialized and valid, do not reload
+      if (questionsRef.current.length > 0) {
+        return;
+      }
+    }
+
+    // 1. If initialQuestions has questions, use it directly
+    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setLoading(false);
       return;
@@ -86,7 +123,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
         const qList = Array.isArray(data)
           ? data
           : (data && Array.isArray(data.questions) ? data.questions : []);
-        if (isMounted) {
+        if (isMounted && !isCompletedRef.current && !isSubmittingRef.current) {
           if (qList.length === 10) {
             setQuestions(qList);
           } else if (qList.length > 0 && (!staticQuiz || staticQuiz.length < 10)) {
@@ -172,6 +209,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   };
 
   const handleFinishQuiz = async () => {
+    if (isSubmittingFinal) return; // Prevent duplicate submissions
     setIsSubmittingFinal(true);
     const timeSpent = Math.max(1, Math.round((Date.now() - startTime) / 1000));
 
@@ -186,9 +224,19 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
 
     try {
       const res = await api.submitTopicQuiz(topicId, answerPayload, timeSpent);
+      if (res) {
+        setSubmissionResult(res);
+      }
       if (res && res.adaptive_feedback) {
         setAdaptiveFeedback(res.adaptive_feedback);
         updateFromFeedback(res.adaptive_feedback);
+      }
+      if (res && res.mastery) {
+        window.dispatchEvent(new CustomEvent('mastery_updated', { detail: res.mastery }));
+      }
+      setIsCompleted(true);
+      if (onQuizSubmitted) {
+        onQuizSubmitted();
       }
       const finalPct = Math.round((score / (questions.length || 10)) * 100);
       if (finalPct >= 70) {
@@ -200,9 +248,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       }
     } catch (err) {
       console.warn('Could not submit quiz results to backend API:', err);
+      setIsCompleted(true);
     } finally {
       setIsSubmittingFinal(false);
-      setIsCompleted(true);
     }
   };
 
@@ -213,7 +261,13 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     setCurrentIndex(0);
     setIsCompleted(false);
     setAdaptiveFeedback(null);
+    setSubmissionResult(null);
     setStartTime(Date.now());
+    // On intentional retake, adopt the latest calibrated questions if available
+    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
+      setQuestions(initialQuestions);
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -234,6 +288,28 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     const finalPct = Math.round((score / totalQuestions) * 100);
     const passed = finalPct >= 70;
     const incorrectCount = totalQuestions - score;
+
+    // Derive review list for corrective practice
+    const reviewList: CorrectivePracticeQuestion[] = (
+      submissionResult?.review && submissionResult.review.length > 0
+        ? submissionResult.review
+        : questions.map((q, qIdx) => {
+            const qCorrect = q.correct_index !== undefined ? q.correct_index : q.correctIndex ?? 0;
+            const userChoice = selectedAnswers[qIdx] !== undefined ? selectedAnswers[qIdx] : null;
+            return {
+              id: q.id,
+              question: q.question,
+              options: q.options,
+              correct_index: qCorrect,
+              user_choice: userChoice,
+              is_correct: userChoice === qCorrect,
+              explanation: q.explanation,
+              difficulty: q.difficulty
+            };
+          })
+    );
+
+    const incorrectQuestions = reviewList.filter(r => !r.is_correct);
 
     return (
       <div
@@ -400,6 +476,17 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
           </div>
         </div>
 
+        {/* MEMBER 4: TARGETED CORRECTIVE PRACTICE UI */}
+        <CorrectivePracticeSection
+          topicId={topicId}
+          originalScore={score}
+          originalTotal={totalQuestions}
+          originalPercentage={finalPct}
+          originalAttemptId={submissionResult?.attempt_id}
+          incorrectQuestions={incorrectQuestions}
+          revisionConcepts={adaptiveFeedback?.revision_concepts || []}
+        />
+
         {/* Accordion / Full Review Section */}
         <div className="space-y-3 pt-2">
           <button
@@ -486,7 +573,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
                               <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-300 font-mono text-[9px] flex items-center justify-center shrink-0">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span>{opt}</span>
+                              <span>{renderFormattedText(opt)}</span>
                             </div>
                             {isCorrectAnswer && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                             {isUserSelected && !isCorrectAnswer && <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
@@ -589,7 +676,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       {/* Question Card */}
       <div className="space-y-3">
         <p className="text-sm font-semibold text-slate-100 light-theme:text-slate-900 leading-relaxed whitespace-pre-line">
-          {currentQ.question}
+          {renderFormattedText(currentQ.question)}
         </p>
 
         {/* Four Selectable Options */}
