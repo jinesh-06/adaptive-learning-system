@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Sparkles, ChevronDown, ChevronUp, Check, Activity, Sliders, Info, ShieldCheck } from 'lucide-react';
 import { useCognitive, ContentMode } from '../../context/CognitiveContext';
+import { AdaptedLessonData } from '../../services/api';
 
 export interface AdaptiveInsightCardProps {
   className?: string;
   onOpenAdaptedLesson?: () => void;
   topicId?: string;
+  adaptation?: AdaptedLessonData['adaptation'] | null;
 }
 
 export const AdaptiveInsightCard: React.FC<AdaptiveInsightCardProps> = ({
   className = '',
   onOpenAdaptedLesson,
-  topicId
+  topicId,
+  adaptation
 }) => {
   const {
     currentLoad,
@@ -108,7 +111,9 @@ export const AdaptiveInsightCard: React.FC<AdaptiveInsightCardProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 light-theme:bg-purple-100 light-theme:text-purple-700 border border-purple-500/20">
-                Adaptive Learning Insight
+                {adaptation && adaptation.strategy && adaptation.strategy !== 'baseline_orientation'
+                  ? `Personalized: ${adaptation.strategy.replace(/_/g, ' ')}`
+                  : 'Adaptive Learning Insight'}
               </span>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-950/80 light-theme:bg-slate-100 border border-slate-800 light-theme:border-slate-300 text-[10px] font-mono">
                 <span
@@ -127,8 +132,20 @@ export const AdaptiveInsightCard: React.FC<AdaptiveInsightCardProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 light-theme:text-slate-600 mt-0.5">
-              Suggested based on your recent learning activity and interaction signals
+              {adaptation && adaptation.strategy && adaptation.strategy !== 'baseline_orientation' && adaptation.reason
+                ? adaptation.reason
+                : 'Suggested based on your recent learning activity and interaction signals'}
             </p>
+            {adaptation && adaptation.strategy && adaptation.strategy !== 'baseline_orientation' && Array.isArray(adaptation.target_concepts) && adaptation.target_concepts.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
+                <span className="text-[10px] text-purple-400 font-mono">Remediation Focus:</span>
+                {adaptation.target_concepts.map((concept: string) => (
+                  <span key={concept} className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                    {concept.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

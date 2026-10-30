@@ -17,13 +17,28 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.services.adapted_lesson_service import adapted_lesson_service
+from backend.services.rag_service import rag_service
 from backend.services.state_store import state_store
-from backend.services.auth_service import auth_service
+from backend.services.auth_service import auth_service, set_firebase_verifier_for_testing
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def isolate_external_dependencies():
+    """Ensure tests run deterministically and fast without external network dependencies."""
+    def _mock_firebase_verifier(token: str):
+        raise ValueError("Offline test mode: token is not a Firebase token")
+
+    set_firebase_verifier_for_testing(_mock_firebase_verifier)
+    with patch.object(adapted_lesson_service, "_generate_with_gemini", return_value=None), \
+         patch.object(rag_service, "get_formatted_context", return_value="Sample curriculum context for tests."):
+        yield
+    set_firebase_verifier_for_testing(None)
 
 
 def _auth_headers(user_id: str) -> dict:

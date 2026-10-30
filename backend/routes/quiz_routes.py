@@ -123,6 +123,9 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "time_spent": payload.time_spent or 0.0
     })
 
+    # Invalidate stale adapted lesson cache so subsequent lesson loads use updated quiz evidence
+    state_store.invalidate_adapted_lessons(user_id, topic_id)
+
     # Persist topic progress into SQLite user_progress table
     course_id = curriculum_service.get_course_id_for_topic(topic_id)
     state_store.save_topic_progress(

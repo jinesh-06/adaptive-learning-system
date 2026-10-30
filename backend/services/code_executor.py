@@ -10,9 +10,13 @@ import shutil
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 
-# Paths to system tools if available
-CLANG_NDK_BIN = r"C:\Program Files\Unity\Hub\Editor\6000.3.11f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK\toolchains\llvm\prebuilt\windows-x86_64\bin\clang.exe"
-CLANG_NDK_SYSROOT = r"C:\Program Files\Unity\Hub\Editor\6000.3.11f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK\toolchains\llvm\prebuilt\windows-x86_64\sysroot"
+from backend.services.sandbox_service import (
+    sandbox_service,
+    ExecutionStatus,
+    ExecutionResult,
+    _strip_c_comments,
+    _strip_c_comments_and_literals
+)
 
 DISALLOWED_PYTHON_MODULES = {
     "os", "subprocess", "shutil", "socket", "pty", "commands",
@@ -161,71 +165,63 @@ class CodeExecutor:
 
     @staticmethod
     def validate_c_code(code: str) -> Optional[str]:
-        """Validate C/C++ code syntax with compiler or structure analysis."""
-        # 0. Check if code is C++
+        """Validate C/C++ code syntax with defense-in-depth security checks and structural analysis.
+
+        Limitations:
+        - Regex and lexical stripping are preliminary defense-in-depth heuristics; they cannot
+          detect dynamic function resolution (e.g. via dlsym), inline assembly syscalls, or
+          macro-token concatenation (e.g. ##). The hardened container sandbox provides the
+          authoritative security boundary (dropped capabilities, unprivileged user, no network).
+        - Comments and string literals are safely stripped for structural checks to avoid
+          false positives on braces/parentheses inside user output or documentation.
+        - Escaped characters within quotes (e.g. \", \\\\) are properly preserved to avoid
+          accidentally hiding restricted calls or misattributing quotes.
+        """
+        code_no_comments = _strip_c_comments(code)
+        code_structure = _strip_c_comments_and_literals(code)
+
+        # 1. Security check for disallowed system-level headers or operations (defense-in-depth)
+        # Function calls checked on code_structure (strings/comments stripped so printf("system()") is not blocked)
+        restricted_calls = [
+            r'\bsystem\s*\(',
+            r'\bfork\s*\(',
+            r'\b(?:execl|execle|execlp|execv|execve|execvp|execvpe)\s*\(',
+            r'\bpopen\s*\(',
+            r'\bkill\s*\(',
+        ]
+        for pattern in restricted_calls:
+            if re.search(pattern, code_structure):
+                return "Security Policy Violation: Disallowed system call or header detected in C/C++ submission."
+
+        # Headers and filesystem paths checked on code_no_comments (comments stripped, string paths kept)
+        restricted_includes_and_files = [
+            r'#include\s*<sys/socket\.h>',
+            r'#include\s*<netinet/in\.h>',
+            r'#include\s*<arpa/inet\.h>',
+            r'#include\s*<unistd\.h>',
+            r'#include\s*<windows\.h>',
+            r"""fopen\s*\(\s*['"][^'"]*(\.env|passwd|shadow|hosts)""",
+        ]
+        for pattern in restricted_includes_and_files:
+            if re.search(pattern, code_no_comments):
+                return "Security Policy Violation: Disallowed system call or header detected in C/C++ submission."
+
+        # 2. Basic structural syntax check on code_structure
         is_cpp = ("<iostream>" in code or "std::" in code or "cout" in code or "namespace std" in code or "<vector>" in code or "<string>" in code)
-        if is_cpp:
-            open_b = code.count('{')
-            close_b = code.count('}')
-            if open_b != close_b:
-                return f"Compiler Error: Unmatched curly braces ({open_b} '{{' vs {close_b} '}}')"
+        lang_name = "C++" if is_cpp else "C"
 
-            open_p = code.count('(')
-            close_p = code.count(')')
-            if open_p != close_p:
-                return f"Compiler Error: Unmatched parentheses ({open_p} '(' vs {close_p} ')')"
-
-            if "main" not in code:
-                return "Compiler Error: Expected function 'main' in C++ program."
-
-            return None
-
-        # 1. Check Clang if available
-        if os.path.exists(CLANG_NDK_BIN) and os.path.exists(CLANG_NDK_SYSROOT):
-            import tempfile
-            tmp_path = None
-            try:
-                with tempfile.NamedTemporaryFile(suffix=".c", mode="w", encoding="utf-8", delete=False) as f:
-                    f.write(code)
-                    tmp_path = f.name
-                proc = subprocess.run(
-                    [
-                        CLANG_NDK_BIN,
-                        "--target=x86_64-linux-android29",
-                        f"--sysroot={CLANG_NDK_SYSROOT}",
-                        "-fsyntax-only",
-                        tmp_path
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=3.0
-                )
-                if proc.returncode != 0:
-                    err = proc.stderr.replace(tmp_path, "solution.c").strip()
-                    return err
-                return None
-            except Exception:
-                pass
-            finally:
-                if tmp_path and os.path.exists(tmp_path):
-                    try:
-                        os.remove(tmp_path)
-                    except Exception:
-                        pass
-
-        # 2. Basic structural syntax check
-        open_b = code.count('{')
-        close_b = code.count('}')
+        open_b = code_structure.count('{')
+        close_b = code_structure.count('}')
         if open_b != close_b:
             return f"Compiler Error: Unmatched curly braces ({open_b} '{{' vs {close_b} '}}')"
 
-        open_p = code.count('(')
-        close_p = code.count(')')
+        open_p = code_structure.count('(')
+        close_p = code_structure.count(')')
         if open_p != close_p:
             return f"Compiler Error: Unmatched parentheses ({open_p} '(' vs {close_p} ')')"
 
-        if "main" not in code:
-            return "Compiler Error: Expected function 'main' in C program."
+        if "main" not in code_structure:
+            return f"Compiler Error: Expected function 'main' in {lang_name} program."
 
         return None
 
@@ -816,7 +812,7 @@ class CodeExecutor:
 
     @classmethod
     def execute_python(cls, code: str, stdin_input: str = "", timeout: float = 5.0) -> Dict[str, Any]:
-        """Execute Python code in isolated subprocess mode."""
+        """Execute Python code in isolated sandbox environment."""
         start_time = time.time()
         syntax_err = cls.validate_python_code(code)
         if syntax_err:
@@ -828,57 +824,18 @@ class CodeExecutor:
                 "error": syntax_err,
                 "compilation_error": syntax_err,
                 "execution_time": elapsed,
+                "execution_time_seconds": elapsed,
                 "execution_time_ms": int(elapsed * 1000)
             }
 
-        try:
-            proc = subprocess.run(
-                [sys.executable, "-I", "-s", "-c", code],
-                input=stdin_input if stdin_input is not None else "",
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
-            elapsed = round(time.time() - start_time, 3)
-            success = (proc.returncode == 0)
-            output = proc.stdout if success else (proc.stdout + ("\n" if proc.stdout else "") + proc.stderr).strip()
-            err_msg = proc.stderr.strip() if not success else None
-
-            return {
-                "success": success,
-                "status": "PASSED" if success else "RUNTIME_ERROR",
-                "output": output,
-                "error": err_msg,
-                "compilation_error": None,
-                "execution_time": elapsed,
-                "execution_time_ms": int(elapsed * 1000)
-            }
-        except subprocess.TimeoutExpired:
-            elapsed = round(time.time() - start_time, 3)
-            return {
-                "success": False,
-                "status": "TIME_LIMIT_EXCEEDED",
-                "output": f"Time Limit Exceeded ({timeout}s limit)",
-                "error": f"Time Limit Exceeded ({timeout}s limit)",
-                "compilation_error": None,
-                "execution_time": elapsed,
-                "execution_time_ms": int(elapsed * 1000)
-            }
-        except Exception as e:
-            elapsed = round(time.time() - start_time, 3)
-            return {
-                "success": False,
-                "status": "RUNTIME_ERROR",
-                "output": f"Execution error: {str(e)}",
-                "error": str(e),
-                "compilation_error": None,
-                "execution_time": elapsed,
-                "execution_time_ms": int(elapsed * 1000)
-            }
+        res = sandbox_service.execute("python", code, stdin_input=stdin_input, timeout=timeout)
+        data = res.to_dict()
+        data["execution_time"] = data.get("execution_time_seconds", 0.0)
+        return data
 
     @classmethod
     def execute_c(cls, code: str, stdin_input: str = "", timeout: float = 5.0) -> Dict[str, Any]:
-        """Execute C code via syntax verification and safe runtime execution."""
+        """Execute C code safely via sandbox container compilation and execution."""
         start_time = time.time()
         c_err = cls.validate_c_code(code)
         if c_err:
@@ -886,202 +843,98 @@ class CodeExecutor:
             return {
                 "success": False,
                 "status": "COMPILATION_ERROR",
+                "execution_status": "COMPILE_ERROR",
                 "output": c_err,
+                "stdout": "",
                 "error": c_err,
+                "stderr": c_err,
                 "compilation_error": c_err,
                 "execution_time": elapsed,
+                "execution_time_seconds": elapsed,
                 "execution_time_ms": int(elapsed * 1000)
             }
 
-        # Transpile C to python runtime
-        try:
-            py_code = cls.transpile_c_to_python(code)
-            proc = subprocess.run(
-                [sys.executable, "-I", "-s", "-c", py_code],
-                input=stdin_input if stdin_input is not None else "",
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
-            elapsed = round(time.time() - start_time, 3)
-            success = (proc.returncode == 0)
-            output = proc.stdout if success else (proc.stdout + ("\n" if proc.stdout else "") + proc.stderr).strip()
-            err_msg = proc.stderr.strip() if not success else None
+        res = sandbox_service.execute("c", code, stdin_input=stdin_input, timeout=timeout)
+        data = res.to_dict()
+        data["execution_time"] = data.get("execution_time_seconds", 0.0)
+        return data
 
-            return {
-                "success": success,
-                "status": "PASSED" if success else "RUNTIME_ERROR",
-                "output": output,
-                "error": err_msg,
-                "compilation_error": None,
-                "execution_time": elapsed,
-                "execution_time_ms": int(elapsed * 1000)
-            }
-        except subprocess.TimeoutExpired:
+    @classmethod
+    def execute_cpp(cls, code: str, stdin_input: str = "", timeout: float = 5.0) -> Dict[str, Any]:
+        """Execute C++ code safely via sandbox container compilation and execution."""
+        start_time = time.time()
+        c_err = cls.validate_c_code(code)
+        if c_err:
             elapsed = round(time.time() - start_time, 3)
             return {
                 "success": False,
-                "status": "TIME_LIMIT_EXCEEDED",
-                "output": f"Time Limit Exceeded ({timeout}s limit)",
-                "error": f"Time Limit Exceeded ({timeout}s limit)",
-                "compilation_error": None,
+                "status": "COMPILATION_ERROR",
+                "execution_status": "COMPILE_ERROR",
+                "output": c_err,
+                "stdout": "",
+                "error": c_err,
+                "stderr": c_err,
+                "compilation_error": c_err,
                 "execution_time": elapsed,
+                "execution_time_seconds": elapsed,
                 "execution_time_ms": int(elapsed * 1000)
             }
-        except Exception as e:
-            elapsed = round(time.time() - start_time, 3)
-            return {
-                "success": False,
-                "status": "RUNTIME_ERROR",
-                "output": f"Execution error: {str(e)}",
-                "error": str(e),
-                "compilation_error": None,
-                "execution_time": elapsed,
-                "execution_time_ms": int(elapsed * 1000)
-            }
+
+        res = sandbox_service.execute("cpp", code, stdin_input=stdin_input, timeout=timeout)
+        data = res.to_dict()
+        data["execution_time"] = data.get("execution_time_seconds", 0.0)
+        return data
 
     @classmethod
     def execute_java(cls, code: str, stdin_input: str = "", timeout: float = 6.0) -> Dict[str, Any]:
-        """Execute Java code safely via javac compilation and JVM execution in a temporary directory."""
-        start_time = time.time()
-        import tempfile
+        """Execute Java code safely via sandbox container compilation and JVM execution."""
+        res = sandbox_service.execute("java", code, stdin_input=stdin_input, timeout=timeout)
+        data = res.to_dict()
+        data["execution_time"] = data.get("execution_time_seconds", 0.0)
+        return data
 
-        javac_path = r"C:\Program Files\Java\jdk1.8.0_111\bin\javac.exe"
-        if not os.path.exists(javac_path):
-            javac_path = shutil.which("javac") or "javac"
-
-        # Detect public class name or default to Main
-        class_match = re.search(r'public\s+class\s+([a-zA-Z_]\w*)', code)
-        class_name = class_match.group(1) if class_match else "Main"
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            src_file = os.path.join(tmpdir, f"{class_name}.java")
-            try:
-                with open(src_file, "w", encoding="utf-8") as f:
-                    f.write(code)
-            except Exception as e:
-                return {
-                    "success": False,
-                    "status": "RUNTIME_ERROR",
-                    "output": f"Failed to write source file: {str(e)}",
-                    "error": str(e),
-                    "compilation_error": None,
-                    "execution_time": 0.0,
-                    "execution_time_ms": 0
-                }
-
-            # Compile using javac
-            try:
-                comp_proc = subprocess.run(
-                    [javac_path, f"{class_name}.java"],
-                    cwd=tmpdir,
-                    capture_output=True,
-                    text=True,
-                    timeout=8.0
-                )
-                if comp_proc.returncode != 0:
-                    elapsed = round(time.time() - start_time, 3)
-                    comp_err = comp_proc.stderr.strip() or comp_proc.stdout.strip()
-                    return {
-                        "success": False,
-                        "status": "COMPILATION_ERROR",
-                        "output": comp_err,
-                        "error": comp_err,
-                        "compilation_error": comp_err,
-                        "execution_time": elapsed,
-                        "execution_time_ms": int(elapsed * 1000)
-                    }
-            except subprocess.TimeoutExpired:
-                return {
-                    "success": False,
-                    "status": "TIME_LIMIT_EXCEEDED",
-                    "output": "Java compilation timed out",
-                    "error": "Compilation timeout",
-                    "compilation_error": "Compilation timeout",
-                    "execution_time": 8.0,
-                    "execution_time_ms": 8000
-                }
-            except Exception as e:
-                elapsed = round(time.time() - start_time, 3)
+    @classmethod
+    def run_code(
+        cls,
+        code: str,
+        language: str = "python",
+        custom_input: Optional[str] = None,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Run code with custom input through sandbox service."""
+        lang = language.lower()
+        if lang in ("python", "py"):
+            syntax_err = cls.validate_python_code(code)
+            if syntax_err:
                 return {
                     "success": False,
                     "status": "COMPILATION_ERROR",
-                    "output": f"Compiler execution failed: {str(e)}",
-                    "error": str(e),
-                    "compilation_error": str(e),
-                    "execution_time": elapsed,
-                    "execution_time_ms": int(elapsed * 1000)
+                    "execution_status": "COMPILE_ERROR",
+                    "output": syntax_err,
+                    "stdout": "",
+                    "error": syntax_err,
+                    "stderr": syntax_err,
+                    "compilation_error": syntax_err,
+                    "execution_time": 0.0,
+                    "execution_time_seconds": 0.0,
+                    "execution_time_ms": 0
                 }
-
-            # Run bytecode using java launcher
-            try:
-                run_proc = subprocess.run(
-                    ["java", "-cp", tmpdir, class_name],
-                    input=stdin_input if stdin_input is not None else "",
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout
-                )
-                elapsed = round(time.time() - start_time, 3)
-                success = (run_proc.returncode == 0)
-                out = run_proc.stdout if success else (run_proc.stdout + ("\n" if run_proc.stdout else "") + run_proc.stderr).strip()
-                err = run_proc.stderr.strip() if not success else None
-                return {
-                    "success": success,
-                    "status": "PASSED" if success else "RUNTIME_ERROR",
-                    "output": out,
-                    "error": err,
-                    "compilation_error": None,
-                    "execution_time": elapsed,
-                    "execution_time_ms": int(elapsed * 1000)
-                }
-            except subprocess.TimeoutExpired:
-                elapsed = round(time.time() - start_time, 3)
-                return {
-                    "success": False,
-                    "status": "TIME_LIMIT_EXCEEDED",
-                    "output": f"Time Limit Exceeded ({timeout}s limit)",
-                    "error": f"Time Limit Exceeded ({timeout}s limit)",
-                    "compilation_error": None,
-                    "execution_time": elapsed,
-                    "execution_time_ms": int(elapsed * 1000)
-                }
-            except Exception as e:
-                elapsed = round(time.time() - start_time, 3)
-                return {
-                    "success": False,
-                    "status": "RUNTIME_ERROR",
-                    "output": f"Runtime execution error: {str(e)}",
-                    "error": str(e),
-                    "compilation_error": None,
-                    "execution_time": elapsed,
-                    "execution_time_ms": int(elapsed * 1000)
-                }
-
-    @classmethod
-    def run_code(cls, code: str, language: str = "python", custom_input: Optional[str] = None) -> Dict[str, Any]:
-        """Run code with custom input."""
-        lang = language.lower()
-        if lang in ("python", "py"):
-            res = cls.execute_python(code, custom_input or "")
+            res = sandbox_service.execute("python", code, stdin_input=custom_input or "", user_id=user_id)
+            d = res.to_dict()
+            d["execution_time"] = d.get("execution_time_seconds", 0.0)
+            return d
         elif lang in ("c", "cpp"):
-            res = cls.execute_c(code, custom_input or "")
+            return cls.execute_cpp(code, custom_input or "") if lang in ("cpp", "c++") else cls.execute_c(code, custom_input or "")
         elif lang in ("java",):
-            res = cls.execute_java(code, custom_input or "")
+            res = sandbox_service.execute("java", code, stdin_input=custom_input or "", user_id=user_id)
+            d = res.to_dict()
+            d["execution_time"] = d.get("execution_time_seconds", 0.0)
+            return d
         else:
-            res = cls.execute_python(code, custom_input or "")
-
-        return {
-            "success": res["success"],
-            "output": res.get("output", ""),
-            "stdout": res.get("output", ""),
-            "error": res.get("error") or "",
-            "stderr": res.get("error") or "",
-            "compilation_error": res.get("compilation_error"),
-            "execution_time_seconds": res.get("execution_time", 0.0),
-            "execution_time_ms": res.get("execution_time_ms", 0),
-            "status": res.get("status", "PASSED" if res["success"] else "RUNTIME_ERROR")
-        }
+            res = sandbox_service.execute(lang, code, stdin_input=custom_input or "", user_id=user_id)
+            d = res.to_dict()
+            d["execution_time"] = d.get("execution_time_seconds", 0.0)
+            return d
 
     @classmethod
     def evaluate_test_cases(cls, code: str, language: str, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -1183,7 +1036,7 @@ class CodeExecutor:
                 total_visible += 1
 
             if lang in ("c", "cpp"):
-                res = cls.execute_c(code, stdin_input=tc_input)
+                res = cls.execute_cpp(code, stdin_input=tc_input) if lang in ("cpp", "c++") else cls.execute_c(code, stdin_input=tc_input)
             elif lang in ("java",):
                 res = cls.execute_java(code, stdin_input=tc_input)
             else:

@@ -12,6 +12,9 @@ class AdaptationInfo(BaseModel):
     confidence: float = Field(default=0.85, description="Model confidence score (0.0 to 1.0)")
     reason: str = Field(..., description="Clear explanation of why this adaptation was selected")
     signals_used: List[str] = Field(default_factory=list, description="Observed signals that informed the adaptation")
+    specific_learning_gaps: Optional[List[str]] = Field(default=None, description="Diagnosed knowledge gaps requiring targeted instruction")
+    target_concepts: Optional[List[str]] = Field(default=None, description="Specific concepts targeted in this adapted lesson")
+    quiz_performance_summary: Optional[Dict[str, Any]] = Field(default=None, description="Summary of student assessment history and trajectory")
 
 
 class SectionStep(BaseModel):
