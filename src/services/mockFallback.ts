@@ -2743,6 +2743,83 @@ export const mockHandlers = {
     };
   },
 
+  getLatestQuizAttempt: async (topicId: string) => {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem('cog_latest_quiz_' + topicId);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const incorrect = (parsed.review || []).filter((r: any) => !r.is_correct);
+          return {
+            has_attempt: true,
+            attempt: {
+              ...parsed,
+              incorrect_questions: incorrect
+            }
+          };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return { has_attempt: false, attempt: null };
+  },
+
+  submitCorrectivePractice: async (payload: { topic_id: string; answers: Record<string, number>; original_attempt_id?: string; time_spent_seconds: number }) => {
+    const rawList = mockQuizzes[payload.topic_id] || (allTopicQuizzes as Record<string, any[]>)[payload.topic_id] || mockQuizzes['top-py-loops'] || [];
+    const qMap = new Map<string, any>();
+    rawList.forEach((q: any) => qMap.set(String(q.id), q));
+
+    const originalReviewMap = new Map<string, any>();
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('cog_latest_quiz_' + payload.topic_id);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          (parsed.review || []).forEach((r: any) => originalReviewMap.set(String(r.id), r));
+        } catch {}
+      }
+    }
+
+    const practiceReview: any[] = [];
+    const resolved: string[] = [];
+    const unresolved: string[] = [];
+
+    Object.entries(payload.answers).forEach(([qId, userChoice]) => {
+      const qObj = qMap.get(String(qId)) || originalReviewMap.get(String(qId));
+      if (!qObj) return;
+      const cIdx = qObj.correct_index !== undefined ? qObj.correct_index : (qObj.correctIndex ?? 0);
+      const isCorrect = userChoice === cIdx;
+      if (isCorrect) resolved.push(qId);
+      else unresolved.push(qId);
+
+      practiceReview.push({
+        question_id: qId,
+        is_correct: isCorrect,
+        user_choice: userChoice,
+        correct_index: cIdx,
+        explanation: qObj.explanation || 'Targeted corrective practice guidance.'
+      });
+    });
+
+    const totalPractice = practiceReview.length || 1;
+    const practiceScore = resolved.length;
+    const practicePercentage = Math.round((practiceScore / totalPractice) * 100);
+
+    return {
+      success: true,
+      topic_id: payload.topic_id,
+      original_attempt_id: payload.original_attempt_id,
+      practice_score: practiceScore,
+      practice_percentage: practicePercentage,
+      total_practice_questions: totalPractice,
+      resolved_questions: resolved,
+      unresolved_questions: unresolved,
+      practice_review: practiceReview,
+      timestamp: new Date().toISOString()
+    };
+  },
+
   getTopicCodingChallenge: async (topicId: string, language?: string) => {
     const langKey = (language || 'python').toLowerCase();
     let challenge = mockCodingChallenges[topicId];

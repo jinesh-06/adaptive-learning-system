@@ -16,7 +16,8 @@ import {
   Zap,
   BarChart3
 } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, CorrectivePracticeQuestion } from '../../services/api';
+import { CorrectivePracticeSection } from './CorrectivePracticeSection';
 import { telemetry } from '../../services/telemetry';
 import { renderFormattedText } from '../../utils/textFormatter';
 import { useCognitive } from '../../context/CognitiveContext';
@@ -55,6 +56,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   const [isSubmittingFinal, setIsSubmittingFinal] = useState<boolean>(false);
   const [adaptiveFeedback, setAdaptiveFeedback] = useState<any | null>(null);
   const [showFullReview, setShowFullReview] = useState<boolean>(true);
+  const [submissionResult, setSubmissionResult] = useState<any | null>(null);
 
   const lastTopicIdRef = useRef<string>(topicId);
   const isCompletedRef = useRef<boolean>(isCompleted);
@@ -80,6 +82,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       setScore(0);
       setIsCompleted(false);
       setAdaptiveFeedback(null);
+    setSubmissionResult(null);
       setStartTime(Date.now());
       setQuestions([]);
       setLoading(true);
@@ -221,6 +224,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
 
     try {
       const res = await api.submitTopicQuiz(topicId, answerPayload, timeSpent);
+      if (res) {
+        setSubmissionResult(res);
+      }
       if (res && res.adaptive_feedback) {
         setAdaptiveFeedback(res.adaptive_feedback);
         updateFromFeedback(res.adaptive_feedback);
@@ -255,6 +261,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     setCurrentIndex(0);
     setIsCompleted(false);
     setAdaptiveFeedback(null);
+    setSubmissionResult(null);
     setStartTime(Date.now());
     // On intentional retake, adopt the latest calibrated questions if available
     if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
@@ -281,6 +288,28 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     const finalPct = Math.round((score / totalQuestions) * 100);
     const passed = finalPct >= 70;
     const incorrectCount = totalQuestions - score;
+
+    // Derive review list for corrective practice
+    const reviewList: CorrectivePracticeQuestion[] = (
+      submissionResult?.review && submissionResult.review.length > 0
+        ? submissionResult.review
+        : questions.map((q, qIdx) => {
+            const qCorrect = q.correct_index !== undefined ? q.correct_index : q.correctIndex ?? 0;
+            const userChoice = selectedAnswers[qIdx] !== undefined ? selectedAnswers[qIdx] : null;
+            return {
+              id: q.id,
+              question: q.question,
+              options: q.options,
+              correct_index: qCorrect,
+              user_choice: userChoice,
+              is_correct: userChoice === qCorrect,
+              explanation: q.explanation,
+              difficulty: q.difficulty
+            };
+          })
+    );
+
+    const incorrectQuestions = reviewList.filter(r => !r.is_correct);
 
     return (
       <div
@@ -446,6 +475,17 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
             </button>
           </div>
         </div>
+
+        {/* MEMBER 4: TARGETED CORRECTIVE PRACTICE UI */}
+        <CorrectivePracticeSection
+          topicId={topicId}
+          originalScore={score}
+          originalTotal={totalQuestions}
+          originalPercentage={finalPct}
+          originalAttemptId={submissionResult?.attempt_id}
+          incorrectQuestions={incorrectQuestions}
+          revisionConcepts={adaptiveFeedback?.revision_concepts || []}
+        />
 
         {/* Accordion / Full Review Section */}
         <div className="space-y-3 pt-2">

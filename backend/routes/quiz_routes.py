@@ -2,7 +2,9 @@
 
 from fastapi import APIRouter, Request, HTTPException, Query
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+import json
+from datetime import datetime, timezone
 
 from backend.services.curriculum_service import curriculum_service
 from backend.services.quiz_service import quiz_service
@@ -175,4 +177,155 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "adaptive_feedback": adaptive_feedback,
         "cognitive_insight": adaptive_feedback,
         "mastery": mastery_snapshot
+    }
+
+
+class CorrectivePracticeSubmission(BaseModel):
+    answers: Dict[str, int]
+    original_attempt_id: Optional[str] = None
+    time_spent: Optional[float] = 30.0
+
+
+@router.get("/topics/{topic_id}/quiz/attempts/latest")
+async def get_latest_quiz_attempt(topic_id: str, request: Request):
+    """Retrieve the latest preserved quiz attempt and assessment summary for the student."""
+    user_id = get_current_user_id(request)
+    clean_topic = topic_id.strip() if topic_id else ""
+    attempts = state_store.get_quiz_attempts(user_id, clean_topic)
+    if not attempts:
+        return {"has_attempt": False, "attempt": None}
+
+    latest = attempts[0]
+    review = []
+    if latest.get("review_json"):
+        try:
+            review = json.loads(latest["review_json"])
+        except Exception:
+            review = []
+
+    adaptive_feedback = {}
+    if latest.get("adaptive_feedback_json"):
+        try:
+            adaptive_feedback = json.loads(latest["adaptive_feedback_json"])
+        except Exception:
+            adaptive_feedback = {}
+
+    answers = {}
+    if latest.get("answers_json"):
+        try:
+            answers = json.loads(latest["answers_json"])
+        except Exception:
+            answers = {}
+
+    incorrect_questions = [r for r in review if not r.get("is_correct")]
+
+    return {
+        "has_attempt": True,
+        "attempt": {
+            "id": latest.get("id"),
+            "score": latest.get("score"),
+            "percentage": latest.get("percentage"),
+            "correct_count": latest.get("correct_count"),
+            "incorrect_count": latest.get("total_questions", 10) - (latest.get("correct_count") or 0),
+            "total_questions": latest.get("total_questions", 10),
+            "passed": float(latest.get("percentage", 0)) >= 70,
+            "time_spent": latest.get("time_spent", 0.0),
+            "created_at": latest.get("created_at"),
+            "review": review,
+            "answers": answers,
+            "adaptive_feedback": adaptive_feedback,
+            "incorrect_questions": incorrect_questions
+        }
+    }
+
+
+@router.post("/topics/{topic_id}/quiz/practice/submit")
+async def submit_corrective_practice(topic_id: str, payload: CorrectivePracticeSubmission, request: Request):
+    """
+    Grade and record a targeted corrective-practice session.
+    Preserves original quiz score and assessment history without altering quiz_attempts table.
+    """
+    user_id = get_current_user_id(request)
+    clean_topic = topic_id.strip() if topic_id else ""
+
+    quiz_data = quiz_service.get_quiz_for_topic(clean_topic)
+    questions = quiz_data.get("questions", [])
+    q_map = {str(q.get("id")): q for q in questions}
+
+    # Inspect original attempt review first for the exact question details assessed
+    original_review_map = {}
+    attempts = state_store.get_quiz_attempts(user_id, clean_topic)
+    for att in attempts:
+        if not payload.original_attempt_id or att.get("id") == payload.original_attempt_id:
+            if att.get("review_json"):
+                try:
+                    for rev in json.loads(att["review_json"]):
+                        original_review_map[str(rev.get("id"))] = rev
+                except Exception:
+                    pass
+            break
+
+    practice_review = []
+    resolved_questions = []
+    unresolved_questions = []
+
+    for q_id, user_choice in payload.answers.items():
+        q_obj = original_review_map.get(str(q_id)) or q_map.get(str(q_id))
+        if not q_obj:
+            continue
+
+        correct_idx = q_obj.get("correct_index")
+        if correct_idx is None:
+            correct_idx = q_obj.get("correctIndex", 0)
+
+        is_correct = user_choice is not None and user_choice == correct_idx
+        if is_correct:
+            resolved_questions.append(str(q_id))
+        else:
+            unresolved_questions.append(str(q_id))
+
+        practice_review.append({
+            "question_id": str(q_id),
+            "is_correct": is_correct,
+            "user_choice": user_choice,
+            "correct_index": correct_idx,
+            "explanation": q_obj.get("explanation", "Targeted corrective concept guidance.")
+        })
+
+    total_practice = len(practice_review) if practice_review else 1
+    practice_score = len(resolved_questions)
+    practice_percentage = round((practice_score / total_practice) * 100)
+
+    # Record practice event in telemetry_events (separate from quiz_attempts)
+    state_store.record_telemetry(user_id, clean_topic, "CORRECTIVE_PRACTICE_SUBMISSION", payload.time_spent or 0.0, {
+        "original_attempt_id": payload.original_attempt_id,
+        "practice_score": practice_score,
+        "total_practice": total_practice,
+        "practice_percentage": practice_percentage,
+        "resolved_count": len(resolved_questions),
+        "unresolved_count": len(unresolved_questions)
+    })
+
+    # Record completion in adaptation feedback store
+    state_store.record_adaptation_feedback(
+        user_id=user_id,
+        topic_id=clean_topic,
+        detail_level="STANDARD",
+        helpful=True,
+        rating="just_right",
+        comment=f"Completed corrective practice: {practice_score}/{total_practice} resolved",
+        completed_practice=True
+    )
+
+    return {
+        "success": True,
+        "topic_id": clean_topic,
+        "original_attempt_id": payload.original_attempt_id,
+        "practice_score": practice_score,
+        "practice_percentage": practice_percentage,
+        "total_practice_questions": total_practice,
+        "resolved_questions": resolved_questions,
+        "unresolved_questions": unresolved_questions,
+        "practice_review": practice_review,
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }

@@ -209,6 +209,28 @@ export const api = {
     return mockHandlers.submitTopicQuiz(topicId, answers, timeSpentSeconds);
   },
 
+  getLatestQuizAttempt: async (topicId: string): Promise<LatestQuizAttemptResponse | null> => {
+    const data = await fetchJson<LatestQuizAttemptResponse>(`${API_BASE}/topics/${topicId}/quiz/attempts/latest`, {
+      headers: getAuthHeaders()
+    });
+    if (data) return data;
+    return mockHandlers.getLatestQuizAttempt(topicId);
+  },
+
+  submitCorrectivePractice: async (payload: CorrectivePracticeSubmission): Promise<CorrectivePracticeResult | null> => {
+    const data = await fetchJson<CorrectivePracticeResult>(`${API_BASE}/topics/${payload.topic_id}/quiz/practice/submit`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        answers: payload.answers,
+        original_attempt_id: payload.original_attempt_id,
+        time_spent: payload.time_spent_seconds
+      })
+    });
+    if (data) return data;
+    return mockHandlers.submitCorrectivePractice(payload);
+  },
+
   // Code Sandbox
   getTopicCodingChallenge: async (topicId: string, language?: string) => {
     const langParam = language ? `?language=${encodeURIComponent(language)}` : '';
@@ -1768,6 +1790,66 @@ export interface AdaptedLessonData {
   sections: AdaptedLessonSection[];
   key_takeaways: string[];
   next_step?: string;
+}
+
+// --- Member 4: Corrective Practice Interfaces ---
+export interface CorrectivePracticeQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  user_choice: number | null;
+  is_correct: boolean;
+  explanation: string;
+  concept?: string;
+  difficulty?: string;
+}
+
+export interface CorrectivePracticeSubmission {
+  topic_id: string;
+  original_attempt_id?: string;
+  answers: Record<string, number>;
+  time_spent_seconds: number;
+}
+
+export interface CorrectivePracticeReviewItem {
+  question_id: string;
+  is_correct: boolean;
+  user_choice: number;
+  correct_index: number;
+  explanation: string;
+}
+
+export interface CorrectivePracticeResult {
+  success: boolean;
+  topic_id: string;
+  original_attempt_id?: string;
+  practice_score: number;
+  practice_percentage: number;
+  total_practice_questions: number;
+  resolved_questions: string[];
+  unresolved_questions: string[];
+  practice_review: CorrectivePracticeReviewItem[];
+  timestamp: string;
+}
+
+export interface LatestQuizAttemptResponse {
+  has_attempt: boolean;
+  attempt?: {
+    id: string;
+    score: number;
+    percentage: number;
+    correct_count: number;
+    incorrect_count: number;
+    total_questions: number;
+    passed: boolean;
+    time_spent: number;
+    created_at?: string;
+    review: CorrectivePracticeQuestion[];
+    answers: Record<string, number>;
+    adaptive_feedback?: any;
+    incorrect_questions: CorrectivePracticeQuestion[];
+  } | null;
 }
 
 // --- Member 4: Learning Outcomes & Feedback Types ---
