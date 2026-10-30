@@ -410,7 +410,7 @@ int main(void) {
 Explanation:
 Packs 3 fields (1 + 1 + 6 = 8 bits) into a structure taking only 4 bytes (or 1 byte when using unsigned char) instead of 12 bytes.
 
-9. COMMON PREPROCESSOR PITFALLS AND DEBUGGING
+9. COMMON PREPROCESSOR PITFALLS, DEBUGGING, AND BEST PRACTICES
 
 * Semicolon in Macro Definitions: Writing `#define TIMEOUT 500;` injects a semicolon into every expression using TIMEOUT, causing syntax errors in `if (elapsed > TIMEOUT)`.
 * Missing Include Guards: Omitting guards in shared headers leads to 'redefinition of struct' errors in multi-file builds.
