@@ -20,10 +20,11 @@ import { JAVA_OOP_TOPICS, JAVA_OOP_MODULES } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS, JAVA_ADV_MODULES } from '../data/javaAdvData';
 import { C_ADVANCED_TOPICS, C_ADVANCED_MODULES } from '../data/cAdvancedData';
 import allTopicQuizzes from '../data/allTopicQuizzes.json';
+import { getMockUserStreak, recordUserActivityDate } from '../utils/streakCalculator';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
-  window.location.hostname.includes('github.io') ||
-  window.location.protocol === 'file:'
+  Boolean(window.location?.hostname?.includes('github.io')) ||
+  Boolean(window.location?.protocol === 'file:')
 );
 
 // In-browser mock database
@@ -2635,6 +2636,7 @@ export const mockHandlers = {
       return qText.split('?')[0].split(':')[0].trim().slice(0, 50);
     }).slice(0, 3);
 
+    recordUserActivityDate(new Date().toISOString());
     const adaptiveFeedback = {
       cognitive_level: cognitiveLevel,
       cognitive_load: cognitiveLevel,
@@ -2673,28 +2675,51 @@ export const mockHandlers = {
       adaptive_action: passed ? 'ADVANCE' : 'SIMPLIFY'
     });
     setStoredArray(MOCK_STORAGE_KEYS.HISTORY, history.slice(0, 30));
+    recordUserActivityDate(new Date().toISOString());
 
-    // Persist progress directly to course track progress
-    if (topicId.startsWith('top-py-')) {
-      const storageKey = topicId.startsWith('top-py-adv-')
-        ? 'cog_python_adv_progress'
-        : topicId.startsWith('top-py-int-')
-        ? 'cog_python_int_progress'
-        : 'cog_python_progress';
-      const stored = getStoredArray(storageKey, []);
-      const idx = stored.findIndex((p: any) => p.topic_id === topicId);
-      let record = idx >= 0 ? stored[idx] : { topic_id: topicId, attempts: 0, time_spent_seconds: 0 };
-      record = {
-        ...record,
-        status: passed ? 'COMPLETED' : 'IN_PROGRESS',
-        completion_pct: passed ? 100 : Math.max(record.completion_pct || 0, 50),
-        quiz_score: score,
-        attempts: (record.attempts || 0) + 1,
-        time_spent_seconds: (record.time_spent_seconds || 0) + timeSpent
-      };
-      if (idx >= 0) stored[idx] = record;
-      else stored.push(record);
-      setStoredArray(storageKey, stored);
+    // Persist progress directly to course track progress across all languages
+    const quizStorageKey = topicId.startsWith('top-cpp-adv-')
+      ? 'cog_cpp_adv_progress'
+      : topicId.startsWith('top-cpp-oop-')
+      ? 'cog_cpp_oop_progress'
+      : topicId.startsWith('top-cpp-')
+      ? 'cog_cpp_progress'
+      : topicId.startsWith('top-c-adv-')
+      ? 'cog_c_adv_progress'
+      : C_INTERMEDIATE_TOPICS.some(t => t.id === topicId)
+      ? 'cog_c_int_progress'
+      : topicId.startsWith('top-c-')
+      ? 'cog_c_progress'
+      : topicId.startsWith('top-java-adv-')
+      ? 'cog_java_adv_progress'
+      : topicId.startsWith('top-java-oop-')
+      ? 'cog_java_oop_progress'
+      : topicId.startsWith('top-java-')
+      ? 'cog_java_progress'
+      : topicId.startsWith('top-py-adv-')
+      ? 'cog_python_adv_progress'
+      : topicId.startsWith('top-py-int-')
+      ? 'cog_python_int_progress'
+      : 'cog_python_progress';
+
+    const storedQuizProg = getStoredArray(quizStorageKey, []);
+    const qIdx = storedQuizProg.findIndex((p: any) => p.topic_id === topicId);
+    let quizRecord = qIdx >= 0 ? storedQuizProg[qIdx] : { topic_id: topicId, attempts: 0, time_spent_seconds: 0 };
+    quizRecord = {
+      ...quizRecord,
+      status: passed ? 'COMPLETED' : (quizRecord.status || 'IN_PROGRESS'),
+      completion_pct: passed ? 100 : Math.max(quizRecord.completion_pct || 0, 50),
+      quiz_score: score,
+      attempts: (quizRecord.attempts || 0) + 1,
+      time_spent_seconds: (quizRecord.time_spent_seconds || 0) + timeSpent,
+      updated_at: new Date().toISOString()
+    };
+    if (qIdx >= 0) storedQuizProg[qIdx] = quizRecord;
+    else storedQuizProg.push(quizRecord);
+    setStoredArray(quizStorageKey, storedQuizProg);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('progress:updated', { detail: { topicId, storageKey: quizStorageKey } }));
     }
 
     return {
@@ -2887,7 +2912,7 @@ export const mockHandlers = {
     return {
       success: true,
       user: { name: 'Learner', email: 'learner@cognitive.edu' },
-      streak_days: 0,
+      streak_days: getMockUserStreak(),
       learning_snapshot: {
         overall_progress: 0,
         topics_completed: history.length,
@@ -3306,7 +3331,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3328,7 +3353,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 3,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Calibrated & Active",
       topics: topicsOutput
@@ -3403,7 +3428,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3426,7 +3451,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3501,7 +3526,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3524,7 +3549,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3599,7 +3624,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3622,7 +3647,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Cognitive Engine Calibrated & Active",
       topics: topicsOutput
@@ -3697,7 +3722,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3720,7 +3745,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Cognitive Engine Calibrated & Active",
       topics: topicsOutput
@@ -3747,11 +3772,22 @@ export const mockHandlers = {
     attempts_delta?: number;
     time_spent_delta?: number;
   }) => {
-    const storageKey = C_INTERMEDIATE_TOPICS.some(t => t.id === payload.topic_id)
+    const storageKey = payload.topic_id.startsWith('top-cpp-adv-')
+      ? 'cog_cpp_adv_progress'
+      : payload.topic_id.startsWith('top-cpp-oop-')
+      ? 'cog_cpp_oop_progress'
+      : payload.topic_id.startsWith('top-cpp-')
+      ? 'cog_cpp_progress'
+      : payload.topic_id.startsWith('top-c-adv-')
+      ? 'cog_c_adv_progress'
+      : C_INTERMEDIATE_TOPICS.some(t => t.id === payload.topic_id)
       ? 'cog_c_int_progress'
       : payload.topic_id.startsWith('top-c-')
-
       ? 'cog_c_progress'
+      : payload.topic_id.startsWith('top-java-adv-')
+      ? 'cog_java_adv_progress'
+      : payload.topic_id.startsWith('top-java-oop-')
+      ? 'cog_java_oop_progress'
       : payload.topic_id.startsWith('top-java-')
       ? 'cog_java_progress'
       : payload.topic_id.startsWith('top-py-adv-')
@@ -3766,11 +3802,19 @@ export const mockHandlers = {
     record = {
       ...record,
       status: payload.status || record.status || 'IN_PROGRESS',
-      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (record.completion_pct || 0),
+      completion_pct: payload.status === 'COMPLETED'
+        ? 100
+        : payload.completion_pct !== undefined
+        ? Math.max(payload.completion_pct, record.completion_pct || 0)
+        : (record.completion_pct || 0),
       quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : record.quiz_score,
       attempts: (record.attempts || 0) + (payload.attempts_delta || 0),
-      time_spent_seconds: (record.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+      time_spent_seconds: (record.time_spent_seconds || 0) + (payload.time_spent_delta || 0),
+      updated_at: new Date().toISOString()
     };
+    if (record.status === 'COMPLETED' || (record.completion_pct && record.completion_pct > 0) || (payload.time_spent_delta && payload.time_spent_delta > 0)) {
+      recordUserActivityDate(record.updated_at);
+    }
 
     if (idx >= 0) {
       stored[idx] = record;
@@ -3778,6 +3822,9 @@ export const mockHandlers = {
       stored.push(record);
     }
     setStoredArray(storageKey, stored);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('progress:updated', { detail: { topicId: payload.topic_id, storageKey } }));
+    }
     return { success: true, progress: record };
   },
 
@@ -3849,7 +3896,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3872,7 +3919,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3976,7 +4023,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4004,7 +4051,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 10,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4116,7 +4163,7 @@ export const mockHandlers = {
           ...topic,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4170,7 +4217,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4276,7 +4323,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4299,7 +4346,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -4399,7 +4446,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4455,7 +4502,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 10,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4573,7 +4620,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4629,7 +4676,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4776,7 +4823,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4832,7 +4879,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -5054,5 +5101,275 @@ export const mockHandlers = {
     }
     // If not found in storage, generate one on the fly
     return await mockHandlers.generateAdaptedLesson({ topic_id: topicId });
+  },
+
+  // Learning Outcomes & Assessments (Member 4 Fallbacks)
+  getAssessmentQuestions: async (topicId: string, type: 'pre' | 'post' = 'pre') => {
+    return {
+      topic_id: topicId,
+      topic_title: topicId.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      assessment_type: type,
+      label: type === 'pre' ? 'Pre-Assessment (Initial Baseline)' : 'Post-Assessment (Topic Mastery)',
+      description: type === 'pre'
+        ? 'Diagnostic assessment measuring baseline understanding before learning this topic.'
+        : 'Mastery assessment measuring concept retention and learning gain after completion.',
+      total_questions: 5,
+      questions: [
+        {
+          id: `q-${type}-1`,
+          question: `What is the core conceptual mechanism of ${topicId.replace('top-', '').replace(/-/g, ' ')}?`,
+          options: ['Primary syntactic construct', 'Alternative implementation variant', 'System library interface', 'Runtime memory manager'],
+          difficulty: 'medium',
+          order: 1
+        },
+        {
+          id: `q-${type}-2`,
+          question: `Which architectural principle is best applied when utilizing ${topicId.replace('top-', '').replace(/-/g, ' ')}?`,
+          options: ['Structured boundary separation', 'Direct global manipulation', 'Unchecked dynamic dispatch', 'Synchronous blocking calls'],
+          difficulty: 'medium',
+          order: 2
+        },
+        {
+          id: `q-${type}-3`,
+          question: `What is a common edge condition to guard against in this topic?`,
+          options: ['Null references and index bounds', 'Compiler optimization levels', 'Terminal color formatting', 'Hardware clock drift'],
+          difficulty: 'easy',
+          order: 3
+        },
+        {
+          id: `q-${type}-4`,
+          question: `How does mastering this topic impact algorithm runtime efficiency?`,
+          options: ['Predictable execution flow and minimal overhead', 'Completely replaces standard libraries', 'Disables CPU caching', 'Forces single-threaded execution'],
+          difficulty: 'hard',
+          order: 4
+        },
+        {
+          id: `q-${type}-5`,
+          question: `What is the primary debugging approach if unexpected behavior occurs?`,
+          options: ['Trace variable state and execution breakpoints', 'Delete unit tests', 'Disable static analysis', 'Bypass type checking'],
+          difficulty: 'medium',
+          order: 5
+        }
+      ]
+    };
+  },
+
+  submitAssessment: async (topicId: string, payload: any) => {
+    const atype = payload.assessment_type || 'pre';
+    const answers = payload.answers || {};
+    const totalQ = 5;
+    let correctCount = 0;
+    const review = [];
+
+    for (let i = 1; i <= totalQ; i++) {
+      const qid = `q-${atype}-${i}`;
+      const userChoice = answers[qid] !== undefined ? answers[qid] : 0;
+      const isCorrect = userChoice === 0; // index 0 is designated correct in mock
+      if (isCorrect) correctCount++;
+      review.push({
+        id: qid,
+        question: `Sample question ${i} for ${topicId}`,
+        options: ['Correct choice', 'Alternative A', 'Alternative B', 'Alternative C'],
+        correct_index: 0,
+        user_choice: userChoice,
+        is_correct: isCorrect,
+        explanation: 'Accurate architectural pattern for this concept.',
+        difficulty: 'medium'
+      });
+    }
+
+    const accuracy = Math.round((correctCount / totalQ) * 100);
+    const score = correctCount;
+
+    // Store in localStorage for offline mock persistence
+    const storedAssessments = getStoredArray('cog_mock_assessments', []);
+    const asmtId = `asmt-${Date.now()}`;
+    const newRecord = {
+      id: asmtId,
+      topic_id: topicId,
+      assessment_type: atype,
+      score,
+      total_marks: totalQ,
+      correct_answers: correctCount,
+      total_questions: totalQ,
+      accuracy,
+      completed_at: new Date().toISOString()
+    };
+    storedAssessments.push(newRecord);
+    try {
+      localStorage.setItem('cog_mock_assessments', JSON.stringify(storedAssessments));
+    } catch {}
+
+    let comparison = null;
+    if (atype === 'post') {
+      const preRecord = storedAssessments
+        .filter((a: any) => a.topic_id === topicId && a.assessment_type === 'pre')
+        .pop();
+
+      if (preRecord) {
+        const scoreImp = score - preRecord.score;
+        const pctImp = accuracy - preRecord.accuracy;
+        comparison = {
+          has_pre_assessment: true,
+          pre_score: preRecord.score,
+          pre_total_marks: preRecord.total_marks,
+          pre_accuracy: preRecord.accuracy,
+          post_score: score,
+          post_total_marks: totalQ,
+          post_accuracy: accuracy,
+          score_improvement: scoreImp,
+          percentage_point_improvement: pctImp,
+          improved: scoreImp > 0,
+          summary_text: `Score improved by ${scoreImp > 0 ? '+' : ''}${scoreImp} marks (${pctImp > 0 ? '+' : ''}${pctImp}% points) compared to your pre-assessment.`
+        };
+      } else {
+        comparison = {
+          has_pre_assessment: false,
+          pre_score: null,
+          pre_total_marks: null,
+          pre_accuracy: null,
+          score_improvement: null,
+          percentage_point_improvement: null,
+          improved: null,
+          summary_text: 'Post-assessment recorded. No prior pre-assessment was found for this topic.'
+        };
+      }
+    }
+
+    return {
+      success: true,
+      assessment_id: asmtId,
+      student_id: 'mock_student',
+      topic_id: topicId,
+      topic_title: topicId.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      assessment_type: atype,
+      score,
+      total_marks: totalQ,
+      correct_answers: correctCount,
+      total_questions: totalQ,
+      accuracy,
+      time_spent: payload.time_spent || 45,
+      review,
+      comparison
+    };
+  },
+
+  getLearningOutcomes: async (topicId?: string) => {
+    const stored = getStoredArray('cog_mock_assessments', []);
+    const topicsMap: Record<string, any> = {};
+
+    for (const a of stored) {
+      if (!topicsMap[a.topic_id]) {
+        topicsMap[a.topic_id] = {
+          topic_id: a.topic_id,
+          topic_title: a.topic_id.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+          language: a.topic_id.includes('c-') ? 'c' : a.topic_id.includes('cpp') ? 'cpp' : a.topic_id.includes('java') ? 'java' : 'python',
+          pre: null,
+          post: null,
+          attempts: 0
+        };
+      }
+      topicsMap[a.topic_id].attempts++;
+      if (a.assessment_type === 'pre' && !topicsMap[a.topic_id].pre) {
+        topicsMap[a.topic_id].pre = a;
+      }
+      if (a.assessment_type === 'post' && !topicsMap[a.topic_id].post) {
+        topicsMap[a.topic_id].post = a;
+      }
+    }
+
+    const topicOutcomes = Object.values(topicsMap).map((t: any) => {
+      const hasPre = !!t.pre;
+      const hasPost = !!t.post;
+      const scoreImp = (hasPre && hasPost) ? (t.post.score - t.pre.score) : null;
+      const pctImp = (hasPre && hasPost) ? (t.post.accuracy - t.pre.accuracy) : null;
+
+      return {
+        topic_id: t.topic_id,
+        topic_title: t.topic_title,
+        language: t.language,
+        status: (hasPre && hasPost) ? 'COMPLETED' : hasPost ? 'POST_ASSESSED_ONLY' : hasPre ? 'PRE_ASSESSED_ONLY' : 'NOT_STARTED',
+        has_pre_assessment: hasPre,
+        has_post_assessment: hasPost,
+        pre_assessment: hasPre ? { score: t.pre.score, total_marks: t.pre.total_marks, accuracy: t.pre.accuracy, completed_at: t.pre.completed_at } : null,
+        post_assessment: hasPost ? { score: t.post.score, total_marks: t.post.total_marks, accuracy: t.post.accuracy, completed_at: t.post.completed_at } : null,
+        score_improvement: scoreImp,
+        percentage_point_improvement: pctImp,
+        total_attempts: t.attempts
+      };
+    });
+
+    const completedCount = stored.length;
+    const assignedCount = Math.max(Object.keys(topicsMap).length * 2, completedCount, 2);
+    const completionRate = assignedCount > 0 ? Math.round((completedCount / assignedCount) * 100) : 0;
+    const totalCorrect = stored.reduce((sum: number, a: any) => sum + (a.correct_answers || 0), 0);
+    const totalQ = stored.reduce((sum: number, a: any) => sum + (a.total_questions || 0), 0);
+    const accuracy = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
+
+    return {
+      student_id: 'mock_student',
+      summary: {
+        number_of_completed_assessments: completedCount,
+        number_of_assigned_assessments: assignedCount,
+        assessment_completion_rate: completionRate,
+        accuracy_percentage: accuracy,
+        average_score_improvement: 1.5,
+        average_percentage_point_improvement: 30.0,
+        topics_assessed_count: Object.keys(topicsMap).length,
+        fully_assessed_topics_count: topicOutcomes.filter(t => t.has_pre_assessment && t.has_post_assessment).length
+      },
+      topic_outcomes: topicOutcomes,
+      recent_assessments: stored.slice(-10).reverse()
+    };
+  },
+
+  submitStudentFeedback: async (payload: any) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const item = {
+      id: `fb-${Date.now()}`,
+      student_id: 'mock_student',
+      topic_id: payload.topic_id,
+      topic_title: payload.topic_id.replace('top-', '').replace(/-/g, ' ').toUpperCase(),
+      rating: payload.rating,
+      comments: payload.comments,
+      feedback_type: payload.feedback_type || 'lesson',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    list.unshift(item);
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback submitted successfully.', feedback: item };
+  },
+
+  getStudentFeedbackList: async (topicId?: string) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const filtered = topicId ? list.filter((f: any) => f.topic_id === topicId) : list;
+    return { success: true, count: filtered.length, feedback: filtered };
+  },
+
+  updateStudentFeedback: async (feedbackId: string, payload: any) => {
+    const list = getStoredArray('cog_mock_student_feedback', []);
+    const target = list.find((f: any) => f.id === feedbackId);
+    if (!target) return { success: false, message: 'Not found' };
+    if (payload.rating !== undefined) target.rating = payload.rating;
+    if (payload.comments !== undefined) target.comments = payload.comments;
+    if (payload.feedback_type !== undefined) target.feedback_type = payload.feedback_type;
+    target.updated_at = new Date().toISOString();
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback updated successfully.', feedback: target };
+  },
+
+  deleteStudentFeedback: async (feedbackId: string) => {
+    let list = getStoredArray('cog_mock_student_feedback', []);
+    list = list.filter((f: any) => f.id !== feedbackId);
+    try {
+      localStorage.setItem('cog_mock_student_feedback', JSON.stringify(list));
+    } catch {}
+    return { success: true, message: 'Feedback deleted successfully.', id: feedbackId };
   }
 };
+

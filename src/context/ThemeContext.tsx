@@ -40,9 +40,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (target === 'light') {
       root.classList.add('light-theme');
       root.classList.remove('dark');
+      root.style.colorScheme = 'light';
     } else {
       root.classList.remove('light-theme');
       root.classList.add('dark');
+      root.style.colorScheme = 'dark';
     }
 
     if (reducedMotion) {

@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useCognitive, ContentMode } from '../context/CognitiveContext';
 import { useTheme } from '../context/ThemeContext';
-import { api } from '../services/api';
+import { api, AdaptedLessonData, AdaptedLessonSection } from '../services/api';
 import { telemetry } from '../services/telemetry';
 import { mockTopicDetails, mockCourses } from '../services/mockFallback';
 import { PYTHON_FUNDAMENTALS_TOPICS } from '../data/pythonFundamentalsData';
@@ -16,6 +16,7 @@ import { CPP_ADVANCED_TOPICS } from '../data/cppAdvancedData';
 import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
 import { JAVA_OOP_TOPICS } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS } from '../data/javaAdvData';
+import { updateUniversalTopicProgress, getUniversalTopicProgress } from '../utils/trackProgress';
 
 const ALL_TOPICS: any[] = [
   ...PYTHON_FUNDAMENTALS_TOPICS,
@@ -55,7 +56,8 @@ import {
   GraduationCap,
   ExternalLink,
   Zap,
-  Bookmark
+  Bookmark,
+  Lightbulb
 } from 'lucide-react';
 import { BookmarkButton } from '../components/BookmarkButton';
 import { QuickNoteModal } from '../components/QuickNoteModal';
@@ -68,6 +70,7 @@ import { InLessonQuiz } from '../components/lesson/InLessonQuiz';
 import { InLessonCodingChallenge } from '../components/lesson/InLessonCodingChallenge';
 import { LessonSummaryCard } from '../components/lesson/LessonSummaryCard';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { renderFormattedText } from '../utils/textFormatter';
 
 export interface TopicLessonPageProps {
   topicId: string;
@@ -130,6 +133,13 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const [topic, setTopic] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Individual Adapted Lesson State
+  const [adaptedLesson, setAdaptedLesson] = useState<AdaptedLessonData | null>(null);
+  const [adaptedLoading, setAdaptedLoading] = useState(false);
+  const currentTopicIdRef = useRef(topicId);
+  currentTopicIdRef.current = topicId;
+  const lastTopicIdRef = useRef<string | null>(null);
+
   // In-Lesson Contextual AI Tutor state
   const [aiTutorResponse, setAiTutorResponse] = useState<any | null>(null);
   const [aiTutorLoading, setAiTutorLoading] = useState(false);
@@ -155,9 +165,90 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     return () => { active = false; };
   }, [topicId, topic?.language]);
 
+  // Individual Adaptation Selectors
+  const isPersonalized = useMemo(() => {
+    return Boolean(
+      adaptedLesson?.adaptation?.strategy &&
+      adaptedLesson.adaptation.strategy !== 'baseline_orientation'
+    );
+  }, [adaptedLesson]);
+
+  const adaptedExplanation = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'explanation');
+  }, [adaptedLesson]);
+
+  const adaptedAnalogy = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'analogy');
+  }, [adaptedLesson]);
+
+  const adaptedDiagram = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'visual_diagram');
+  }, [adaptedLesson]);
+
+  const adaptedStepByStep = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'step_by_step');
+  }, [adaptedLesson]);
+
+  const adaptedCodeExample = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'code_example');
+  }, [adaptedLesson]);
+
+  const adaptedMistakes = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'common_mistakes');
+  }, [adaptedLesson]);
+
+  const adaptedPractice = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'guided_practice');
+  }, [adaptedLesson]);
+
+  const adaptedQuiz = useMemo(() => {
+    return adaptedLesson?.sections?.find(s => s.type === 'quiz');
+  }, [adaptedLesson]);
+
+  const quizInitialQuestions = useMemo(() => {
+    if (isPersonalized && adaptedQuiz?.questions && adaptedQuiz.questions.length > 0) {
+      return adaptedQuiz.questions as any;
+    }
+    return topic?.quiz;
+  }, [isPersonalized, adaptedQuiz?.questions, topic?.quiz]);
+
+  const summaryItems = useMemo(() => {
+    if (isPersonalized && adaptedLesson?.key_takeaways && adaptedLesson.key_takeaways.length > 0) {
+      return adaptedLesson.key_takeaways;
+    }
+    return topic?.summary || [
+      'Master fundamental syntax and language paradigms',
+      'Understand memory layout and runtime execution boundaries',
+      'Write clean, well-tested code that prevents common anti-patterns'
+    ];
+  }, [isPersonalized, adaptedLesson, topic?.summary]);
+
+  const displayMistakes = useMemo(() => {
+    if (isPersonalized && adaptedMistakes?.mistakes && adaptedMistakes.mistakes.length > 0) {
+      return adaptedMistakes.mistakes.map(m => ({
+        mistake: m.mistake,
+        codeSnippet: undefined,
+        correction: m.fix,
+        explanation: m.why_wrong
+      }));
+    }
+    if (topic?.commonMistakes && topic.commonMistakes.length > 0) {
+      return topic.commonMistakes;
+    }
+    return [
+      {
+        mistake: 'Syntax and Type Mismatch',
+        codeSnippet: '// Invalid syntax or mismatched type assignment',
+        correction: 'Declare exact type matches and verify function prototypes.',
+        explanation: 'Statically typed languages catch these errors during compilation.'
+      }
+    ];
+  }, [isPersonalized, adaptedMistakes, topic?.commonMistakes]);
+
   // Feedback state
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
   const [completedLocally, setCompletedLocally] = useState<boolean>(false);
+  const lastScrollMilestoneRef = useRef<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -169,37 +260,111 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       ? 'SIMPLIFIED'
       : 'STANDARD';
 
-  useEffect(() => {
-    setActiveTopicId(topicId);
-    telemetry.initTopicSession(topicId);
-
-    const loadTopic = async () => {
+  const loadTopicAndAdaptation = useCallback(async (targetTopicId: string = topicId, forceRefresh: boolean = false) => {
+    if (!forceRefresh) {
       setLoading(true);
-      const curTopic = ALL_TOPICS.find(t => t.id === topicId);
+    }
+    setAdaptedLoading(true);
+    const curTopic = ALL_TOPICS.find(t => t.id === targetTopicId);
+
+    const topicDetailPromise = (async () => {
       try {
-        const data = await api.getTopicDetail(topicId);
+        const data = await api.getTopicDetail(targetTopicId);
         if (data) {
-          setTopic(curTopic ? { ...curTopic, ...data } : data);
-        } else {
-          // Fallback to local mock topic details
-          const fallback = mockTopicDetails[topicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
-          setTopic(curTopic ? { ...curTopic, ...fallback } : fallback);
+          return curTopic ? { ...curTopic, ...data } : data;
         }
       } catch (err) {
         console.warn('Failed to load topic detail via API, using mock:', err);
-        const fallback = mockTopicDetails[topicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
-        setTopic(curTopic ? { ...curTopic, ...fallback } : fallback);
-      } finally {
+      }
+      const fallback = mockTopicDetails[targetTopicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
+      return curTopic ? { ...curTopic, ...fallback } : fallback;
+    })();
+
+    const adaptedLessonPromise = (async () => {
+      try {
+        const res = await api.getAdaptedLesson(targetTopicId, activeMode, forceRefresh);
+        const lessonData = res?.lesson || res?.lesson_data || res?.adapted_lesson || res;
+        if (lessonData && (lessonData.sections || lessonData.adaptation)) {
+          return lessonData as AdaptedLessonData;
+        }
+      } catch (err) {
+        console.warn('Failed to load adapted lesson:', err);
+      }
+      return null;
+    })();
+
+    try {
+      const [loadedTopic, loadedAdaptation] = await Promise.all([
+        topicDetailPromise,
+        adaptedLessonPromise
+      ]);
+
+      if (currentTopicIdRef.current === targetTopicId) {
+        setTopic(loadedTopic);
+        setAdaptedLesson(loadedAdaptation);
+      }
+    } finally {
+      if (currentTopicIdRef.current === targetTopicId) {
         setLoading(false);
+        setAdaptedLoading(false);
+      }
+    }
+  }, [topicId, activeMode]);
+
+  const handleQuizSubmitted = useCallback(() => {
+    loadTopicAndAdaptation(topicId, true);
+  }, [topicId, loadTopicAndAdaptation]);
+
+  useEffect(() => {
+    setActiveTopicId(topicId);
+    telemetry.initTopicSession(topicId);
+    lastScrollMilestoneRef.current = 0;
+
+    const existingProg = getUniversalTopicProgress(topicId);
+    if (existingProg && (existingProg.status === 'COMPLETED' || (existingProg.completion_pct || 0) >= 95)) {
+      setCompletedLocally(true);
+    } else {
+      setCompletedLocally(false);
+      const curPct = existingProg?.completion_pct || 0;
+      updateUniversalTopicProgress(topicId, {
+        status: 'IN_PROGRESS',
+        completion_pct: Math.max(curPct, 25),
+        time_spent_delta: 15
+      });
+    }
+
+    const isDifferentTopic = lastTopicIdRef.current !== topicId;
+    lastTopicIdRef.current = topicId;
+
+    loadTopicAndAdaptation(topicId, false).then(() => {
+      if (isDifferentTopic) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    };
+    });
 
-    loadTopic();
-
-    // Listen to user scrolling to collect telemetry
     const handleScroll = () => {
       telemetry.recordScroll();
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop;
+      const scrollHeight = doc.scrollHeight - doc.clientHeight;
+      if (scrollHeight > 50) {
+        const scrollPct = (scrollTop / scrollHeight) * 100;
+        if (scrollPct >= 40 && lastScrollMilestoneRef.current < 50) {
+          lastScrollMilestoneRef.current = 50;
+          updateUniversalTopicProgress(topicId, {
+            status: 'IN_PROGRESS',
+            completion_pct: 50,
+            time_spent_delta: 20
+          });
+        } else if (scrollPct >= 80 && lastScrollMilestoneRef.current < 75) {
+          lastScrollMilestoneRef.current = 75;
+          updateUniversalTopicProgress(topicId, {
+            status: 'IN_PROGRESS',
+            completion_pct: 75,
+            time_spent_delta: 20
+          });
+        }
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
@@ -207,7 +372,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       telemetry.flushSession();
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [topicId, setActiveTopicId]);
+  }, [topicId, activeMode, setActiveTopicId, loadTopicAndAdaptation]);
 
   // Determine previous and next topics from curriculum sequence
   const curriculumSequence = useMemo(() => {
@@ -319,25 +484,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const nextTopic = currentIndex >= 0 && currentIndex < curriculumSequence.length - 1 ? curriculumSequence[currentIndex + 1] : null;
 
   const handleTopicNavigation = (targetId: string) => {
-    const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
-    const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
-    if (isTopicCAdv) {
-      api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (isTopicCInt) {
-      api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-c-')) {
-      api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-adv-')) {
-      api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-oop-')) {
-      api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-')) {
-      api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-java-')) {
-      api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-py-')) {
-      api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    }
+    updateUniversalTopicProgress(topicId, {
+      status: 'COMPLETED',
+      completion_pct: 100,
+      time_spent_delta: 60
+    });
     if (onSelectTopic) {
       onSelectTopic(targetId);
     }
@@ -345,29 +496,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   const handleMarkCompleted = async () => {
     setCompletedLocally(true);
-    try {
-      const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
-      const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
-      if (isTopicCAdv) {
-        await api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (isTopicCInt) {
-        await api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-c-')) {
-        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-adv-')) {
-        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-oop-')) {
-        await api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-')) {
-        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-')) {
-        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-py-')) {
-        await api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      }
-    } catch (err) {
-      console.warn('Could not save completion progress:', err);
-    }
+    await updateUniversalTopicProgress(topicId, {
+      status: 'COMPLETED',
+      completion_pct: 100,
+      time_spent_delta: 60
+    });
   };
 
   // Trigger contextual AI assistance
@@ -397,19 +530,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     setFeedbackSent(type);
     try {
       await api.submitContentFeedback(topicId, type);
-      if (topicId.startsWith('top-c-')) {
-        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-adv-')) {
-        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-')) {
-        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-adv-')) {
-        await api.updateJavaAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-oop-')) {
-        await api.updateJavaOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-')) {
-        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      }
+      await updateUniversalTopicProgress(topicId, {
+        status: 'COMPLETED',
+        completion_pct: 100,
+        time_spent_delta: 60
+      });
     } catch (err) {
       console.error('Feedback error:', err);
     }
@@ -483,15 +608,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const moduleName = curriculumSequence[currentIndex]?.moduleTitle || 'Core Fundamentals';
   const progressPercent = Math.min(100, Math.round(((currentIndex + 1) / (curriculumSequence.length || 1)) * 100));
 
-  // Key takeaways for summary
-  const summaryItems = topic.summary || [
-    'Master fundamental syntax and language paradigms',
-    'Understand memory layout and runtime execution boundaries',
-    'Write clean, well-tested code that prevents common anti-patterns'
-  ];
+
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#030712] light-theme:bg-[#F7F8FA] text-slate-100 light-theme:text-slate-900 transition-colors">
+    <div ref={containerRef} className="min-h-screen bg-slate-950 light-theme:bg-slate-50 text-slate-100 light-theme:text-slate-900 transition-colors">
       {/* 1. TOP NAVIGATION BAR */}
       <header className="sticky top-0 z-30 bg-slate-950/95 light-theme:bg-white/95 border-b border-slate-800 light-theme:border-slate-200 backdrop-blur-md px-4 sm:px-6 py-2.5">
         <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-3">
@@ -730,11 +850,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 light-theme:text-slate-700 leading-relaxed max-w-3xl">
-              {topic.shortDescription || topic.desc || topic.content_standard || 'Learn fundamental concepts, memory references, and core syntax.'}
+              {(isPersonalized && adaptedLesson?.introduction)
+                ? adaptedLesson.introduction
+                : (topic.shortDescription || topic.desc || topic.content_standard || 'Learn fundamental concepts, memory references, and core syntax.')}
             </p>
 
             {/* Metadata Badges */}
             <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
+              {isPersonalized && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 light-theme:text-purple-800">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="font-semibold">Tailored Lesson:</span>
+                  <span className="capitalize">{adaptedLesson?.adaptation?.strategy?.replace(/_/g, ' ') || 'Personalized'}</span>
+                </div>
+              )}
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 light-theme:bg-slate-100 border border-slate-800 light-theme:border-slate-200 text-slate-300 light-theme:text-slate-700">
                 <Clock className="w-3.5 h-3.5 text-cyan-400 light-theme:text-blue-600" />
                 <span>⏱ {topic.estimatedMinutes || 20} min read</span>
@@ -765,15 +894,18 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 By the end of this lesson, you will be able to:
               </p>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300 light-theme:text-slate-600">
-                {(topic.learningObjectives || [
-                  "Understand Python's fundamental data types and memory model",
-                  "Explain the difference between mutable and immutable objects",
-                  "Identify common Python collections and sequence types",
-                  "Inspect memory addresses and references using id() and is"
-                ]).map((obj: string, idx: number) => (
+                {(isPersonalized && adaptedLesson?.learning_objectives && adaptedLesson.learning_objectives.length > 0
+                  ? adaptedLesson.learning_objectives
+                  : (topic.learningObjectives || [
+                      "Understand fundamental concepts and memory references",
+                      "Trace execution flows and boundary conditions",
+                      "Avoid common misconceptions and anti-patterns",
+                      "Apply patterns in hands-on sandbox coding"
+                    ])
+                ).map((obj: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>{obj}</span>
+                    <span>{renderFormattedText(obj)}</span>
                   </li>
                 ))}
               </ul>
@@ -784,6 +916,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
           <AdaptiveInsightCard
             onOpenAdaptedLesson={() => onOpenAdaptedLesson?.(topicId)}
             topicId={topicId}
+            adaptation={adaptedLesson?.adaptation}
           />
 
           {/* SECTION 3: INTRODUCTION */}
@@ -793,11 +926,19 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
               Introduction
             </h2>
             <div className="text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed space-y-3">
-              <p>
-                {topic.shortDescription || topic.desc || topic.conceptExplanation?.split('\n\n')[0] || 'Understand core operational primitives, memory organization, and syntax.'}
-              </p>
-              {topic.conceptExplanation?.split('\n\n')[1] && (
-                <p>{topic.conceptExplanation.split('\n\n')[1]}</p>
+              {isPersonalized && adaptedLesson?.introduction ? (
+                <div className="p-4 rounded-xl bg-slate-900/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200">
+                  <MarkdownRenderer content={adaptedLesson.introduction} />
+                </div>
+              ) : (
+                <>
+                  <p>
+                    {renderFormattedText(topic.shortDescription || topic.desc || topic.conceptExplanation?.split('\n\n')[0] || 'Understand core operational primitives, memory organization, and syntax.')}
+                  </p>
+                  {topic.conceptExplanation?.split('\n\n')[1] && (
+                    <p>{renderFormattedText(topic.conceptExplanation.split('\n\n')[1])}</p>
+                  )}
+                </>
               )}
             </div>
           </section>
@@ -835,70 +976,117 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
               </div>
             </div>
 
-            {/* STANDARD MODE RENDERING */}
-            {activeMode === 'STANDARD' && (
-              <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
-                <div className="whitespace-pre-line leading-relaxed space-y-2">
-                  {topic.conceptExplanation || topic.content_standard}
+            {/* ADAPTED PERSONALIZED EXPLANATION */}
+            {isPersonalized && adaptedExplanation?.content ? (
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-cyan-500/30 space-y-5 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
+                {adaptedLesson?.adaptation?.reason && (
+                  <div className="p-3.5 rounded-xl bg-purple-950/30 light-theme:bg-purple-50 border border-purple-500/30 text-xs text-purple-300 light-theme:text-purple-900 flex items-start gap-2.5">
+                    <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Adaptive Remediation Focus: </span>
+                      <span>{adaptedLesson.adaptation.reason}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="leading-relaxed space-y-3">
+                  <MarkdownRenderer content={adaptedExplanation.content} />
                 </div>
-                {topic.simpleExample && (
-                  <div className="mt-3 p-3.5 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200 space-y-2">
-                    <strong className="text-xs text-cyan-400 light-theme:text-blue-600 font-mono uppercase tracking-wider block">Foundational Example:</strong>
-                    <pre className="font-mono text-xs text-emerald-300 light-theme:text-emerald-800 overflow-x-auto whitespace-pre-wrap">{topic.simpleExample.code}</pre>
-                    <p className="text-xs text-slate-400 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
+
+                {adaptedAnalogy?.content && (
+                  <div className="p-4 rounded-xl bg-amber-950/20 light-theme:bg-amber-50/80 border border-amber-500/30 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400 light-theme:text-amber-700">
+                      <Lightbulb className="w-4 h-4" />
+                      <span>Intuitive Analogy</span>
+                    </div>
+                    <div className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700 whitespace-pre-line">
+                      {adaptedAnalogy.content}
+                    </div>
+                  </div>
+                )}
+
+                {adaptedStepByStep?.steps && adaptedStepByStep.steps.length > 0 && (
+                  <div className="space-y-3 pt-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-400 light-theme:text-blue-600">
+                      Step-by-Step Architectural Mechanics
+                    </h3>
+                    <div className="space-y-2 text-xs">
+                      {adaptedStepByStep.steps.map((st: any, idx: number) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800/80 light-theme:border-slate-200">
+                          <strong className="text-cyan-400 mr-2">Step {st.step || idx + 1}: {st.title}</strong>
+                          <span className="text-slate-300 light-theme:text-slate-700">{st.description}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* DETAILED MODE RENDERING */}
-            {activeMode === 'DETAILED' && (
-              <div className="p-6 rounded-2xl bg-slate-900/50 light-theme:bg-white border border-purple-500/30 space-y-5 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
-                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 light-theme:text-purple-800 font-medium">
-                  <strong>Deep Architecture Breakdown:</strong> Execution pipeline, memory allocation, and runtime mechanics for {topic.title}.
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-white light-theme:text-slate-900">
-                    Step-by-Step Architectural Mechanics
-                  </h3>
-                  <div className="space-y-2 text-xs sm:text-sm">
-                    {(topic.stepByStep || [
-                      "1. Program parsing and syntax tree construction",
-                      "2. Static type checking and symbol table resolution",
-                      "3. Code generation or bytecode interpretation",
-                      "4. Stack and heap frame allocation during runtime execution"
-                    ]).map((step: string, sIdx: number) => (
-                      <div key={sIdx} className="p-2.5 rounded-lg bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800/80 light-theme:border-slate-200">
-                        {step}
+            ) : (
+              <>
+                {/* STANDARD MODE RENDERING */}
+                {activeMode === 'STANDARD' && (
+                  <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
+                    <MarkdownRenderer content={topic.conceptExplanation || topic.content_standard || ''} />
+                    {topic.simpleExample && (
+                      <div className="mt-3 p-3.5 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200 space-y-2">
+                        <strong className="text-xs text-cyan-400 light-theme:text-blue-600 font-mono uppercase tracking-wider block">Foundational Example:</strong>
+                        <pre className="font-mono text-xs text-emerald-300 light-theme:text-emerald-800 overflow-x-auto whitespace-pre-wrap">{topic.simpleExample.code}</pre>
+                        <p className="text-xs text-slate-400 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* SIMPLIFIED MODE RENDERING */}
-            {activeMode === 'SIMPLIFIED' && (
-              <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-cyan-500/30 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
-                <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 light-theme:text-blue-800 font-medium">
-                  <strong>Everyday Analogy & Core Concept:</strong>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-base font-bold text-white light-theme:text-slate-900">
-                    {topic.title} Made Simple
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700">
-                    {topic.shortDescription || topic.desc || (topic.conceptExplanation ? topic.conceptExplanation.split('.')[0] + '.' : 'Master the foundational mechanics.')}
-                  </p>
-                  {topic.simpleExample && (
-                    <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800">
-                      <p className="text-xs text-emerald-400 font-semibold mb-1">Key Rule:</p>
-                      <p className="text-xs text-slate-300 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
+                {/* DETAILED MODE RENDERING */}
+                {activeMode === 'DETAILED' && (
+                  <div className="p-6 rounded-2xl bg-slate-900/50 light-theme:bg-white border border-purple-500/30 space-y-5 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
+                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 light-theme:text-purple-800 font-medium">
+                      <strong>Deep Architecture Breakdown:</strong> Execution pipeline, memory allocation, and runtime mechanics for {topic.title}.
                     </div>
-                  )}
-                </div>
-              </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-base font-bold text-white light-theme:text-slate-900">
+                        Step-by-Step Architectural Mechanics
+                      </h3>
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        {(topic.stepByStep || [
+                          "1. Program parsing and syntax tree construction",
+                          "2. Static type checking and symbol table resolution",
+                          "3. Code generation or bytecode interpretation",
+                          "4. Stack and heap frame allocation during runtime execution"
+                        ]).map((step: string, sIdx: number) => (
+                          <div key={sIdx} className="p-2.5 rounded-lg bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800/80 light-theme:border-slate-200">
+                            {renderFormattedText(step)}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SIMPLIFIED MODE RENDERING */}
+                {activeMode === 'SIMPLIFIED' && (
+                  <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-cyan-500/30 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
+                    <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs text-cyan-300 light-theme:text-blue-800 font-medium">
+                      <strong>Everyday Analogy & Core Concept:</strong>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-base font-bold text-white light-theme:text-slate-900">
+                        {topic.title} Made Simple
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700">
+                        {renderFormattedText(topic.shortDescription || topic.desc || (topic.conceptExplanation ? topic.conceptExplanation.split('.')[0] + '.' : 'Master the foundational mechanics.'))}
+                      </p>
+                      {topic.simpleExample && (
+                        <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800">
+                          <p className="text-xs text-emerald-400 font-semibold mb-1">Key Rule:</p>
+                          <p className="text-xs text-slate-300 light-theme:text-slate-600">{renderFormattedText(topic.simpleExample.explanation)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
 
@@ -927,13 +1115,48 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
               title={`${topic.title} Interactive Sandbox`}
               language={topic.language || 'python'}
               topicId={topicId}
-              initialCode={topic.codeExample || topic.simpleExample?.code || `// Interactive code for ${topic.title}`}
-              explanationOfOutput={topic.expectedOutput || topic.simpleExample?.explanation || `Executed ${topic.title} successfully.`}
+              initialCode={
+                (isPersonalized && adaptedCodeExample?.code)
+                  ? adaptedCodeExample.code
+                  : (topic.codeExample || topic.simpleExample?.code || `// Interactive code for ${topic.title}`)
+              }
+              explanationOfOutput={
+                (isPersonalized && adaptedCodeExample?.code_explanation)
+                  ? adaptedCodeExample.code_explanation
+                  : (topic.expectedOutput || topic.simpleExample?.explanation || `Executed ${topic.title} successfully.`)
+              }
             />
+
+            {isPersonalized && adaptedCodeExample?.line_by_line && adaptedCodeExample.line_by_line.length > 0 && (
+              <div className="p-3.5 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200 space-y-2">
+                <span className="text-xs font-mono font-bold text-cyan-400 light-theme:text-blue-600 block uppercase tracking-wider">Line-by-Line Breakdown:</span>
+                <div className="space-y-1.5 text-xs">
+                  {adaptedCodeExample.line_by_line.map((lbl, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-slate-300 light-theme:text-slate-700">
+                      <span className="font-mono text-cyan-300 light-theme:text-blue-700 bg-slate-900 light-theme:bg-slate-100 px-1.5 py-0.5 rounded border border-slate-800 light-theme:border-slate-200 text-[11px] shrink-0">{lbl.line}</span>
+                      <span className="text-slate-400 light-theme:text-slate-600 mt-0.5">{lbl.explanation}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* SECTION 7: VISUAL LEARNING & ARCHITECTURAL DIAGRAMS */}
-          {topic.visualDiagram && (
+          {(isPersonalized && adaptedDiagram?.diagram_content) ? (
+            <section id="section-diagram" className="space-y-3">
+              <h2 className="text-lg sm:text-xl font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
+                <span className="w-2 h-5 rounded-full bg-cyan-400" />
+                {adaptedDiagram.title || 'Architectural & Memory Diagram'}
+              </h2>
+              <div className="rounded-xl border border-cyan-500/30 bg-slate-950 p-4 font-mono text-xs sm:text-sm text-cyan-300 overflow-x-auto shadow-inner shadow-cyan-950/20 leading-relaxed">
+                <pre className="whitespace-pre">{adaptedDiagram.diagram_content}</pre>
+              </div>
+              {adaptedDiagram.diagram_caption && (
+                <p className="text-xs text-slate-400 italic">{adaptedDiagram.diagram_caption}</p>
+              )}
+            </section>
+          ) : topic.visualDiagram ? (
             <section id="section-diagram" className="space-y-3">
               <h2 className="text-lg sm:text-xl font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
                 <span className="w-2 h-5 rounded-full bg-cyan-400" />
@@ -943,7 +1166,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 <pre>{typeof topic.visualDiagram === 'string' ? topic.visualDiagram : JSON.stringify(topic.visualDiagram, null, 2)}</pre>
               </div>
             </section>
-          )}
+          ) : null}
 
           <VisualConceptExplainer
             topicId={topicId}
@@ -953,20 +1176,16 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
           {/* SECTION 8: KEY TAKEAWAYS */}
           <section id="section-takeaway" className="space-y-3">
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950/30 via-slate-900 to-indigo-950/30 light-theme:bg-blue-50/70 border border-blue-500/30 light-theme:border-blue-200 space-y-2">
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950/30 via-slate-900 to-indigo-950/30 light-theme:bg-blue-50 light-theme:[background-image:none] border border-blue-500/30 light-theme:border-blue-200 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 light-theme:text-blue-700">
                 <Sparkles className="w-4 h-4" />
                 Key Takeaway
               </div>
               <ul className="space-y-1.5 text-sm text-slate-200 light-theme:text-slate-800">
-                {(topic.summary || [
-                  'Master core procedural and architectural foundations',
-                  'Verify memory structures and strict compiler bounds',
-                  'Apply structured control patterns for robust execution'
-                ]).map((item: string, sIdx: number) => (
+                {summaryItems.map((item: string, sIdx: number) => (
                   <li key={sIdx} className="flex items-start gap-2">
                     <span className="text-cyan-400 font-bold">•</span>
-                    <span>{item}</span>
+                    <span>{renderFormattedText(item)}</span>
                   </li>
                 ))}
               </ul>
@@ -981,17 +1200,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(topic.commonMistakes && topic.commonMistakes.length > 0
-                ? topic.commonMistakes
-                : [
-                    {
-                      mistake: 'Syntax and Type Mismatch',
-                      codeSnippet: '// Invalid syntax or mismatched type assignment',
-                      correction: 'Declare exact type matches and verify function prototypes.',
-                      explanation: 'Statically typed languages catch these errors during compilation.'
-                    }
-                  ]
-              ).map((mistake: any, mIdx: number) => (
+              {displayMistakes.map((mistake: any, mIdx: number) => (
                 <div
                   key={mIdx}
                   className={`p-4 rounded-xl border space-y-2 text-xs ${
@@ -1002,7 +1211,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 >
                   <div className={`flex items-center gap-1.5 font-bold ${mIdx % 2 === 0 ? 'text-rose-400 light-theme:text-rose-700' : 'text-amber-400 light-theme:text-amber-700'}`}>
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Mistake: {mistake.mistake}</span>
+                    <span>Mistake: {renderFormattedText(mistake.mistake)}</span>
                   </div>
                   {mistake.codeSnippet && (
                     <div className="p-2.5 rounded-lg bg-slate-950 light-theme:bg-white font-mono text-[11px] text-rose-300 border border-rose-500/20 overflow-x-auto">
@@ -1011,10 +1220,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                   )}
                   <p className="text-slate-300 light-theme:text-slate-700">
                     <strong className="text-emerald-400 light-theme:text-emerald-700 block mb-0.5">Correction:</strong>
-                    {mistake.correction}
+                    {renderFormattedText(mistake.correction)}
                   </p>
                   <p className="text-slate-400 light-theme:text-slate-600 italic">
-                    {mistake.explanation}
+                    {renderFormattedText(mistake.explanation)}
                   </p>
                 </div>
               ))}
@@ -1032,10 +1241,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 <>
                   <div className="flex items-center gap-2 font-bold text-cyan-400 light-theme:text-blue-600 text-xs uppercase tracking-wide">
                     <span>Industry Scenario:</span>
-                    <span className="text-white light-theme:text-slate-900">{topic.realWorldExample.scenario}</span>
+                    <span className="text-white light-theme:text-slate-900">{renderFormattedText(topic.realWorldExample.scenario)}</span>
                   </div>
                   <p className="text-slate-300 light-theme:text-slate-700 leading-relaxed">
-                    {topic.realWorldExample.explanation}
+                    {renderFormattedText(topic.realWorldExample.explanation)}
                   </p>
                   {topic.realWorldExample.code && (
                     <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-slate-50 p-3.5 font-mono text-xs text-emerald-400 light-theme:text-emerald-700 overflow-x-auto">
@@ -1043,6 +1252,15 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                     </div>
                   )}
                 </>
+              ) : isPersonalized && adaptedAnalogy?.content ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-cyan-400 light-theme:text-blue-600 text-xs uppercase tracking-wide">
+                    <span>Remedial Real-World Context:</span>
+                  </div>
+                  <p className="text-slate-300 light-theme:text-slate-700 leading-relaxed whitespace-pre-line">
+                    {adaptedAnalogy.content}
+                  </p>
+                </div>
               ) : (
                 <p>
                   High-performance production environments rely on predictable resource consumption, strict memory budgeting, and zero-overhead abstractions.
@@ -1055,15 +1273,39 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
           <TryYourselfSandbox
             topicId={topicId}
             language={topic.language || 'python'}
-            prompt={topic.practice?.prompt}
-            initialCode={topic.practice?.starterCode}
-            expectedOutputMatcher={topic.practice?.expectedOutputMatcher}
-            hint={topic.practice?.hint}
-            solution={topic.practice?.solution}
+            prompt={
+              (isPersonalized && adaptedPractice?.practice?.prompt)
+                ? adaptedPractice.practice.prompt
+                : topic.practice?.prompt
+            }
+            initialCode={
+              (isPersonalized && adaptedPractice?.practice?.starter_code)
+                ? adaptedPractice.practice.starter_code
+                : topic.practice?.starterCode
+            }
+            expectedOutputMatcher={
+              (isPersonalized && adaptedPractice?.practice?.expected_output)
+                ? adaptedPractice.practice.expected_output
+                : topic.practice?.expectedOutputMatcher
+            }
+            hint={
+              (isPersonalized && adaptedPractice?.practice?.hint)
+                ? adaptedPractice.practice.hint
+                : topic.practice?.hint
+            }
+            solution={
+              (isPersonalized && adaptedPractice?.practice?.solution)
+                ? adaptedPractice.practice.solution
+                : topic.practice?.solution
+            }
           />
 
           {/* SECTION 12: IN-LESSON MINI QUIZ */}
-          <InLessonQuiz topicId={topicId} initialQuestions={topic.quiz} />
+          <InLessonQuiz
+            topicId={topicId}
+            initialQuestions={quizInitialQuestions}
+            onQuizSubmitted={handleQuizSubmitted}
+          />
 
           {/* SECTION 13: IN-LESSON CODING CHALLENGE */}
           <InLessonCodingChallenge
@@ -1115,7 +1357,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             )}
 
             {aiTutorResponse && (
-              <div className="p-4 sm:p-5 rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/20 to-slate-950 light-theme:bg-purple-50/80 text-xs text-slate-200 light-theme:text-slate-800 leading-relaxed animate-pop-in space-y-2.5 shadow-lg shadow-purple-950/20">
+              <div className="p-4 sm:p-5 rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/20 to-slate-950 light-theme:bg-purple-50 light-theme:[background-image:none] text-xs text-slate-200 light-theme:text-slate-800 leading-relaxed animate-pop-in space-y-2.5 shadow-lg shadow-purple-950/20">
                 <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-purple-400 light-theme:text-purple-700 uppercase text-[10px] tracking-wider flex items-center gap-1.5">

@@ -28,6 +28,8 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { LearningOutcomesSection } from '../components/dashboard/LearningOutcomesSection';
+import { StudentMasteryCard } from '../components/dashboard/StudentMasteryCard';
 
 interface LearnerDashboardProps {
   onSelectTopic: (topicId: string) => void;
@@ -128,7 +130,7 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. TOP SECTION: COMMAND CENTER HERO (Section 44) */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 light-theme:bg-white light-theme:shadow-sm shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 mb-3">
@@ -311,7 +313,13 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
         </div>
       </div>
 
-      {/* 5. GAMIFICATION & ACHIEVEMENTS (Section 68, 69) */}
+      {/* 4.5. STUDENT MASTERY PROFILE (Member 3 Module) */}
+      <StudentMasteryCard />
+
+      {/* 5. LEARNING OUTCOMES & STUDENT FEEDBACK (Member 4 Module) */}
+      <LearningOutcomesSection onSelectTopic={onSelectTopic} />
+
+      {/* 6. GAMIFICATION & ACHIEVEMENTS (Section 68, 69) */}
       <div>
         <h2 className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4 flex items-center gap-2">
           <Award className="w-4 h-4 text-amber-400" />

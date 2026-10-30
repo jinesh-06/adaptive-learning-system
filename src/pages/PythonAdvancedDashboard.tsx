@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getMockUserStreak } from '../utils/streakCalculator';
 import { api } from '../services/api';
 import {
   PYTHON_ADVANCED_TOPICS,
@@ -42,6 +43,11 @@ export const PythonAdvancedDashboard: React.FC<PythonAdvancedDashboardProps> = (
 
   useEffect(() => {
     loadDashboard();
+    const handleStreak = () => {
+      setDashboardData((prev: any) => prev ? { ...prev, streak_days: getMockUserStreak() } : prev);
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    return () => window.removeEventListener('streak:updated', handleStreak);
   }, []);
 
   const loadDashboard = async () => {
@@ -138,7 +144,7 @@ export const PythonAdvancedDashboard: React.FC<PythonAdvancedDashboardProps> = (
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -185,7 +191,7 @@ export const PythonAdvancedDashboard: React.FC<PythonAdvancedDashboardProps> = (
       </div>
 
       {/* Main Course Hero Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 p-6 sm:p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 light-theme:bg-white light-theme:shadow-sm p-6 sm:p-8 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -249,7 +255,7 @@ export const PythonAdvancedDashboard: React.FC<PythonAdvancedDashboardProps> = (
               <div>
                 <span className="text-slate-400 text-[11px] block">Current Streak</span>
                 <span className="font-bold text-amber-400 text-sm">
-                  {dashboardData?.streak_days || 5} Days 🔥
+                  {dashboardData?.streak_days ?? 0} Days 🔥
                 </span>
               </div>
             </div>

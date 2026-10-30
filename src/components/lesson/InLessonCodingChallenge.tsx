@@ -363,7 +363,9 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-white overflow-hidden">
           {/* Editor Header */}
           <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 light-theme:bg-slate-100 border-b border-slate-800 light-theme:border-slate-300 text-xs">
-            <span className="font-mono text-cyan-400 light-theme:text-blue-600 font-bold">solution.py</span>
+            <span className="font-mono text-cyan-400 light-theme:text-blue-600 font-bold">
+              {activeLang === 'java' ? 'Solution.java' : `solution.${activeLang === 'cpp' ? 'cpp' : activeLang === 'c' ? 'c' : 'py'}`}
+            </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyCode}

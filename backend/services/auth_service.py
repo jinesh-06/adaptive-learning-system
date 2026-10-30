@@ -108,7 +108,12 @@ class AuthService:
     def verify_internal_token(self, token: str) -> Dict[str, Any]:
         """Verify internally signed HS256 JWT."""
         try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            payload = jwt.decode(
+                token,
+                JWT_SECRET,
+                algorithms=[JWT_ALGORITHM],
+                options={"require": ["exp", "sub"]}
+            )
             return payload
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token has expired")
@@ -121,6 +126,7 @@ class AuthService:
             "sub": user_id,
             "email": email,
             "role": role,
+            "token_type": "internal_hs256",
             "iat": int(time.time()),
             "exp": int(time.time()) + expires_in_seconds
         }

@@ -25,6 +25,7 @@ import json
 import os
 import math
 import uuid
+import sqlite3
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
@@ -164,7 +165,9 @@ class MasteryService:
         score: float,
         subject_id: Optional[str] = None,
         assessment_id: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs
     ) -> Dict[str, Any]:
         """
         Idempotently process a verified assessment result, update topic mastery,
@@ -180,7 +183,7 @@ class MasteryService:
             raise ValueError(f"Invalid assessment_type '{assessment_type}'. Must be 'quiz' or 'coding'.")
 
         valid_score = self.validate_score(score)
-        metadata = details or {}
+        metadata = details or metadata or {}
 
         # Resolve subject_id / course_id if missing
         if not subject_id or not str(subject_id).strip():
@@ -189,263 +192,279 @@ class MasteryService:
 
         with state_store._lock:
             conn = state_store.get_connection()
-            cur = conn.cursor()
+            try:
+                conn.execute("BEGIN IMMEDIATE")
+                cur = conn.cursor()
 
-            # --- Idempotency Check ---
-            # If an assessment_id is provided, check if it was already processed
-            if assessment_id:
+                # --- Idempotency Check ---
+                # If an assessment_id is provided, check if it was already processed
+                if assessment_id:
+                    cur.execute(
+                        "SELECT * FROM mastery_history WHERE assessment_id = ? AND user_id = ?",
+                        (assessment_id, user_id)
+                    )
+                    duplicate = cur.fetchone()
+                    if duplicate:
+                        logger.info(f"Duplicate assessment '{assessment_id}' detected for user '{user_id}'. Skipping reprocessing.")
+                        # Fetch and return existing topic mastery record
+                        cur.execute(
+                            "SELECT * FROM student_topic_mastery WHERE user_id = ? AND topic_id = ?",
+                            (user_id, topic_id)
+                        )
+                        existing_mastery = cur.fetchone()
+                        return self._format_topic_mastery_row(existing_mastery, is_duplicate=True)
+
+                # --- Load or Initialize Topic Mastery Record ---
                 cur.execute(
-                    "SELECT * FROM mastery_history WHERE assessment_id = ? AND user_id = ?",
-                    (assessment_id, user_id)
+                    "SELECT * FROM student_topic_mastery WHERE user_id = ? AND topic_id = ?",
+                    (user_id, topic_id)
                 )
-                duplicate = cur.fetchone()
-                if duplicate:
-                    logger.info(f"Duplicate assessment '{assessment_id}' detected for user '{user_id}'. Skipping reprocessing.")
-                    # Fetch and return existing topic mastery record
+                existing = cur.fetchone()
+
+                rec_id = f"{user_id}_{subject_id}_{topic_id}"
+                now_iso = datetime.now(timezone.utc).isoformat()
+
+                if existing:
+                    total_attempts = (existing["total_attempts"] or 0) + 1
+                    completed_assessments = (existing["completed_assessments"] or 0) + 1
+
+                    quiz_attempts = existing["quiz_attempts"] or 0
+                    quiz_correct = existing["quiz_correct_answers"] or 0
+                    quiz_incorrect = existing["quiz_incorrect_answers"] or 0
+                    quiz_accuracy = existing["quiz_accuracy"]
+                    best_quiz_accuracy = existing["best_quiz_accuracy"]
+
+                    coding_attempts = existing["coding_attempts"] or 0
+                    coding_passed = existing["coding_passed_tests"] or 0
+                    coding_total = existing["coding_total_tests"] or 0
+                    coding_score = existing["coding_score"]
+                    best_coding_score = existing["best_coding_score"]
+
+                    previous_mastery = existing["current_mastery"]
+
+                    if clean_type == "quiz":
+                        quiz_attempts += 1
+                        quiz_accuracy = valid_score
+                        best_quiz_accuracy = max(best_quiz_accuracy or 0.0, valid_score)
+                        if "correct_count" in metadata:
+                            cor = int(metadata.get("correct_count", 0))
+                            quiz_correct += cor
+                            if "total_questions" in metadata:
+                                tot = int(metadata.get("total_questions", 0))
+                                quiz_incorrect += max(0, tot - cor)
+                            else:
+                                quiz_incorrect += max(0, 10 - cor)
+                        else:
+                            cor = int(round(valid_score / 10.0)) if valid_score > 0 else 0
+                            quiz_correct += cor
+                            quiz_incorrect += max(0, 10 - cor)
+
+                    elif clean_type == "coding":
+                        coding_attempts += 1
+                        coding_score = valid_score
+                        best_coding_score = max(best_coding_score or 0.0, valid_score)
+                        if "passed_tests" in metadata:
+                            coding_passed += int(metadata.get("passed_tests", 0))
+                        else:
+                            coding_passed += int(round(valid_score / 10.0)) if valid_score > 0 else 0
+                        if "total_tests" in metadata:
+                            coding_total += int(metadata.get("total_tests", 0))
+                        else:
+                            coding_total += 10
+
+                    # Recalculate mastery
+                    calc = self.calculate_mastery(quiz_accuracy, coding_score)
+                    new_mastery = calc["current_mastery"]
+                    status = calc["status"]
+
+                    correct_attempts = (quiz_correct or 0) + (coding_passed or 0)
+                    total_items = (quiz_correct + quiz_incorrect) + coding_total
+                    accuracy_pct = round((correct_attempts / total_items) * 100, 2) if total_items > 0 else (quiz_accuracy if quiz_accuracy is not None else coding_score)
+                    improvement = round(new_mastery - previous_mastery, 2) if (previous_mastery is not None and new_mastery is not None) else None
+
+                    cur.execute(
+                        """UPDATE student_topic_mastery
+                           SET subject_id = ?,
+                               mastery_score = ?,
+                               total_attempts = ?,
+                               correct_attempts = ?,
+                               accuracy_percentage = ?,
+                               improvement = ?,
+                               completed_assessments = ?,
+                               quiz_attempts = ?,
+                               quiz_correct_answers = ?,
+                               quiz_incorrect_answers = ?,
+                               quiz_accuracy = ?,
+                               best_quiz_accuracy = ?,
+                               coding_attempts = ?,
+                               coding_passed_tests = ?,
+                               coding_total_tests = ?,
+                               coding_score = ?,
+                               best_coding_score = ?,
+                               current_mastery = ?,
+                               previous_mastery = ?,
+                               mastery_status = ?,
+                               last_activity_at = ?,
+                               updated_at = ?
+                           WHERE user_id = ? AND topic_id = ?""",
+                        (
+                            subject_id,
+                            new_mastery,
+                            total_attempts,
+                            correct_attempts,
+                            accuracy_pct,
+                            improvement,
+                            completed_assessments,
+                            quiz_attempts,
+                            quiz_correct,
+                            quiz_incorrect,
+                            quiz_accuracy,
+                            best_quiz_accuracy,
+                            coding_attempts,
+                            coding_passed,
+                            coding_total,
+                            coding_score,
+                            best_coding_score,
+                            new_mastery,
+                            previous_mastery,
+                            status,
+                            now_iso,
+                            now_iso,
+                            user_id,
+                            topic_id
+                        )
+                    )
+
+                else:
+                    total_attempts = 1
+                    completed_assessments = 1
+                    previous_mastery = None
+                    improvement = None
+
+                    if clean_type == "quiz":
+                        quiz_attempts = 1
+                        quiz_accuracy = valid_score
+                        best_quiz_accuracy = valid_score
+                        cor = int(metadata.get("correct_count", round(valid_score / 10.0) if valid_score > 0 else 0))
+                        tot = int(metadata.get("total_questions", 10))
+                        quiz_correct = cor
+                        quiz_incorrect = max(0, tot - cor)
+
+                        coding_attempts = 0
+                        coding_passed = 0
+                        coding_total = 0
+                        coding_score = None
+                        best_coding_score = None
+                        correct_attempts = quiz_correct
+                        accuracy_pct = valid_score
+                    else:
+                        quiz_attempts = 0
+                        quiz_correct = 0
+                        quiz_incorrect = 0
+                        quiz_accuracy = None
+                        best_quiz_accuracy = None
+
+                        coding_attempts = 1
+                        coding_score = valid_score
+                        best_coding_score = valid_score
+                        coding_passed = int(metadata.get("passed_tests", round(valid_score / 10.0) if valid_score > 0 else 0))
+                        coding_total = int(metadata.get("total_tests", 10))
+                        correct_attempts = coding_passed
+                        accuracy_pct = valid_score
+
+                    calc = self.calculate_mastery(quiz_accuracy, coding_score)
+                    new_mastery = calc["current_mastery"]
+                    status = calc["status"]
+
+                    cur.execute(
+                        """INSERT INTO student_topic_mastery (
+                               id, user_id, subject_id, topic_id, mastery_score, total_attempts,
+                               correct_attempts, accuracy_percentage, improvement, completed_assessments,
+                               quiz_attempts, quiz_correct_answers, quiz_incorrect_answers,
+                               quiz_accuracy, best_quiz_accuracy, coding_attempts, coding_passed_tests,
+                               coding_total_tests, coding_score, best_coding_score,
+                               current_mastery, previous_mastery, mastery_status,
+                               last_activity_at, created_at, updated_at
+                           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (
+                            rec_id,
+                            user_id,
+                            subject_id,
+                            topic_id,
+                            new_mastery,
+                            total_attempts,
+                            correct_attempts,
+                            accuracy_pct,
+                            improvement,
+                            completed_assessments,
+                            quiz_attempts,
+                            quiz_correct,
+                            quiz_incorrect,
+                            quiz_accuracy,
+                            best_quiz_accuracy,
+                            coding_attempts,
+                            coding_passed,
+                            coding_total,
+                            coding_score,
+                            best_coding_score,
+                            new_mastery,
+                            previous_mastery,
+                            status,
+                            now_iso,
+                            now_iso,
+                            now_iso
+                        )
+                    )
+
+                # --- Log into Mastery History ---
+                hist_id = f"hist_{uuid.uuid4().hex[:16]}"
+                change_delta = round(new_mastery - previous_mastery, 2) if (previous_mastery is not None and new_mastery is not None) else None
+                meta_json = json.dumps(metadata)
+
+                cur.execute(
+                    """INSERT INTO mastery_history (
+                           id, user_id, subject_id, topic_id, assessment_id, assessment_type,
+                           score, previous_mastery, new_mastery, change_delta, metadata_json, timestamp
+                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        hist_id,
+                        user_id,
+                        subject_id,
+                        topic_id,
+                        assessment_id or hist_id,
+                        clean_type,
+                        valid_score,
+                        previous_mastery,
+                        new_mastery,
+                        change_delta,
+                        meta_json,
+                        now_iso
+                    )
+                )
+
+                conn.commit()
+
+                # Retrieve updated row
+                cur.execute("SELECT * FROM student_topic_mastery WHERE id = ?", (rec_id,))
+                updated_row = cur.fetchone()
+
+                return self._format_topic_mastery_row(updated_row, is_duplicate=False)
+            except sqlite3.IntegrityError as e:
+                conn.rollback()
+                if assessment_id and "mastery_history.assessment_id" in str(e):
+                    logger.info(f"Concurrent duplicate submission '{assessment_id}' handled by database constraint.")
                     cur.execute(
                         "SELECT * FROM student_topic_mastery WHERE user_id = ? AND topic_id = ?",
                         (user_id, topic_id)
                     )
                     existing_mastery = cur.fetchone()
-                    conn.close()
                     return self._format_topic_mastery_row(existing_mastery, is_duplicate=True)
-
-            # --- Load or Initialize Topic Mastery Record ---
-            cur.execute(
-                "SELECT * FROM student_topic_mastery WHERE user_id = ? AND topic_id = ?",
-                (user_id, topic_id)
-            )
-            existing = cur.fetchone()
-
-            rec_id = f"{user_id}_{subject_id}_{topic_id}"
-            now_iso = datetime.now(timezone.utc).isoformat()
-
-            if existing:
-                total_attempts = (existing["total_attempts"] or 0) + 1
-                completed_assessments = (existing["completed_assessments"] or 0) + 1
-
-                quiz_attempts = existing["quiz_attempts"] or 0
-                quiz_correct = existing["quiz_correct_answers"] or 0
-                quiz_incorrect = existing["quiz_incorrect_answers"] or 0
-                quiz_accuracy = existing["quiz_accuracy"]
-                best_quiz_accuracy = existing["best_quiz_accuracy"]
-
-                coding_attempts = existing["coding_attempts"] or 0
-                coding_passed = existing["coding_passed_tests"] or 0
-                coding_total = existing["coding_total_tests"] or 0
-                coding_score = existing["coding_score"]
-                best_coding_score = existing["best_coding_score"]
-
-                previous_mastery = existing["current_mastery"]
-
-                if clean_type == "quiz":
-                    quiz_attempts += 1
-                    quiz_accuracy = valid_score
-                    best_quiz_accuracy = max(best_quiz_accuracy or 0.0, valid_score)
-                    if "correct_count" in metadata:
-                        cor = int(metadata.get("correct_count", 0))
-                        quiz_correct += cor
-                        if "total_questions" in metadata:
-                            tot = int(metadata.get("total_questions", 0))
-                            quiz_incorrect += max(0, tot - cor)
-                        else:
-                            quiz_incorrect += max(0, 10 - cor)
-                    else:
-                        cor = int(round(valid_score / 10.0)) if valid_score > 0 else 0
-                        quiz_correct += cor
-                        quiz_incorrect += max(0, 10 - cor)
-
-                elif clean_type == "coding":
-                    coding_attempts += 1
-                    coding_score = valid_score
-                    best_coding_score = max(best_coding_score or 0.0, valid_score)
-                    if "passed_tests" in metadata:
-                        coding_passed += int(metadata.get("passed_tests", 0))
-                    else:
-                        coding_passed += int(round(valid_score / 10.0)) if valid_score > 0 else 0
-                    if "total_tests" in metadata:
-                        coding_total += int(metadata.get("total_tests", 0))
-                    else:
-                        coding_total += 10
-
-                # Recalculate mastery
-                calc = self.calculate_mastery(quiz_accuracy, coding_score)
-                new_mastery = calc["current_mastery"]
-                status = calc["status"]
-
-                correct_attempts = (quiz_correct or 0) + (coding_passed or 0)
-                total_items = (quiz_correct + quiz_incorrect) + coding_total
-                accuracy_pct = round((correct_attempts / total_items) * 100, 2) if total_items > 0 else (quiz_accuracy if quiz_accuracy is not None else coding_score)
-                improvement = round(new_mastery - previous_mastery, 2) if (previous_mastery is not None and new_mastery is not None) else None
-
-                cur.execute(
-                    """UPDATE student_topic_mastery
-                       SET subject_id = ?,
-                           mastery_score = ?,
-                           total_attempts = ?,
-                           correct_attempts = ?,
-                           accuracy_percentage = ?,
-                           improvement = ?,
-                           completed_assessments = ?,
-                           quiz_attempts = ?,
-                           quiz_correct_answers = ?,
-                           quiz_incorrect_answers = ?,
-                           quiz_accuracy = ?,
-                           best_quiz_accuracy = ?,
-                           coding_attempts = ?,
-                           coding_passed_tests = ?,
-                           coding_total_tests = ?,
-                           coding_score = ?,
-                           best_coding_score = ?,
-                           current_mastery = ?,
-                           previous_mastery = ?,
-                           mastery_status = ?,
-                           last_activity_at = ?,
-                           updated_at = ?
-                       WHERE user_id = ? AND topic_id = ?""",
-                    (
-                        subject_id,
-                        new_mastery,
-                        total_attempts,
-                        correct_attempts,
-                        accuracy_pct,
-                        improvement,
-                        completed_assessments,
-                        quiz_attempts,
-                        quiz_correct,
-                        quiz_incorrect,
-                        quiz_accuracy,
-                        best_quiz_accuracy,
-                        coding_attempts,
-                        coding_passed,
-                        coding_total,
-                        coding_score,
-                        best_coding_score,
-                        new_mastery,
-                        previous_mastery,
-                        status,
-                        now_iso,
-                        now_iso,
-                        user_id,
-                        topic_id
-                    )
-                )
-
-            else:
-                total_attempts = 1
-                completed_assessments = 1
-                previous_mastery = None
-                improvement = None
-
-                if clean_type == "quiz":
-                    quiz_attempts = 1
-                    quiz_accuracy = valid_score
-                    best_quiz_accuracy = valid_score
-                    cor = int(metadata.get("correct_count", round(valid_score / 10.0) if valid_score > 0 else 0))
-                    tot = int(metadata.get("total_questions", 10))
-                    quiz_correct = cor
-                    quiz_incorrect = max(0, tot - cor)
-
-                    coding_attempts = 0
-                    coding_passed = 0
-                    coding_total = 0
-                    coding_score = None
-                    best_coding_score = None
-                    correct_attempts = quiz_correct
-                    accuracy_pct = valid_score
-                else:
-                    quiz_attempts = 0
-                    quiz_correct = 0
-                    quiz_incorrect = 0
-                    quiz_accuracy = None
-                    best_quiz_accuracy = None
-
-                    coding_attempts = 1
-                    coding_score = valid_score
-                    best_coding_score = valid_score
-                    coding_passed = int(metadata.get("passed_tests", round(valid_score / 10.0) if valid_score > 0 else 0))
-                    coding_total = int(metadata.get("total_tests", 10))
-                    correct_attempts = coding_passed
-                    accuracy_pct = valid_score
-
-                calc = self.calculate_mastery(quiz_accuracy, coding_score)
-                new_mastery = calc["current_mastery"]
-                status = calc["status"]
-
-                cur.execute(
-                    """INSERT INTO student_topic_mastery (
-                           id, user_id, subject_id, topic_id, mastery_score, total_attempts,
-                           correct_attempts, accuracy_percentage, improvement, completed_assessments,
-                           quiz_attempts, quiz_correct_answers, quiz_incorrect_answers,
-                           quiz_accuracy, best_quiz_accuracy, coding_attempts, coding_passed_tests,
-                           coding_total_tests, coding_score, best_coding_score,
-                           current_mastery, previous_mastery, mastery_status,
-                           last_activity_at, created_at, updated_at
-                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (
-                        rec_id,
-                        user_id,
-                        subject_id,
-                        topic_id,
-                        new_mastery,
-                        total_attempts,
-                        correct_attempts,
-                        accuracy_pct,
-                        improvement,
-                        completed_assessments,
-                        quiz_attempts,
-                        quiz_correct,
-                        quiz_incorrect,
-                        quiz_accuracy,
-                        best_quiz_accuracy,
-                        coding_attempts,
-                        coding_passed,
-                        coding_total,
-                        coding_score,
-                        best_coding_score,
-                        new_mastery,
-                        previous_mastery,
-                        status,
-                        now_iso,
-                        now_iso,
-                        now_iso
-                    )
-                )
-
-            # --- Log into Mastery History ---
-            hist_id = f"hist_{uuid.uuid4().hex[:16]}"
-            change_delta = round(new_mastery - previous_mastery, 2) if (previous_mastery is not None and new_mastery is not None) else None
-            meta_json = json.dumps(metadata)
-
-            cur.execute(
-                """INSERT INTO mastery_history (
-                       id, user_id, subject_id, topic_id, assessment_id, assessment_type,
-                       score, previous_mastery, new_mastery, change_delta, metadata_json, timestamp
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    hist_id,
-                    user_id,
-                    subject_id,
-                    topic_id,
-                    assessment_id or hist_id,
-                    clean_type,
-                    valid_score,
-                    previous_mastery,
-                    new_mastery,
-                    change_delta,
-                    meta_json,
-                    now_iso
-                )
-            )
-
-            conn.commit()
-
-            # Retrieve updated row
-            cur.execute("SELECT * FROM student_topic_mastery WHERE id = ?", (rec_id,))
-            updated_row = cur.fetchone()
-            conn.close()
-
-            return self._format_topic_mastery_row(updated_row, is_duplicate=False)
+                raise
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
 
     def get_topic_mastery(self, user_id: str, topic_id: str) -> Dict[str, Any]:
         """Retrieve topic-level mastery for a given authenticated student."""
@@ -779,7 +798,7 @@ class MasteryService:
                 query += " AND subject_id = ?"
                 params.append(subject_id)
 
-            query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+            query += " ORDER BY timestamp DESC, rowid DESC LIMIT ? OFFSET ?"
             params.extend([max(1, min(200, limit)), max(0, offset)])
 
             cur.execute(query, tuple(params))
@@ -872,6 +891,9 @@ class MasteryService:
             res["is_duplicate"] = True
             res["message"] = "Assessment already recorded. Skipping duplicate processing."
         return res
+
+    # Backward compatibility alias
+    record_assessment_result = process_assessment_result
 
 
 mastery_service = MasteryService()

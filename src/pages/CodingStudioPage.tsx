@@ -166,6 +166,9 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
       } else if (challenge.starter_code && typeof challenge.starter_code === 'object') {
         starter = challenge.starter_code[newLang] || Object.values(challenge.starter_code)[0] || '';
       }
+      if (!starter && newLang === 'java') {
+        starter = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        // Write your solution here\n    }\n}\n';
+      }
       if (starter) {
         setCode(starter);
         saveLocalDraft(draftKey, starter);
@@ -182,6 +185,9 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
         starter = challenge.starter_code;
       } else if (challenge.starter_code && typeof challenge.starter_code === 'object') {
         starter = challenge.starter_code[currentLang] || Object.values(challenge.starter_code)[0] || '';
+      }
+      if (!starter && currentLang === 'java') {
+        starter = 'import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        // Write your solution here\n    }\n}\n';
       }
       if (starter) {
         setCode(starter);
@@ -655,10 +661,22 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
                   <span>C++</span>
                   <span className="text-[10px] text-slate-500 font-normal">(.cpp)</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLanguage('java')}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+                    currentLang === 'java'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>Java</span>
+                  <span className="text-[10px] text-slate-500 font-normal">(.java)</span>
+                </button>
               </div>
 
               <span className="font-mono text-cyan-400 text-xs hidden sm:inline">
-                solution.{currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : currentLang === 'cpp' ? 'cpp' : 'java'}
+                {currentLang === 'java' ? 'Solution.java' : `solution.${currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : 'cpp'}`}
               </span>
             </div>
 
@@ -843,6 +861,17 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
 
               {activeTab === 'output' && (
                 <div className="space-y-3 font-mono">
+                  {(execResult?.status === 'EXECUTOR_UNAVAILABLE' || execResult?.execution_status === 'EXECUTOR_UNAVAILABLE') && (
+                    <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-950/20 text-xs flex flex-col gap-1.5 font-sans">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="font-bold text-amber-300">Sandbox Isolation Engine Offline</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                        To securely execute student code without compromising system integrity, a container runtime (Docker or Podman with Linux containers) must be active. Direct host code execution is restricted for security.
+                      </p>
+                    </div>
+                  )}
                   {execResult?.stdout && (
                     <div>
                       <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1.5">

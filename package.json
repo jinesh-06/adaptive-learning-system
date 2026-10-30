@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "server": "python backend/main.py",
-    "start": "python backend/main.py",
+    "server": ".venv\\Scripts\\python.exe -m uvicorn backend.main:app --reload",
+    "start": ".venv\\Scripts\\python.exe -m uvicorn backend.main:app",
     "test:integration": "python backend/test_integration.py",
     "test:llm": "python -m unittest llm.test_adaptive_generator",
     "reindex:rag": "python -m rag.src.ingest"
