@@ -45,17 +45,26 @@ INSECURE_DEFAULT_SECRETS = {
 }
 
 # CORS Configuration
+DEFAULT_ALLOWED_ORIGINS = [
+    "https://adaptive-learning-system-sage.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173"
+]
+
 _raw_allowed_origins = os.getenv("ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS")
 if _raw_allowed_origins and _raw_allowed_origins.strip():
-    ALLOWED_ORIGINS = [o.strip() for o in _raw_allowed_origins.split(",") if o.strip()]
+    configured_origins = [o.strip().rstrip("/") for o in _raw_allowed_origins.split(",") if o.strip()]
+    # Normalize and ensure production Vercel frontend is always explicitly permitted
+    ALLOWED_ORIGINS = list(dict.fromkeys(configured_origins + ["https://adaptive-learning-system-sage.vercel.app"]))
 else:
-    # Safe development defaults
-    ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ]
+    # Safe production & development defaults including the production Vercel client
+    ALLOWED_ORIGINS = DEFAULT_ALLOWED_ORIGINS.copy()
 
 
 def validate_production_security(
