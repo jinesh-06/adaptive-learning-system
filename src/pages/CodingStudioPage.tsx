@@ -232,6 +232,9 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
 
       const execution = res.execution || res;
       setExecResult(execution);
+      if (res && res.mastery) {
+        window.dispatchEvent(new CustomEvent('mastery_updated', { detail: res.mastery }));
+      }
       const passed = res.is_passed !== undefined ? res.is_passed : (execution?.status === 'PASSED');
       setIsPassed(!!passed);
 

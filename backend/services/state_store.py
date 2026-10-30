@@ -251,7 +251,11 @@ class StateStore:
                     user_id TEXT NOT NULL,
                     subject_id TEXT NOT NULL,
                     topic_id TEXT NOT NULL,
+                    mastery_score REAL DEFAULT NULL,
                     total_attempts INTEGER DEFAULT 0,
+                    correct_attempts INTEGER DEFAULT 0,
+                    accuracy_percentage REAL DEFAULT NULL,
+                    improvement REAL DEFAULT NULL,
                     completed_assessments INTEGER DEFAULT 0,
                     quiz_attempts INTEGER DEFAULT 0,
                     quiz_correct_answers INTEGER DEFAULT 0,
@@ -273,6 +277,17 @@ class StateStore:
                     UNIQUE(user_id, topic_id)
                 )
             """)
+
+            cur.execute("PRAGMA table_info(student_topic_mastery)")
+            stm_cols = [r[1] for r in cur.fetchall()]
+            for col_name, col_def in [
+                ("mastery_score", "REAL DEFAULT NULL"),
+                ("correct_attempts", "INTEGER DEFAULT 0"),
+                ("accuracy_percentage", "REAL DEFAULT NULL"),
+                ("improvement", "REAL DEFAULT NULL"),
+            ]:
+                if col_name not in stm_cols:
+                    cur.execute(f"ALTER TABLE student_topic_mastery ADD COLUMN {col_name} {col_def}")
 
             # Mastery History table
             cur.execute("""

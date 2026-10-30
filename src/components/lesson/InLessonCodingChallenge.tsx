@@ -242,6 +242,21 @@ export const InLessonCodingChallenge: React.FC<InLessonCodingChallengeProps> = (
         lastSavedTopicRef.current = topicId;
         localStorage.setItem(`topic_challenge_passed_${topicId}`, 'true');
         setSaveStatus('saved');
+        const passedCount = results.filter(r => r.passed).length;
+        const totalCount = results.length;
+        const codingScore = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 100;
+        try {
+          const mRes = await api.updateCodingMastery({
+            topic_id: topicId,
+            score: codingScore,
+            passed_tests: passedCount,
+            total_tests: totalCount,
+            assessment_id: `lesson_challenge_${topicId}_${Date.now()}`
+          });
+          if (mRes && mRes.data) {
+            window.dispatchEvent(new CustomEvent('mastery_updated', { detail: mRes.data }));
+          }
+        } catch {}
       } catch (err) {
         console.warn('Could not save coding challenge progress to backend:', err);
         setSaveStatus('error');
