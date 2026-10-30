@@ -27,6 +27,8 @@ export interface PythonTopic {
   id: string;
   number: number;
   numberDisplay: string; // e.g. "01"
+  moduleId?: string;
+  moduleTitle?: string;
   title: string;
   slug: string;
   shortDescription: string;
@@ -1145,3 +1147,58 @@ export const PYTHON_FUNDAMENTALS_TOPICS: PythonTopic[] = [
     ]
   }
 ];
+
+export interface PythonModule {
+  id: string;
+  number: number;
+  numberDisplay: string;
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  topics: PythonTopic[];
+}
+
+export const PYTHON_MODULES: PythonModule[] = [
+  {
+    id: 'mod-py-foundations',
+    number: 1,
+    numberDisplay: '01',
+    title: 'Module 01: Python Foundations & Data Types',
+    description: 'Master the Python runtime, interpreter execution, variables, primitives, console I/O, and arithmetic & logical operators.',
+    estimatedMinutes: 90,
+    topics: PYTHON_FUNDAMENTALS_TOPICS.slice(0, 4)
+  },
+  {
+    id: 'mod-py-control-functions',
+    number: 2,
+    numberDisplay: '02',
+    title: 'Module 02: Control Flow, Loops & Functions',
+    description: 'Learn conditional branching, loop constructs, modular function decomposition, variable scope, and string manipulation.',
+    estimatedMinutes: 120,
+    topics: PYTHON_FUNDAMENTALS_TOPICS.slice(4, 8)
+  },
+  {
+    id: 'mod-py-collections',
+    number: 3,
+    numberDisplay: '03',
+    title: 'Module 03: Data Structures & Collections',
+    description: 'Deep dive into Python compound collection types: mutable lists, immutable tuples, hash-based sets, and key-value dictionaries.',
+    estimatedMinutes: 120,
+    topics: PYTHON_FUNDAMENTALS_TOPICS.slice(8, 12)
+  },
+  {
+    id: 'mod-py-applied',
+    number: 4,
+    numberDisplay: '04',
+    title: 'Module 04: Applied Python, Exceptions & File Systems',
+    description: 'Robust error handling with try-except, persistent file operations, module namespace packaging, and capstone mini-projects.',
+    estimatedMinutes: 130,
+    topics: PYTHON_FUNDAMENTALS_TOPICS.slice(12, 16)
+  }
+];
+
+// Associate module IDs to each topic
+PYTHON_FUNDAMENTALS_TOPICS.slice(0, 4).forEach(t => { t.moduleId = 'mod-py-foundations'; t.moduleTitle = 'Module 01: Python Foundations & Data Types'; });
+PYTHON_FUNDAMENTALS_TOPICS.slice(4, 8).forEach(t => { t.moduleId = 'mod-py-control-functions'; t.moduleTitle = 'Module 02: Control Flow, Loops & Functions'; });
+PYTHON_FUNDAMENTALS_TOPICS.slice(8, 12).forEach(t => { t.moduleId = 'mod-py-collections'; t.moduleTitle = 'Module 03: Data Structures & Collections'; });
+PYTHON_FUNDAMENTALS_TOPICS.slice(12, 16).forEach(t => { t.moduleId = 'mod-py-applied'; t.moduleTitle = 'Module 04: Applied Python, Exceptions & File Systems'; });

@@ -652,10 +652,22 @@ export const CodingStudioPage: React.FC<CodingStudioProps> = ({
                   <span>C++</span>
                   <span className="text-[10px] text-slate-500 font-normal">(.cpp)</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchLanguage('java')}
+                  className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+                    currentLang === 'java'
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span>Java</span>
+                  <span className="text-[10px] text-slate-500 font-normal">(.java)</span>
+                </button>
               </div>
 
               <span className="font-mono text-cyan-400 text-xs hidden sm:inline">
-                solution.{currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : currentLang === 'cpp' ? 'cpp' : 'java'}
+                {currentLang === 'java' ? 'Solution.java' : `solution.${currentLang === 'python' ? 'py' : currentLang === 'c' ? 'c' : 'cpp'}`}
               </span>
             </div>
 

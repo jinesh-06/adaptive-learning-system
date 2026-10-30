@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { CPP_FUNDAMENTALS_TOPICS, CPP_MODULES, CppTopic } from '../data/cppFundamentalsData';
+import { getMockUserStreak } from '../utils/streakCalculator';
+import { resetModuleProgress } from '../utils/moduleProgress';
 import {
   BookOpen,
   CheckCircle2,
@@ -23,7 +25,9 @@ import {
   Terminal,
   Cpu,
   HelpCircle,
-  ShieldCheck
+  ShieldCheck,
+  Trophy,
+  RotateCcw
 } from 'lucide-react';
 
 export interface CppDashboardProps {
@@ -50,6 +54,16 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
 
   useEffect(() => {
     loadDashboard();
+    const handleStreak = () => {
+      setDashboardData((prev: any) => prev ? { ...prev, streak_days: getMockUserStreak() } : prev);
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    const handleProgress = () => { loadDashboard(); };
+    window.addEventListener('progress:updated', handleProgress);
+    return () => {
+      window.removeEventListener('streak:updated', handleStreak);
+      window.removeEventListener('progress:updated', handleProgress);
+    };
   }, []);
 
   const loadDashboard = async () => {
@@ -128,7 +142,7 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
         ...topic,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -142,11 +156,13 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
       .filter(t => t.status !== 'COMPLETED')
       .reduce((acc, t) => acc + t.estimatedMinutes, 0);
 
-    // Calculate completed modules out of 3
-    const mod1Completed = topicsOutput.slice(0, 8).every(t => t.status === 'COMPLETED');
-    const mod2Completed = topicsOutput.slice(8, 16).every(t => t.status === 'COMPLETED');
-    const mod3Completed = topicsOutput.slice(16, 24).every(t => t.status === 'COMPLETED');
-    const completedModulesCount = (mod1Completed ? 1 : 0) + (mod2Completed ? 1 : 0) + (mod3Completed ? 1 : 0);
+    // Calculate completed modules dynamically
+    const completedModulesCount = CPP_MODULES.filter(m =>
+      m.topics.every(t => {
+        const p = progressMap[t.id];
+        return p && (p.status === 'COMPLETED' || Number(p.completion_pct || 0) >= 95);
+      })
+    ).length;
 
     setDashboardData({
       title: 'C++ Modern Fundamentals',
@@ -158,7 +174,7 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -184,6 +200,25 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
 
   const currentTopic = topicsList.find((t: any) => t.id === dashboardData?.current_topic_id) || topicsList[0];
 
+  const activeModule = CPP_MODULES.find(m => m.id === activeModuleTab);
+  const isActiveModuleCompleted = activeModule
+    ? activeModule.topics.every((t: any) => {
+        const p = topicsList.find((tl: any) => tl.id === t.id);
+        return p && (p.status === 'COMPLETED' || p.completion_percentage >= 95);
+      })
+    : false;
+
+  const handleResetModule = (moduleObj: any) => {
+    const confirmReset = window.confirm(
+      `Are you sure you want to re-attempt ${moduleObj.title}? This will reset all lessons and quizzes in this module so you can practice again from the start.`
+    );
+    if (!confirmReset) return;
+
+    const topicIds = moduleObj.topics.map((t: any) => t.id);
+    resetModuleProgress('cog_cpp_progress', topicIds);
+    loadDashboard();
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-8">
       {/* Top Breadcrumb & Status */}
@@ -203,7 +238,7 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
       </div>
 
       {/* Hero Course Overview Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 p-6 sm:p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 light-theme:bg-white light-theme:shadow-sm p-6 sm:p-8 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -288,7 +323,7 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
                 <span>Streak</span>
               </div>
               <div className="text-xl sm:text-2xl font-black text-white font-mono">
-                {dashboardData?.streak_days || 5} Days
+                {dashboardData?.streak_days ?? 0} Days
               </div>
             </div>
 
@@ -300,6 +335,20 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
               <div className="text-xl sm:text-2xl font-black text-white font-mono">
                 {Math.round((dashboardData?.estimated_remaining_minutes || 480) / 60)}h
               </div>
+            </div>
+          </div>
+
+          {/* Overall Completion Progress Line */}
+          <div className="space-y-1.5 pt-2">
+            <div className="flex justify-between text-xs font-mono text-slate-400">
+              <span>Overall Completion</span>
+              <span className="text-cyan-400 font-bold">{dashboardData?.overall_progress || 0}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                style={{ width: `${dashboardData?.overall_progress || 0}%` }}
+              />
             </div>
           </div>
         </div>
@@ -368,21 +417,64 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
           All Modules (24 Lessons)
         </button>
 
-        {CPP_MODULES.map(m => (
-          <button
-            key={m.id}
-            onClick={() => setActiveModuleTab(m.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-              activeModuleTab === m.id
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <span>Module {m.numberDisplay}: {m.number === 1 ? 'Foundations' : m.number === 2 ? 'Control Flow' : 'Functions & Memory'}</span>
-            <span className="text-[10px] opacity-75 font-mono">({m.topics.length})</span>
-          </button>
-        ))}
+        {CPP_MODULES.map(m => {
+          const isModDone = m.topics.every((t: any) => {
+            const p = topicsList.find((tl: any) => tl.id === t.id);
+            return p && (p.status === 'COMPLETED' || p.completion_percentage >= 95);
+          });
+          return (
+            <button
+              key={m.id}
+              onClick={() => setActiveModuleTab(m.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+                activeModuleTab === m.id
+                  ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                  : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>Module {m.numberDisplay}: {m.number === 1 ? 'Foundations' : m.number === 2 ? 'Control Flow' : 'Functions & Memory'}</span>
+              <span className="text-[10px] opacity-75 font-mono">({m.topics.length})</span>
+              {isModDone && (
+                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/40">
+                  ✓ Done
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Module Completion & Re-attempt Banner */}
+      {activeModule && isActiveModuleCompleted && (
+        <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-slate-900/70 to-cyan-950/30 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl shadow-emerald-950/30 animate-fade-in">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 text-emerald-400 mt-0.5">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-2">
+                <span>Module {activeModule.numberDisplay} Completed</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] border border-emerald-500/30">100% Mastery</span>
+              </div>
+              <h3 className="text-base font-bold text-white mt-0.5">
+                {activeModule.title}
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Outstanding! You have completed all lessons and quizzes in this module. You can re-attempt it at any time to refresh your skills.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => handleResetModule(activeModule)}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition-all flex items-center gap-2 shrink-0 active:scale-95 shadow-md"
+            title="Reset all lessons and quizzes in this module for another practice run"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Re-attempt Module</span>
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -488,69 +580,64 @@ export const CppFundamentalsDashboard: React.FC<CppDashboardProps> = ({
                   {topic.shortDescription || topic.desc}
                 </p>
 
-                {/* Progress bar if in progress or completed */}
-                {(isCompleted || isInProgress) && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
-                      <span>Mastery</span>
-                      <span>{isCompleted ? '100%' : `${topic.completion_percentage || 50}%`}</span>
-                    </div>
-                    <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-cyan-500'}`}
-                        style={{ width: `${isCompleted ? 100 : topic.completion_percentage || 50}%` }}
-                      />
-                    </div>
+                {/* Metadata: Time and Quiz Score */}
+                <div className="flex items-center gap-4 text-[11px] text-slate-400 mb-3 font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>{topic.estimatedMinutes} min</span>
                   </div>
-                )}
-              </div>
-
-              {/* Bottom Card Controls */}
-              <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {!isLocked && onStartQuiz && (
-                    <button
-                      onClick={() => onStartQuiz(topic.id)}
-                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors"
-                      title="Take Lesson Quiz"
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {!isLocked && onOpenCoding && (
-                    <button
-                      onClick={() => onOpenCoding(topic.id)}
-                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors"
-                      title="Open Code Studio"
-                    >
-                      <Terminal className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {!isLocked && onSelectAdaptedLesson && (
-                    <button
-                      onClick={() => onSelectAdaptedLesson(topic.id)}
-                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-purple-400 transition-colors"
-                      title="Adapted Explanation"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                    </button>
+                  {topic.quiz_score !== null && topic.quiz_score !== undefined && (
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-purple-400" />
+                      <span>Quiz: {Math.round(topic.quiz_score)}%</span>
+                    </div>
                   )}
                 </div>
 
-                <button
-                  onClick={() => !isLocked && onSelectTopic(topic.id)}
-                  disabled={isLocked}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    isLocked
-                      ? 'bg-slate-900 text-slate-600 cursor-not-allowed'
-                      : isCompleted
-                      ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-white'
-                      : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-sm shadow-cyan-500/20'
-                  }`}
-                >
-                  <span>{isCompleted ? 'Review' : isLocked ? 'Locked' : 'Start'}</span>
-                  {!isLocked && <ArrowRight className="w-3 h-3" />}
-                </button>
+                {/* Progress Line */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center text-[10px] font-mono text-slate-400 mb-1.5">
+                    <span>Progress</span>
+                    <span className="text-white font-bold">{topic.completion_percentage || 0}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        isCompleted ? 'bg-emerald-500' : isInProgress ? 'bg-cyan-500' : 'bg-slate-700'
+                      }`}
+                      style={{ width: `${topic.completion_percentage || 0}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card CTA */}
+              <div>
+                {isLocked ? (
+                  <button
+                    disabled
+                    className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800/80 text-slate-500 font-medium text-xs flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Prerequisite Required</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onSelectTopic(topic.id)}
+                    className={`w-full py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 group/btn ${
+                      isCompleted
+                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                        : isInProgress
+                        ? 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20'
+                        : 'bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-white'
+                    }`}
+                  >
+                    <span>
+                      {isCompleted ? 'Review Topic' : isInProgress ? 'Continue Topic' : 'Start Topic'}
+                    </span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                  </button>
+                )}
               </div>
             </div>
           );

@@ -127,7 +127,7 @@ export const LearnerDashboardPage: React.FC<LearnerDashboardProps> = ({ onSelect
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* 1. TOP SECTION: COMMAND CENTER HERO (Section 44) */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl border border-slate-800 light-theme:border-slate-200 bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/20 light-theme:bg-white light-theme:shadow-sm shadow-xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 mb-3">

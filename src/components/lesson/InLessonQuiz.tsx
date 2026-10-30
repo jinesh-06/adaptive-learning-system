@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { telemetry } from '../../services/telemetry';
+import { renderFormattedText } from '../../utils/textFormatter';
 import { useCognitive } from '../../context/CognitiveContext';
 import allTopicQuizzes from '../../data/allTopicQuizzes.json';
 
@@ -486,7 +487,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
                               <span className="w-4 h-4 rounded-full bg-slate-800 text-slate-300 font-mono text-[9px] flex items-center justify-center shrink-0">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span>{opt}</span>
+                              <span>{renderFormattedText(opt)}</span>
                             </div>
                             {isCorrectAnswer && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                             {isUserSelected && !isCorrectAnswer && <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />}
@@ -589,7 +590,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       {/* Question Card */}
       <div className="space-y-3">
         <p className="text-sm font-semibold text-slate-100 light-theme:text-slate-900 leading-relaxed whitespace-pre-line">
-          {currentQ.question}
+          {renderFormattedText(currentQ.question)}
         </p>
 
         {/* Four Selectable Options */}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getMockUserStreak } from '../utils/streakCalculator';
 import { api } from '../services/api';
 import { CPP_ADVANCED_TOPICS, CPP_ADVANCED_MODULES, CppAdvancedTopic } from '../data/cppAdvancedData';
 import {
@@ -61,6 +62,11 @@ export const CppAdvancedDashboard: React.FC<CppAdvancedDashboardProps> = ({
 
   useEffect(() => {
     loadDashboard();
+    const handleStreak = () => {
+      setDashboardData((prev: any) => prev ? { ...prev, streak_days: getMockUserStreak() } : prev);
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    return () => window.removeEventListener('streak:updated', handleStreak);
   }, []);
 
   const loadDashboard = async () => {
@@ -206,7 +212,7 @@ export const CppAdvancedDashboard: React.FC<CppAdvancedDashboardProps> = ({
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -261,7 +267,7 @@ export const CppAdvancedDashboard: React.FC<CppAdvancedDashboardProps> = ({
       </div>
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950 border border-slate-800 p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 p-8 shadow-2xl light-theme:shadow-sm">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -280,7 +286,7 @@ export const CppAdvancedDashboard: React.FC<CppAdvancedDashboardProps> = ({
               </span>
               <span className="px-3 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-amber-400" />
-                {dashboardData?.streak_days || 5} Day Streak
+                {dashboardData?.streak_days ?? 0} Day Streak
               </span>
             </div>
 

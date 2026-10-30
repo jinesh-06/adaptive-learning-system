@@ -20,10 +20,11 @@ import { JAVA_OOP_TOPICS, JAVA_OOP_MODULES } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS, JAVA_ADV_MODULES } from '../data/javaAdvData';
 import { C_ADVANCED_TOPICS, C_ADVANCED_MODULES } from '../data/cAdvancedData';
 import allTopicQuizzes from '../data/allTopicQuizzes.json';
+import { getMockUserStreak, recordUserActivityDate } from '../utils/streakCalculator';
 
 export const isGitHubPages = typeof window !== 'undefined' && (
-  window.location.hostname.includes('github.io') ||
-  window.location.protocol === 'file:'
+  Boolean(window.location?.hostname?.includes('github.io')) ||
+  Boolean(window.location?.protocol === 'file:')
 );
 
 // In-browser mock database
@@ -2635,6 +2636,7 @@ export const mockHandlers = {
       return qText.split('?')[0].split(':')[0].trim().slice(0, 50);
     }).slice(0, 3);
 
+    recordUserActivityDate(new Date().toISOString());
     const adaptiveFeedback = {
       cognitive_level: cognitiveLevel,
       cognitive_load: cognitiveLevel,
@@ -2673,28 +2675,51 @@ export const mockHandlers = {
       adaptive_action: passed ? 'ADVANCE' : 'SIMPLIFY'
     });
     setStoredArray(MOCK_STORAGE_KEYS.HISTORY, history.slice(0, 30));
+    recordUserActivityDate(new Date().toISOString());
 
-    // Persist progress directly to course track progress
-    if (topicId.startsWith('top-py-')) {
-      const storageKey = topicId.startsWith('top-py-adv-')
-        ? 'cog_python_adv_progress'
-        : topicId.startsWith('top-py-int-')
-        ? 'cog_python_int_progress'
-        : 'cog_python_progress';
-      const stored = getStoredArray(storageKey, []);
-      const idx = stored.findIndex((p: any) => p.topic_id === topicId);
-      let record = idx >= 0 ? stored[idx] : { topic_id: topicId, attempts: 0, time_spent_seconds: 0 };
-      record = {
-        ...record,
-        status: passed ? 'COMPLETED' : 'IN_PROGRESS',
-        completion_pct: passed ? 100 : Math.max(record.completion_pct || 0, 50),
-        quiz_score: score,
-        attempts: (record.attempts || 0) + 1,
-        time_spent_seconds: (record.time_spent_seconds || 0) + timeSpent
-      };
-      if (idx >= 0) stored[idx] = record;
-      else stored.push(record);
-      setStoredArray(storageKey, stored);
+    // Persist progress directly to course track progress across all languages
+    const quizStorageKey = topicId.startsWith('top-cpp-adv-')
+      ? 'cog_cpp_adv_progress'
+      : topicId.startsWith('top-cpp-oop-')
+      ? 'cog_cpp_oop_progress'
+      : topicId.startsWith('top-cpp-')
+      ? 'cog_cpp_progress'
+      : topicId.startsWith('top-c-adv-')
+      ? 'cog_c_adv_progress'
+      : C_INTERMEDIATE_TOPICS.some(t => t.id === topicId)
+      ? 'cog_c_int_progress'
+      : topicId.startsWith('top-c-')
+      ? 'cog_c_progress'
+      : topicId.startsWith('top-java-adv-')
+      ? 'cog_java_adv_progress'
+      : topicId.startsWith('top-java-oop-')
+      ? 'cog_java_oop_progress'
+      : topicId.startsWith('top-java-')
+      ? 'cog_java_progress'
+      : topicId.startsWith('top-py-adv-')
+      ? 'cog_python_adv_progress'
+      : topicId.startsWith('top-py-int-')
+      ? 'cog_python_int_progress'
+      : 'cog_python_progress';
+
+    const storedQuizProg = getStoredArray(quizStorageKey, []);
+    const qIdx = storedQuizProg.findIndex((p: any) => p.topic_id === topicId);
+    let quizRecord = qIdx >= 0 ? storedQuizProg[qIdx] : { topic_id: topicId, attempts: 0, time_spent_seconds: 0 };
+    quizRecord = {
+      ...quizRecord,
+      status: passed ? 'COMPLETED' : (quizRecord.status || 'IN_PROGRESS'),
+      completion_pct: passed ? 100 : Math.max(quizRecord.completion_pct || 0, 50),
+      quiz_score: score,
+      attempts: (quizRecord.attempts || 0) + 1,
+      time_spent_seconds: (quizRecord.time_spent_seconds || 0) + timeSpent,
+      updated_at: new Date().toISOString()
+    };
+    if (qIdx >= 0) storedQuizProg[qIdx] = quizRecord;
+    else storedQuizProg.push(quizRecord);
+    setStoredArray(quizStorageKey, storedQuizProg);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('progress:updated', { detail: { topicId, storageKey: quizStorageKey } }));
     }
 
     return {
@@ -2887,7 +2912,7 @@ export const mockHandlers = {
     return {
       success: true,
       user: { name: 'Learner', email: 'learner@cognitive.edu' },
-      streak_days: 0,
+      streak_days: getMockUserStreak(),
       learning_snapshot: {
         overall_progress: 0,
         topics_completed: history.length,
@@ -3306,7 +3331,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3328,7 +3353,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 3,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Calibrated & Active",
       topics: topicsOutput
@@ -3403,7 +3428,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3426,7 +3451,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3501,7 +3526,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3524,7 +3549,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3599,7 +3624,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3622,7 +3647,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Cognitive Engine Calibrated & Active",
       topics: topicsOutput
@@ -3697,7 +3722,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3720,7 +3745,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: "Cognitive Engine Calibrated & Active",
       topics: topicsOutput
@@ -3747,11 +3772,22 @@ export const mockHandlers = {
     attempts_delta?: number;
     time_spent_delta?: number;
   }) => {
-    const storageKey = C_INTERMEDIATE_TOPICS.some(t => t.id === payload.topic_id)
+    const storageKey = payload.topic_id.startsWith('top-cpp-adv-')
+      ? 'cog_cpp_adv_progress'
+      : payload.topic_id.startsWith('top-cpp-oop-')
+      ? 'cog_cpp_oop_progress'
+      : payload.topic_id.startsWith('top-cpp-')
+      ? 'cog_cpp_progress'
+      : payload.topic_id.startsWith('top-c-adv-')
+      ? 'cog_c_adv_progress'
+      : C_INTERMEDIATE_TOPICS.some(t => t.id === payload.topic_id)
       ? 'cog_c_int_progress'
       : payload.topic_id.startsWith('top-c-')
-
       ? 'cog_c_progress'
+      : payload.topic_id.startsWith('top-java-adv-')
+      ? 'cog_java_adv_progress'
+      : payload.topic_id.startsWith('top-java-oop-')
+      ? 'cog_java_oop_progress'
       : payload.topic_id.startsWith('top-java-')
       ? 'cog_java_progress'
       : payload.topic_id.startsWith('top-py-adv-')
@@ -3766,11 +3802,19 @@ export const mockHandlers = {
     record = {
       ...record,
       status: payload.status || record.status || 'IN_PROGRESS',
-      completion_pct: payload.completion_pct !== undefined ? payload.completion_pct : (record.completion_pct || 0),
+      completion_pct: payload.status === 'COMPLETED'
+        ? 100
+        : payload.completion_pct !== undefined
+        ? Math.max(payload.completion_pct, record.completion_pct || 0)
+        : (record.completion_pct || 0),
       quiz_score: payload.quiz_score !== undefined ? payload.quiz_score : record.quiz_score,
       attempts: (record.attempts || 0) + (payload.attempts_delta || 0),
-      time_spent_seconds: (record.time_spent_seconds || 0) + (payload.time_spent_delta || 0)
+      time_spent_seconds: (record.time_spent_seconds || 0) + (payload.time_spent_delta || 0),
+      updated_at: new Date().toISOString()
     };
+    if (record.status === 'COMPLETED' || (record.completion_pct && record.completion_pct > 0) || (payload.time_spent_delta && payload.time_spent_delta > 0)) {
+      recordUserActivityDate(record.updated_at);
+    }
 
     if (idx >= 0) {
       stored[idx] = record;
@@ -3778,6 +3822,9 @@ export const mockHandlers = {
       stored.push(record);
     }
     setStoredArray(storageKey, stored);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('progress:updated', { detail: { topicId: payload.topic_id, storageKey } }));
+    }
     return { success: true, progress: record };
   },
 
@@ -3849,7 +3896,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -3872,7 +3919,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -3976,7 +4023,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4004,7 +4051,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 10,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4116,7 +4163,7 @@ export const mockHandlers = {
           ...topic,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4170,7 +4217,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4276,7 +4323,7 @@ export const mockHandlers = {
         estimatedMinutes: topic.estimatedMinutes,
         desc: topic.shortDescription,
         status,
-        completion_percentage: compPct,
+        completion_percentage: status === 'COMPLETED' ? 100 : compPct,
         quiz_score: quizScore,
         attempts: prog.attempts || 0,
         time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4299,7 +4346,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
       topics: topicsOutput
@@ -4399,7 +4446,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4455,7 +4502,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 4,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 10,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4573,7 +4620,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4629,7 +4676,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -4776,7 +4823,7 @@ export const mockHandlers = {
           estimatedMinutes: topic.estimatedMinutes,
           desc: topic.shortDescription,
           status,
-          completion_percentage: compPct,
+          completion_percentage: status === 'COMPLETED' ? 100 : compPct,
           quiz_score: quizScore,
           attempts: prog.attempts || 0,
           time_spent_seconds: prog.time_spent_seconds || 0,
@@ -4832,7 +4879,7 @@ export const mockHandlers = {
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',

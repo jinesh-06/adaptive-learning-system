@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getMockUserStreak } from '../utils/streakCalculator';
 import { api } from '../services/api';
 import { JAVA_ADV_TOPICS, JAVA_ADV_MODULES, JavaAdvTopic } from '../data/javaAdvData';
 import {
@@ -51,6 +52,11 @@ export const JavaAdvDashboard: React.FC<JavaAdvDashboardProps> = ({
 
   useEffect(() => {
     loadDashboard();
+    const handleStreak = () => {
+      setDashboardData((prev: any) => prev ? { ...prev, streak_days: getMockUserStreak() } : prev);
+    };
+    window.addEventListener('streak:updated', handleStreak);
+    return () => window.removeEventListener('streak:updated', handleStreak);
   }, []);
 
   const loadDashboard = async () => {
@@ -198,7 +204,7 @@ export const JavaAdvDashboard: React.FC<JavaAdvDashboardProps> = ({
       quizzes_completed: quizCompletedCount,
       overall_progress: overallProgress,
       current_topic_id: currentTopicId,
-      streak_days: 5,
+      streak_days: getMockUserStreak(),
       estimated_remaining_minutes: remainingMinutes,
       total_duration_hours: 14,
       learning_signals_status: 'Cognitive Engine Calibrated & Active',
@@ -230,7 +236,7 @@ export const JavaAdvDashboard: React.FC<JavaAdvDashboardProps> = ({
 
   if (loading && !dashboardData) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-6 text-slate-400">
+      <div className="min-h-screen bg-slate-950 light-theme:bg-slate-50 flex items-center justify-center p-6 text-slate-400">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-mono tracking-wider">CALIBRATING ADVANCED JAVA CURRICULUM...</p>
@@ -244,7 +250,7 @@ export const JavaAdvDashboard: React.FC<JavaAdvDashboardProps> = ({
   const currentTopic = JAVA_ADV_TOPICS.find(t => t.id === currentTopicId) || JAVA_ADV_TOPICS[0];
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
+    <div className="min-h-screen bg-slate-950 light-theme:bg-slate-50 text-slate-100 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* 1. TOP BREADCRUMB & BACK TO CATALOG */}
       <div className="flex items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -272,7 +278,7 @@ export const JavaAdvDashboard: React.FC<JavaAdvDashboardProps> = ({
       </div>
 
       {/* 2. HERO COURSE BANNER */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-blue-950/40 border border-slate-800 p-6 sm:p-10 shadow-2xl space-y-6">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-blue-950/40 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 p-6 sm:p-10 shadow-2xl light-theme:shadow-sm space-y-6">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 

@@ -16,6 +16,7 @@ import { CPP_ADVANCED_TOPICS } from '../data/cppAdvancedData';
 import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
 import { JAVA_OOP_TOPICS } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS } from '../data/javaAdvData';
+import { updateUniversalTopicProgress, getUniversalTopicProgress } from '../utils/trackProgress';
 
 const ALL_TOPICS: any[] = [
   ...PYTHON_FUNDAMENTALS_TOPICS,
@@ -68,6 +69,7 @@ import { InLessonQuiz } from '../components/lesson/InLessonQuiz';
 import { InLessonCodingChallenge } from '../components/lesson/InLessonCodingChallenge';
 import { LessonSummaryCard } from '../components/lesson/LessonSummaryCard';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { renderFormattedText } from '../utils/textFormatter';
 
 export interface TopicLessonPageProps {
   topicId: string;
@@ -158,6 +160,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   // Feedback state
   const [feedbackSent, setFeedbackSent] = useState<string | null>(null);
   const [completedLocally, setCompletedLocally] = useState<boolean>(false);
+  const lastScrollMilestoneRef = useRef<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -172,6 +175,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   useEffect(() => {
     setActiveTopicId(topicId);
     telemetry.initTopicSession(topicId);
+    lastScrollMilestoneRef.current = 0;
+
+    const existingProg = getUniversalTopicProgress(topicId);
+    if (existingProg && (existingProg.status === 'COMPLETED' || (existingProg.completion_pct || 0) >= 95)) {
+      setCompletedLocally(true);
+    } else {
+      setCompletedLocally(false);
+      const curPct = existingProg?.completion_pct || 0;
+      updateUniversalTopicProgress(topicId, {
+        status: 'IN_PROGRESS',
+        completion_pct: Math.max(curPct, 25),
+        time_spent_delta: 15
+      });
+    }
 
     const loadTopic = async () => {
       setLoading(true);
@@ -200,6 +217,27 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     // Listen to user scrolling to collect telemetry
     const handleScroll = () => {
       telemetry.recordScroll();
+      const doc = document.documentElement;
+      const scrollTop = window.scrollY || doc.scrollTop;
+      const scrollHeight = doc.scrollHeight - doc.clientHeight;
+      if (scrollHeight > 50) {
+        const scrollPct = (scrollTop / scrollHeight) * 100;
+        if (scrollPct >= 40 && lastScrollMilestoneRef.current < 50) {
+          lastScrollMilestoneRef.current = 50;
+          updateUniversalTopicProgress(topicId, {
+            status: 'IN_PROGRESS',
+            completion_pct: 50,
+            time_spent_delta: 20
+          });
+        } else if (scrollPct >= 80 && lastScrollMilestoneRef.current < 75) {
+          lastScrollMilestoneRef.current = 75;
+          updateUniversalTopicProgress(topicId, {
+            status: 'IN_PROGRESS',
+            completion_pct: 75,
+            time_spent_delta: 20
+          });
+        }
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
 
@@ -319,25 +357,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const nextTopic = currentIndex >= 0 && currentIndex < curriculumSequence.length - 1 ? curriculumSequence[currentIndex + 1] : null;
 
   const handleTopicNavigation = (targetId: string) => {
-    const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
-    const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
-    if (isTopicCAdv) {
-      api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (isTopicCInt) {
-      api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-c-')) {
-      api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-adv-')) {
-      api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-oop-')) {
-      api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-cpp-')) {
-      api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-java-')) {
-      api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    } else if (topicId.startsWith('top-py-')) {
-      api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 }).catch(() => {});
-    }
+    updateUniversalTopicProgress(topicId, {
+      status: 'COMPLETED',
+      completion_pct: 100,
+      time_spent_delta: 60
+    });
     if (onSelectTopic) {
       onSelectTopic(targetId);
     }
@@ -345,29 +369,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
   const handleMarkCompleted = async () => {
     setCompletedLocally(true);
-    try {
-      const isTopicCAdv = C_ADVANCED_TOPICS.some(t => t.id === topicId);
-      const isTopicCInt = C_INTERMEDIATE_TOPICS.some(t => t.id === topicId);
-      if (isTopicCAdv) {
-        await api.updateCAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (isTopicCInt) {
-        await api.updateCIntermediateProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-c-')) {
-        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-adv-')) {
-        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-oop-')) {
-        await api.updateCppOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-')) {
-        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-')) {
-        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-py-')) {
-        await api.updatePythonProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      }
-    } catch (err) {
-      console.warn('Could not save completion progress:', err);
-    }
+    await updateUniversalTopicProgress(topicId, {
+      status: 'COMPLETED',
+      completion_pct: 100,
+      time_spent_delta: 60
+    });
   };
 
   // Trigger contextual AI assistance
@@ -397,19 +403,11 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     setFeedbackSent(type);
     try {
       await api.submitContentFeedback(topicId, type);
-      if (topicId.startsWith('top-c-')) {
-        await api.updateCProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-adv-')) {
-        await api.updateCppAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-cpp-')) {
-        await api.updateCppProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-adv-')) {
-        await api.updateJavaAdvProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-oop-')) {
-        await api.updateJavaOopProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      } else if (topicId.startsWith('top-java-')) {
-        await api.updateJavaProgress({ topic_id: topicId, status: 'COMPLETED', completion_pct: 100, time_spent_delta: 60 });
-      }
+      await updateUniversalTopicProgress(topicId, {
+        status: 'COMPLETED',
+        completion_pct: 100,
+        time_spent_delta: 60
+      });
     } catch (err) {
       console.error('Feedback error:', err);
     }
@@ -491,7 +489,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   ];
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#030712] light-theme:bg-[#F7F8FA] text-slate-100 light-theme:text-slate-900 transition-colors">
+    <div ref={containerRef} className="min-h-screen bg-slate-950 light-theme:bg-slate-50 text-slate-100 light-theme:text-slate-900 transition-colors">
       {/* 1. TOP NAVIGATION BAR */}
       <header className="sticky top-0 z-30 bg-slate-950/95 light-theme:bg-white/95 border-b border-slate-800 light-theme:border-slate-200 backdrop-blur-md px-4 sm:px-6 py-2.5">
         <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-3">
@@ -773,7 +771,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 ]).map((obj: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>{obj}</span>
+                    <span>{renderFormattedText(obj)}</span>
                   </li>
                 ))}
               </ul>
@@ -794,10 +792,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             </h2>
             <div className="text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed space-y-3">
               <p>
-                {topic.shortDescription || topic.desc || topic.conceptExplanation?.split('\n\n')[0] || 'Understand core operational primitives, memory organization, and syntax.'}
+                {renderFormattedText(topic.shortDescription || topic.desc || topic.conceptExplanation?.split('\n\n')[0] || 'Understand core operational primitives, memory organization, and syntax.')}
               </p>
               {topic.conceptExplanation?.split('\n\n')[1] && (
-                <p>{topic.conceptExplanation.split('\n\n')[1]}</p>
+                <p>{renderFormattedText(topic.conceptExplanation.split('\n\n')[1])}</p>
               )}
             </div>
           </section>
@@ -838,9 +836,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             {/* STANDARD MODE RENDERING */}
             {activeMode === 'STANDARD' && (
               <div className="p-5 rounded-2xl bg-slate-900/40 light-theme:bg-white border border-slate-800 light-theme:border-slate-200 space-y-4 text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed animate-fade-in">
-                <div className="whitespace-pre-line leading-relaxed space-y-2">
-                  {topic.conceptExplanation || topic.content_standard}
-                </div>
+                <MarkdownRenderer content={topic.conceptExplanation || topic.content_standard || ''} />
                 {topic.simpleExample && (
                   <div className="mt-3 p-3.5 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800 light-theme:border-slate-200 space-y-2">
                     <strong className="text-xs text-cyan-400 light-theme:text-blue-600 font-mono uppercase tracking-wider block">Foundational Example:</strong>
@@ -870,7 +866,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                       "4. Stack and heap frame allocation during runtime execution"
                     ]).map((step: string, sIdx: number) => (
                       <div key={sIdx} className="p-2.5 rounded-lg bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800/80 light-theme:border-slate-200">
-                        {step}
+                        {renderFormattedText(step)}
                       </div>
                     ))}
                   </div>
@@ -889,12 +885,12 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                     {topic.title} Made Simple
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700">
-                    {topic.shortDescription || topic.desc || (topic.conceptExplanation ? topic.conceptExplanation.split('.')[0] + '.' : 'Master the foundational mechanics.')}
+                    {renderFormattedText(topic.shortDescription || topic.desc || (topic.conceptExplanation ? topic.conceptExplanation.split('.')[0] + '.' : 'Master the foundational mechanics.'))}
                   </p>
                   {topic.simpleExample && (
                     <div className="p-3 rounded-xl bg-slate-950/60 light-theme:bg-slate-50 border border-slate-800">
                       <p className="text-xs text-emerald-400 font-semibold mb-1">Key Rule:</p>
-                      <p className="text-xs text-slate-300 light-theme:text-slate-600">{topic.simpleExample.explanation}</p>
+                      <p className="text-xs text-slate-300 light-theme:text-slate-600">{renderFormattedText(topic.simpleExample.explanation)}</p>
                     </div>
                   )}
                 </div>
@@ -953,7 +949,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
           {/* SECTION 8: KEY TAKEAWAYS */}
           <section id="section-takeaway" className="space-y-3">
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950/30 via-slate-900 to-indigo-950/30 light-theme:bg-blue-50/70 border border-blue-500/30 light-theme:border-blue-200 space-y-2">
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-950/30 via-slate-900 to-indigo-950/30 light-theme:bg-blue-50 light-theme:[background-image:none] border border-blue-500/30 light-theme:border-blue-200 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 light-theme:text-blue-700">
                 <Sparkles className="w-4 h-4" />
                 Key Takeaway
@@ -966,7 +962,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 ]).map((item: string, sIdx: number) => (
                   <li key={sIdx} className="flex items-start gap-2">
                     <span className="text-cyan-400 font-bold">•</span>
-                    <span>{item}</span>
+                    <span>{renderFormattedText(item)}</span>
                   </li>
                 ))}
               </ul>
@@ -1002,7 +998,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 >
                   <div className={`flex items-center gap-1.5 font-bold ${mIdx % 2 === 0 ? 'text-rose-400 light-theme:text-rose-700' : 'text-amber-400 light-theme:text-amber-700'}`}>
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Mistake: {mistake.mistake}</span>
+                    <span>Mistake: {renderFormattedText(mistake.mistake)}</span>
                   </div>
                   {mistake.codeSnippet && (
                     <div className="p-2.5 rounded-lg bg-slate-950 light-theme:bg-white font-mono text-[11px] text-rose-300 border border-rose-500/20 overflow-x-auto">
@@ -1011,10 +1007,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                   )}
                   <p className="text-slate-300 light-theme:text-slate-700">
                     <strong className="text-emerald-400 light-theme:text-emerald-700 block mb-0.5">Correction:</strong>
-                    {mistake.correction}
+                    {renderFormattedText(mistake.correction)}
                   </p>
                   <p className="text-slate-400 light-theme:text-slate-600 italic">
-                    {mistake.explanation}
+                    {renderFormattedText(mistake.explanation)}
                   </p>
                 </div>
               ))}
@@ -1032,10 +1028,10 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
                 <>
                   <div className="flex items-center gap-2 font-bold text-cyan-400 light-theme:text-blue-600 text-xs uppercase tracking-wide">
                     <span>Industry Scenario:</span>
-                    <span className="text-white light-theme:text-slate-900">{topic.realWorldExample.scenario}</span>
+                    <span className="text-white light-theme:text-slate-900">{renderFormattedText(topic.realWorldExample.scenario)}</span>
                   </div>
                   <p className="text-slate-300 light-theme:text-slate-700 leading-relaxed">
-                    {topic.realWorldExample.explanation}
+                    {renderFormattedText(topic.realWorldExample.explanation)}
                   </p>
                   {topic.realWorldExample.code && (
                     <div className="rounded-xl border border-slate-800 light-theme:border-slate-300 bg-slate-950 light-theme:bg-slate-50 p-3.5 font-mono text-xs text-emerald-400 light-theme:text-emerald-700 overflow-x-auto">
@@ -1115,7 +1111,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
             )}
 
             {aiTutorResponse && (
-              <div className="p-4 sm:p-5 rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/20 to-slate-950 light-theme:bg-purple-50/80 text-xs text-slate-200 light-theme:text-slate-800 leading-relaxed animate-pop-in space-y-2.5 shadow-lg shadow-purple-950/20">
+              <div className="p-4 sm:p-5 rounded-xl border border-purple-500/40 bg-gradient-to-b from-purple-950/20 to-slate-950 light-theme:bg-purple-50 light-theme:[background-image:none] text-xs text-slate-200 light-theme:text-slate-800 leading-relaxed animate-pop-in space-y-2.5 shadow-lg shadow-purple-950/20">
                 <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-purple-400 light-theme:text-purple-700 uppercase text-[10px] tracking-wider flex items-center gap-1.5">

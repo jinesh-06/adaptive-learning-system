@@ -1,9 +1,9 @@
 import { mockHandlers, isGitHubPages } from './mockFallback';
 
 const VERCEL_BACKEND = 'https://learning-platform08-o7uub2ykr-aihack.vercel.app';
-const rawApiUrl = import.meta.env.VITE_API_URL;
+const rawApiUrl = import.meta.env?.VITE_API_URL;
 
-if (import.meta.env.PROD && !rawApiUrl && !isGitHubPages) {
+if (import.meta.env?.PROD && !rawApiUrl && !isGitHubPages) {
   console.error(
     '[Configuration Warning] VITE_API_URL is missing in production. ' +
     'Frontend requests must target the active backend URL (e.g. on Render). ' +
