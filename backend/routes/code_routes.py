@@ -123,13 +123,15 @@ def _validate_code_request(code: Any, language: Any, stdin_val: Any = None):
 
 @router.get("/topics/{topic_id}/coding")
 async def get_coding_challenge(topic_id: str, language: Optional[str] = Query("python")):
-    challenge = curriculum_service.get_coding_challenge(topic_id, language)
-    if challenge and isinstance(challenge, dict) and "test_cases" in challenge:
+    challenge = curriculum_service.get_coding_challenge(topic_id, language, include_solution=False)
+    if challenge and isinstance(challenge, dict):
         client_challenge = dict(challenge)
-        client_challenge["test_cases"] = [
-            tc for tc in challenge.get("test_cases", [])
-            if not tc.get("is_hidden")
-        ]
+        client_challenge.pop("solution", None)
+        if "test_cases" in client_challenge:
+            client_challenge["test_cases"] = [
+                tc for tc in challenge.get("test_cases", [])
+                if not tc.get("is_hidden")
+            ]
         return client_challenge
     return challenge
 
@@ -348,7 +350,7 @@ async def submit_code(payload: CodeSubmitRequest, request: Request, response: Re
     })
 
     # Persist topic progress into SQLite user_progress table
-    course_id = curriculum_service.get_course_id_for_topic(payload.topicId)
+    course_id = curriculum_service.get_course_id_for_topic(payload.topicId) or "unknown"
 
     if is_overall_pass:
         state_store.save_topic_progress(

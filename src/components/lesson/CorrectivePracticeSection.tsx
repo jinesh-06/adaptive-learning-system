@@ -31,6 +31,8 @@ export interface CorrectivePracticeSectionProps {
   revisionConcepts?: string[];
   onPracticeCompleted?: (practiceScore: number, totalQuestions: number) => void;
   onResetPractice?: () => void;
+  conceptUpdates?: any[];
+  conceptProfile?: any;
 }
 
 export const CorrectivePracticeSection: React.FC<CorrectivePracticeSectionProps> = ({
@@ -42,7 +44,9 @@ export const CorrectivePracticeSection: React.FC<CorrectivePracticeSectionProps>
   incorrectQuestions,
   revisionConcepts = [],
   onPracticeCompleted,
-  onResetPractice
+  onResetPractice,
+  conceptUpdates,
+  conceptProfile
 }) => {
   // Practice state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
@@ -495,6 +499,28 @@ export const CorrectivePracticeSection: React.FC<CorrectivePracticeSectionProps>
           <p className="text-[11px] text-slate-300 light-theme:text-slate-700 leading-relaxed">
             Your targeted practice session has been recorded. Your original assessment score of <strong>{originalScore}/{originalTotal} ({originalPercentage}%)</strong> remains preserved as your verified baseline.
           </p>
+
+          {practiceResult.concept_updates && practiceResult.concept_updates.length > 0 && (
+            <div className="pt-2 border-t border-cyan-500/20 space-y-1.5">
+              <span className="text-[11px] font-bold text-cyan-300">Updated Concept Mastery:</span>
+              <div className="flex flex-wrap gap-2">
+                {practiceResult.concept_updates.map((cu: any, cuIdx: number) => {
+                  const kState = cu.knowledge_state || 'LEARNING';
+                  const badgeColor = kState === 'MASTERED'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : kState === 'LEARNING'
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                  return (
+                    <span key={cuIdx} className={`text-[10px] font-mono px-2 py-0.5 rounded border ${badgeColor} flex items-center gap-1`}>
+                      <span>{cu.concept || cu.concept_id}:</span>
+                      <strong className="uppercase">{kState}</strong>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

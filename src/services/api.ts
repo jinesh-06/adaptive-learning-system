@@ -199,11 +199,11 @@ export const api = {
     return mockHandlers.getTopicQuiz(topicId);
   },
 
-  submitTopicQuiz: async (topicId: string, answers: Record<string, number>, timeSpentSeconds: number) => {
+  submitTopicQuiz: async (topicId: string, answers: Record<string, number>, timeSpentSeconds: number, submissionId?: string) => {
     const data = await fetchJson(`${API_BASE}/topics/${topicId}/quiz/submit`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ answers, time_spent: timeSpentSeconds })
+      body: JSON.stringify({ answers, time_spent: timeSpentSeconds, submission_id: submissionId })
     });
     if (data) return data;
     return mockHandlers.submitTopicQuiz(topicId, answers, timeSpentSeconds);
@@ -1784,6 +1784,8 @@ export interface AdaptedLessonData {
     specific_learning_gaps?: string[];
     target_concepts?: string[];
     quiz_performance_summary?: any;
+    mastered_prerequisites?: string[];
+    active_learning_gaps?: string[];
   };
   learning_objectives: string[];
   introduction: string;
@@ -1802,6 +1804,7 @@ export interface CorrectivePracticeQuestion {
   is_correct: boolean;
   explanation: string;
   concept?: string;
+  concept_id?: string;
   difficulty?: string;
 }
 
@@ -1818,6 +1821,8 @@ export interface CorrectivePracticeReviewItem {
   user_choice: number;
   correct_index: number;
   explanation: string;
+  concept?: string;
+  concept_id?: string;
 }
 
 export interface CorrectivePracticeResult {
@@ -1830,6 +1835,8 @@ export interface CorrectivePracticeResult {
   resolved_questions: string[];
   unresolved_questions: string[];
   practice_review: CorrectivePracticeReviewItem[];
+  concept_updates?: any[];
+  concept_profile?: any;
   timestamp: string;
 }
 
@@ -1849,6 +1856,8 @@ export interface LatestQuizAttemptResponse {
     answers: Record<string, number>;
     adaptive_feedback?: any;
     incorrect_questions: CorrectivePracticeQuestion[];
+    concept_updates?: any[];
+    concept_profile?: any;
   } | null;
 }
 

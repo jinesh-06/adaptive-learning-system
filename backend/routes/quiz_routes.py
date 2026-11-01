@@ -10,6 +10,7 @@ from backend.services.curriculum_service import curriculum_service
 from backend.services.quiz_service import quiz_service
 from backend.services.ml_service import ml_service
 from backend.services.state_store import state_store
+from backend.services.concept_service import concept_service
 from backend.routes.auth_routes import get_current_user_id
 from backend.routes.c_adv_routes import C_ADV_TOPIC_MAP
 
@@ -19,6 +20,7 @@ router = APIRouter(tags=["quizzes"])
 class QuizSubmission(BaseModel):
     answers: Dict[str, int]
     time_spent: Optional[float] = 60.0
+    submission_id: Optional[str] = None
 
 
 @router.get("/topics/{topic_id}/quiz")
@@ -40,12 +42,55 @@ async def regenerate_topic_quiz(topic_id: str):
 async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Request):
     """Grade 10-question quiz submission, evaluate cognitive load signals, persist attempt, and generate adaptive feedback."""
     user_id = get_current_user_id(request)
+    clean_sub_id = str(payload.submission_id).strip() if payload.submission_id and str(payload.submission_id).strip() else None
+
+    # Idempotency check: if client submission_id was already recorded, return preserved attempt without duplicate counting
+    if clean_sub_id:
+        existing_attempt = state_store.get_quiz_attempt_by_submission_id(user_id, clean_sub_id)
+        if existing_attempt:
+            rev = []
+            if existing_attempt.get("review_json"):
+                try:
+                    rev = json.loads(existing_attempt["review_json"])
+                except Exception:
+                    rev = []
+            ad_fb = {}
+            if existing_attempt.get("adaptive_feedback_json"):
+                try:
+                    ad_fb = json.loads(existing_attempt["adaptive_feedback_json"])
+                except Exception:
+                    ad_fb = {}
+            tot = int(existing_attempt.get("total_questions") or 10)
+            corr = int(existing_attempt.get("correct_count") or 0)
+            pct = int(existing_attempt.get("percentage") or 0)
+            prof = concept_service.get_learner_concept_profile(user_id, topic_id)
+            return {
+                "attempt_id": existing_attempt.get("id"),
+                "score": pct,
+                "correct_count": corr,
+                "incorrect_count": tot - corr,
+                "total_questions": tot,
+                "total": tot,
+                "percentage": pct,
+                "passed": pct >= 70,
+                "review": rev,
+                "results": rev,
+                "adaptive_feedback": ad_fb,
+                "cognitive_insight": ad_fb,
+                "mastery": None,
+                "concept_updates": [],
+                "concept_profile": prof,
+                "idempotent_replay": True
+            }
+
     quiz_data = quiz_service.get_quiz_for_topic(topic_id)
     questions = quiz_data.get("questions", [])
 
     correct_count = 0
     feedback = []
     review = []
+
+    topic_title = quiz_data.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
 
     for idx, q in enumerate(questions):
         q_id = str(q.get("id"))
@@ -58,12 +103,18 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         if is_correct:
             correct_count += 1
 
+        c_meta = quiz_service.get_concept_for_question(q, topic_id, topic_title)
+        concept_id = c_meta["concept_id"]
+        concept_title = c_meta["concept"]
+
         feedback.append({
             "question_id": q_id,
             "correct": is_correct,
             "user_answer": user_answer,
             "correct_answer": q.get("correct_index"),
-            "explanation": q.get("explanation", "")
+            "explanation": q.get("explanation", ""),
+            "concept_id": concept_id,
+            "concept": concept_title
         })
 
         review.append({
@@ -74,7 +125,9 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "explanation": q.get("explanation", ""),
             "difficulty": q.get("difficulty", "medium"),
             "is_correct": is_correct,
-            "user_choice": user_answer
+            "user_choice": user_answer,
+            "concept_id": concept_id,
+            "concept": concept_title
         })
 
     total = len(questions) if len(questions) > 0 else 10
@@ -92,7 +145,6 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
     })
 
     # Generate personalized adaptive feedback based on missed concepts and learning signals
-    topic_title = quiz_data.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
     adaptive_feedback = quiz_service.generate_adaptive_feedback(
         topic_title=topic_title,
         topic_id=topic_id,
@@ -113,7 +165,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "cognitive_load": ml_eval.get("cognitive_load")
     })
 
-    # Save quiz attempt record to SQLite
+    # Save quiz attempt record to SQLite with submission_id for idempotency
     attempt_id = state_store.save_quiz_attempt(user_id, topic_id, {
         "score": correct_count,
         "percentage": percentage,
@@ -122,14 +174,15 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "answers": payload.answers,
         "review": review,
         "adaptive_feedback": adaptive_feedback,
-        "time_spent": payload.time_spent or 0.0
+        "time_spent": payload.time_spent or 0.0,
+        "submission_id": clean_sub_id
     })
 
     # Invalidate stale adapted lesson cache so subsequent lesson loads use updated quiz evidence
     state_store.invalidate_adapted_lessons(user_id, topic_id)
 
     # Persist topic progress into SQLite user_progress table
-    course_id = curriculum_service.get_course_id_for_topic(topic_id)
+    course_id = curriculum_service.get_course_id_for_topic(topic_id) or "unknown"
     state_store.save_topic_progress(
         user_id=user_id,
         course_id=course_id,
@@ -140,6 +193,43 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         attempts_delta=1,
         time_spent_delta=payload.time_spent or 0.0
     )
+
+    # Record concept-level assessment evidence into ConceptService
+    concept_updates = []
+    for r in review:
+        # Do not classify skipped questions as selected wrong answers
+        if r.get("user_choice") is not None:
+            q_id = str(r.get("id"))
+            c_id = r.get("concept_id") or "core_topic_mechanics"
+            is_q_correct = bool(r.get("is_correct"))
+            evidence_id = f"quiz_{clean_sub_id or attempt_id}_{q_id}"
+
+            try:
+                rec = concept_service.record_concept_evidence(
+                    user_id=user_id,
+                    concept_id=c_id,
+                    topic_id=topic_id,
+                    is_correct=is_q_correct,
+                    evidence_id=evidence_id,
+                    source="quiz_submission",
+                    metadata={
+                        "attempt_id": attempt_id,
+                        "question_id": q_id,
+                        "user_choice": r.get("user_choice"),
+                        "correct_index": r.get("correct_index")
+                    }
+                )
+                concept_updates.append({
+                    "concept_id": c_id,
+                    "concept": r.get("concept"),
+                    "knowledge_state": rec["knowledge_state"],
+                    "correct_count": rec["correct_count"],
+                    "incorrect_count": rec["incorrect_count"]
+                })
+            except Exception as ce:
+                print(f"[ConceptEvidence] Failed to record quiz concept evidence for {c_id}: {ce}")
+
+    learner_concept_profile = concept_service.get_learner_concept_profile(user_id, topic_id)
 
     # Recalculate and update student-specific topic mastery
     mastery_snapshot = None
@@ -176,7 +266,9 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
         "results": feedback,
         "adaptive_feedback": adaptive_feedback,
         "cognitive_insight": adaptive_feedback,
-        "mastery": mastery_snapshot
+        "mastery": mastery_snapshot,
+        "concept_updates": concept_updates,
+        "concept_profile": learner_concept_profile
     }
 
 
@@ -218,7 +310,13 @@ async def get_latest_quiz_attempt(topic_id: str, request: Request):
             answers = {}
 
     incorrect_questions = [r for r in review if not r.get("is_correct")]
+    for q in incorrect_questions:
+        if not q.get("concept_id") or not q.get("concept"):
+            c_meta = quiz_service.get_concept_for_question(q, clean_topic, clean_topic)
+            q["concept_id"] = c_meta["concept_id"]
+            q["concept"] = c_meta["concept"]
 
+    learner_concept_profile = concept_service.get_learner_concept_profile(user_id, clean_topic)
     return {
         "has_attempt": True,
         "attempt": {
@@ -234,7 +332,8 @@ async def get_latest_quiz_attempt(topic_id: str, request: Request):
             "review": review,
             "answers": answers,
             "adaptive_feedback": adaptive_feedback,
-            "incorrect_questions": incorrect_questions
+            "incorrect_questions": incorrect_questions,
+            "concept_profile": learner_concept_profile
         }
     }
 
@@ -268,6 +367,7 @@ async def submit_corrective_practice(topic_id: str, payload: CorrectivePracticeS
     practice_review = []
     resolved_questions = []
     unresolved_questions = []
+    concept_updates = []
 
     for q_id, user_choice in payload.answers.items():
         q_obj = original_review_map.get(str(q_id)) or q_map.get(str(q_id))
@@ -284,13 +384,48 @@ async def submit_corrective_practice(topic_id: str, payload: CorrectivePracticeS
         else:
             unresolved_questions.append(str(q_id))
 
+        c_meta = quiz_service.get_concept_for_question(q_obj, clean_topic, clean_topic)
+        concept_id = c_meta["concept_id"]
+        concept_title = c_meta["concept"]
+
         practice_review.append({
             "question_id": str(q_id),
             "is_correct": is_correct,
             "user_choice": user_choice,
             "correct_index": correct_idx,
-            "explanation": q_obj.get("explanation", "Targeted corrective concept guidance.")
+            "explanation": q_obj.get("explanation", "Targeted corrective concept guidance."),
+            "concept_id": concept_id,
+            "concept": concept_title
         })
+
+        # Record verified corrective practice evidence into ConceptService
+        practice_evidence_id = f"practice_{payload.original_attempt_id or 'latest'}_{q_id}"
+        try:
+            rec = concept_service.record_concept_evidence(
+                user_id=user_id,
+                concept_id=concept_id,
+                topic_id=clean_topic,
+                is_correct=is_correct,
+                evidence_id=practice_evidence_id,
+                source="corrective_practice",
+                metadata={
+                    "original_attempt_id": payload.original_attempt_id,
+                    "question_id": str(q_id),
+                    "user_choice": user_choice,
+                    "correct_index": correct_idx
+                }
+            )
+            concept_updates.append({
+                "concept_id": concept_id,
+                "concept": concept_title,
+                "question_id": str(q_id),
+                "is_correct": is_correct,
+                "knowledge_state": rec["knowledge_state"],
+                "correct_count": rec["correct_count"],
+                "incorrect_count": rec["incorrect_count"]
+            })
+        except Exception as ce:
+            print(f"[ConceptEvidence] Failed to record practice evidence for {concept_id}: {ce}")
 
     total_practice = len(practice_review) if practice_review else 1
     practice_score = len(resolved_questions)
@@ -327,5 +462,7 @@ async def submit_corrective_practice(topic_id: str, payload: CorrectivePracticeS
         "resolved_questions": resolved_questions,
         "unresolved_questions": unresolved_questions,
         "practice_review": practice_review,
+        "concept_updates": concept_updates,
+        "concept_profile": concept_service.get_learner_concept_profile(user_id, clean_topic),
         "timestamp": datetime.now(timezone.utc).isoformat()
     }

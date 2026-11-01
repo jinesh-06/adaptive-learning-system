@@ -44,6 +44,20 @@ class AdaptedLessonService:
 
     def _diagnose_concept_from_question(self, q_data: Dict[str, Any], topic_id: str, topic_meta: Dict[str, Any]) -> Dict[str, Any]:
         """Classify question into concept key, human title, and error category based on question/explanation semantics."""
+        # 0. Check explicit concept_id and concept if present
+        if q_data.get("concept_id") and q_data.get("concept"):
+            return {
+                "concept_key": str(q_data["concept_id"]).strip(),
+                "title": str(q_data["concept"]).strip(),
+                "category": "conceptual_misunderstanding",
+                "remediation_focus": f"Targeted instruction and practice for {q_data['concept']}.",
+                "question_id": str(q_data.get("id", "")),
+                "question": (q_data.get("question") or "").strip(),
+                "user_choice": q_data.get("user_choice"),
+                "correct_index": q_data.get("correct_index"),
+                "explanation": (q_data.get("explanation") or "").strip()
+            }
+
         q_text = (q_data.get("question") or "").strip()
         explanation = (q_data.get("explanation") or "").strip()
         combined = f"{q_text} {explanation}".lower()
@@ -152,6 +166,8 @@ class AdaptedLessonService:
                 "diagnosed_gaps": [],
                 "target_concepts": [topic_title],
                 "specific_learning_gaps": [],
+                "mastered_prerequisites": [],
+                "active_learning_gaps": [],
                 "mastery_tier": "unassessed",
                 "quiz_performance_summary": {
                     "attempt_count": 0,
@@ -265,6 +281,44 @@ class AdaptedLessonService:
             reason = f"Personalized for you: Solid understanding demonstrated ({latest_score:.0f}%). Balanced review reinforcing edge cases before advancing."
             target_concepts = [topic_title]
 
+        # Retrieve persistent concept-level knowledge and prerequisite profile
+        mastered_prerequisites: List[str] = []
+        try:
+            from backend.services.concept_service import concept_service
+            learner_profile = concept_service.get_learner_concept_profile(safe_user_id, topic_id)
+            known_concept_ids = list(learner_profile.get("known_concept_ids", []))
+
+            # Retrieve prerequisite topic concept mastery if defined
+            prereq_topic_id = topic_meta.get("prerequisiteId")
+            mastered_prerequisites = list(known_concept_ids)
+            if prereq_topic_id and str(prereq_topic_id).lower() not in ("none", "null", ""):
+                prereq_profile = concept_service.get_learner_concept_profile(safe_user_id, str(prereq_topic_id).strip())
+                for cid in prereq_profile.get("known_concept_ids", []):
+                    if cid not in mastered_prerequisites:
+                        mastered_prerequisites.append(cid)
+
+            # Core concept prerequisite dependencies
+            CONCEPT_PREREQUISITES: Dict[str, List[str]] = {
+                "boundary_conditions_and_indexing": ["operator_precedence_and_evaluation", "variable_scope_and_state"],
+                "loop_termination_and_control_flow": ["variable_scope_and_state", "operator_precedence_and_evaluation"],
+                "recursion_and_call_stack": ["variable_scope_and_state", "loop_termination_and_control_flow"],
+                "pointer_addressing_and_dereference": ["variable_scope_and_state"],
+                "memory_allocation_and_lifecycle": ["pointer_addressing_and_dereference"],
+                "oop_and_inheritance": ["variable_scope_and_state"],
+            }
+            # For each diagnosed gap, check if prerequisites are mastered
+            all_user_known = set(concept_service.get_known_concepts(safe_user_id, as_ids=True))
+            for g in diagnosed_gaps:
+                g_key = g.get("concept_key")
+                req_prereqs = CONCEPT_PREREQUISITES.get(g_key, [])
+                for rp in req_prereqs:
+                    if rp in all_user_known or rp in known_concept_ids:
+                        if rp not in mastered_prerequisites:
+                            mastered_prerequisites.append(rp)
+        except Exception as prereq_err:
+            logger.warning("Could not retrieve concept prerequisites: %s", prereq_err)
+            mastered_prerequisites = []
+
         signals_used = [
             f"Assessment accuracy: {latest_score:.0f}% ({latest_correct}/{latest_total} correct)",
             f"Quiz attempt history: {len(attempts)} attempt(s) (trend: {score_trend})"
@@ -290,6 +344,8 @@ class AdaptedLessonService:
             "repeated_concepts": repeated_concepts,
             "target_concepts": target_concepts,
             "specific_learning_gaps": specific_learning_gaps,
+            "mastered_prerequisites": mastered_prerequisites,
+            "active_learning_gaps": [g["concept_key"] for g in diagnosed_gaps],
             "mastery_tier": "mastered" if latest_score >= 90 and has_adequate_evidence else "competent" if latest_score >= 70 else "struggling",
             "quiz_performance_summary": {
                 "attempt_count": len(attempts),
@@ -563,6 +619,7 @@ class AdaptedLessonService:
         diag_info = diagnosis or {}
         gaps_list = diag_info.get("specific_learning_gaps", [])
         quiz_summary = diag_info.get("quiz_performance_summary", {})
+        mastered_prereqs = diag_info.get("mastered_prerequisites", [])
 
         # Build prompt
         prompt = f"""You are an elite educational AI pedagogy system for a computer science platform.
@@ -579,6 +636,7 @@ TOPIC INFORMATION:
 DIAGNOSED STUDENT LEARNING EVIDENCE:
 - Teaching Strategy: {strategy}
 - Diagnosed Knowledge Gaps: {json.dumps(gaps_list)}
+- Mastered Prerequisite Concepts: {json.dumps(mastered_prereqs)}
 - Performance Summary: {json.dumps(quiz_summary)}
 - Cognitive Load Category: {pred_load} (Confidence: {confidence:.2f})
 - Active Explanation Mode: {detail_level}
@@ -587,8 +645,11 @@ DIAGNOSED STUDENT LEARNING EVIDENCE:
 
 PEDAGOGICAL STRATEGY RULES:
 {strategy_instructions}
-CRITICAL REQUIREMENT:
-The lesson MUST specifically teach and reinforce the student's diagnosed knowledge gaps: {json.dumps(gaps_list)}.
+CRITICAL PEDAGOGICAL & PREREQUISITE REQUIREMENTS:
+1. The lesson MUST specifically teach and reinforce the student's diagnosed knowledge gaps: {json.dumps(gaps_list)}.
+2. The student has ALREADY MASTERED these prerequisite concepts: {json.dumps(mastered_prereqs)}.
+   Build directly upon this mastered knowledge. DO NOT unnecessarily repeat basic definitions of these prerequisites.
+3. Bridge from the student's known prerequisites to clarify and resolve the diagnosed knowledge gap.
 Ensure the code example, visual diagram, common pitfalls, and guided practice challenge directly target these concepts!
 
 OUTPUT FORMAT REQUIREMENTS:
@@ -774,6 +835,12 @@ IMPORTANT:
             f"Write and execute valid {subject.capitalize()} code",
             f"Debug common issues in {topic_title}"
         ]
+
+        mastered_prereqs = diag.get("mastered_prerequisites", [])
+        prereq_bridge_note = ""
+        if mastered_prereqs:
+            clean_prereq_names = [p.replace("_", " ").title() for p in mastered_prereqs[:2]]
+            prereq_bridge_note = f" Building upon your verified understanding of {', '.join(clean_prereq_names)}, this lesson bridges directly into resolving {primary_gap['title'] if primary_gap else 'this concept'}."
 
         # -------------------------------------------------------------
         # Branch tailored lesson content based on diagnosed gap & strategy
@@ -1390,7 +1457,9 @@ IMPORTANT:
                 "signals_used": signals_used,
                 "specific_learning_gaps": diag.get("specific_learning_gaps", []),
                 "target_concepts": diag.get("target_concepts", []),
-                "quiz_performance_summary": diag.get("quiz_performance_summary")
+                "quiz_performance_summary": diag.get("quiz_performance_summary"),
+                "mastered_prerequisites": diag.get("mastered_prerequisites", []),
+                "active_learning_gaps": diag.get("active_learning_gaps", [])
             },
             "learning_objectives": objectives,
             "introduction": intro,

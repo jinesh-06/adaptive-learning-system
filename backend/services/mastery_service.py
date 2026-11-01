@@ -188,7 +188,7 @@ class MasteryService:
         # Resolve subject_id / course_id if missing
         if not subject_id or not str(subject_id).strip():
             subject_id = curriculum_service.get_course_id_for_topic(topic_id)
-        subject_id = str(subject_id).strip()
+        subject_id = str(subject_id or "general").strip()
 
         with state_store._lock:
             conn = state_store.get_connection()
@@ -480,7 +480,7 @@ class MasteryService:
 
         if not row:
             # Topic not assessed yet: return clean Not assessed structure
-            subject_id = curriculum_service.get_course_id_for_topic(topic_id)
+            subject_id = curriculum_service.get_course_id_for_topic(topic_id) or "general"
             return {
                 "id": f"{user_id}_{subject_id}_{topic_id}",
                 "student_id": user_id,

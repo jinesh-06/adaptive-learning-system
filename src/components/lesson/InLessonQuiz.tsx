@@ -59,6 +59,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   const [submissionResult, setSubmissionResult] = useState<any | null>(null);
 
   const lastTopicIdRef = useRef<string>(topicId);
+  const submissionIdRef = useRef<string>(`sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
   const isCompletedRef = useRef<boolean>(isCompleted);
   isCompletedRef.current = isCompleted;
   const isSubmittingRef = useRef<boolean>(isSubmittingFinal);
@@ -76,13 +77,14 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     if (isTopicChange) {
       // User navigated to a new topic -> cleanly reset all quiz state
       lastTopicIdRef.current = topicId;
+      submissionIdRef.current = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       setCurrentIndex(0);
       setSelectedAnswers({});
       setSubmittedQuestions({});
       setScore(0);
       setIsCompleted(false);
       setAdaptiveFeedback(null);
-    setSubmissionResult(null);
+      setSubmissionResult(null);
       setStartTime(Date.now());
       setQuestions([]);
       setLoading(true);
@@ -117,7 +119,49 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       setLoading(true);
     }
 
-    // 3. Always request calibrated 10-question quiz from backend API
+    // 3. Query existing completed quiz attempt to restore state on mount / refresh
+    api.getLatestQuizAttempt(topicId)
+      .then(attRes => {
+        if (!isMounted) return;
+        if (isSubmittingRef.current || isCompletedRef.current) return;
+        if (Object.keys(selectedAnswersRef.current).length > 0) return;
+
+        if (attRes && attRes.has_attempt && attRes.attempt) {
+          const att = attRes.attempt;
+          const restoredReview = Array.isArray(att.review) ? att.review : [];
+          const restoredCorrect = typeof att.correct_count === 'number'
+            ? att.correct_count
+            : (typeof att.score === 'number' && att.score <= (att.total_questions || 10) ? Math.round(att.score) : 0);
+          const restoredPct = typeof att.percentage === 'number'
+            ? Math.round(att.percentage)
+            : (typeof att.score === 'number' && att.score <= 100 ? Math.round(att.score) : 0);
+
+          setScore(restoredCorrect);
+          if (att.adaptive_feedback) {
+            setAdaptiveFeedback(att.adaptive_feedback);
+          }
+          setSubmissionResult({
+            attempt_id: att.id,
+            score: att.score,
+            percentage: restoredPct,
+            correct_count: restoredCorrect,
+            incorrect_count: att.incorrect_count,
+            total_questions: att.total_questions || 10,
+            passed: att.passed,
+            review: restoredReview,
+            adaptive_feedback: att.adaptive_feedback,
+            concept_profile: att.concept_profile,
+            concept_updates: att.concept_updates || []
+          });
+          setIsCompleted(true);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load latest quiz attempt:', err);
+      });
+
+    // 4. Always request calibrated 10-question quiz from backend API
     api.getTopicQuiz(topicId)
       .then(data => {
         const qList = Array.isArray(data)
@@ -223,7 +267,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     });
 
     try {
-      const res = await api.submitTopicQuiz(topicId, answerPayload, timeSpent);
+      const res = await api.submitTopicQuiz(topicId, answerPayload, timeSpent, submissionIdRef.current);
       if (res) {
         setSubmissionResult(res);
       }
@@ -255,6 +299,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   };
 
   const handleRestart = () => {
+    submissionIdRef.current = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     setSelectedAnswers({});
     setSubmittedQuestions({});
     setScore(0);
@@ -284,10 +329,23 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
 
   // --- FINAL RESULTS VIEW ---
   if (isCompleted) {
-    const totalQuestions = questions.length;
-    const finalPct = Math.round((score / totalQuestions) * 100);
-    const passed = finalPct >= 70;
-    const incorrectCount = totalQuestions - score;
+    const totalQuestions = submissionResult?.total_questions || questions.length || 10;
+    const finalPct = typeof submissionResult?.percentage === 'number'
+      ? Math.round(submissionResult.percentage)
+      : (typeof submissionResult?.score === 'number' && submissionResult.score <= 100
+        ? Math.round(submissionResult.score)
+        : Math.round((score / totalQuestions) * 100));
+    const finalCorrectCount = typeof submissionResult?.correct_count === 'number'
+      ? submissionResult.correct_count
+      : (typeof submissionResult?.score === 'number' && submissionResult.score <= totalQuestions
+        ? Math.round(submissionResult.score)
+        : score);
+    const passed = typeof submissionResult?.passed === 'boolean'
+      ? submissionResult.passed
+      : finalPct >= 70;
+    const incorrectCount = typeof submissionResult?.incorrect_count === 'number'
+      ? submissionResult.incorrect_count
+      : totalQuestions - finalCorrectCount;
 
     // Derive review list for corrective practice
     const reviewList: CorrectivePracticeQuestion[] = (
@@ -359,7 +417,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
           <div className="p-4 rounded-xl border border-slate-800 light-theme:border-slate-200 bg-slate-950/60 light-theme:bg-slate-50 space-y-1">
             <span className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">Final Score</span>
             <div className="text-2xl font-black text-white light-theme:text-slate-900 font-mono">
-              {score} <span className="text-xs text-slate-500 font-normal">/ {totalQuestions}</span>
+              {finalCorrectCount} <span className="text-xs text-slate-500 font-normal">/ {totalQuestions}</span>
             </div>
           </div>
 
@@ -375,7 +433,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
               <CheckCircle2 className="w-3 h-3" /> Correct
             </span>
             <div className="text-2xl font-black text-emerald-400 font-mono">
-              {score}
+              {finalCorrectCount}
             </div>
           </div>
 
@@ -408,8 +466,8 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
           <p className="text-xs sm:text-sm text-slate-300 light-theme:text-slate-700 leading-relaxed">
             {adaptiveFeedback?.personalized_summary || (
               passed
-                ? `Outstanding work! You solved ${score} of ${totalQuestions} questions correctly. Your mastery of this topic is solid.`
-                : `You answered ${score} of ${totalQuestions} questions correctly. We have analyzed the questions you missed and recommended concepts to review.`
+                ? `Outstanding work! You solved ${finalCorrectCount} of ${totalQuestions} questions correctly. Your mastery of this topic is solid.`
+                : `You answered ${finalCorrectCount} of ${totalQuestions} questions correctly. We have analyzed the questions you missed and recommended concepts to review.`
             )}
           </p>
 
@@ -476,15 +534,55 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
           </div>
         </div>
 
+        {/* Concept Mastery State Progress Badges */}
+        {((submissionResult?.concept_updates && submissionResult.concept_updates.length > 0) ||
+          (submissionResult?.concept_profile?.concepts && submissionResult.concept_profile.concepts.length > 0)) && (
+          <div className="p-4 rounded-xl border border-slate-800 light-theme:border-slate-200 bg-slate-950/50 light-theme:bg-slate-50 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-300 light-theme:text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                Concept Knowledge State Progression
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Mistake-Based Tracking</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(submissionResult?.concept_updates && submissionResult.concept_updates.length > 0
+                ? submissionResult.concept_updates
+                : (submissionResult?.concept_profile?.concepts || [])
+              ).map((cu: any, cuIdx: number) => {
+                const kState = cu.knowledge_state || 'LEARNING';
+                const badgeColor = kState === 'MASTERED'
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : kState === 'LEARNING'
+                  ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                  : 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+                return (
+                  <span
+                    key={cuIdx}
+                    className={`text-[11px] font-mono px-2.5 py-1 rounded-lg border ${badgeColor} flex items-center gap-1.5`}
+                  >
+                    <span className="text-slate-300 light-theme:text-slate-700 font-sans">
+                      {cu.concept || cu.concept_id}:
+                    </span>
+                    <strong className="font-bold uppercase">{kState}</strong>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* MEMBER 4: TARGETED CORRECTIVE PRACTICE UI */}
         <CorrectivePracticeSection
           topicId={topicId}
-          originalScore={score}
+          originalScore={finalCorrectCount}
           originalTotal={totalQuestions}
           originalPercentage={finalPct}
           originalAttemptId={submissionResult?.attempt_id}
           incorrectQuestions={incorrectQuestions}
           revisionConcepts={adaptiveFeedback?.revision_concepts || []}
+          conceptUpdates={submissionResult?.concept_updates}
+          conceptProfile={submissionResult?.concept_profile}
         />
 
         {/* Accordion / Full Review Section */}

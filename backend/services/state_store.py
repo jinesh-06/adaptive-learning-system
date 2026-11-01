@@ -204,9 +204,15 @@ class StateStore:
                     review_json TEXT,
                     adaptive_feedback_json TEXT,
                     time_spent REAL,
+                    submission_id TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            cur.execute("PRAGMA table_info(quiz_attempts)")
+            qa_cols = [r[1] for r in cur.fetchall()]
+            if "submission_id" not in qa_cols:
+                cur.execute("ALTER TABLE quiz_attempts ADD COLUMN submission_id TEXT")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_quiz_attempts_user_sub ON quiz_attempts(user_id, submission_id) WHERE submission_id IS NOT NULL")
 
             # Learning Outcomes: Assessment Results (Pre and Post)
             cur.execute("""
@@ -963,15 +969,28 @@ class StateStore:
         """Persist quiz attempt record for tracking and preventing duplicate submissions."""
         import uuid
         attempt_id = attempt_data.get("id") or f"attempt-{uuid.uuid4().hex[:12]}"
+        submission_id = attempt_data.get("submission_id")
+        clean_sub = str(submission_id).strip() if submission_id and str(submission_id).strip() else None
         try:
             with self._lock:
                 conn = self.get_connection()
                 cur = conn.cursor()
+                if clean_sub:
+                    cur.execute(
+                        """SELECT id FROM quiz_attempts
+                           WHERE user_id = ? AND submission_id = ? LIMIT 1""",
+                        (user_id, clean_sub)
+                    )
+                    existing = cur.fetchone()
+                    if existing:
+                        conn.close()
+                        return existing["id"]
+
                 cur.execute(
                     """INSERT INTO quiz_attempts (
                            id, user_id, topic_id, score, percentage, correct_count,
-                           total_questions, answers_json, review_json, adaptive_feedback_json, time_spent
-                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                           total_questions, answers_json, review_json, adaptive_feedback_json, time_spent, submission_id
+                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         attempt_id,
                         user_id,
@@ -983,7 +1002,8 @@ class StateStore:
                         json.dumps(attempt_data.get("answers", {})),
                         json.dumps(attempt_data.get("review", [])),
                         json.dumps(attempt_data.get("adaptive_feedback", {})),
-                        float(attempt_data.get("time_spent", 0.0))
+                        float(attempt_data.get("time_spent", 0.0)),
+                        clean_sub
                     )
                 )
                 conn.commit()
@@ -991,7 +1011,34 @@ class StateStore:
                 return attempt_id
         except Exception as e:
             print(f"[StateStore] save_quiz_attempt error: {e}")
+            # If unique constraint triggered by concurrent insert of same submission_id, return existing
+            if clean_sub:
+                existing = self.get_quiz_attempt_by_submission_id(user_id, clean_sub)
+                if existing:
+                    return existing.get("id", attempt_id)
             return attempt_id
+
+    def get_quiz_attempt_by_submission_id(self, user_id: str, submission_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieve an existing quiz attempt by user_id and client submission_id for idempotency."""
+        safe_uid = str(user_id or "").strip()
+        safe_sub = str(submission_id or "").strip()
+        if not safe_uid or not safe_sub:
+            return None
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT * FROM quiz_attempts
+                   WHERE user_id = ? AND submission_id = ?
+                   ORDER BY created_at DESC LIMIT 1""",
+                (safe_uid, safe_sub)
+            )
+            row = cur.fetchone()
+            conn.close()
+            return dict(row) if row else None
+        except Exception as e:
+            print(f"[StateStore] get_quiz_attempt_by_submission_id error: {e}")
+            return None
 
     def get_quiz_attempts(self, user_id: str, topic_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Retrieve history of quiz attempts."""
@@ -1001,13 +1048,13 @@ class StateStore:
             if topic_id:
                 cur.execute(
                     """SELECT * FROM quiz_attempts WHERE user_id = ? AND topic_id = ?
-                       ORDER BY created_at DESC LIMIT 20""",
+                       ORDER BY created_at DESC, rowid DESC LIMIT 20""",
                     (user_id, topic_id)
                 )
             else:
                 cur.execute(
                     """SELECT * FROM quiz_attempts WHERE user_id = ?
-                       ORDER BY created_at DESC LIMIT 50""",
+                       ORDER BY created_at DESC, rowid DESC LIMIT 50""",
                     (user_id,)
                 )
             rows = [dict(r) for r in cur.fetchall()]
