@@ -35,12 +35,19 @@ class AuthIdentity(BaseModel):
 
 
 # --- Pluggable In-Memory Verifier for Offline Testing ---
+def get_firebase_project_id() -> str:
+    """Retrieve active Firebase project ID, supporting dynamic environment configuration."""
+    from backend import config
+    return os.getenv("FIREBASE_PROJECT_ID", config.FIREBASE_PROJECT_ID).strip()
+
+
 def _default_firebase_verifier(token: str) -> Dict[str, Any]:
     """Production verifier: validates against Google's live public certificates."""
+    active_pid = get_firebase_project_id()
     return id_token.verify_firebase_token(
         token,
         GoogleAuthRequest(),
-        audience=FIREBASE_PROJECT_ID,
+        audience=active_pid,
         clock_skew_in_seconds=10
     )
 
@@ -75,12 +82,22 @@ class AuthService:
         if not isinstance(claims, dict):
             raise HTTPException(status_code=401, detail="Invalid token payload structure")
 
+        active_pid = get_firebase_project_id()
+
         # 1. Validate Issuer
-        expected_iss = f"https://securetoken.google.com/{FIREBASE_PROJECT_ID}"
+        expected_iss = f"https://securetoken.google.com/{active_pid}"
         if claims.get("iss") != expected_iss:
             raise HTTPException(
                 status_code=401,
                 detail=f"Invalid token issuer: expected {expected_iss}, got {claims.get('iss')}"
+            )
+
+        # 1b. Validate Audience
+        aud = claims.get("aud")
+        if aud and aud != active_pid:
+            raise HTTPException(
+                status_code=401,
+                detail=f"Invalid Firebase ID token: Token has wrong audience {aud}, expected one of ['{active_pid}']"
             )
 
         # 2. Validate Subject
