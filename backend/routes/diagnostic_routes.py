@@ -21,7 +21,7 @@ class DiagnosticSubmission(BaseModel):
 
 @router.get("/{language}/questions")
 async def get_diagnostic_questions(language: str):
-    raw_questions = curriculum_service.get_diagnostic_questions(language=language)
+    raw_questions = curriculum_service.get_diagnostic_questions(language=language, include_answers=False)
     # Return questions with sanitized payload for client test taking
     client_questions = []
     for q in raw_questions:
@@ -45,7 +45,7 @@ async def get_diagnostic_questions(language: str):
 @router.post("/{language}/submit")
 async def submit_diagnostic(language: str, payload: DiagnosticSubmission, request: Request):
     user_id = get_current_user_id(request)
-    questions = curriculum_service.get_diagnostic_questions(language=language)
+    questions = curriculum_service.get_diagnostic_questions_for_grading(language=language)
 
     correct_count = 0
     total = len(questions) if questions else 1

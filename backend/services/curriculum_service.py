@@ -1,9 +1,108 @@
 """Curriculum Service providing access to courses, modules, topics, quizzes, and coding challenges."""
 
 import json
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from backend.services.state_store import state_store
+
+logger = logging.getLogger(__name__)
+
+
+def normalize_language(lang: Optional[str]) -> str:
+    """Normalize language name or alias to canonical identifier: python, cpp, c, java."""
+    if not lang:
+        return "python"
+    clean = str(lang).strip().lower()
+    if clean in ("cpp", "c++", "cplusplus"):
+        return "cpp"
+    if clean in ("python", "python3", "py"):
+        return "python"
+    if clean in ("c",):
+        return "c"
+    if clean in ("java",):
+        return "java"
+    return clean
+
+def _safe_extract_mistake(common_mistakes: Any, key: str = "mistake", default: str = "") -> str:
+    """Safely extract mistake/pitfall description whether stored as list of dicts, list of strings, or string."""
+    if not common_mistakes:
+        return default
+    if isinstance(common_mistakes, str):
+        return common_mistakes.strip()
+    if isinstance(common_mistakes, list) and len(common_mistakes) > 0:
+        first = common_mistakes[0]
+        if isinstance(first, dict):
+            return str(first.get(key) or first.get("mistake") or first.get("whyWrong") or first.get("explanation") or default)
+        if isinstance(first, str):
+            return first.strip()
+        return str(first)
+    return default
+
+
+def _safe_extract_secondary_mistake(common_mistakes: Any, key: str = "whyWrong", default: str = "") -> str:
+    """Safely extract secondary mistake/explanation if available."""
+    if not common_mistakes:
+        return default
+    if isinstance(common_mistakes, str):
+        return common_mistakes.strip()
+    if isinstance(common_mistakes, list):
+        if len(common_mistakes) > 1:
+            second = common_mistakes[1]
+            if isinstance(second, dict):
+                return str(second.get(key) or second.get("explanation") or second.get("whyWrong") or second.get("mistake") or default)
+            if isinstance(second, str):
+                return second.strip()
+            return str(second)
+        elif len(common_mistakes) == 1:
+            first = common_mistakes[0]
+            if isinstance(first, dict):
+                return str(first.get(key) or first.get("explanation") or first.get("whyWrong") or default)
+            if isinstance(first, str):
+                return first.strip()
+    return default
+
+
+PYTHON_TOPIC_ALIASES: Dict[str, str] = {
+    "top-py-adv-args": "top-py-adv-args-kwargs",
+    "top-py-adv-closures": "top-py-adv-closures-scope",
+    "top-py-adv-decorators": "top-py-adv-advanced-decorators",
+    "top-py-adv-generators": "top-py-adv-generators-yield",
+    "top-py-adv-iterators": "top-py-adv-iterators-protocol",
+    "top-py-adv-comprehensions": "top-py-adv-advanced-comprehensions",
+    "top-py-adv-functional": "top-py-adv-functional-programming",
+    "top-py-adv-method-types": "top-py-adv-methods-types",
+    "top-py-adv-encapsulation": "top-py-adv-encapsulation-access",
+    "top-py-adv-multiple-inheritance": "top-py-adv-inheritance-multiple",
+    "top-py-adv-mro": "top-py-adv-inheritance-mro",
+    "top-py-adv-polymorphism": "top-py-adv-polymorphism-duck-typing",
+    "top-py-adv-abc": "top-py-adv-abstraction-abc",
+    "top-py-adv-descriptors": "top-py-adv-properties-descriptors",
+    "top-py-adv-composition": "top-py-adv-composition-vs-inheritance",
+    "top-py-adv-solid": "top-py-adv-solid-principles",
+    "top-py-adv-sync-vs-async": "top-py-adv-async-sync-vs-async",
+    "top-py-adv-concurrency-vs-parallelism": "top-py-adv-async-concurrency-vs-parallelism",
+    "top-py-adv-blocking-non-blocking": "top-py-adv-async-blocking-vs-nonblocking",
+    "top-py-adv-intro-asyncio": "top-py-adv-async-intro-asyncio",
+    "top-py-adv-coroutines": "top-py-adv-async-coroutines-await",
+    "top-py-adv-event-loop": "top-py-adv-async-event-loop",
+    "top-py-adv-tasks-futures": "top-py-adv-async-tasks-futures",
+    "top-py-adv-gather": "top-py-adv-async-gather",
+    "top-py-adv-create-task": "top-py-adv-async-create-task",
+    "top-py-adv-async-iterators": "top-py-adv-async-iterators-generators",
+    "top-py-adv-async-exceptions": "top-py-adv-async-exception-handling",
+    "top-py-adv-async-timeouts": "top-py-adv-async-timeouts-cancellation",
+    "top-py-adv-concurrency-comparison": "top-py-adv-async-threading-multiprocessing",
+    "top-py-adv-concurrent-apps": "top-py-adv-async-concurrent-apps",
+    "top-py-adv-shallow-deep-copy": "top-py-adv-shallow-vs-deep-copy",
+    "top-py-adv-mutable-immutable": "top-py-adv-mutable-vs-immutable",
+    "top-py-adv-unit-testing": "top-py-adv-testing-pytest",
+    "top-py-adv-env-vars-config": "top-py-adv-env-config",
+    "top-py-adv-async-http": "top-py-adv-async-http-apis",
+    "top-py-adv-final-project": "top-py-adv-mini-project",
+    "top-py-int-args": "top-py-int-args-kwargs"
+}
+
 
 
 class CurriculumService:
@@ -12,131 +111,119 @@ class CurriculumService:
     def __init__(self):
         self.data = state_store.platform_data
 
+        def _safe_load_json(file_path: Path) -> Optional[Dict[str, Any]]:
+            if not file_path.exists():
+                return None
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error("Failed to load curriculum data file %s: %s", file_path.name, e)
+                return None
+
         # Load authoritative C topics data
         self.c_topics: Dict[str, Any] = {}
         c_path = Path(__file__).resolve().parent.parent / "data" / "c_topics_data.json"
-        if c_path.exists():
-            try:
-                with open(c_path, "r", encoding="utf-8") as f:
-                    c_json = json.load(f)
-                    for t in c_json.get("topics", []):
-                        self.c_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load c_topics_data.json: {e}")
+        c_json = _safe_load_json(c_path)
+        if c_json:
+            for t in c_json.get("topics", []):
+                self.c_topics[t["id"]] = t
 
         # Load authoritative Python topics data
         self.python_topics: Dict[str, Any] = {}
         py_path = Path(__file__).resolve().parent.parent / "data" / "python_topics_data.json"
-        if py_path.exists():
-            try:
-                with open(py_path, "r", encoding="utf-8") as f:
-                    py_json = json.load(f)
-                    for key in ["fundamentals", "intermediate", "advanced"]:
-                        for t in py_json.get(key, []):
-                            self.python_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load python_topics_data.json: {e}")
+        py_json = _safe_load_json(py_path)
+        if py_json:
+            for key in ["fundamentals", "intermediate", "advanced"]:
+                for t in py_json.get(key, []):
+                    self.python_topics[t["id"]] = t
 
         # Load authoritative Java topics data
         self.java_topics: Dict[str, Any] = {}
         java_path = Path(__file__).resolve().parent.parent / "data" / "java_topics_data.json"
-        if java_path.exists():
-            try:
-                with open(java_path, "r", encoding="utf-8") as f:
-                    java_json = json.load(f)
-                    for t in java_json.get("topics", []):
-                        self.java_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load java_topics_data.json: {e}")
+        java_json = _safe_load_json(java_path)
+        if java_json:
+            for t in java_json.get("topics", []):
+                self.java_topics[t["id"]] = t
 
         # Load Java Object-Oriented Design topics data
         java_oop_path = Path(__file__).resolve().parent.parent / "data" / "java_oop_topics_data.json"
-        if java_oop_path.exists():
-            try:
-                with open(java_oop_path, "r", encoding="utf-8") as f:
-                    java_oop_json = json.load(f)
-                    for t in java_oop_json.get("topics", []):
-                        self.java_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load java_oop_topics_data.json: {e}")
+        java_oop_json = _safe_load_json(java_oop_path)
+        if java_oop_json:
+            for t in java_oop_json.get("topics", []):
+                self.java_topics[t["id"]] = t
 
         # Load Java Advanced topics data
         java_adv_path = Path(__file__).resolve().parent.parent / "data" / "java_adv_topics_data.json"
-        if java_adv_path.exists():
-            try:
-                with open(java_adv_path, "r", encoding="utf-8") as f:
-                    java_adv_json = json.load(f)
-                    for t in java_adv_json.get("topics", []):
-                        self.java_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load java_adv_topics_data.json: {e}")
+        java_adv_json = _safe_load_json(java_adv_path)
+        if java_adv_json:
+            for t in java_adv_json.get("topics", []):
+                self.java_topics[t["id"]] = t
 
         # Load authoritative C++ topics data
         self.cpp_topics: Dict[str, Any] = {}
         cpp_path = Path(__file__).resolve().parent.parent / "data" / "cpp_topics_data.json"
-        if cpp_path.exists():
-            try:
-                with open(cpp_path, "r", encoding="utf-8") as f:
-                    cpp_json = json.load(f)
-                    for t in cpp_json.get("topics", []):
-                        self.cpp_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load cpp_topics_data.json: {e}")
+        cpp_json = _safe_load_json(cpp_path)
+        if cpp_json:
+            for t in cpp_json.get("topics", []):
+                self.cpp_topics[t["id"]] = t
 
         # Load C++ OOP topics data
         cpp_oop_path = Path(__file__).resolve().parent.parent / "data" / "cpp_oop_topics_data.json"
-        if cpp_oop_path.exists():
-            try:
-                with open(cpp_oop_path, "r", encoding="utf-8") as f:
-                    cpp_oop_json = json.load(f)
-                    for t in cpp_oop_json.get("topics", []):
-                        self.cpp_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load cpp_oop_topics_data.json: {e}")
+        cpp_oop_json = _safe_load_json(cpp_oop_path)
+        if cpp_oop_json:
+            for t in cpp_oop_json.get("topics", []):
+                self.cpp_topics[t["id"]] = t
 
         # Load C++ Advanced topics data
         cpp_adv_path = Path(__file__).resolve().parent.parent / "data" / "cpp_advanced_topics_data.json"
-        if cpp_adv_path.exists():
-            try:
-                with open(cpp_adv_path, "r", encoding="utf-8") as f:
-                    cpp_adv_json = json.load(f)
-                    for t in cpp_adv_json.get("topics", []):
-                        self.cpp_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load cpp_advanced_topics_data.json: {e}")
+        cpp_adv_json = _safe_load_json(cpp_adv_path)
+        if cpp_adv_json:
+            for t in cpp_adv_json.get("topics", []):
+                self.cpp_topics[t["id"]] = t
 
         # Load C Advanced Systems & Data Structures topics data
         self.c_adv_topics: Dict[str, Any] = {}
         c_adv_path = Path(__file__).resolve().parent.parent / "data" / "c_advanced_topics_data.json"
-        if c_adv_path.exists():
-            try:
-                with open(c_adv_path, "r", encoding="utf-8") as f:
-                    c_adv_json = json.load(f)
-                    for t in c_adv_json.get("topics", []):
-                        self.c_adv_topics[t["id"]] = t
-                        self.c_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load c_advanced_topics_data.json: {e}")
+        c_adv_json = _safe_load_json(c_adv_path)
+        if c_adv_json:
+            for t in c_adv_json.get("topics", []):
+                self.c_adv_topics[t["id"]] = t
+                self.c_topics[t["id"]] = t
 
         # Load C Intermediate Pointers & Memory Management topics data
         self.c_int_topics: Dict[str, Any] = {}
         c_int_path = Path(__file__).resolve().parent.parent / "data" / "c_intermediate_topics_data.json"
-        if c_int_path.exists():
-            try:
-                with open(c_int_path, "r", encoding="utf-8") as f:
-                    c_int_json = json.load(f)
-                    for t in c_int_json.get("topics", []):
-                        self.c_int_topics[t["id"]] = t
-                        self.c_topics[t["id"]] = t
-            except Exception as e:
-                print(f"[CurriculumService] Failed to load c_intermediate_topics_data.json: {e}")
+        c_int_json = _safe_load_json(c_int_path)
+        if c_int_json:
+            for t in c_int_json.get("topics", []):
+                self.c_int_topics[t["id"]] = t
+                self.c_topics[t["id"]] = t
 
-
-
-    def get_courses(self, language: Optional[str] = None, level: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_courses(self, language: Optional[str] = None, level: Optional[str] = None, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         raw_courses = self.data.get("courses", [])
         modules = self.data.get("modules", [])
         topics = self.data.get("topics", [])
+
+        # Fetch actual recorded learner progress if user_id is provided
+        user_topic_progress: Dict[str, str] = {}
+        if user_id:
+            try:
+                conn = state_store.get_connection()
+                cur = conn.cursor()
+                cur.execute("SELECT topic_id, course_id, status FROM user_progress WHERE user_id = ?", (user_id,))
+                for row in cur.fetchall():
+                    if row["topic_id"] and row["status"]:
+                        user_topic_progress[f"{row['course_id']}_{row['topic_id']}"] = row["status"]
+                        user_topic_progress[row["topic_id"]] = row["status"]
+                conn.close()
+            except Exception as e:
+                logger.warning("Failed to fetch user progress for %s: %s", user_id, e)
+
+        def resolve_status(t_id: str, c_id: str, default_status: str = "NOT_STARTED") -> str:
+            if user_id:
+                return user_topic_progress.get(f"{c_id}_{t_id}") or user_topic_progress.get(t_id) or "NOT_STARTED"
+            return default_status
 
         results = []
         for c in raw_courses:
@@ -154,16 +241,17 @@ class CurriculumService:
                             "id": "mod-py-fund-core",
                             "title": "Python Core & Syntax",
                             "order": 1,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(TOPIC_METADATA[:8])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in TOPIC_METADATA[:8]]
                         },
                         {
                             "id": "mod-py-fund-advanced",
                             "title": "Data Structures & Modules",
                             "order": 2,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(TOPIC_METADATA[8:])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in TOPIC_METADATA[8:]]
                         }
                     ]
-                except Exception:
+                except Exception as e:
+                    logger.error("Failed building py-beg modules: %s", e)
                     structured_modules = []
             elif c_id == "c-beg":
                 try:
@@ -173,16 +261,17 @@ class CurriculumService:
                             "id": "mod-c-core",
                             "title": "C Core & Logic",
                             "order": 1,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(C_TOPIC_METADATA[:8])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in C_TOPIC_METADATA[:8]]
                         },
                         {
                             "id": "mod-c-advanced",
                             "title": "Pointers & Systems",
                             "order": 2,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(C_TOPIC_METADATA[8:])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in C_TOPIC_METADATA[8:]]
                         }
                     ]
-                except Exception:
+                except Exception as e:
+                    logger.error("Failed building c-beg modules: %s", e)
                     structured_modules = []
             elif c_id in ("c-int", "c-intermediate") or (c.get("language") == "c" and c.get("level") == "intermediate"):
                 try:
@@ -195,18 +284,18 @@ class CurriculumService:
                             "order": m.get("number", 1),
                             "topics": []
                         }
-                    for idx, t in enumerate(C_INT_TOPIC_METADATA):
+                    for t in C_INT_TOPIC_METADATA:
                         m_id = t["moduleId"]
                         if m_id in mod_map:
                             mod_map[m_id]["topics"].append({
                                 "id": t["id"],
                                 "title": t["title"],
                                 "level": "intermediate",
-                                "status": "COMPLETED" if idx == 0 else "NOT_STARTED"
+                                "status": resolve_status(t["id"], c_id)
                             })
                     structured_modules = list(mod_map.values())
                 except Exception as e:
-                    print(f"[curriculum_service] error building c-int modules: {e}")
+                    logger.error("Error building c-int modules: %s", e)
                     structured_modules = []
             elif c_id in ("c-advanced-systems", "c-adv") or (c.get("language") == "c" and c.get("level") == "advanced"):
                 try:
@@ -219,18 +308,18 @@ class CurriculumService:
                             "order": m.get("number", 1),
                             "topics": []
                         }
-                    for idx, t in enumerate(C_ADV_TOPIC_METADATA):
+                    for t in C_ADV_TOPIC_METADATA:
                         m_id = t["moduleId"]
                         if m_id in mod_map:
                             mod_map[m_id]["topics"].append({
                                 "id": t["id"],
                                 "title": t["title"],
                                 "level": "advanced",
-                                "status": "COMPLETED" if idx == 0 else "NOT_STARTED"
+                                "status": resolve_status(t["id"], c_id)
                             })
                     structured_modules = list(mod_map.values())
                 except Exception as e:
-                    print(f"[curriculum_service] error building c-adv modules: {e}")
+                    logger.error("Error building c-adv modules: %s", e)
                     structured_modules = []
             elif c_id in ("java-adv", "java-advanced") or (c.get("language") == "java" and c.get("level") == "advanced"):
                 try:
@@ -243,18 +332,18 @@ class CurriculumService:
                             "order": m["number"],
                             "topics": []
                         }
-                    for idx, t in enumerate(JAVA_ADV_TOPIC_METADATA):
+                    for t in JAVA_ADV_TOPIC_METADATA:
                         m_id = t["moduleId"]
                         if m_id in mod_map:
                             mod_map[m_id]["topics"].append({
                                 "id": t["id"],
                                 "title": t["title"],
                                 "level": "advanced",
-                                "status": "COMPLETED" if idx == 0 else "NOT_STARTED"
+                                "status": resolve_status(t["id"], c_id)
                             })
                     structured_modules = list(mod_map.values())
                 except Exception as e:
-                    print(f"[curriculum_service] error building java-adv modules: {e}")
+                    logger.error("Error building java-adv modules: %s", e)
                     structured_modules = []
             elif c_id in ("java-int", "java-oop") or (c.get("language") == "java" and c.get("level") == "intermediate"):
                 try:
@@ -267,18 +356,18 @@ class CurriculumService:
                             "order": m["number"],
                             "topics": []
                         }
-                    for idx, t in enumerate(JAVA_OOP_TOPIC_METADATA):
+                    for t in JAVA_OOP_TOPIC_METADATA:
                         m_id = t["moduleId"]
                         if m_id in mod_map:
                             mod_map[m_id]["topics"].append({
                                 "id": t["id"],
                                 "title": t["title"],
                                 "level": "intermediate",
-                                "status": "COMPLETED" if idx == 0 else "NOT_STARTED"
+                                "status": resolve_status(t["id"], c_id)
                             })
                     structured_modules = list(mod_map.values())
                 except Exception as e:
-                    print(f"[curriculum_service] error building java-oop modules: {e}")
+                    logger.error("Error building java-oop modules: %s", e)
                     structured_modules = []
             elif c_id in ("java-beg", "java-basics") or (c.get("language") == "java" and c.get("level") in ("beginner", None)):
                 try:
@@ -288,22 +377,23 @@ class CurriculumService:
                             "id": "mod-java-architecture-basics",
                             "title": "Module 01: Java Core Architecture & Basics",
                             "order": 1,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[:6])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in JAVA_TOPIC_METADATA[:6]]
                         },
                         {
                             "id": "mod-java-fundamentals-control",
                             "title": "Module 02: Java Fundamentals & Control Structures",
                             "order": 2,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[6:17])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in JAVA_TOPIC_METADATA[6:17]]
                         },
                         {
                             "id": "mod-java-methods-arrays",
                             "title": "Module 03: Java Methods & Arrays",
                             "order": 3,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(JAVA_TOPIC_METADATA[17:])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in JAVA_TOPIC_METADATA[17:]]
                         }
                     ]
-                except Exception:
+                except Exception as e:
+                    logger.error("Error building java-beg modules: %s", e)
                     structured_modules = []
             elif c_id in ("cpp-beg", "cpp-fundamentals") or (c.get("language") == "cpp" and c.get("level") == "beginner"):
                 try:
@@ -313,22 +403,23 @@ class CurriculumService:
                             "id": "mod-cpp-foundations",
                             "title": "MODULE 01: C++ Introduction & Programming Foundations",
                             "order": 1,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(CPP_TOPIC_METADATA[:8])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in CPP_TOPIC_METADATA[:8]]
                         },
                         {
                             "id": "mod-cpp-control-flow",
                             "title": "MODULE 02: Control Flow & Problem Solving",
                             "order": 2,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(CPP_TOPIC_METADATA[8:16])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in CPP_TOPIC_METADATA[8:16]]
                         },
                         {
                             "id": "mod-cpp-functions-memory",
                             "title": "MODULE 03: Functions, References & Memory Fundamentals",
                             "order": 3,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": "LOCKED"} for idx, t in enumerate(CPP_TOPIC_METADATA[16:])]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "beginner", "status": resolve_status(t["id"], c_id)} for t in CPP_TOPIC_METADATA[16:]]
                         }
                     ]
-                except Exception:
+                except Exception as e:
+                    logger.error("Error building cpp-beg modules: %s", e)
                     structured_modules = []
             elif c_id in ("cpp-int", "cpp-oop") or (c.get("language") == "cpp" and c.get("level") == "intermediate"):
                 try:
@@ -338,10 +429,11 @@ class CurriculumService:
                             "id": "mod-cpp-oop-core",
                             "title": "Module 01: Object-Oriented C++ Architecture & Design",
                             "order": 1,
-                            "topics": [{"id": t["id"], "title": t["title"], "level": "intermediate", "status": "COMPLETED" if idx == 0 else "NOT_STARTED"} for idx, t in enumerate(CPP_OOP_TOPIC_METADATA)]
+                            "topics": [{"id": t["id"], "title": t["title"], "level": "intermediate", "status": resolve_status(t["id"], c_id)} for t in CPP_OOP_TOPIC_METADATA]
                         }
                     ]
-                except Exception:
+                except Exception as e:
+                    logger.error("Error building cpp-oop modules: %s", e)
                     structured_modules = []
             elif c_id in ("cpp-adv", "cpp-advanced") or (c.get("language") == "cpp" and c.get("level") == "advanced"):
                 try:
@@ -354,18 +446,18 @@ class CurriculumService:
                             "order": m["number"],
                             "topics": []
                         }
-                    for idx, t in enumerate(CPP_ADV_TOPIC_METADATA):
+                    for t in CPP_ADV_TOPIC_METADATA:
                         m_id = t["moduleId"]
                         if m_id in mod_map:
                             mod_map[m_id]["topics"].append({
                                 "id": t["id"],
                                 "title": t["title"],
                                 "level": "advanced",
-                                "status": "COMPLETED" if idx == 0 else "NOT_STARTED"
+                                "status": resolve_status(t["id"], c_id)
                             })
                     structured_modules = list(mod_map.values())
                 except Exception as e:
-                    print(f"[curriculum_service] error building cpp-adv modules: {e}")
+                    logger.error("Error building cpp-adv modules: %s", e)
                     structured_modules = []
             else:
                 c_modules = [m for m in modules if m.get("course_id") == c.get("id")]
@@ -377,12 +469,12 @@ class CurriculumService:
                     m_topics.sort(key=lambda t: t.get("order_index", 0))
 
                     structured_topics = []
-                    for idx, t in enumerate(m_topics):
+                    for t in m_topics:
                         structured_topics.append({
                             "id": t.get("id"),
                             "title": t.get("title"),
                             "level": c.get("level"),
-                            "status": "COMPLETED" if idx == 0 else "IN_PROGRESS" if idx == 1 else "LOCKED"
+                            "status": resolve_status(t.get("id"), c.get("id"))
                         })
 
                     structured_modules.append({
@@ -403,23 +495,29 @@ class CurriculumService:
 
         return results
 
-    def get_course_detail(self, course_id: str) -> Optional[Dict[str, Any]]:
-        courses = self.get_courses()
+    def get_course_detail(self, course_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        courses = self.get_courses(user_id=user_id)
         for c in courses:
             if c.get("id") == course_id:
                 return c
         return None
 
-    def get_course_id_for_topic(self, topic_id: str) -> str:
+    def get_course_id_for_topic(self, topic_id: str, default: Optional[str] = None, raise_on_unknown: bool = False) -> Optional[str]:
         """
         Resolve the authoritative curriculum course_id for a given topic_id.
         Ensures consistent course progress tracking across quizzes, coding exercises,
-        and course dashboards.
+        and course dashboards without silent fallback to py-beg.
         """
         if not topic_id:
-            return "py-beg"
+            if raise_on_unknown:
+                raise ValueError("Empty topic_id cannot be mapped to any course.")
+            return default
 
-        t_id = str(topic_id).strip()
+        t_id = PYTHON_TOPIC_ALIASES.get(str(topic_id).strip(), str(topic_id).strip())
+        if not t_id:
+            if raise_on_unknown:
+                raise ValueError("Empty topic_id cannot be mapped to any course.")
+            return default
 
         # 1. C Topics
         # Check C Advanced first (e.g. top-c-preprocessor is in c_advanced_topics_data.json)
@@ -454,7 +552,17 @@ class CurriculumService:
         if t_id.startswith("top-py-"):
             return "py-beg"
 
-        return "py-beg"
+        # 5. Check platform_data.json topics & modules
+        for t in self.data.get("topics", []):
+            if t.get("id") == t_id:
+                mod_id = t.get("module_id")
+                for m in self.data.get("modules", []):
+                    if m.get("id") == mod_id and m.get("course_id"):
+                        return m.get("course_id")
+
+        if raise_on_unknown:
+            raise ValueError(f"Unknown topic_id '{topic_id}' cannot be mapped to any course.")
+        return default
 
     def get_topic_detail(self, topic_id: str) -> Optional[Dict[str, Any]]:
         # 1. Check C Topics
@@ -468,7 +576,7 @@ class CurriculumService:
                         "order_index": 1,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("syntax", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_mistake(t.get("commonMistakes"), "mistake")
                     },
                     {
                         "id": f"{topic_id}-sec-2",
@@ -476,27 +584,51 @@ class CurriculumService:
                         "order_index": 2,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("codeExample", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("whyWrong", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_secondary_mistake(t.get("commonMistakes"), "whyWrong")
                     }
                 ]
             if not t.get("content_standard"):
                 t["content_standard"] = t.get("conceptExplanation", "")
             return t
 
-        # 2. Check Python Topics
-        if topic_id in self.python_topics:
-            t = dict(self.python_topics[topic_id])
+        # 2. Check Python Topics (with support for authoritative and route alias IDs)
+        resolved_py_id = PYTHON_TOPIC_ALIASES.get(topic_id, topic_id)
+        if resolved_py_id in self.python_topics:
+            t = dict(self.python_topics[resolved_py_id])
             if not t.get("sections"):
-                t["sections"] = [
+                code_ex = ""
+                if t.get("codeExamples") and isinstance(t.get("codeExamples"), list) and len(t["codeExamples"]) > 0:
+                    first_ex = t["codeExamples"][0]
+                    if isinstance(first_ex, dict):
+                        code_ex = first_ex.get("code", "")
+                    elif isinstance(first_ex, str):
+                        code_ex = first_ex
+                elif t.get("codeExample"):
+                    code_ex = str(t.get("codeExample"))
+
+                pitfall_1 = _safe_extract_mistake(t.get("commonMistakes"), "mistake")
+                pitfall_2 = _safe_extract_secondary_mistake(t.get("commonMistakes"), "whyWrong")
+
+                sections = [
                     {
-                        "id": f"{topic_id}-sec-1",
+                        "id": f"{resolved_py_id}-sec-1",
                         "title": "1. Core Conceptual Overview",
                         "order_index": 1,
                         "content": t.get("conceptExplanation", t.get("content_standard", "")),
                         "code_snippet": t.get("syntax", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                        "pitfalls": pitfall_1
                     }
                 ]
+                if code_ex or pitfall_2:
+                    sections.append({
+                        "id": f"{resolved_py_id}-sec-2",
+                        "title": "2. Syntax & Implementation",
+                        "order_index": 2,
+                        "content": t.get("conceptExplanation", t.get("content_standard", "")),
+                        "code_snippet": code_ex or t.get("syntax", ""),
+                        "pitfalls": pitfall_2
+                    })
+                t["sections"] = sections
             if not t.get("content_standard"):
                 t["content_standard"] = t.get("conceptExplanation", "")
             return t
@@ -512,7 +644,7 @@ class CurriculumService:
                         "order_index": 1,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("syntax", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_mistake(t.get("commonMistakes"), "mistake")
                     },
                     {
                         "id": f"{topic_id}-sec-2",
@@ -520,7 +652,7 @@ class CurriculumService:
                         "order_index": 2,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("codeExample", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("explanation", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_secondary_mistake(t.get("commonMistakes"), "explanation")
                     }
                 ]
             if not t.get("content_standard"):
@@ -547,7 +679,7 @@ class CurriculumService:
                         "order_index": 1,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("syntax", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("mistake", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_mistake(t.get("commonMistakes"), "mistake")
                     },
                     {
                         "id": f"{resolved_topic_id}-sec-2",
@@ -555,7 +687,7 @@ class CurriculumService:
                         "order_index": 2,
                         "content": t.get("conceptExplanation", ""),
                         "code_snippet": t.get("codeExample", ""),
-                        "pitfalls": t.get("commonMistakes", [{}])[0].get("explanation", "") if t.get("commonMistakes") else ""
+                        "pitfalls": _safe_extract_secondary_mistake(t.get("commonMistakes"), "explanation")
                     }
                 ]
             if not t.get("content_standard"):
@@ -586,18 +718,19 @@ class CurriculumService:
         from backend.services.quiz_service import quiz_service
         return quiz_service.get_quiz_for_topic(topic_id, force_regenerate=force_regenerate)
 
-
-    def get_coding_challenge(self, topic_id: str, language: Optional[str] = "python") -> Dict[str, Any]:
-        lang_key = (language or "python").lower()
-        if lang_key in ("c++", "cpp"):
-            lang_key = "c"
+    def get_coding_challenge(self, topic_id: str, language: Optional[str] = "python", include_solution: bool = False) -> Dict[str, Any]:
+        """
+        Retrieve coding challenge with language-specific starter code.
+        Does NOT expose solution unless include_solution=True.
+        """
+        lang_key = normalize_language(language)
 
         # 1. Check if C topic has coding challenge
         if topic_id in self.c_topics and self.c_topics[topic_id].get("codingChallenge"):
             cc = self.c_topics[topic_id]["codingChallenge"]
             starter = cc.get("starter_code", "")
             prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
-            return {
+            res = {
                 "id": f"code-{topic_id}",
                 "topic_id": topic_id,
                 "title": cc.get("title", f"Coding Challenge: {self.c_topics[topic_id].get('title', topic_id)}"),
@@ -610,23 +743,26 @@ class CurriculumService:
                 "sample_input": cc.get("test_cases", [{}])[0].get("input", "") if cc.get("test_cases") else "",
                 "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
                 "starter_code": starter,
-                "starter_codes": {"c": starter, "python": starter},
-                "test_cases": cc.get("test_cases", []),
-                "solution": cc.get("solution_code", starter)
+                "starter_codes": {"c": starter},
+                "test_cases": cc.get("test_cases", [])
             }
+            if include_solution:
+                res["solution"] = cc.get("solution_code", starter)
+            return res
 
         # 2. Check if Python topic has coding challenge
-        if topic_id in self.python_topics and self.python_topics[topic_id].get("codingChallenge"):
-            cc = self.python_topics[topic_id]["codingChallenge"]
+        resolved_py_id = PYTHON_TOPIC_ALIASES.get(topic_id, topic_id)
+        if resolved_py_id in self.python_topics and self.python_topics[resolved_py_id].get("codingChallenge"):
+            cc = self.python_topics[resolved_py_id]["codingChallenge"]
             starter = cc.get("starter_code", "")
             if isinstance(starter, dict):
                 selected_sc = starter.get(lang_key) or starter.get("python") or ""
                 all_sc = starter
             else:
                 selected_sc = str(starter)
-                all_sc = {"python": selected_sc, "c": selected_sc, "java": selected_sc}
+                all_sc = {"python": selected_sc}
             prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
-            return {
+            res = {
                 "id": f"code-{topic_id}",
                 "topic_id": topic_id,
                 "title": cc.get("title", f"Coding Challenge: {self.python_topics[topic_id].get('title', topic_id)}"),
@@ -640,9 +776,11 @@ class CurriculumService:
                 "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
                 "starter_code": selected_sc,
                 "starter_codes": all_sc,
-                "test_cases": cc.get("test_cases", []),
-                "solution": cc.get("solution_code", selected_sc)
+                "test_cases": cc.get("test_cases", [])
             }
+            if include_solution:
+                res["solution"] = cc.get("solution_code", selected_sc)
+            return res
 
         # 3. Check if Java topic has coding challenge
         if topic_id in self.java_topics and self.java_topics[topic_id].get("codingChallenge"):
@@ -653,9 +791,9 @@ class CurriculumService:
                 all_sc = starter
             else:
                 selected_sc = str(starter)
-                all_sc = {"java": selected_sc, "python": selected_sc, "c": selected_sc}
+                all_sc = {"java": selected_sc}
             prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
-            return {
+            res = {
                 "id": f"code-{topic_id}",
                 "topic_id": topic_id,
                 "title": cc.get("title", f"Coding Challenge: {self.java_topics[topic_id].get('title', topic_id)}"),
@@ -669,9 +807,11 @@ class CurriculumService:
                 "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
                 "starter_code": selected_sc,
                 "starter_codes": all_sc,
-                "test_cases": cc.get("test_cases", []),
-                "solution": cc.get("solution_code", selected_sc)
+                "test_cases": cc.get("test_cases", [])
             }
+            if include_solution:
+                res["solution"] = cc.get("solution_code", selected_sc)
+            return res
 
         # 4. Check if C++ topic has coding challenge
         cpp_aliases = {
@@ -691,9 +831,9 @@ class CurriculumService:
                 all_sc = starter
             else:
                 selected_sc = str(starter)
-                all_sc = {"cpp": selected_sc, "c": selected_sc, "python": selected_sc}
+                all_sc = {"cpp": selected_sc}
             prob_desc = cc.get("problem_statement") or cc.get("description", "Write the program to solve the challenge.")
-            return {
+            res = {
                 "id": f"code-{resolved_topic_id}",
                 "topic_id": resolved_topic_id,
                 "title": cc.get("title", f"Coding Challenge: {self.cpp_topics[resolved_topic_id].get('title', resolved_topic_id)}"),
@@ -707,9 +847,11 @@ class CurriculumService:
                 "sample_output": cc.get("test_cases", [{}])[0].get("expected_output", "") if cc.get("test_cases") else "",
                 "starter_code": selected_sc,
                 "starter_codes": all_sc,
-                "test_cases": cc.get("test_cases", []),
-                "solution": cc.get("solution_code", selected_sc)
+                "test_cases": cc.get("test_cases", [])
             }
+            if include_solution:
+                res["solution"] = cc.get("solution_code", selected_sc)
+            return res
 
         # 5. Existing logic from platformData
         coding_qs = self.data.get("coding_questions", [])
@@ -728,14 +870,25 @@ class CurriculumService:
             c = challenges[0]
             raw_sc = c.get("starter_code", {})
             if isinstance(raw_sc, dict):
-                selected_sc = raw_sc.get(lang_key) or raw_sc.get("python") or raw_sc.get("c") or ""
+                if lang_key in raw_sc:
+                    selected_sc = raw_sc[lang_key]
+                elif lang_key == "cpp" and "cpp" in raw_sc:
+                    selected_sc = raw_sc["cpp"]
+                elif lang_key == "c" and "c" in raw_sc:
+                    selected_sc = raw_sc["c"]
+                elif lang_key == "python" and "python" in raw_sc:
+                    selected_sc = raw_sc["python"]
+                elif lang_key == "java" and "java" in raw_sc:
+                    selected_sc = raw_sc["java"]
+                else:
+                    selected_sc = raw_sc.get("python") or raw_sc.get("c") or ""
                 all_sc = raw_sc
             else:
                 selected_sc = str(raw_sc)
-                all_sc = {"python": selected_sc, "c": selected_sc}
+                all_sc = {lang_key: selected_sc}
 
             prob_desc = c.get("problem_statement") or c.get("description", "Solve the challenge.")
-            return {
+            res = {
                 "id": c.get("id"),
                 "topic_id": c.get("topic_id", topic_id),
                 "title": c.get("title", "Coding Challenge"),
@@ -749,13 +902,22 @@ class CurriculumService:
                 "sample_output": c.get("sample_output", ""),
                 "starter_code": selected_sc,
                 "starter_codes": all_sc,
-                "test_cases": c.get("test_cases", []),
-                "solution": c.get("solution_code", "") or selected_sc
+                "test_cases": c.get("test_cases", [])
             }
+            if include_solution:
+                res["solution"] = c.get("solution_code", "") or selected_sc
+            return res
 
-        # Default starter challenge with complete rich fields
+        # Default starter challenge with complete rich fields for all 4 languages
         fallback_desc = "Write a program that reads input and generates the required output."
-        return {
+        default_starters = {
+            "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    print(raw)\n",
+            "c": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"%d\\n\", n);\n    }\n    return 0;\n}\n",
+            "cpp": "#include <iostream>\n\nint main() {\n    int n;\n    if (std::cin >> n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n",
+            "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        if (scanner.hasNextInt()) {\n            int n = scanner.nextInt();\n            System.out.println(n);\n        }\n    }\n}\n"
+        }
+        selected_fallback = default_starters.get(lang_key, default_starters["python"])
+        res = {
             "id": f"code-{topic_id}",
             "topic_id": topic_id,
             "title": "Interactive Programming Exercise",
@@ -767,14 +929,18 @@ class CurriculumService:
             "constraints": "Standard execution time limit 5000ms.",
             "sample_input": "10",
             "sample_output": "10",
-            "starter_code": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    print(raw)\n" if lang_key != "c" else "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"%d\\n\", n);\n    }\n    return 0;\n}\n",
-            "starter_codes": {
-                "python": "import sys\n\nraw = sys.stdin.read().strip()\nif raw:\n    print(raw)\n",
-                "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        printf(\"%d\\n\", n);\n    }\n    return 0;\n}\n"
-            },
-            "test_cases": [{"input": "10", "expected_output": "10", "is_hidden": False}],
-            "solution": ""
+            "starter_code": selected_fallback,
+            "starter_codes": default_starters,
+            "test_cases": [{"input": "10", "expected_output": "10", "is_hidden": False}]
         }
+        if include_solution:
+            res["solution"] = ""
+        return res
+
+    def get_challenge_solution(self, topic_id: str, language: Optional[str] = "python") -> Optional[str]:
+        """Retrieve reference solution code for backend verification and evaluation."""
+        challenge = self.get_coding_challenge(topic_id, language=language, include_solution=True)
+        return challenge.get("solution")
 
     def get_projects(self, language: str = "python", level: Optional[str] = None) -> List[Dict[str, Any]]:
         projects = self.data.get("projects", [])
@@ -790,10 +956,13 @@ class CurriculumService:
                 return p
         return None
 
-    def get_diagnostic_questions(self, language: str = "python") -> List[Dict[str, Any]]:
-        lang_key = (language or "python").lower()
-        if lang_key in ("c++", "cpp"):
-            lang_key = "cpp"
+    def get_diagnostic_questions(self, language: str = "python", include_answers: bool = False) -> List[Dict[str, Any]]:
+        """
+        Retrieve diagnostic questions for onboarding placement.
+        By default (include_answers=False), returns sanitized questions omitting correct_index and explanation.
+        Set include_answers=True for server-side evaluation only.
+        """
+        lang_key = normalize_language(language)
 
         question_bank: Dict[str, List[Dict[str, Any]]] = {
             "python": [
@@ -1109,12 +1278,34 @@ class CurriculumService:
             ]
         }
 
-        return question_bank.get(lang_key, question_bank["python"])
+        raw_questions = question_bank.get(lang_key, question_bank["python"])
+        if include_answers:
+            return raw_questions
+
+        # Public sanitized view for test-takers: omit correct_index and explanation
+        sanitized = []
+        for q in raw_questions:
+            item = {
+                "id": q.get("id"),
+                "category": q.get("category", "concept"),
+                "difficulty_weight": q.get("difficulty_weight", 1.0),
+                "question": q.get("question"),
+                "options": list(q.get("options", [])),
+                "concept": q.get("concept")
+            }
+            if "code_snippet" in q:
+                item["code_snippet"] = q["code_snippet"]
+            sanitized.append(item)
+        return sanitized
+
+    def get_diagnostic_questions_for_grading(self, language: str = "python") -> List[Dict[str, Any]]:
+        """Retrieve authoritative diagnostic questions with correct_index and explanation for backend grading."""
+        return self.get_diagnostic_questions(language=language, include_answers=True)
 
 
 curriculum_service = CurriculumService()
 
 
-def resolve_course_id(topic_id: str) -> str:
+def resolve_course_id(topic_id: str, default: Optional[str] = None) -> Optional[str]:
     """Convenience helper resolving course_id for a given topic_id."""
-    return curriculum_service.get_course_id_for_topic(topic_id)
+    return curriculum_service.get_course_id_for_topic(topic_id, default=default)

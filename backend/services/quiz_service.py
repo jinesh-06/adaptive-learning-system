@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import random
 import re
 from typing import Dict, Any, List, Optional
@@ -38,6 +39,61 @@ class QuizService:
     def __init__(self):
         pass
 
+    def get_concept_for_question(self, q: Dict[str, Any], topic_id: str, topic_title: str) -> Dict[str, str]:
+        """Determine explicit concept_id and human concept title for a question."""
+        if not isinstance(q, dict):
+            clean_topic = re.sub(r'[^a-zA-Z0-9_]', '_', (topic_id or "core").lower()).strip('_')
+            return {
+                "concept_id": f"{clean_topic}_core_mechanics",
+                "concept": f"{topic_title} Mechanics"
+            }
+
+        # 1. Direct explicit concept_id if already present
+        c_id = q.get("concept_id")
+        c_title = q.get("concept")
+        if c_id and c_title:
+            return {"concept_id": str(c_id).strip(), "concept": str(c_title).strip()}
+        if c_id and not c_title:
+            return {"concept_id": str(c_id).strip(), "concept": str(c_id).replace("_", " ").title()}
+
+        # 2. Check question text / explanation against core taxonomy keys
+        q_text = (q.get("question") or q.get("question_text") or "").strip()
+        expl = (q.get("explanation") or "").strip()
+        combined = f"{q_text} {expl}".lower()
+        clean_combined = combined.replace((topic_title or "").lower(), "")
+
+        if any(k in clean_combined for k in ("range(", "stop value", "index", "bounds", "slice", "off-by-one", "fencepost", "last index", "len(", "out of range")):
+            return {"concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"}
+        elif any(k in clean_combined for k in ("while ", "while(", "termination", "infinite loop", "break", "continue", "sentinel", "condition-driven", "loop condition")):
+            return {"concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"}
+        elif any(k in clean_combined for k in ("syntax", "convention", "declaration", "format")):
+            return {"concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"}
+        elif any(k in clean_combined for k in ("debugging", "unexpectedly", "assertions", "trace", "debugging approach")):
+            return {"concept_id": "debugging_and_runtime_flow", "concept": "Debugging & Runtime Flow"}
+        elif any(k in clean_combined for k in ("performance", "memory allocations", "redundant iteration", "efficiency")):
+            return {"concept_id": "performance_and_resource_scoping", "concept": "Performance & Resource Scoping"}
+        elif any(k in clean_combined for k in ("robustness", "maintainable", "best practice", "architecting")):
+            return {"concept_id": "robustness_and_architecture", "concept": "Robustness & Architectural Principles"}
+        elif any(k in clean_combined for k in ("variable", "assignment", "scope", "local", "global", "shadowing", "reassignment", "mutable", "immutable", "datatype", "type(")):
+            return {"concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"}
+        elif any(k in clean_combined for k in ("precedence", "operator", "division", "modulo", "//", "%", "bitwise", "logical and", "logical or", "truthy", "falsy")):
+            return {"concept_id": "operator_precedence_and_evaluation", "concept": "Operator Semantics & Evaluation Precedence"}
+        elif any(k in clean_combined for k in ("pointer", "address-of", "dereference", "*ptr", "&var", "null pointer", "segmentation", "segfault")):
+            return {"concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"}
+        elif any(k in clean_combined for k in ("malloc", "free", "heap", "memory leak", "sizeof", "calloc", "realloc", "dangling")):
+            return {"concept_id": "memory_allocation_and_lifecycle", "concept": "Dynamic Memory Allocation & Lifecycle"}
+        elif any(k in clean_combined for k in ("recursion", "recursive", "base case", "call stack", "stack overflow")):
+            return {"concept_id": "recursion_and_call_stack", "concept": "Recursion Invariants & Call Stack Depth"}
+        elif any(k in clean_combined for k in ("class", "object", "inheritance", "polymorphism", "encapsulation", "self", "this", "constructor", "method")):
+            return {"concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"}
+
+        # 3. Topic-based deterministic safe fallback
+        clean_topic = re.sub(r'[^a-zA-Z0-9_]', '_', (topic_id or "core").lower()).strip('_')
+        return {
+            "concept_id": f"{clean_topic}_core_mechanics",
+            "concept": f"{topic_title} Mechanics"
+        }
+
     def validate_and_normalize_quiz(
         self,
         questions: List[Dict[str, Any]],
@@ -73,6 +129,7 @@ class QuizService:
             if diff not in ("easy", "medium", "hard"):
                 diff = "medium"
 
+            c_meta = self.get_concept_for_question(q, topic_id, topic_title)
             valid_list.append({
                 "id": f"q-{topic_id}-{len(valid_list) + 1}",
                 "question": q_text,
@@ -80,23 +137,26 @@ class QuizService:
                 "correct_index": c_idx,
                 "correctIndex": c_idx,
                 "explanation": expl,
-                "difficulty": diff
+                "difficulty": diff,
+                "concept_id": c_meta["concept_id"],
+                "concept": c_meta["concept"]
             })
 
             if len(valid_list) == 10:
                 break
 
-        # If fewer than 10, fill up to 10
+        # If fewer than 10, fill up to 10 with concept-diverse templates
+        clean_topic = re.sub(r'[^a-zA-Z0-9_]', '_', (topic_id or "core").lower()).strip('_')
         fallback_templates = [
-            (f"What is a foundational mechanism behind {topic_title}?", f"Executes structured logic adhering to standard language mechanics.", ["Bypasses all type checks", "Disables memory management", "Forces unbuffered I/O"], "easy"),
-            (f"Which principle is recommended when architecting solutions for {topic_title}?", f"Maintain clean boundary separation and predictable resource scoping.", ["Rely on silent error handling", "Disable compiler optimization", "Store transient state in global variables"], "medium"),
-            (f"What is the primary debugging approach if {topic_title} behaves unexpectedly?", f"Trace variable bindings, bounds checking, and runtime flow.", ["Assume internal compiler fault", "Delete all assertions", "Remove type annotations"], "medium"),
-            (f"How does {topic_title} enhance program robustness?", f"Ensures idiomatic, maintainable, and type-safe execution.", ["Eliminates all unit tests", "Replaces standard libraries", "Executes directly in hardware bios"], "hard"),
-            (f"What is a key performance consideration when utilizing {topic_title}?", f"Minimize unnecessary memory allocations and redundant iterations.", ["Always use blocking sleeps", "Avoid utilizing local variables", "Disable stack execution"], "hard")
+            (f"What is a foundational mechanism behind {topic_title}?", f"Executes structured logic adhering to standard language mechanics.", ["Bypasses all type checks", "Disables memory management", "Forces unbuffered I/O"], "easy", f"{clean_topic}_core_mechanics", f"{topic_title} Mechanics"),
+            (f"Which principle is recommended when architecting solutions for {topic_title}?", f"Maintain clean boundary separation and predictable resource scoping.", ["Rely on silent error handling", "Disable compiler optimization", "Store transient state in global variables"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+            (f"What is the primary debugging approach if {topic_title} behaves unexpectedly?", f"Trace variable bindings, bounds checking, and runtime flow.", ["Assume internal compiler fault", "Delete all assertions", "Remove type annotations"], "medium", "debugging_and_runtime_flow", "Debugging & Runtime Flow"),
+            (f"How does {topic_title} enhance program robustness?", f"Ensures idiomatic, maintainable, and type-safe execution.", ["Eliminates all unit tests", "Replaces standard libraries", "Executes directly in hardware bios"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles"),
+            (f"What is a key performance consideration when utilizing {topic_title}?", f"Minimize unnecessary memory allocations and redundant iterations.", ["Always use blocking sleeps", "Avoid utilizing local variables", "Disable stack execution"], "hard", "performance_and_resource_scoping", "Performance & Resource Scoping")
         ]
         fb_idx = 0
         while len(valid_list) < 10:
-            tmpl_q, tmpl_ans, tmpl_dist, tmpl_diff = fallback_templates[fb_idx % len(fallback_templates)]
+            tmpl_q, tmpl_ans, tmpl_dist, tmpl_diff, tmpl_cid, tmpl_cname = fallback_templates[fb_idx % len(fallback_templates)]
             target_idx = (len(valid_list) * 3 + 1) % 4
             opts, c_idx = shuffle_options_with_correct(tmpl_dist, tmpl_ans, target_idx)
             valid_list.append({
@@ -106,7 +166,9 @@ class QuizService:
                 "correct_index": c_idx,
                 "correctIndex": c_idx,
                 "explanation": f"In {topic_title}, this represents standard best engineering practice.",
-                "difficulty": tmpl_diff
+                "difficulty": tmpl_diff,
+                "concept_id": tmpl_cid,
+                "concept": tmpl_cname
             })
             fb_idx += 1
 
@@ -155,6 +217,7 @@ class QuizService:
             if diff not in ("easy", "medium", "hard"):
                 diff = "medium"
 
+            c_meta = self.get_concept_for_question(q, topic_id, topic_title)
             valid_existing.append({
                 "id": f"q-{topic_id}-{len(valid_existing) + 1}",
                 "question": q_text,
@@ -162,7 +225,9 @@ class QuizService:
                 "correct_index": c_idx,
                 "correctIndex": c_idx,
                 "explanation": expl,
-                "difficulty": diff
+                "difficulty": diff,
+                "concept_id": c_meta["concept_id"],
+                "concept": c_meta["concept"]
             })
 
         if len(valid_existing) >= 10:
@@ -199,6 +264,7 @@ class QuizService:
             seen.add(q_text.lower())
             target_idx = (len(generated) * 3 + 1) % 4
             opts, c_idx = shuffle_options_with_correct(distractors, correct_opt, target_idx)
+            c_meta = self.get_concept_for_question({"question": q_text, "explanation": expl}, topic_id, topic_title)
             generated.append({
                 "id": f"q-{topic_id}-{len(generated) + 1}",
                 "question": q_text,
@@ -206,7 +272,9 @@ class QuizService:
                 "correct_index": c_idx,
                 "correctIndex": c_idx,
                 "explanation": expl,
-                "difficulty": diff
+                "difficulty": diff,
+                "concept_id": c_meta["concept_id"],
+                "concept": c_meta["concept"]
             })
 
         # 1. Learning Objectives
@@ -416,6 +484,12 @@ class QuizService:
         if not force_regenerate:
             cached = state_store.get_generated_quiz(topic_id)
             if cached and isinstance(cached.get("questions"), list) and len(cached["questions"]) == 10:
+                topic_title = cached.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
+                for q in cached["questions"]:
+                    if not q.get("concept_id") or not q.get("concept"):
+                        c_meta = self.get_concept_for_question(q, topic_id, topic_title)
+                        q["concept_id"] = c_meta["concept_id"]
+                        q["concept"] = c_meta["concept"]
                 return cached
 
         # 2. Look up topic in curriculum
@@ -451,6 +525,14 @@ class QuizService:
         # 5. Lesson-grounded generator fallback
         if not questions or len(questions) != 10:
             questions = self.generate_10_questions_offline(topic)
+
+        # Ensure all questions carry concept_id and concept metadata
+        clean_title = topic_title.replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
+        for q in questions:
+            if not q.get("concept_id") or not q.get("concept"):
+                c_meta = self.get_concept_for_question(q, topic_id, clean_title)
+                q["concept_id"] = c_meta["concept_id"]
+                q["concept"] = c_meta["concept"]
 
         quiz_data = {
             "topic_id": topic_id,
@@ -508,27 +590,28 @@ class QuizService:
 
         # Attempt Gemini personalized feedback if available
         ai_advice = None
-        try:
-            from llm.config import get_gemini_client, get_model_name
-            from google.genai import types
+        if os.getenv("ENVIRONMENT", "").lower() != "test" or os.getenv("ALLOW_TEST_GEMINI_CALLS"):
+            try:
+                from llm.config import get_gemini_client, get_model_name
+                from google.genai import types
 
-            client = get_gemini_client()
-            model = get_model_name()
-            prompt = (
-                f"You are an empathetic adaptive tutor. A learner just scored {percentage}% on a 10-question quiz for '{topic_title}'.\n"
-                f"Missed {len(missed_questions)} out of 10 questions:\n"
-                + "\n".join(f"- Question: {m.get('question')} | User Choice: {m.get('user_choice')} | Correct: {m.get('correct_index')} | Expl: {m.get('explanation')}" for m in missed_questions[:3])
-                + f"\nGive 2 short paragraphs of encouraging, specific feedback: (1) Diagnosing the key misconception, (2) 2 specific actionable revision steps."
-            )
-            resp = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.3)
-            )
-            if resp and resp.text:
-                ai_advice = resp.text.strip()
-        except Exception:
-            pass
+                client = get_gemini_client()
+                model = get_model_name()
+                prompt = (
+                    f"You are an empathetic adaptive tutor. A learner just scored {percentage}% on a 10-question quiz for '{topic_title}'.\n"
+                    f"Missed {len(missed_questions)} out of 10 questions:\n"
+                    + "\n".join(f"- Question: {m.get('question')} | User Choice: {m.get('user_choice')} | Correct: {m.get('correct_index')} | Expl: {m.get('explanation')}" for m in missed_questions[:3])
+                    + f"\nGive 2 short paragraphs of encouraging, specific feedback: (1) Diagnosing the key misconception, (2) 2 specific actionable revision steps."
+                )
+                resp = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(temperature=0.3)
+                )
+                if resp and resp.text:
+                    ai_advice = resp.text.strip()
+            except Exception:
+                pass
 
         if not ai_advice:
             if passed:

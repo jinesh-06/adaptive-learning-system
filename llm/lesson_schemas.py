@@ -15,6 +15,8 @@ class AdaptationInfo(BaseModel):
     specific_learning_gaps: Optional[List[str]] = Field(default=None, description="Diagnosed knowledge gaps requiring targeted instruction")
     target_concepts: Optional[List[str]] = Field(default=None, description="Specific concepts targeted in this adapted lesson")
     quiz_performance_summary: Optional[Dict[str, Any]] = Field(default=None, description="Summary of student assessment history and trajectory")
+    mastered_prerequisites: Optional[List[str]] = Field(default=None, description="Prerequisite concepts already mastered by learner")
+    active_learning_gaps: Optional[List[str]] = Field(default=None, description="Active concept-level learning gaps")
 
 
 class SectionStep(BaseModel):
