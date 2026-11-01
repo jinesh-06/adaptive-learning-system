@@ -32,7 +32,7 @@ services:
       - key: ALLOWED_ORIGINS
         sync: false
       - key: FIREBASE_PROJECT_ID
-        sync: false
+        value: cognitive-adaptive-learning
       - key: PRODUCTION_ADMIN_EMAILS
         sync: false
       - key: GEMINI_API_KEY

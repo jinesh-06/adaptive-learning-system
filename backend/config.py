@@ -31,7 +31,7 @@ else:
     # In production, do not fall back to dummy placeholder admin email
     PRODUCTION_ADMIN_EMAILS = [] if ENVIRONMENT == "production" else ["admin@cognitive.edu"]
 
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "adaptive-learning-system").strip()
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "cognitive-adaptive-learning").strip()
 
 INSECURE_DEFAULT_SECRETS = {
     "cognitive-adaptive-secret-key-2026",
