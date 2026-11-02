@@ -130,8 +130,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
   const { contentMode, currentLoad, setActiveTopicId, setContentModeManually } = useCognitive();
   const { theme, setTheme } = useTheme();
 
-  const [topic, setTopic] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [topic, setTopic] = useState<any | null>(() => ALL_TOPICS.find(t => t.id === topicId) || null);
+  const [loading, setLoading] = useState<boolean>(() => !ALL_TOPICS.some(t => t.id === topicId));
 
   // Individual Adapted Lesson State
   const [adaptedLesson, setAdaptedLesson] = useState<AdaptedLessonData | null>(null);
@@ -261,11 +261,28 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       : 'STANDARD';
 
   const loadTopicAndAdaptation = useCallback(async (targetTopicId: string = topicId, forceRefresh: boolean = false) => {
-    if (!forceRefresh) {
+    const curTopic = ALL_TOPICS.find(t => t.id === targetTopicId);
+
+    // If local curriculum topic exists, mount it immediately to eliminate loading screen
+    if (curTopic) {
+      setTopic(curTopic);
+      setLoading(false);
+    } else if (!forceRefresh) {
       setLoading(true);
     }
     setAdaptedLoading(true);
-    const curTopic = ALL_TOPICS.find(t => t.id === targetTopicId);
+
+    const safetyTimer = setTimeout(() => {
+      if (currentTopicIdRef.current === targetTopicId) {
+        if (curTopic) {
+          setTopic(curTopic);
+        } else {
+          const fallback = mockTopicDetails[targetTopicId] || mockTopicDetails['top-py-fundamentals'];
+          if (fallback) setTopic(fallback);
+        }
+        setLoading(false);
+      }
+    }, 3000);
 
     const topicDetailPromise = (async () => {
       try {
@@ -274,7 +291,7 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
           return curTopic ? { ...curTopic, ...data } : data;
         }
       } catch (err) {
-        console.warn('Failed to load topic detail via API, using mock:', err);
+        console.warn('Failed to load topic detail via API, using local curriculum:', err);
       }
       const fallback = mockTopicDetails[targetTopicId] || (curTopic ? curTopic : mockTopicDetails['top-py-fundamentals']);
       return curTopic ? { ...curTopic, ...fallback } : fallback;
@@ -293,26 +310,20 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       return null;
     })();
 
-    const safetyTimer = setTimeout(() => {
-      if (currentTopicIdRef.current === targetTopicId) {
-        setLoading(false);
-      }
-    }, 4000);
-
     // 1. Immediately resolve and render the core topic lesson
     try {
       const loadedTopic = await topicDetailPromise;
       if (currentTopicIdRef.current === targetTopicId && loadedTopic) {
-        setTopic(loadedTopic);
+        setTopic((prev: any) => (prev ? { ...prev, ...loadedTopic } : loadedTopic));
         setLoading(false);
       }
     } catch (err) {
       console.warn('Failed to resolve core topic:', err);
+    } finally {
+      clearTimeout(safetyTimer);
       if (currentTopicIdRef.current === targetTopicId) {
         setLoading(false);
       }
-    } finally {
-      clearTimeout(safetyTimer);
     }
 
     // 2. Asynchronously enrich with personalized AI adaptation in background
@@ -325,7 +336,6 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       console.warn('Failed to resolve adapted lesson:', err);
     } finally {
       if (currentTopicIdRef.current === targetTopicId) {
-        setLoading(false);
         setAdaptedLoading(false);
       }
     }
