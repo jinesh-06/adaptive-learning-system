@@ -238,6 +238,145 @@ class TestFirebaseAudienceFix(unittest.TestCase):
         self.assertIn("score", sub_data)
         self.assertIn("recommended_level", sub_data)
 
+    # ================= Verification 7 =================
+    def test_07_dashboard_snapshot_authenticated_student(self):
+        """Criterion 4: /api/dashboard/snapshot works for an authenticated student with valid Firebase token."""
+        now = time.time()
+        intended_claims = {
+            "iss": "https://securetoken.google.com/cognitive-adaptive-learning",
+            "aud": "cognitive-adaptive-learning",
+            "sub": "student_fb_user",
+            "email": "student_fb@example.com",
+            "name": "Firebase Student",
+            "auth_time": now - 10.0
+        }
+        set_firebase_verifier_for_testing(lambda t: intended_claims if t == "valid_fb_token" else None)
+        headers = {"Authorization": "Bearer valid_fb_token"}
+
+        res = self.client.get("/api/dashboard/snapshot", headers=headers)
+        self.assertEqual(res.status_code, 200, f"Expected 200, got {res.status_code}: {res.text}")
+        data = res.json()
+        self.assertTrue(data.get("success"))
+        self.assertEqual(data.get("user_id"), "student_fb_user")
+        self.assertIn("learning_snapshot", data)
+        self.assertIn("streak_days", data)
+        self.assertIn("achievements", data)
+
+    # ================= Verification 8 =================
+    def test_08_dashboard_snapshot_rejection_matrix(self):
+        """Criteria 2 & 3: Missing, malformed, expired, and wrong-project tokens rejected on /api/dashboard/snapshot."""
+        # 1. Missing token
+        res_missing = self.client.get("/api/dashboard/snapshot")
+        self.assertEqual(res_missing.status_code, 401)
+
+        # 2. Malformed token
+        res_malformed = self.client.get("/api/dashboard/snapshot", headers={"Authorization": "Bearer not_a_real_token"})
+        self.assertEqual(res_malformed.status_code, 401)
+
+        # 3. Wrong project token ('adaptive-learning-system')
+        now = time.time()
+        wrong_claims = {
+            "iss": "https://securetoken.google.com/adaptive-learning-system",
+            "aud": "adaptive-learning-system",
+            "sub": "student_fb_user",
+            "email": "student_fb@example.com",
+            "auth_time": now - 10.0
+        }
+        set_firebase_verifier_for_testing(lambda t: wrong_claims)
+        res_wrong_proj = self.client.get("/api/dashboard/snapshot", headers={"Authorization": "Bearer token_wrong_project"})
+        self.assertEqual(res_wrong_proj.status_code, 401)
+
+        # 4. Adversary project token ('foreign-attacker-app')
+        adversary_claims = {
+            "iss": "https://securetoken.google.com/cognitive-adaptive-learning",
+            "aud": "foreign-attacker-app",
+            "sub": "student_fb_user",
+            "email": "student_fb@example.com",
+            "auth_time": now - 10.0
+        }
+        set_firebase_verifier_for_testing(lambda t: adversary_claims)
+        res_adversary = self.client.get("/api/dashboard/snapshot", headers={"Authorization": "Bearer token_adversary"})
+        self.assertEqual(res_adversary.status_code, 401)
+
+        # 5. Expired internal token
+        expired_token = auth_service.create_internal_token("student_fb_user", "student_fb@example.com", expires_in_seconds=-3600)
+        res_expired = self.client.get("/api/dashboard/snapshot", headers={"Authorization": f"Bearer {expired_token}"})
+        self.assertEqual(res_expired.status_code, 401)
+
+    # ================= Verification 9 =================
+    def test_09_dashboard_snapshot_data_scoping_and_isolation(self):
+        """Criteria 5 & 6: Dashboard data is scoped to authenticated user; cross-student isolation is strictly enforced."""
+        conn = state_store.get_connection()
+        cur = conn.cursor()
+        # Seed student A progress: 2 completed topics
+        cur.execute(
+            "INSERT OR REPLACE INTO user_progress (user_id, topic_id, course_id, status, completion_pct) VALUES (?, ?, ?, ?, ?)",
+            ("student_fb_user", "top-py-adv-generators", "course-py-adv", "COMPLETED", 100.0)
+        )
+        cur.execute(
+            "INSERT OR REPLACE INTO user_progress (user_id, topic_id, course_id, status, completion_pct) VALUES (?, ?, ?, ?, ?)",
+            ("student_fb_user", "top-py-adv-decorators", "course-py-adv", "COMPLETED", 100.0)
+        )
+        # Ensure student B has no completed progress records
+        cur.execute("DELETE FROM user_progress WHERE user_id = 'student_other_user'")
+        conn.commit()
+        conn.close()
+
+        # Token for Student A
+        now = time.time()
+        claims_a = {
+            "iss": "https://securetoken.google.com/cognitive-adaptive-learning",
+            "aud": "cognitive-adaptive-learning",
+            "sub": "student_fb_user",
+            "email": "student_fb@example.com",
+            "auth_time": now - 10.0
+        }
+        # Token for Student B
+        claims_b = {
+            "iss": "https://securetoken.google.com/cognitive-adaptive-learning",
+            "aud": "cognitive-adaptive-learning",
+            "sub": "student_other_user",
+            "email": "other@example.com",
+            "auth_time": now - 10.0
+        }
+
+        def mock_verifier(tok):
+            if tok == "token_student_a":
+                return claims_a
+            elif tok == "token_student_b":
+                return claims_b
+            return None
+
+        set_firebase_verifier_for_testing(mock_verifier)
+
+        # 1. Student A gets their own dashboard: 2 completed topics
+        res_a = self.client.get("/api/dashboard/snapshot", headers={"Authorization": "Bearer token_student_a"})
+        self.assertEqual(res_a.status_code, 200)
+        data_a = res_a.json()
+        self.assertEqual(data_a["user_id"], "student_fb_user")
+        self.assertEqual(data_a["learning_snapshot"]["topics_completed"], 2)
+
+        # 2. Student B gets their own dashboard: 0 completed topics
+        res_b = self.client.get("/api/dashboard/snapshot", headers={"Authorization": "Bearer token_student_b"})
+        self.assertEqual(res_b.status_code, 200)
+        data_b = res_b.json()
+        self.assertEqual(data_b["user_id"], "student_other_user")
+        self.assertEqual(data_b["learning_snapshot"]["topics_completed"], 0)
+
+        # 3. Student B attempts to impersonate Student A via headers or query parameters
+        res_spoof = self.client.get(
+            "/api/dashboard/snapshot?user_id=student_fb_user",
+            headers={
+                "Authorization": "Bearer token_student_b",
+                "X-User-Id": "student_fb_user"
+            }
+        )
+        self.assertEqual(res_spoof.status_code, 200)
+        data_spoof = res_spoof.json()
+        # Data MUST remain scoped to Student B, ignoring any attempted spoofing
+        self.assertEqual(data_spoof["user_id"], "student_other_user")
+        self.assertEqual(data_spoof["learning_snapshot"]["topics_completed"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

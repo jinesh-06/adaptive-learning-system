@@ -1,4 +1,5 @@
 import { mockHandlers, isGitHubPages } from './mockFallback';
+import { auth, isFirebaseConfigured } from './firebase';
 
 const VERCEL_BACKEND = 'https://learning-platform08-o7uub2ykr-aihack.vercel.app';
 const rawApiUrl = import.meta.env?.VITE_API_URL;
@@ -52,6 +53,29 @@ export interface UserPreferences {
   selected_language: string;
   current_level: string;
   preferred_mode: 'standard' | 'adaptive';
+}
+
+export async function getFreshAuthToken(): Promise<string | null> {
+  if (isFirebaseConfigured && auth?.currentUser) {
+    try {
+      const freshToken = await auth.currentUser.getIdToken();
+      if (freshToken) {
+        localStorage.setItem('cognitive_token', freshToken);
+        return freshToken;
+      }
+    } catch (e) {
+      console.warn('Failed to refresh Firebase token, falling back to cached token:', e);
+    }
+  }
+  return localStorage.getItem('cognitive_token');
+}
+
+export async function getAuthHeadersAsync(): Promise<HeadersInit> {
+  const token = await getFreshAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
 }
 
 function getAuthHeaders(): HeadersInit {
@@ -488,7 +512,7 @@ export const api = {
   getDashboardSnapshot: async () => {
     try {
       const res = await fetch(`${API_BASE}/dashboard/snapshot`, {
-        headers: getAuthHeaders()
+        headers: await getAuthHeadersAsync()
       });
       if (res.ok) return await res.json();
     } catch {}
@@ -501,7 +525,7 @@ export const api = {
   getUserSnapshot: async () => {
     try {
       const res = await fetch(`${API_BASE}/dashboard/snapshot`, {
-        headers: getAuthHeaders()
+        headers: await getAuthHeadersAsync()
       });
       if (res.ok) return await res.json();
     } catch {}
@@ -1470,7 +1494,7 @@ export const api = {
   getPythonAdvanced: async () => {
     try {
       const res = await fetch(`${API_BASE}/python/advanced`, {
-        headers: getAuthHeaders()
+        headers: await getAuthHeadersAsync()
       });
       if (res.ok) return await res.json();
     } catch {}
