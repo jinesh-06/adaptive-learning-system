@@ -16,7 +16,7 @@ const API_BASE = rawApiUrl
   ? `${rawApiUrl.replace(/\/$/, '')}/api`
   : (isGitHubPages ? `${VERCEL_BACKEND}/api` : '/api');
 
-export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 25000): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -35,7 +35,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
   }
 }
 
-async function fetchJson<T = any>(url: string, options?: RequestInit, timeoutMs = 8000): Promise<T | null> {
+async function fetchJson<T = any>(url: string, options?: RequestInit, timeoutMs = 25000): Promise<T | null> {
   try {
     const res = await fetchWithTimeout(url, options, timeoutMs);
     const contentType = res.headers.get('content-type') || '';
@@ -218,7 +218,7 @@ export const api = {
         const headers = await getAuthHeadersAsync();
         const data = await fetchJson(`${API_BASE}/auth/me`, {
           headers
-        }, 8000);
+        }, 25000);
         if (data) return data;
         return {
           user: { id: 'guest-learner', name: 'Learner', email: 'learner@cognitive.edu', role: 'student' },
@@ -570,7 +570,7 @@ export const api = {
         const headers = await getAuthHeadersAsync();
         const res = await fetchWithTimeout(`${API_BASE}/dashboard/snapshot`, {
           headers
-        }, 8000);
+        }, 25000);
         if (res.ok) {
           const data = await res.json();
           snapshotCache = { data, timestamp: Date.now() };
@@ -1000,7 +1000,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/c/fundamentals`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCFundamentals();
@@ -1030,7 +1030,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/cpp/fundamentals`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppFundamentals();
@@ -1091,7 +1091,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/cpp-oop/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppOopDashboard();
@@ -1152,7 +1152,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/cpp-adv/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppAdvDashboard();
@@ -1216,7 +1216,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/java/fundamentals`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaFundamentals();
@@ -1277,7 +1277,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/java-oop/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaOopDashboard();
@@ -1341,7 +1341,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/java-adv/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaAdvDashboard();
@@ -1406,7 +1406,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/c-adv/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCAdvDashboard();
@@ -1469,7 +1469,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/c-adv/dashboard`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCAdvDashboard();
@@ -1488,7 +1488,7 @@ export const api = {
       try {
         const res = await fetchWithTimeout(`${API_BASE}/curriculum/c-int/progress`, {
           headers: getAuthHeaders()
-        }, 8000);
+        }, 25000);
         if (res.ok) {
           const data = await res.json();
           if (data && data.topics) {
@@ -1532,7 +1532,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/fundamentals`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonFundamentals();
@@ -1543,7 +1543,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/intermediate`, {
         headers: getAuthHeaders()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonIntermediate();
@@ -1554,7 +1554,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/advanced`, {
         headers: await getAuthHeadersAsync()
-      }, 8000);
+      }, 25000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonAdvanced();
