@@ -65,6 +65,7 @@ async def get_c_fundamentals_dashboard(request: Request):
     topics_output = []
     current_topic_id = TOPIC_METADATA[0]["id"] if TOPIC_METADATA else "top-c-intro"
     first_incomplete_found = False
+    adapted_ids = state_store.get_user_adapted_topic_ids(user_id)
 
     for idx, meta in enumerate(TOPIC_METADATA):
         t_id = meta["id"]
@@ -98,7 +99,7 @@ async def get_c_fundamentals_dashboard(request: Request):
                 current_topic_id = t_id
                 first_incomplete_found = True
 
-        has_adaptation = state_store.get_adapted_lesson(user_id, t_id) is not None
+        has_adaptation = t_id in adapted_ids
         if has_adaptation and status != "COMPLETED":
             status = "ADAPTATION_AVAILABLE"
 

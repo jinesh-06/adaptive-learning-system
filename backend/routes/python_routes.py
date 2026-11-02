@@ -174,6 +174,7 @@ async def get_python_fundamentals_dashboard(request: Request):
     topics_output = []
     current_topic_id = TOPIC_METADATA[0]["id"]
     first_incomplete_found = False
+    adapted_ids = state_store.get_user_adapted_topic_ids(user_id)
 
     for idx, meta in enumerate(TOPIC_METADATA):
         t_id = meta["id"]
@@ -208,7 +209,7 @@ async def get_python_fundamentals_dashboard(request: Request):
                 first_incomplete_found = True
 
         # Check if an adapted lesson exists
-        has_adaptation = state_store.get_adapted_lesson(user_id, t_id) is not None
+        has_adaptation = t_id in adapted_ids
         if has_adaptation and status != "COMPLETED":
             status = "ADAPTATION_AVAILABLE"
 
@@ -261,6 +262,7 @@ async def get_python_intermediate_dashboard(request: Request):
     topics_output = []
     current_topic_id = INTERMEDIATE_TOPIC_METADATA[0]["id"]
     first_incomplete_found = False
+    adapted_ids = state_store.get_user_adapted_topic_ids(user_id)
 
     for idx, meta in enumerate(INTERMEDIATE_TOPIC_METADATA):
         t_id = meta["id"]
@@ -295,7 +297,7 @@ async def get_python_intermediate_dashboard(request: Request):
                 first_incomplete_found = True
 
         # Check if an adapted lesson exists
-        has_adaptation = state_store.get_adapted_lesson(user_id, t_id) is not None
+        has_adaptation = t_id in adapted_ids
         if has_adaptation and status != "COMPLETED":
             status = "ADAPTATION_AVAILABLE"
 
@@ -347,6 +349,7 @@ async def get_python_advanced_dashboard(request: Request):
     topics_output = []
     current_topic_id = ADVANCED_TOPIC_METADATA[0]["id"]
     first_incomplete_found = False
+    adapted_ids = state_store.get_user_adapted_topic_ids(user_id)
 
     for idx, meta in enumerate(ADVANCED_TOPIC_METADATA):
         t_id = meta["id"]
@@ -381,7 +384,7 @@ async def get_python_advanced_dashboard(request: Request):
                 first_incomplete_found = True
 
         # Check if an adapted lesson exists
-        has_adaptation = state_store.get_adapted_lesson(user_id, t_id) is not None
+        has_adaptation = t_id in adapted_ids
         if has_adaptation and status != "COMPLETED":
             status = "ADAPTATION_AVAILABLE"
 

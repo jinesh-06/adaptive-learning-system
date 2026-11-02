@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCognitive } from '../context/CognitiveContext';
 import { api } from '../services/api';
+import { mockCourses } from '../services/mockFallback';
 import { VisualRoadmap } from '../components/VisualRoadmap';
 import {
   BookOpen,
@@ -34,6 +35,152 @@ interface CourseCatalogProps {
   onOpenJavaAdvDashboard?: () => void;
 }
 
+// Read stored progress from localStorage instantly
+const getStoredCourseProgress = (cId: string, totalTopics: number): number => {
+  try {
+    let key = '';
+    if (cId === 'py-beg' || cId === 'course-py-fund') key = 'cog_python_progress';
+    else if (cId === 'py-int') key = 'cog_python_int_progress';
+    else if (cId === 'py-adv') key = 'cog_python_adv_progress';
+    else if (cId === 'c-beg') key = 'cog_c_progress';
+    else if (cId === 'c-int') key = 'cog_c_int_progress';
+    else if (cId === 'c-advanced-systems') key = 'cog_c_adv_progress';
+    else if (cId === 'cpp-beg' || cId === 'cpp-fundamentals') key = 'cog_cpp_progress';
+    else if (cId === 'cpp-int' || cId === 'cpp-oop') key = 'cog_cpp_oop_progress';
+    else if (cId === 'cpp-adv' || cId === 'cpp-advanced') key = 'cog_cpp_adv_progress';
+    else if (cId === 'java-beg' || cId === 'java-basics') key = 'cog_java_progress';
+    else if (cId === 'java-int' || cId === 'java-oop') key = 'cog_java_oop_progress';
+    else if (cId === 'java-adv' || cId === 'java-advanced') key = 'cog_java_adv_progress';
+
+    if (!key) return 0;
+    const raw = localStorage.getItem(key);
+    if (!raw) return 0;
+    const items = JSON.parse(raw);
+    if (Array.isArray(items) && totalTopics > 0) {
+      const completed = items.filter((p: any) => p.status === 'COMPLETED' || Number(p.completion_pct || 0) >= 95).length;
+      return Math.min(100, Math.round((completed / totalTopics) * 100));
+    }
+  } catch {}
+  return 0;
+};
+
+// Helper to map raw course items to UI model with topic count and progress
+const mapCourseWithProgress = (c: any, progressMap: Record<string, any> = {}) => {
+  const isPyAdv = c.language === 'python' && (c.id === 'py-adv' || c.title?.toLowerCase().includes('advanced') || c.level === 'advanced');
+  const isPyInt = c.language === 'python' && (c.id === 'py-int' || c.title?.toLowerCase().includes('intermediate') || c.level === 'intermediate');
+  const isPyFund = c.language === 'python' && (c.id === 'py-beg' || c.id === 'course-py-fund' || c.title?.toLowerCase().includes('fundamentals') || c.level === 'beginner');
+  const isCFund = c.language === 'c' && (c.id === 'c-beg' || c.title?.toLowerCase().includes('foundations') || c.level === 'beginner');
+  const isCInt = c.language === 'c' && (c.id === 'c-int' || c.title?.toLowerCase().includes('pointer') || c.title?.toLowerCase().includes('memory') || c.level === 'intermediate');
+  const isCAdv = c.language === 'c' && (c.id === 'c-advanced-systems' || c.title?.toLowerCase().includes('advanced') || c.level === 'advanced');
+  const isCppFund = c.language === 'cpp' && (c.id === 'cpp-beg' || c.id === 'cpp-fundamentals' || c.id === 'course-cpp-fund' || c.title?.toLowerCase().includes('modern') || c.title?.toLowerCase().includes('fundamentals') || c.level === 'beginner');
+  const isCppOop = c.language === 'cpp' && (c.id === 'cpp-int' || c.id === 'cpp-oop' || c.title?.toLowerCase().includes('object-oriented') || c.level === 'intermediate');
+  const isCppAdv = c.language === 'cpp' && (c.id === 'cpp-adv' || c.id === 'cpp-advanced' || c.title?.toLowerCase().includes('stl') || c.level === 'advanced');
+  const isJavaFund = c.language === 'java' && (c.id === 'java-beg' || c.id === 'java-basics' || c.id === 'course-java-fund' || c.title?.toLowerCase().includes('architecture') || c.title?.toLowerCase().includes('core') || c.level === 'beginner');
+  const isJavaOop = c.language === 'java' && (c.id === 'java-int' || c.id === 'java-oop' || c.title?.toLowerCase().includes('object-oriented') || c.title?.toLowerCase().includes('design') || c.level === 'intermediate');
+  const isJavaAdv = c.language === 'java' && (c.id === 'java-adv' || c.id === 'java-advanced' || c.title?.toLowerCase().includes('collections') || c.level === 'advanced');
+
+  let topics_count = c.topics_count || 16;
+  let duration_hours = c.duration_hours || 6;
+  let progress = c.progress || 0;
+  let first_topic_id = c.first_topic_id || 'top-py-intro';
+
+  if (isPyFund) {
+    const d = progressMap.pyFund;
+    topics_count = d?.total_topics || 16;
+    duration_hours = 6;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 16));
+    first_topic_id = d?.current_topic_id || 'top-py-intro';
+  } else if (isPyInt) {
+    const d = progressMap.pyInt;
+    topics_count = d?.total_topics || 26;
+    duration_hours = 10;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 26));
+    first_topic_id = d?.current_topic_id || 'top-py-int-comprehensions';
+  } else if (isPyAdv) {
+    const d = progressMap.pyAdv;
+    topics_count = d?.total_topics || 53;
+    duration_hours = 14;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 53));
+    first_topic_id = d?.current_topic_id || 'top-py-adv-args-kwargs';
+  } else if (isCFund) {
+    const d = progressMap.cFund;
+    topics_count = d?.total_topics || 16;
+    duration_hours = 8.5;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 16));
+    first_topic_id = d?.current_topic_id || 'top-c-intro';
+  } else if (isCInt) {
+    const d = progressMap.cInt;
+    topics_count = d?.total_topics || 16;
+    duration_hours = 10;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 16));
+    first_topic_id = d?.current_topic_id || 'top-c-pointers-intro';
+  } else if (isCAdv) {
+    const d = progressMap.cAdv;
+    topics_count = d?.total_topics || 16;
+    duration_hours = 14;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 16));
+    first_topic_id = d?.current_topic_id || 'top-c-advanced-structures';
+  } else if (isCppFund) {
+    const d = progressMap.cppFund;
+    topics_count = d?.total_topics || 24;
+    duration_hours = 8;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 24));
+    first_topic_id = d?.current_topic_id || 'top-cpp-intro';
+  } else if (isCppOop) {
+    const d = progressMap.cppOop;
+    topics_count = d?.total_topics || 16;
+    duration_hours = 10;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 16));
+    first_topic_id = d?.current_topic_id || 'top-cpp-oop-intro';
+  } else if (isCppAdv) {
+    const d = progressMap.cppAdv;
+    topics_count = d?.total_topics || 33;
+    duration_hours = 14;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 33));
+    first_topic_id = d?.current_topic_id || 'top-cpp-adv-generic-programming-intro';
+  } else if (isJavaFund) {
+    const d = progressMap.javaFund;
+    topics_count = d?.total_topics || 28;
+    duration_hours = 8;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 28));
+    first_topic_id = d?.current_topic_id || 'top-java-intro';
+  } else if (isJavaOop) {
+    const d = progressMap.javaOop;
+    topics_count = d?.total_topics || 37;
+    duration_hours = 10;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 37));
+    first_topic_id = d?.current_topic_id || 'top-java-oop-intro';
+  } else if (isJavaAdv) {
+    const d = progressMap.javaAdv;
+    topics_count = d?.total_topics || 28;
+    duration_hours = 14;
+    progress = d?.overall_progress !== undefined ? Number(d.overall_progress) : (progress || getStoredCourseProgress(c.id, 28));
+    first_topic_id = d?.current_topic_id || 'top-java-adv-01-collections-intro';
+  } else {
+    topics_count = c.topics_count || (c.id === 'c-int' ? 12 : c.id === 'c-advanced-systems' ? 16 : 6);
+    duration_hours = c.duration_hours || (c.level === 'intermediate' ? 10 : c.level === 'advanced' ? 14 : 8);
+    progress = progress || getStoredCourseProgress(c.id, topics_count);
+    first_topic_id = c.first_topic_id || (c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro');
+  }
+
+  return {
+    ...c,
+    topics_count,
+    duration_hours,
+    difficulty: c.level === 'beginner' ? 'Beginner' : c.level === 'intermediate' ? 'Intermediate' : 'Advanced',
+    progress,
+    first_topic_id
+  };
+};
+
+const getInitialCoursesForLanguage = (language: string): any[] => {
+  const norm = (language || 'python').toLowerCase();
+  const matched = (mockCourses || []).filter((c: any) => c.language === norm);
+  const selected = matched.length > 0 ? matched : (mockCourses || []);
+  return selected.map((c: any) => mapCourseWithProgress(c));
+};
+
+
 export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
   onSelectTopic,
   onOpenPythonDashboard,
@@ -51,7 +198,6 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
 }) => {
   const { preferences, updateLanguage } = useAuth();
   const { currentLoad } = useCognitive();
-  const [courses, setCourses] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'explorer' | 'roadmap'>('explorer');
 
   // Filters (Section 45)
@@ -60,199 +206,45 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [loading, setLoading] = useState(true);
+  // Initialize immediately from curriculum constants for zero loading lag
+  const [courses, setCourses] = useState<any[]>(() =>
+    getInitialCoursesForLanguage(preferences.selected_language || 'python')
+  );
+  const [loading, setLoading] = useState(false);
 
   // Sync selectedLanguage when preferences change (e.g. from Sidebar dropdown)
   useEffect(() => {
     if (preferences.selected_language && preferences.selected_language !== selectedLanguage) {
       setSelectedLanguage(preferences.selected_language);
+      setCourses(getInitialCoursesForLanguage(preferences.selected_language));
     }
   }, [preferences.selected_language]);
 
-  // Helper to map raw course items to UI model with topic count and progress
-  const mapCourseWithProgress = (c: any, progressMap: Record<string, any> = {}) => {
-    const isPyAdv = c.language === 'python' && (c.id === 'py-adv' || c.title?.toLowerCase().includes('advanced') || c.level === 'advanced');
-    const isPyInt = c.language === 'python' && (c.id === 'py-int' || c.title?.toLowerCase().includes('intermediate') || c.level === 'intermediate');
-    const isPyFund = c.language === 'python' && (c.id === 'py-beg' || c.id === 'course-py-fund' || c.title?.toLowerCase().includes('fundamentals') || c.level === 'beginner');
-    const isCFund = c.language === 'c' && (c.id === 'c-beg' || c.title?.toLowerCase().includes('foundations') || c.level === 'beginner');
-    const isCInt = c.language === 'c' && (c.id === 'c-int' || c.title?.toLowerCase().includes('pointer') || c.title?.toLowerCase().includes('memory') || c.level === 'intermediate');
-    const isCAdv = c.language === 'c' && (c.id === 'c-advanced-systems' || c.title?.toLowerCase().includes('advanced') || c.level === 'advanced');
-    const isCppFund = c.language === 'cpp' && (c.id === 'cpp-beg' || c.id === 'cpp-fundamentals' || c.id === 'course-cpp-fund' || c.title?.toLowerCase().includes('modern') || c.title?.toLowerCase().includes('fundamentals') || c.level === 'beginner');
-    const isCppOop = c.language === 'cpp' && (c.id === 'cpp-int' || c.id === 'cpp-oop' || c.title?.toLowerCase().includes('object-oriented') || c.level === 'intermediate');
-    const isCppAdv = c.language === 'cpp' && (c.id === 'cpp-adv' || c.id === 'cpp-advanced' || c.title?.toLowerCase().includes('stl') || c.level === 'advanced');
-    const isJavaFund = c.language === 'java' && (c.id === 'java-beg' || c.id === 'java-basics' || c.id === 'course-java-fund' || c.title?.toLowerCase().includes('architecture') || c.title?.toLowerCase().includes('core') || c.level === 'beginner');
-    const isJavaOop = c.language === 'java' && (c.id === 'java-int' || c.id === 'java-oop' || c.title?.toLowerCase().includes('object-oriented') || c.title?.toLowerCase().includes('design') || c.level === 'intermediate');
-    const isJavaAdv = c.language === 'java' && (c.id === 'java-adv' || c.id === 'java-advanced' || c.title?.toLowerCase().includes('collections') || c.level === 'advanced');
-
-    let topics_count = c.topics_count || 16;
-    let duration_hours = c.duration_hours || 6;
-    let progress = c.progress || 0;
-    let first_topic_id = c.first_topic_id || 'top-py-intro';
-
-    if (isPyFund) {
-      const d = progressMap.pyFund;
-      topics_count = d?.total_topics || 16;
-      duration_hours = 6;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-py-intro';
-    } else if (isPyInt) {
-      const d = progressMap.pyInt;
-      topics_count = d?.total_topics || 26;
-      duration_hours = 10;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-py-int-comprehensions';
-    } else if (isPyAdv) {
-      const d = progressMap.pyAdv;
-      topics_count = d?.total_topics || 53;
-      duration_hours = 14;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-py-adv-args-kwargs';
-    } else if (isCFund) {
-      const d = progressMap.cFund;
-      topics_count = d?.total_topics || 16;
-      duration_hours = 8.5;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-c-intro';
-    } else if (isCInt) {
-      const d = progressMap.cInt;
-      topics_count = d?.total_topics || 16;
-      duration_hours = 10;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-c-pointers-intro';
-    } else if (isCAdv) {
-      const d = progressMap.cAdv;
-      topics_count = d?.total_topics || 16;
-      duration_hours = 14;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-c-advanced-structures';
-    } else if (isCppFund) {
-      const d = progressMap.cppFund;
-      topics_count = d?.total_topics || 24;
-      duration_hours = 8;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-cpp-intro';
-    } else if (isCppOop) {
-      const d = progressMap.cppOop;
-      topics_count = d?.total_topics || 16;
-      duration_hours = 10;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-cpp-oop-intro';
-    } else if (isCppAdv) {
-      const d = progressMap.cppAdv;
-      topics_count = d?.total_topics || 33;
-      duration_hours = 14;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-cpp-adv-generic-programming-intro';
-    } else if (isJavaFund) {
-      const d = progressMap.javaFund;
-      topics_count = d?.total_topics || 28;
-      duration_hours = 8;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-java-intro';
-    } else if (isJavaOop) {
-      const d = progressMap.javaOop;
-      topics_count = d?.total_topics || 37;
-      duration_hours = 10;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-java-oop-intro';
-    } else if (isJavaAdv) {
-      const d = progressMap.javaAdv;
-      topics_count = d?.total_topics || 28;
-      duration_hours = 14;
-      progress = Number(d?.overall_progress ?? progress);
-      first_topic_id = d?.current_topic_id || 'top-java-adv-01-collections-intro';
-    } else {
-      topics_count = c.topics_count || (c.id === 'c-int' ? 12 : c.id === 'c-advanced-systems' ? 16 : 6);
-      duration_hours = c.duration_hours || (c.level === 'intermediate' ? 10 : c.level === 'advanced' ? 14 : 8);
-      first_topic_id = c.first_topic_id || (c.language === 'c' ? 'top-c-intro' : c.language === 'java' ? 'top-java-intro' : 'top-py-intro');
-    }
-
-    return {
-      ...c,
-      topics_count,
-      duration_hours,
-      difficulty: c.level === 'beginner' ? 'Beginner' : c.level === 'intermediate' ? 'Intermediate' : 'Advanced',
-      progress,
-      first_topic_id
-    };
+  const handleSelectLanguage = (langId: string) => {
+    setSelectedLanguage(langId);
+    updateLanguage(langId);
+    setCourses(getInitialCoursesForLanguage(langId));
   };
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
-    const safetyTimer = setTimeout(() => {
-      if (isMounted) {
-        setLoading(false);
-      }
-    }, 4000);
-
-    const loadCoursesWithLiveProgress = async () => {
+    // Asynchronously refresh courses from backend without showing any loading spinner
+    const syncCourses = async () => {
       try {
         const list = await api.getCourses(selectedLanguage);
-        if (Array.isArray(list) && list.length > 0) {
-          // Immediately display baseline courses without waiting for background progress endpoints
-          if (isMounted) {
-            setCourses(list.map(c => mapCourseWithProgress(c)));
-            setLoading(false);
-          }
-
-          // Asynchronously enrich progress ONLY for the selected language
-          const lang = selectedLanguage?.toLowerCase() || 'python';
-          let progressMap: Record<string, any> = {};
-
-          try {
-            if (lang === 'python') {
-              const [pyFund, pyInt, pyAdv] = await Promise.all([
-                api.getPythonFundamentals().catch(() => null),
-                api.getPythonIntermediate().catch(() => null),
-                api.getPythonAdvanced().catch(() => null)
-              ]);
-              progressMap = { pyFund, pyInt, pyAdv };
-            } else if (lang === 'c') {
-              const [cFund, cInt, cAdv] = await Promise.all([
-                api.getCFundamentals().catch(() => null),
-                api.getCIntermediate?.().catch(() => null),
-                api.getCAdvanced?.().catch(() => null)
-              ]);
-              progressMap = { cFund, cInt, cAdv };
-            } else if (lang === 'cpp') {
-              const [cppFund, cppOop, cppAdv] = await Promise.all([
-                api.getCppFundamentals().catch(() => null),
-                api.getCppOopDashboard().catch(() => null),
-                api.getCppAdvDashboard().catch(() => null)
-              ]);
-              progressMap = { cppFund, cppOop, cppAdv };
-            } else if (lang === 'java') {
-              const [javaFund, javaOop, javaAdv] = await Promise.all([
-                api.getJavaFundamentals().catch(() => null),
-                api.getJavaOopDashboard().catch(() => null),
-                api.getJavaAdvDashboard().catch(() => null)
-              ]);
-              progressMap = { javaFund, javaOop, javaAdv };
-            }
-
-            if (isMounted && Object.keys(progressMap).length > 0) {
-              setCourses(list.map(c => mapCourseWithProgress(c, progressMap)));
-            }
-          } catch (progressErr) {
-            console.warn('[CourseCatalog] Background progress enrichment notice:', progressErr);
-          }
+        if (isMounted && Array.isArray(list) && list.length > 0) {
+          setCourses(list.map((c: any) => mapCourseWithProgress(c)));
         }
       } catch (err) {
-        console.error('Failed to load courses with live progress:', err);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        console.warn('[CourseCatalog] Background course sync notice:', err);
       }
     };
 
-    loadCoursesWithLiveProgress();
+    syncCourses();
 
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimer);
     };
   }, [selectedLanguage]);
 
@@ -309,10 +301,7 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
         ].map(lang => (
           <button
             key={lang.id}
-            onClick={() => {
-              setSelectedLanguage(lang.id);
-              updateLanguage(lang.id);
-            }}
+            onClick={() => handleSelectLanguage(lang.id)}
             className={`px-5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
               selectedLanguage === lang.id
                 ? 'border-cyan-500 bg-cyan-950/40 text-cyan-400 shadow-md shadow-cyan-500/10'

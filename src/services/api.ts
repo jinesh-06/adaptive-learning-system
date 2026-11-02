@@ -246,7 +246,7 @@ export const api = {
     const params = new URLSearchParams();
     if (language) params.append('language', language);
     if (level) params.append('level', level);
-    const data = await fetchJson(`${API_BASE}/courses?${params.toString()}`);
+    const data = await fetchJson(`${API_BASE}/courses?${params.toString()}`, undefined, 6000);
     if (data) return data;
     return mockHandlers.getCourses(language);
   },
@@ -1532,7 +1532,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/fundamentals`, {
         headers: getAuthHeaders()
-      }, 25000);
+      }, 10000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonFundamentals();
@@ -1543,7 +1543,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/intermediate`, {
         headers: getAuthHeaders()
-      }, 25000);
+      }, 10000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonIntermediate();
@@ -1554,7 +1554,7 @@ export const api = {
     try {
       const res = await fetchWithTimeout(`${API_BASE}/python/advanced`, {
         headers: await getAuthHeadersAsync()
-      }, 25000);
+      }, 10000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonAdvanced();
