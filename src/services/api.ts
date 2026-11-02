@@ -346,11 +346,11 @@ export const api = {
     metadata?: Record<string, any>;
   }) => {
     try {
-      const res = await fetch(`${API_BASE}/behavior/event`, {
+      const res = await fetchWithTimeout(`${API_BASE}/behavior/event`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(event)
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return { success: true };
@@ -362,7 +362,7 @@ export const api = {
     metadata?: Record<string, any>;
   }) => {
     try {
-      const res = await fetch(`${API_BASE}/behavior/event`, {
+      const res = await fetchWithTimeout(`${API_BASE}/behavior/event`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -370,7 +370,7 @@ export const api = {
           duration: event.durationSeconds,
           metadata: event.metadata
         })
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return { success: true };
@@ -903,9 +903,9 @@ export const api = {
       if (query) params.append('q', query);
       if (language && language !== 'all') params.append('language', language);
       if (topicId && topicId !== 'all') params.append('topic_id', topicId);
-      const res = await fetch(`${API_BASE}/notes?${params.toString()}`, {
+      const res = await fetchWithTimeout(`${API_BASE}/notes?${params.toString()}`, {
         headers: getAuthHeaders()
-      });
+      }, 10000);
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data?.notes || []);
@@ -1679,15 +1679,15 @@ export const api = {
       if (forceRefresh) params.append('refresh', 'true');
       const qs = params.toString() ? `?${params.toString()}` : '';
       const url = `${API_BASE}/lessons/adapt/${topicId}${qs}`;
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         headers: getAuthHeaders()
-      });
+      }, 12000);
       if (res.ok) return await res.json();
     } catch {}
     try {
-      const res = await fetch(`${API_BASE}/python/adapted/${topicId}`, {
+      const res = await fetchWithTimeout(`${API_BASE}/python/adapted/${topicId}`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getAdaptedLesson(topicId);

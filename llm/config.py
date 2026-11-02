@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 # Automatically search and load .env file from project root
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -42,15 +43,16 @@ def get_gemini_api_key() -> str:
     return api_key
 
 
-def get_gemini_client(api_key: Optional[str] = None) -> genai.Client:
-    """Initialize and return a Google Gemini client.
+def get_gemini_client(api_key: Optional[str] = None, timeout_ms: int = 10000) -> genai.Client:
+    """Initialize and return a Google Gemini client bounded by an explicit timeout.
 
     Args:
         api_key: Optional explicit API key. If not provided,
                  fetches from environment via get_gemini_api_key().
+        timeout_ms: Maximum HTTP call duration in milliseconds (default 10,000ms / 10s).
 
     Returns:
         genai.Client: Configured official Gemini client.
     """
     key = api_key or get_gemini_api_key()
-    return genai.Client(api_key=key)
+    return genai.Client(api_key=key, http_options=types.HttpOptions(timeout=timeout_ms))

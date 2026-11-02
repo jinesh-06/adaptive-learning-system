@@ -293,16 +293,36 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       return null;
     })();
 
-    try {
-      const [loadedTopic, loadedAdaptation] = await Promise.all([
-        topicDetailPromise,
-        adaptedLessonPromise
-      ]);
-
+    const safetyTimer = setTimeout(() => {
       if (currentTopicIdRef.current === targetTopicId) {
+        setLoading(false);
+      }
+    }, 4000);
+
+    // 1. Immediately resolve and render the core topic lesson
+    try {
+      const loadedTopic = await topicDetailPromise;
+      if (currentTopicIdRef.current === targetTopicId && loadedTopic) {
         setTopic(loadedTopic);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.warn('Failed to resolve core topic:', err);
+      if (currentTopicIdRef.current === targetTopicId) {
+        setLoading(false);
+      }
+    } finally {
+      clearTimeout(safetyTimer);
+    }
+
+    // 2. Asynchronously enrich with personalized AI adaptation in background
+    try {
+      const loadedAdaptation = await adaptedLessonPromise;
+      if (currentTopicIdRef.current === targetTopicId && loadedAdaptation) {
         setAdaptedLesson(loadedAdaptation);
       }
+    } catch (err) {
+      console.warn('Failed to resolve adapted lesson:', err);
     } finally {
       if (currentTopicIdRef.current === targetTopicId) {
         setLoading(false);
@@ -556,14 +576,22 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
       <div className="max-w-xl mx-auto my-20 p-8 text-center rounded-2xl border border-slate-800 bg-slate-900/60 text-slate-300">
         <h2 className="text-xl font-bold mb-2">Lesson Not Found</h2>
         <p className="text-xs text-slate-400 mb-4">We could not find content for topic id: {topicId}</p>
-        {onBackToCatalog && (
+        <div className="flex justify-center gap-3">
           <button
-            onClick={onBackToCatalog}
-            className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+            onClick={() => loadTopicAndAdaptation(topicId, true)}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs"
           >
-            Return to Curriculum
+            Retry Loading
           </button>
-        )}
+          {onBackToCatalog && (
+            <button
+              onClick={onBackToCatalog}
+              className="px-4 py-2 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs"
+            >
+              Return to Curriculum
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -857,7 +885,13 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
 
             {/* Metadata Badges */}
             <div className="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
-              {isPersonalized && (
+              {adaptedLoading && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 animate-pulse">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="font-semibold">Tailoring insights...</span>
+                </div>
+              )}
+              {isPersonalized && !adaptedLoading && (
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-300 light-theme:text-purple-800">
                   <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                   <span className="font-semibold">Tailored Lesson:</span>

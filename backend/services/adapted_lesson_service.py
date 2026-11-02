@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 import sys
+import concurrent.futures
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -776,35 +777,37 @@ IMPORTANT:
 4. Return ONLY valid JSON, with no enclosing backticks or markdown preamble.
 """
 
-        candidate_models = [
-            get_model_name(),
-            "gemini-2.5-flash",
-            "gemini-1.5-flash"
-        ]
+        model_name = get_model_name() or "gemini-3.5-flash"
 
-        for model_name in candidate_models:
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        temperature=0.3
-                    )
+        def _call_gemini():
+            return client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.3
                 )
-                text = response.text.strip() if response.text else ""
-                if not text:
-                    continue
+            )
 
-                parsed = json.loads(text)
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            future = executor.submit(_call_gemini)
+            response = future.result(timeout=10.0)
+            resp_text = response.text.strip() if response and response.text else ""
+            if resp_text:
+                parsed = json.loads(resp_text)
                 if isinstance(parsed, dict) and "sections" in parsed:
                     return parsed
-            except genai_errors.APIError as api_err:
-                logger.warning("Gemini API error on %s: %s", model_name, api_err)
-            except json.JSONDecodeError as json_err:
-                logger.warning("Failed to parse Gemini JSON on %s: %s", model_name, json_err)
-            except Exception as e:
-                logger.warning("Unexpected error calling Gemini %s: %s", model_name, e)
+        except concurrent.futures.TimeoutError:
+            logger.warning("Gemini generation timed out after 10s on %s; falling back to offline adaptation", model_name)
+        except genai_errors.APIError as api_err:
+            logger.warning("Gemini API error on %s: %s; falling back to offline adaptation", model_name, api_err)
+        except json.JSONDecodeError as json_err:
+            logger.warning("Failed to parse Gemini JSON on %s: %s; falling back to offline adaptation", model_name, json_err)
+        except Exception as e:
+            logger.warning("Unexpected error calling Gemini %s: %s; falling back to offline adaptation", model_name, e)
+        finally:
+            executor.shutdown(wait=False, cancel_futures=True)
 
         return None
 

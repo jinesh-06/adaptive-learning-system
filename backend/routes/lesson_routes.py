@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Request, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
+from starlette.concurrency import run_in_threadpool
 
 from backend.services.adapted_lesson_service import adapted_lesson_service
 from backend.services.state_store import state_store
@@ -20,7 +21,8 @@ async def adapt_lesson(payload: AdaptedLessonRequest, request: Request):
     """
     user_id = get_current_user_id(request)
     
-    result = adapted_lesson_service.generate_adapted_lesson(
+    result = await run_in_threadpool(
+        adapted_lesson_service.generate_adapted_lesson,
         user_id=user_id,
         topic_id=payload.topic_id,
         detail_level=payload.detail_level or "STANDARD",
@@ -40,7 +42,8 @@ async def get_adapted_lesson_by_topic(
 ):
     """Retrieve an existing generated adapted lesson for the authenticated learner, refreshing if new quiz evidence exists."""
     user_id = get_current_user_id(request)
-    return adapted_lesson_service.generate_adapted_lesson(
+    return await run_in_threadpool(
+        adapted_lesson_service.generate_adapted_lesson,
         user_id=user_id,
         topic_id=topic_id,
         detail_level=detail_level or "STANDARD",
@@ -52,7 +55,8 @@ async def get_adapted_lesson_by_topic(
 async def submit_adaptation_feedback(payload: AdaptationFeedbackRequest, request: Request):
     """Store learner feedback on an AI-adapted lesson."""
     user_id = get_current_user_id(request)
-    result = state_store.record_adaptation_feedback(
+    result = await run_in_threadpool(
+        state_store.record_adaptation_feedback,
         user_id=user_id,
         topic_id=payload.topic_id,
         detail_level=payload.detail_level,
