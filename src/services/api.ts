@@ -998,9 +998,9 @@ export const api = {
   // C Programming Foundations Flow
   getCFundamentals: async () => {
     try {
-      const res = await fetch(`${API_BASE}/c/fundamentals`, {
+      const res = await fetchWithTimeout(`${API_BASE}/c/fundamentals`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCFundamentals();
@@ -1028,9 +1028,9 @@ export const api = {
   // C++ Modern Fundamentals Flow
   getCppFundamentals: async () => {
     try {
-      const res = await fetch(`${API_BASE}/cpp/fundamentals`, {
+      const res = await fetchWithTimeout(`${API_BASE}/cpp/fundamentals`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppFundamentals();
@@ -1089,9 +1089,9 @@ export const api = {
   // Object-Oriented C++ Flow
   getCppOopDashboard: async () => {
     try {
-      const res = await fetch(`${API_BASE}/cpp-oop/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/cpp-oop/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppOopDashboard();
@@ -1150,9 +1150,9 @@ export const api = {
   // Advanced C++ & STL Architecture Flow
   getCppAdvDashboard: async () => {
     try {
-      const res = await fetch(`${API_BASE}/cpp-adv/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/cpp-adv/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCppAdvDashboard();
@@ -1214,9 +1214,9 @@ export const api = {
   // Java Core Architecture & Basics Flow
   getJavaFundamentals: async () => {
     try {
-      const res = await fetch(`${API_BASE}/java/fundamentals`, {
+      const res = await fetchWithTimeout(`${API_BASE}/java/fundamentals`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaFundamentals();
@@ -1275,9 +1275,9 @@ export const api = {
   // Java Object-Oriented Design Flow
   getJavaOopDashboard: async () => {
     try {
-      const res = await fetch(`${API_BASE}/java-oop/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/java-oop/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaOopDashboard();
@@ -1339,9 +1339,9 @@ export const api = {
   // Advanced Java & Collections Framework Flow
   getJavaAdvDashboard: async () => {
     try {
-      const res = await fetch(`${API_BASE}/java-adv/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/java-adv/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getJavaAdvDashboard();
@@ -1404,9 +1404,9 @@ export const api = {
   // Advanced C Systems & Data Structures Flow
   getCAdvDashboard: async () => {
     try {
-      const res = await fetch(`${API_BASE}/c-adv/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/c-adv/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCAdvDashboard();
@@ -1467,9 +1467,9 @@ export const api = {
 
   getCAdvanced: async () => {
     try {
-      const res = await fetch(`${API_BASE}/c-adv/dashboard`, {
+      const res = await fetchWithTimeout(`${API_BASE}/c-adv/dashboard`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getCAdvDashboard();
@@ -1486,9 +1486,9 @@ export const api = {
 
     cIntermediateInFlight = (async () => {
       try {
-        const res = await fetch(`${API_BASE}/curriculum/c-int/progress`, {
+        const res = await fetchWithTimeout(`${API_BASE}/curriculum/c-int/progress`, {
           headers: getAuthHeaders()
-        });
+        }, 8000);
         if (res.ok) {
           const data = await res.json();
           if (data && data.topics) {
@@ -1530,9 +1530,9 @@ export const api = {
   // Python Fundamentals Adaptive Flow
   getPythonFundamentals: async () => {
     try {
-      const res = await fetch(`${API_BASE}/python/fundamentals`, {
+      const res = await fetchWithTimeout(`${API_BASE}/python/fundamentals`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonFundamentals();
@@ -1541,9 +1541,9 @@ export const api = {
   // Intermediate Python & Data Structures Flow
   getPythonIntermediate: async () => {
     try {
-      const res = await fetch(`${API_BASE}/python/intermediate`, {
+      const res = await fetchWithTimeout(`${API_BASE}/python/intermediate`, {
         headers: getAuthHeaders()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonIntermediate();
@@ -1552,9 +1552,9 @@ export const api = {
   // Advanced Python, OOP & Async Flow
   getPythonAdvanced: async () => {
     try {
-      const res = await fetch(`${API_BASE}/python/advanced`, {
+      const res = await fetchWithTimeout(`${API_BASE}/python/advanced`, {
         headers: await getAuthHeadersAsync()
-      });
+      }, 8000);
       if (res.ok) return await res.json();
     } catch {}
     return mockHandlers.getPythonAdvanced();

@@ -73,6 +73,12 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
     let isMounted = true;
     setLoading(true);
 
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 6000);
+
     const loadCoursesWithLiveProgress = async () => {
       try {
         const list = await api.getCourses(selectedLanguage);
@@ -290,6 +296,7 @@ export const CourseCatalogPage: React.FC<CourseCatalogProps> = ({
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
     };
   }, [selectedLanguage]);
 
