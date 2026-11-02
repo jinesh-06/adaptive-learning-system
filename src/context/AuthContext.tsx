@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
-import { api, UserInfo, UserPreferences } from '../services/api';
+import { api, clearApiCaches, UserInfo, UserPreferences } from '../services/api';
 import { firebaseAuth, mapFirebaseUser, formatFirebaseAuthError, ExtendedUserProfile } from '../services/firebaseAuth';
 import { isFirebaseConfigured } from '../services/firebase';
 
@@ -55,6 +55,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
 
     if (isFirebaseConfigured) {
+      // Safety guard: ensure authentication loading state resolves within 6 seconds
+      const safetyTimer = setTimeout(() => {
+        if (isMounted) {
+          setIsLoading((current) => {
+            if (current) {
+              console.warn('[AuthContext] Session verification safety timeout (6s) reached. Exiting loading state.');
+              return false;
+            }
+            return false;
+          });
+        }
+      }, 6000);
+
       const unsubscribe = firebaseAuth.onAuthStateChange(async (fbUser) => {
         if (!isMounted) return;
 
@@ -68,13 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(mapped);
               setToken(idToken);
               localStorage.setItem('cognitive_token', idToken);
+              // Unblock the application and route guards immediately once identity is verified
+              setIsLoading(false);
             }
 
-            // Sync profile / preferences
-            await syncPreferences();
+            // Sync profile and preferences non-blockingly in the background
+            syncPreferences().catch((err) => {
+              console.warn('[AuthContext] Non-blocking syncPreferences warning:', err);
+            });
           } catch (err) {
             console.error('Error handling Firebase Auth state:', err);
-          } finally {
             if (isMounted) setIsLoading(false);
           }
         } else {
@@ -89,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setUser(null);
               setToken(null);
               localStorage.removeItem('cognitive_token');
+              clearApiCaches();
               setIsLoading(false);
             }
           }
@@ -97,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return () => {
         isMounted = false;
+        clearTimeout(safetyTimer);
         unsubscribe();
       };
     } else {
@@ -136,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Manual login adapter for backward compatibility
   const login = (newToken: string, newUser: UserInfo, newPrefs?: UserPreferences) => {
+    clearApiCaches();
     localStorage.setItem('cognitive_token', newToken);
     setToken(newToken);
     setUser(newUser);
@@ -153,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('SignOut warning:', e);
     }
+    clearApiCaches();
     localStorage.removeItem('cognitive_token');
     setToken(null);
     setUser(null);

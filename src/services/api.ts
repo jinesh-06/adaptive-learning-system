@@ -16,9 +16,28 @@ const API_BASE = rawApiUrl
   ? `${rawApiUrl.replace(/\/$/, '')}/api`
   : (isGitHubPages ? `${VERCEL_BACKEND}/api` : '/api');
 
-async function fetchJson<T = any>(url: string, options?: RequestInit): Promise<T | null> {
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (options.signal) {
+    options.signal.addEventListener('abort', () => controller.abort());
+  }
+
   try {
-    const res = await fetch(url, options);
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function fetchJson<T = any>(url: string, options?: RequestInit, timeoutMs = 8000): Promise<T | null> {
+  try {
+    const res = await fetchWithTimeout(url, options, timeoutMs);
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('text/html') && url.includes('/api/')) {
       console.warn(
@@ -30,7 +49,10 @@ async function fetchJson<T = any>(url: string, options?: RequestInit): Promise<T
     if (!res.ok) return null;
     if (!contentType.includes('application/json')) return null;
     return await res.json();
-  } catch {
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      console.warn(`[API Timeout] Request to '${url}' timed out after ${timeoutMs}ms.`);
+    }
     return null;
   }
 }
@@ -55,10 +77,14 @@ export interface UserPreferences {
   preferred_mode: 'standard' | 'adaptive';
 }
 
-export async function getFreshAuthToken(): Promise<string | null> {
+export async function getFreshAuthToken(timeoutMs = 3000): Promise<string | null> {
   if (isFirebaseConfigured && auth?.currentUser) {
     try {
-      const freshToken = await auth.currentUser.getIdToken();
+      const tokenPromise = auth.currentUser.getIdToken();
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), timeoutMs)
+      );
+      const freshToken = await Promise.race([tokenPromise, timeoutPromise]);
       if (freshToken) {
         localStorage.setItem('cognitive_token', freshToken);
         return freshToken;
@@ -88,6 +114,18 @@ function getAuthHeaders(): HeadersInit {
 
 let cIntermediateCache: { data: any; timestamp: number } | null = null;
 let cIntermediateInFlight: Promise<any> | null = null;
+let snapshotCache: { data: any; timestamp: number } | null = null;
+let snapshotInFlight: Promise<any> | null = null;
+let meInFlight: Promise<any> | null = null;
+const SNAPSHOT_CACHE_TTL_MS = 5000;
+
+export function clearApiCaches(): void {
+  snapshotCache = null;
+  snapshotInFlight = null;
+  cIntermediateCache = null;
+  cIntermediateInFlight = null;
+  meInFlight = null;
+}
 
 export const api = {
   // Auth
@@ -174,14 +212,23 @@ export const api = {
   },
 
   getMe: async () => {
-    const data = await fetchJson(`${API_BASE}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    if (data) return data;
-    return {
-      user: { id: 'guest-learner', name: 'Learner', email: 'learner@cognitive.edu', role: 'student' },
-      preferences: { selected_language: 'python', current_level: 'beginner', preferred_mode: 'adaptive' }
-    };
+    if (meInFlight) return meInFlight;
+    meInFlight = (async () => {
+      try {
+        const headers = await getAuthHeadersAsync();
+        const data = await fetchJson(`${API_BASE}/auth/me`, {
+          headers
+        }, 8000);
+        if (data) return data;
+        return {
+          user: { id: 'guest-learner', name: 'Learner', email: 'learner@cognitive.edu', role: 'student' },
+          preferences: { selected_language: 'python', current_level: 'beginner', preferred_mode: 'adaptive' }
+        };
+      } finally {
+        meInFlight = null;
+      }
+    })();
+    return meInFlight;
   },
 
   updatePreferences: async (prefs: Partial<UserPreferences>) => {
@@ -510,29 +557,41 @@ export const api = {
 
   // Dashboard Snapshot (Section 44)
   getDashboardSnapshot: async () => {
-    try {
-      const res = await fetch(`${API_BASE}/dashboard/snapshot`, {
-        headers: await getAuthHeadersAsync()
-      });
-      if (res.ok) return await res.json();
-    } catch {}
-    if (isGitHubPages) {
-      return mockHandlers.getDashboardSnapshot();
+    const now = Date.now();
+    if (snapshotCache && (now - snapshotCache.timestamp < SNAPSHOT_CACHE_TTL_MS)) {
+      return snapshotCache.data;
     }
-    return null;
+    if (snapshotInFlight) {
+      return snapshotInFlight;
+    }
+
+    snapshotInFlight = (async () => {
+      try {
+        const headers = await getAuthHeadersAsync();
+        const res = await fetchWithTimeout(`${API_BASE}/dashboard/snapshot`, {
+          headers
+        }, 8000);
+        if (res.ok) {
+          const data = await res.json();
+          snapshotCache = { data, timestamp: Date.now() };
+          return data;
+        }
+      } catch (e) {
+        console.warn('API getDashboardSnapshot failed/timed out, falling back:', e);
+      } finally {
+        snapshotInFlight = null;
+      }
+      if (isGitHubPages) {
+        return mockHandlers.getDashboardSnapshot();
+      }
+      return null;
+    })();
+
+    return snapshotInFlight;
   },
 
   getUserSnapshot: async () => {
-    try {
-      const res = await fetch(`${API_BASE}/dashboard/snapshot`, {
-        headers: await getAuthHeadersAsync()
-      });
-      if (res.ok) return await res.json();
-    } catch {}
-    if (isGitHubPages) {
-      return mockHandlers.getDashboardSnapshot();
-    }
-    return null;
+    return api.getDashboardSnapshot();
   },
 
   // --- Student-Specific Mastery API ---
