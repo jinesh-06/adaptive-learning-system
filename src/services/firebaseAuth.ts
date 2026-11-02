@@ -8,6 +8,7 @@ import {
   updateProfile,
   User as FirebaseUser,
   onAuthStateChanged,
+  onIdTokenChanged,
   Unsubscribe
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider, isFirebaseConfigured } from './firebase';
@@ -259,7 +260,7 @@ export const firebaseAuth = {
    */
   onAuthStateChange(callback: (user: FirebaseUser | null) => void): Unsubscribe {
     if (isFirebaseConfigured && auth) {
-      return onAuthStateChanged(auth, callback);
+      return onIdTokenChanged(auth, callback);
     }
     // Return empty unsubscribe if not configured
     return () => {};
