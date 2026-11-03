@@ -17,6 +17,7 @@ import { JAVA_FUNDAMENTALS_TOPICS } from '../data/javaFundamentalsData';
 import { JAVA_OOP_TOPICS } from '../data/javaOopData';
 import { JAVA_ADV_TOPICS } from '../data/javaAdvData';
 import { updateUniversalTopicProgress, getUniversalTopicProgress } from '../utils/trackProgress';
+import allTopicQuizzes from '../data/allTopicQuizzes.json';
 
 const ALL_TOPICS: any[] = [
   ...PYTHON_FUNDAMENTALS_TOPICS,
@@ -205,12 +206,19 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
     return adaptedLesson?.sections?.find(s => s.type === 'quiz');
   }, [adaptedLesson]);
 
+  const isComprehensionCheck = Boolean(isPersonalized && adaptedQuiz?.questions && adaptedQuiz.questions.length > 0);
+
   const quizInitialQuestions = useMemo(() => {
-    if (isPersonalized && adaptedQuiz?.questions && adaptedQuiz.questions.length > 0) {
-      return adaptedQuiz.questions as any;
+    if (isComprehensionCheck) {
+      return adaptedQuiz!.questions as any;
+    }
+    // For standard lesson mastery quiz, ensure complete 10-question bank is used
+    const static10 = (allTopicQuizzes as Record<string, any[]>)[topicId];
+    if (static10 && Array.isArray(static10) && static10.length === 10) {
+      return static10;
     }
     return topic?.quiz;
-  }, [isPersonalized, adaptedQuiz?.questions, topic?.quiz]);
+  }, [isComprehensionCheck, adaptedQuiz?.questions, topicId, topic?.quiz]);
 
   const summaryItems = useMemo(() => {
     if (isPersonalized && adaptedLesson?.key_takeaways && adaptedLesson.key_takeaways.length > 0) {
@@ -1348,6 +1356,8 @@ export const TopicLessonPage: React.FC<TopicLessonPageProps> = ({
           <InLessonQuiz
             topicId={topicId}
             initialQuestions={quizInitialQuestions}
+            quizType={isComprehensionCheck ? 'adapted' : 'mastery'}
+            detailLevel={isPersonalized ? activeMode : undefined}
             onQuizSubmitted={handleQuizSubmitted}
           />
 

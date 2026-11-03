@@ -2594,23 +2594,89 @@ export const mockHandlers = {
     return mockTopicDetails[topicId] || mockTopicDetails['top-py-loops'];
   },
 
-  getTopicQuiz: async (topicId: string) => {
-    const rawList = mockQuizzes[topicId] || (allTopicQuizzes as Record<string, any[]>)[topicId] || mockQuizzes['top-py-loops'];
-    const qList = (rawList && rawList.length >= 10) ? rawList.slice(0, 10) : rawList;
+  getTopicQuiz: async (topicId: string, options?: { refresh?: boolean; quizType?: string; detailLevel?: string }) => {
+    const staticQuiz = (allTopicQuizzes as Record<string, any[]>)[topicId];
+    let pool = (staticQuiz && Array.isArray(staticQuiz)) ? [...staticQuiz] : [];
+    if (mockQuizzes[topicId]) {
+      pool = [...pool, ...mockQuizzes[topicId]];
+    }
+    if (pool.length < 10) {
+      pool = [...pool, ...((allTopicQuizzes as Record<string, any[]>)['top-py-loops'] || [])];
+    }
+    // Deduplicate pool
+    const seen = new Set<string>();
+    const uniquePool: any[] = [];
+    pool.forEach(q => {
+      if (q && q.question && !seen.has(q.question)) {
+        seen.add(q.question);
+        uniquePool.push(q);
+      }
+    });
+
+    let offset = 0;
+    try {
+      if (typeof localStorage !== 'undefined' && options?.refresh) {
+        const key = `mock_quiz_att_idx_${topicId}`;
+        const prev = parseInt(localStorage.getItem(key) || '0', 10);
+        offset = (prev + 10) % (uniquePool.length >= 15 ? uniquePool.length : 10);
+        localStorage.setItem(key, String(offset));
+      }
+    } catch {}
+
+    const rotated = uniquePool.length >= 15
+      ? [...uniquePool.slice(offset), ...uniquePool.slice(0, offset)].slice(0, 10)
+      : uniquePool.slice(0, 10);
+
     return {
       topic_id: topicId,
       title: `Mini Quiz: ${mockTopicDetails[topicId]?.title || topicId}`,
       target_difficulty: 'standard',
       adaptive_note: 'Standard calibrated 10-question quiz based on your active mastery.',
-      questions: qList
+      questions: rotated
     };
   },
 
-  submitTopicQuiz: async (topicId: string, answers: Record<string, number>, timeSpent: number) => {
-    const rawList = mockQuizzes[topicId] || (allTopicQuizzes as Record<string, any[]>)[topicId] || mockQuizzes['top-py-loops'];
-    const qList = (rawList && rawList.length >= 10) ? rawList.slice(0, 10) : rawList;
+  submitTopicQuiz: async (
+    topicId: string,
+    answers: Record<string, number>,
+    timeSpent: number,
+    options?: { submission_id?: string; quiz_type?: string; question_ids?: string[]; detail_level?: string }
+  ) => {
+    const isComprehensionCheck = options?.quiz_type === 'comprehension_check';
+    const static10 = (allTopicQuizzes as Record<string, any[]>)[topicId];
+
+    let presentedQuestions: any[] = [];
+    if (isComprehensionCheck && options?.question_ids && options.question_ids.length > 0) {
+      const allKnown = [
+        ...(static10 || []),
+        ...(mockQuizzes[topicId] || []),
+        ...Object.values(mockQuizzes).flat()
+      ];
+      const qMap = new Map<string, any>();
+      allKnown.forEach((q: any) => { if (q && q.id) qMap.set(String(q.id), q); });
+      presentedQuestions = options.question_ids.map(qid => qMap.get(String(qid))).filter(Boolean);
+      if (presentedQuestions.length === 0) {
+        presentedQuestions = (static10 || mockQuizzes['top-py-loops'] || []).slice(0, 2);
+      }
+    } else {
+      presentedQuestions = (static10 && static10.length === 10)
+        ? static10
+        : ((mockQuizzes[topicId] && mockQuizzes[topicId].length >= 10)
+            ? mockQuizzes[topicId].slice(0, 10)
+            : (static10 || mockQuizzes['top-py-loops'] || []).slice(0, 10));
+    }
+
+    // Evaluate only presented questions for which answers were submitted
+    // Unanswered and never-presented questions are NOT marked as incorrect
+    const evaluatedQuestions = presentedQuestions.filter((q: any, idx: number) => {
+      const qId = String(q.id);
+      return answers[qId] !== undefined || answers[String(idx)] !== undefined;
+    });
+
+    const targetQuestions = evaluatedQuestions.length > 0 ? evaluatedQuestions : presentedQuestions;
+
     let correct = 0;
-    const review = qList.map((q: any, idx: number) => {
+    const review = targetQuestions.map((q: any, idx: number) => {
       const qId = String(q.id);
       const userAns = answers[qId] !== undefined ? answers[qId] : answers[String(idx)];
       const cIdx = q.correct_index !== undefined ? q.correct_index : q.correctIndex;
@@ -2624,7 +2690,7 @@ export const mockHandlers = {
         user_choice: userAns
       };
     });
-    const total = qList.length || 10;
+    const total = targetQuestions.length || 10;
     const score = Math.round((correct / total) * 100);
     const passed = score >= 70;
     const cognitiveLevel = score < 60 ? 'HIGH' : score >= 85 ? 'LOW' : 'MEDIUM';
@@ -2721,6 +2787,23 @@ export const mockHandlers = {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('progress:updated', { detail: { topicId, storageKey: quizStorageKey } }));
     }
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('cog_latest_quiz_' + topicId, JSON.stringify({
+          id: options?.submission_id || `mock_att_${Date.now()}`,
+          topic_id: topicId,
+          score: score,
+          percentage: score,
+          correct_count: correct,
+          incorrect_count: total - correct,
+          total_questions: total,
+          passed: passed,
+          review: review,
+          adaptive_feedback: adaptiveFeedback
+        }));
+      }
+    } catch {}
 
     return {
       score: score,

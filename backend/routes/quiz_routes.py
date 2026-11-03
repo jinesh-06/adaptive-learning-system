@@ -21,15 +21,25 @@ class QuizSubmission(BaseModel):
     answers: Dict[str, int]
     time_spent: Optional[float] = 60.0
     submission_id: Optional[str] = None
+    quiz_type: Optional[str] = "mastery"
+    question_ids: Optional[List[str]] = None
+    detail_level: Optional[str] = None
 
 
 @router.get("/topics/{topic_id}/quiz")
 async def get_topic_quiz(
     topic_id: str,
-    refresh: bool = Query(default=False, description="Force regenerate 10 quiz questions")
+    request: Request,
+    refresh: bool = Query(default=False, description="Force regenerate 10 quiz questions"),
+    quiz_type: Optional[str] = Query(default="mastery", description="Quiz type: mastery, adapted, or comprehension_check"),
+    detail_level: Optional[str] = Query(default=None, description="Detail level for adapted quiz")
 ):
     """Retrieve exactly 10 questions for any lesson, generating dynamically or retrieving from verified cache."""
-    return quiz_service.get_quiz_for_topic(topic_id, force_regenerate=refresh)
+    user_id = get_current_user_id(request)
+    if quiz_type in ("adapted", "comprehension_check"):
+        from backend.services.adapted_lesson_service import adapted_lesson_service
+        return adapted_lesson_service.get_adapted_lesson_quiz(user_id, topic_id, detail_level=detail_level, refresh=refresh)
+    return quiz_service.get_quiz_for_topic(topic_id, user_id=user_id, quiz_type=quiz_type, force_regenerate=refresh)
 
 
 @router.post("/topics/{topic_id}/quiz/regenerate")
@@ -83,23 +93,104 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
                 "idempotent_replay": True
             }
 
-    quiz_data = quiz_service.get_quiz_for_topic(topic_id)
-    questions = quiz_data.get("questions", [])
+    is_comprehension_check = (payload.quiz_type == "comprehension_check")
+    if not is_comprehension_check and payload.question_ids:
+        if any(str(qid).startswith("kc-") for qid in payload.question_ids):
+            is_comprehension_check = True
+
+    trusted_questions: List[Dict[str, Any]] = []
+
+    # 1. First check if submission_id maps to an active session in quiz_sessions
+    if clean_sub_id:
+        sess = state_store.get_quiz_session(clean_sub_id)
+        if sess and sess.get("questions"):
+            trusted_questions = sess["questions"]
+
+    if not trusted_questions and is_comprehension_check:
+        # Retrieve trusted server-side questions from adapted lesson cache
+        adapted_row = state_store.get_adapted_lesson(user_id, topic_id, payload.detail_level)
+        if adapted_row and adapted_row.get("lesson_data_json"):
+            try:
+                lesson_data = json.loads(adapted_row["lesson_data_json"])
+                for sec in lesson_data.get("sections", []):
+                    if sec.get("type") == "quiz" or sec.get("id") == "knowledge-check":
+                        trusted_questions = sec.get("questions", [])
+                        break
+            except Exception:
+                trusted_questions = []
+
+        if not trusted_questions:
+            try:
+                from backend.services.adapted_lesson_service import adapted_lesson_service
+                adapt_res = adapted_lesson_service.get_adapted_lesson(
+                    user_id=user_id,
+                    topic_id=topic_id,
+                    detail_level=payload.detail_level or "standard"
+                )
+                lesson = adapt_res.get("lesson") or adapt_res.get("lesson_data") or {}
+                for sec in lesson.get("sections", []):
+                    if sec.get("type") == "quiz" or sec.get("id") == "knowledge-check":
+                        trusted_questions = sec.get("questions", [])
+                        break
+            except Exception:
+                trusted_questions = []
+
+    # 3. Load authoritative topic candidate bank
+    candidates = quiz_service.get_candidate_questions_for_topic(topic_id)
+    if not trusted_questions:
+        trusted_questions = candidates
+    else:
+        existing_ids = {str(q.get("id")) for q in trusted_questions if q.get("id")}
+        trusted_questions = trusted_questions + [c for c in candidates if str(c.get("id")) not in existing_ids]
+
+    topic_title = topic_id.replace("top-", "").replace("-", " ").title()
+
+    # Map trusted questions by string ID
+    trusted_by_id = {str(q.get("id")): q for q in trusted_questions if q.get("id")}
+
+    # Determine presented questions
+    if payload.question_ids and len(payload.question_ids) > 0:
+        presented_questions = []
+        for qid in payload.question_ids:
+            sqid = str(qid)
+            if sqid in trusted_by_id:
+                presented_questions.append(trusted_by_id[sqid])
+        if not presented_questions:
+            presented_questions = trusted_questions
+    else:
+        presented_questions = trusted_questions
+
+    # Identify questions actually evaluated:
+    # A question is evaluated if the learner submitted an answer for it.
+    # Unanswered and never-presented questions are NOT marked as incorrect.
+    evaluated_questions = []
+    evaluated_user_answers = {}
+    for idx, q in enumerate(presented_questions):
+        q_id = str(q.get("id"))
+        user_answer = payload.answers.get(q_id)
+        if user_answer is None:
+            user_answer = payload.answers.get(str(idx))
+        if user_answer is not None:
+            evaluated_questions.append(q)
+            evaluated_user_answers[q_id] = user_answer
+
+    # Edge case: If no answers were provided at all, evaluate presented questions with score 0
+    if not evaluated_questions:
+        evaluated_questions = presented_questions
+        evaluated_user_answers = {}
 
     correct_count = 0
     feedback = []
     review = []
 
-    topic_title = quiz_data.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
-
-    for idx, q in enumerate(questions):
+    for idx, q in enumerate(evaluated_questions):
         q_id = str(q.get("id"))
-        # Support answers keyed by question ID or 0-indexed position
-        user_answer = payload.answers.get(q_id)
-        if user_answer is None:
-            user_answer = payload.answers.get(str(idx))
+        user_answer = evaluated_user_answers.get(q_id)
+        trusted_correct = q.get("correct_index")
+        if trusted_correct is None:
+            trusted_correct = q.get("correctIndex", 0)
 
-        is_correct = user_answer is not None and user_answer == q.get("correct_index")
+        is_correct = user_answer is not None and user_answer == trusted_correct
         if is_correct:
             correct_count += 1
 
@@ -111,7 +202,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "question_id": q_id,
             "correct": is_correct,
             "user_answer": user_answer,
-            "correct_answer": q.get("correct_index"),
+            "correct_answer": trusted_correct,
             "explanation": q.get("explanation", ""),
             "concept_id": concept_id,
             "concept": concept_title
@@ -121,7 +212,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "id": q_id,
             "question": q.get("question", ""),
             "options": q.get("options", []),
-            "correct_index": q.get("correct_index", 0),
+            "correct_index": trusted_correct,
             "explanation": q.get("explanation", ""),
             "difficulty": q.get("difficulty", "medium"),
             "is_correct": is_correct,
@@ -130,8 +221,8 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
             "concept": concept_title
         })
 
-    total = len(questions) if len(questions) > 0 else 10
-    percentage = round((correct_count / total) * 100)
+    total = len(evaluated_questions) if len(evaluated_questions) > 0 else 10
+    percentage = round((correct_count / total) * 100) if total > 0 else 0
     passed = percentage >= 70
 
     # Trigger ML cognitive evaluation based on real learning signals
@@ -148,7 +239,7 @@ async def submit_topic_quiz(topic_id: str, payload: QuizSubmission, request: Req
     adaptive_feedback = quiz_service.generate_adaptive_feedback(
         topic_title=topic_title,
         topic_id=topic_id,
-        questions=questions,
+        questions=evaluated_questions,
         review=review,
         score=correct_count,
         percentage=percentage,

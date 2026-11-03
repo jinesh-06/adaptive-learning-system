@@ -36,12 +36,16 @@ export interface QuizQuestion {
 export interface InLessonQuizProps {
   topicId: string;
   initialQuestions?: QuizQuestion[];
+  quizType?: 'mastery' | 'adapted' | 'comprehension_check';
+  detailLevel?: string;
   onQuizSubmitted?: () => void;
 }
 
 export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
   topicId,
   initialQuestions,
+  quizType = 'mastery',
+  detailLevel,
   onQuizSubmitted
 }) => {
   const { updateFromFeedback, setContentModeManually } = useCognitive();
@@ -103,14 +107,21 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       }
     }
 
-    // 1. If initialQuestions has questions, use it directly
-    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
+    // 1. If intentional comprehension check and initialQuestions provided, adopt directly
+    if (quizType === 'comprehension_check' && initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setLoading(false);
       return;
     }
 
-    // 2. Immediate zero-latency fallback from allTopicQuizzes dictionary
+    // 2. If standard mastery quiz and initialQuestions has strictly 10 questions, adopt it
+    if (quizType === 'mastery' && initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length === 10) {
+      setQuestions(initialQuestions);
+      setLoading(false);
+      return;
+    }
+
+    // 3. Immediate zero-latency fallback from allTopicQuizzes dictionary (guaranteed 10 questions)
     const staticQuiz = (allTopicQuizzes as Record<string, QuizQuestion[]>)[topicId];
     if (staticQuiz && Array.isArray(staticQuiz) && staticQuiz.length === 10) {
       setQuestions(staticQuiz);
@@ -225,7 +236,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       updateFromFeedback({
         confidence: 0.82,
         cognitive_level: 'MEDIUM',
-        reason: `Learner answered question ${currentIndex + 1} of 10 incorrectly. Concept clarification accessible.`,
+        reason: `Learner answered question ${currentIndex + 1} of ${questions.length || 10} incorrectly. Concept clarification accessible.`,
         suggested_adaptation: 'Detailed explanation or everyday analogy may clarify this concept.',
         contributing_factors: ['Quiz question checkpoint attempt needing revision']
       });
@@ -233,7 +244,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
       updateFromFeedback({
         confidence: 0.92,
         cognitive_level: 'LOW',
-        reason: `Solid grasp demonstrated on question ${currentIndex + 1} of 10.`,
+        reason: `Solid grasp demonstrated on question ${currentIndex + 1} of ${questions.length || 10}.`,
         suggested_adaptation: 'Standard or accelerated pace is appropriate.',
         contributing_factors: ['Correct quiz answer validation on first attempt']
       });
@@ -259,7 +270,9 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
 
     // Map answers by question ID and index
     const answerPayload: Record<string, number> = {};
+    const presentedQuestionIds: string[] = [];
     questions.forEach((q, idx) => {
+      presentedQuestionIds.push(q.id);
       if (selectedAnswers[idx] !== undefined) {
         answerPayload[q.id] = selectedAnswers[idx];
         answerPayload[String(idx)] = selectedAnswers[idx];
@@ -267,7 +280,17 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     });
 
     try {
-      const res = await api.submitTopicQuiz(topicId, answerPayload, timeSpent, submissionIdRef.current);
+      const res = await api.submitTopicQuiz(
+        topicId,
+        answerPayload,
+        timeSpent,
+        submissionIdRef.current,
+        {
+          quizType: quizType || 'mastery',
+          questionIds: presentedQuestionIds,
+          detailLevel: detailLevel
+        }
+      );
       if (res) {
         setSubmissionResult(res);
       }
@@ -298,7 +321,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     }
   };
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     submissionIdRef.current = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     setSelectedAnswers({});
     setSubmittedQuestions({});
@@ -308,10 +331,37 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
     setAdaptiveFeedback(null);
     setSubmissionResult(null);
     setStartTime(Date.now());
-    // On intentional retake, adopt the latest calibrated questions if available
-    if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
+
+    // On intentional retake, fetch a fresh attempt-unique question set from API
+    try {
+      setLoading(true);
+      const freshQuiz = await api.getTopicQuiz(topicId, {
+        refresh: true,
+        quizType: quizType || 'mastery',
+        detailLevel
+      });
+      if (freshQuiz && Array.isArray(freshQuiz.questions) && freshQuiz.questions.length === 10) {
+        setQuestions(freshQuiz.questions);
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.warn('[InLessonQuiz] Fresh quiz fetch notice:', e);
+    }
+
+    // Fallback: adopt initialQuestions or static 10-question bank
+    if (quizType === 'comprehension_check' && initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setLoading(false);
+    } else if (initialQuestions && Array.isArray(initialQuestions) && initialQuestions.length === 10) {
+      setQuestions(initialQuestions);
+      setLoading(false);
+    } else {
+      const staticQuiz = (allTopicQuizzes as Record<string, QuizQuestion[]>)[topicId];
+      if (staticQuiz && Array.isArray(staticQuiz) && staticQuiz.length === 10) {
+        setQuestions(staticQuiz);
+        setLoading(false);
+      }
     }
   };
 
@@ -708,7 +758,7 @@ export const InLessonQuiz: React.FC<InLessonQuizProps> = ({
           </div>
           <div>
             <h3 className="text-sm font-bold text-white light-theme:text-slate-900 flex items-center gap-2">
-              <span>Mini Quiz</span>
+              <span>{quizType === 'comprehension_check' ? 'Knowledge Check' : quizType === 'adapted' ? 'Adapted Mastery Quiz' : 'Lesson Mastery Quiz'}</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 light-theme:bg-purple-100 light-theme:text-purple-700 border border-purple-500/20">
                 Question {currentIndex + 1} of {questions.length}
               </span>

@@ -8,6 +8,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from datetime import datetime, date, timedelta
+import uuid
 
 from backend.config import DB_PATH, PLATFORM_DATA_PATH, PROJECT_ROOT, ENVIRONMENT
 
@@ -213,6 +214,32 @@ class StateStore:
             if "submission_id" not in qa_cols:
                 cur.execute("ALTER TABLE quiz_attempts ADD COLUMN submission_id TEXT")
             cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_quiz_attempts_user_sub ON quiz_attempts(user_id, submission_id) WHERE submission_id IS NOT NULL")
+
+            # Track presented quiz questions per student and topic for attempt uniqueness
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS presented_quiz_questions (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    quiz_type TEXT DEFAULT 'mastery',
+                    question_id TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_presented_qq_user_topic ON presented_quiz_questions(user_id, topic_id)")
+
+            # Track active quiz sessions with full question content and trusted answer keys
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS quiz_sessions (
+                    session_id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    topic_id TEXT NOT NULL,
+                    quiz_type TEXT DEFAULT 'mastery',
+                    questions_json TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user_topic ON quiz_sessions(user_id, topic_id)")
 
             # Learning Outcomes: Assessment Results (Pre and Post)
             cur.execute("""
@@ -1063,6 +1090,127 @@ class StateStore:
         except Exception as e:
             print(f"[StateStore] get_quiz_attempts error: {e}")
             return []
+
+    def record_presented_questions(
+        self,
+        user_id: str,
+        topic_id: str,
+        question_ids: List[str],
+        quiz_type: str = "mastery",
+        session_id: Optional[str] = None,
+        questions: Optional[List[Dict[str, Any]]] = None
+    ) -> None:
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        safe_tid = str(topic_id or "").strip()
+        if not safe_tid or not question_ids:
+            return
+        with self._lock:
+            try:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                for qid in question_ids:
+                    rec_id = f"{safe_uid}_{safe_tid}_{qid}_{uuid.uuid4().hex[:8]}"
+                    cur.execute(
+                        """INSERT OR REPLACE INTO presented_quiz_questions
+                           (id, user_id, topic_id, quiz_type, question_id, created_at)
+                           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                        (rec_id, safe_uid, safe_tid, quiz_type, str(qid))
+                    )
+                if session_id and questions:
+                    cur.execute(
+                        """INSERT OR REPLACE INTO quiz_sessions
+                           (session_id, user_id, topic_id, quiz_type, questions_json, created_at)
+                           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                        (session_id, safe_uid, safe_tid, quiz_type, json.dumps(questions))
+                    )
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.error("[StateStore] record_presented_questions error: %s", e)
+
+    def get_presented_question_ids(self, user_id: str, topic_id: str) -> List[str]:
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        safe_tid = str(topic_id or "").strip()
+        if not safe_tid:
+            return []
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT question_id FROM presented_quiz_questions
+                   WHERE user_id = ? AND topic_id = ?
+                   ORDER BY rowid DESC""",
+                (safe_uid, safe_tid)
+            )
+            rows = cur.fetchall()
+            conn.close()
+            seen = set()
+            ordered = []
+            for r in rows:
+                qid = str(r[0]).strip()
+                if qid and qid not in seen:
+                    seen.add(qid)
+                    ordered.append(qid)
+            # Supplement from historical attempts reviews
+            attempts = self.get_quiz_attempts(safe_uid, safe_tid)
+            for att in attempts:
+                if att.get("review_json"):
+                    try:
+                        rev = json.loads(att["review_json"])
+                        for q in rev:
+                            qid = str(q.get("id") or q.get("question_id") or "").strip()
+                            if qid and qid not in seen:
+                                seen.add(qid)
+                                ordered.append(qid)
+                    except Exception:
+                        pass
+            return ordered
+        except Exception as e:
+            logger.error("[StateStore] get_presented_question_ids error: %s", e)
+            return []
+
+    def save_quiz_session(self, session_id: str, user_id: str, topic_id: str, quiz_type: str, questions: List[Dict[str, Any]]) -> None:
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        safe_tid = str(topic_id or "").strip()
+        safe_sid = str(session_id or "").strip()
+        if not safe_sid or not safe_tid or not questions:
+            return
+        with self._lock:
+            try:
+                conn = self.get_connection()
+                cur = conn.cursor()
+                cur.execute(
+                    """INSERT OR REPLACE INTO quiz_sessions
+                       (session_id, user_id, topic_id, quiz_type, questions_json, created_at)
+                       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                    (safe_sid, safe_uid, safe_tid, quiz_type, json.dumps(questions))
+                )
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                logger.error("[StateStore] save_quiz_session error: %s", e)
+
+    def get_quiz_session(self, session_id: str) -> Optional[Dict[str, Any]]:
+        safe_sid = str(session_id or "").strip()
+        if not safe_sid:
+            return None
+        try:
+            conn = self.get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                """SELECT * FROM quiz_sessions WHERE session_id = ? LIMIT 1""",
+                (safe_sid,)
+            )
+            row = cur.fetchone()
+            conn.close()
+            if row:
+                d = dict(row)
+                d["questions"] = json.loads(d["questions_json"])
+                return d
+            return None
+        except Exception as e:
+            logger.error("[StateStore] get_quiz_session error: %s", e)
+            return None
 
     def update_topic_progress(self, topic_id: str, status: str, time_spent: float = 0.0, user_id: str = "guest-learner", course_id: str = "course-py-fund"):
         return self.save_topic_progress(user_id=user_id, course_id=course_id, topic_id=topic_id, status=status, time_spent_delta=time_spent)
