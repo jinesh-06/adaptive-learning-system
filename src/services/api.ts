@@ -264,20 +264,57 @@ export const api = {
   },
 
   // Quizzes
-  getTopicQuiz: async (topicId: string) => {
-    const data = await fetchJson(`${API_BASE}/topics/${topicId}/quiz`);
-    if (data) return data;
+  getTopicQuiz: async (
+    topicId: string,
+    options?: {
+      refresh?: boolean;
+      quizType?: 'mastery' | 'adapted' | 'comprehension_check';
+      detailLevel?: string;
+    }
+  ) => {
+    const params = new URLSearchParams();
+    if (options?.refresh) params.set('refresh', 'true');
+    if (options?.quizType) params.set('quiz_type', options.quizType);
+    if (options?.detailLevel) params.set('detail_level', options.detailLevel);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const data = await fetchJson(`${API_BASE}/topics/${topicId}/quiz${qs}`, {
+      headers: getAuthHeaders()
+    });
+    if (data && data.questions && data.questions.length > 0) return data;
     return mockHandlers.getTopicQuiz(topicId);
   },
 
-  submitTopicQuiz: async (topicId: string, answers: Record<string, number>, timeSpentSeconds: number, submissionId?: string) => {
+  submitTopicQuiz: async (
+    topicId: string,
+    answers: Record<string, number>,
+    timeSpentSeconds: number,
+    submissionId?: string,
+    options?: {
+      quizType?: 'mastery' | 'adapted' | 'comprehension_check';
+      questionIds?: string[];
+      detailLevel?: string;
+    }
+  ) => {
+    const payload = {
+      answers,
+      time_spent: timeSpentSeconds,
+      submission_id: submissionId,
+      quiz_type: options?.quizType || 'mastery',
+      question_ids: options?.questionIds,
+      detail_level: options?.detailLevel
+    };
     const data = await fetchJson(`${API_BASE}/topics/${topicId}/quiz/submit`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ answers, time_spent: timeSpentSeconds, submission_id: submissionId })
+      body: JSON.stringify(payload)
     });
     if (data) return data;
-    return mockHandlers.submitTopicQuiz(topicId, answers, timeSpentSeconds);
+    return mockHandlers.submitTopicQuiz(topicId, answers, timeSpentSeconds, {
+      submission_id: submissionId,
+      quiz_type: options?.quizType || 'mastery',
+      question_ids: options?.questionIds,
+      detail_level: options?.detailLevel
+    });
   },
 
   getLatestQuizAttempt: async (topicId: string): Promise<LatestQuizAttemptResponse | null> => {

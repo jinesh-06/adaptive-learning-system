@@ -13,6 +13,8 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from google.genai import types
+import uuid
+from backend.services.quiz_service import quiz_service
 from google.genai import errors as genai_errors
 
 from llm.config import get_gemini_client, get_model_name
@@ -24,6 +26,108 @@ from backend.services.state_store import state_store
 
 logger = logging.getLogger(__name__)
 
+
+# Pre-calibrated 12-question pedagogical banks for diagnosed gap categories
+_ADAPTED_GAP_QUESTION_BANKS: Dict[str, List[Dict[str, Any]]] = {
+    "boundary_conditions_and_indexing": [
+        {"id": "kc-bnd-1", "question": "What is the exact output of list(range(2, 6))?", "options": ["[2, 3, 4, 5, 6]", "[2, 3, 4, 5]", "[2, 4, 6]", "[0, 2, 4, 6]"], "correct_index": 1, "explanation": "In Python, range(start, stop) stops before reaching stop, producing [2, 3, 4, 5].", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-2", "question": "For a sequence with length 5, what is the highest valid 0-based index?", "options": ["5", "4", "6", "0"], "correct_index": 1, "explanation": "With zero-based indexing, a sequence of length 5 has valid indices 0, 1, 2, 3, and 4.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-3", "question": "In Python, what does accessing lst[-1] evaluate to?", "options": ["The final element of the list", "The first element of the list", "A negative index error", "The length of the list"], "correct_index": 0, "explanation": "Negative indexing in Python counts backward from the end, so lst[-1] yields the last element.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-4", "question": "Given letters = ['a', 'b', 'c', 'd'], what is letters[1:3]?", "options": ["['a', 'b']", "['b', 'c']", "['b', 'c', 'd']", "['a', 'b', 'c']"], "correct_index": 1, "explanation": "Slice [1:3] includes index 1 ('b') and index 2 ('c'), stopping strictly before index 3.", "difficulty": "medium", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-5", "question": "What primary error occurs when accessing an index greater than or equal to len(collection)?", "options": ["IndexError: list index out of range", "ValueError: collection overflow", "KeyError: missing index mapping", "TypeError: invalid index type"], "correct_index": 0, "explanation": "Python raises an IndexError when an integer index exceeds the valid boundary bounds.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-6", "question": "When iterating with index i from 0 to N-1, what loop condition prevents fencepost overflow?", "options": ["i <= N", "i < N", "i < N + 1", "i == N"], "correct_index": 1, "explanation": "Strict inequality i < N guarantees i never reaches N, avoiding out-of-bounds access.", "difficulty": "medium", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-7", "question": "What does a slice with step 2 (e.g. nums[::2]) return?", "options": ["Every alternate element starting from index 0", "Only the first two elements", "Elements between index 0 and 2", "The list duplicated twice"], "correct_index": 0, "explanation": "A stride of 2 selects indices 0, 2, 4, ..., picking every alternate element.", "difficulty": "medium", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-8", "question": "What happens when attempting to access index 0 of an empty list [][0]?", "options": ["Returns None", "Raises IndexError: list index out of range", "Initializes the list with 0", "Returns False"], "correct_index": 1, "explanation": "An empty list has length 0, so even index 0 is out of bounds and triggers IndexError.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-9", "question": "Why is the half-open interval [start, stop) standard across modern programming languages?", "options": ["The number of elements equals stop - start", "It saves memory at the compiler level", "It disables zero-based counting", "It prevents garbage collection leaks"], "correct_index": 0, "explanation": "The half-open convention ensures length calculation is straightforward: len = stop - start.", "difficulty": "hard", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-10", "question": "How many iterations occur in a loop `for i in range(0):`?", "options": ["0 iterations (body never executes)", "1 iteration with i = 0", "Infinite iterations", "Throws a ValueError"], "correct_index": 0, "explanation": "range(0) produces an empty sequence of numbers, so the loop body executes zero times.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-11", "question": "What does slicing lst[100:200] return if len(lst) is only 5?", "options": ["Raises an IndexError", "An empty list []", "None", "The first 5 elements"], "correct_index": 1, "explanation": "Unlike direct indexing, Python list slicing handles out-of-bounds bounds gracefully by returning an empty collection.", "difficulty": "medium", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"},
+        {"id": "kc-bnd-12", "question": "In a countdown loop `range(5, 0, -1)`, what are the first and last values of the loop variable?", "options": ["First 5, last 1", "First 5, last 0", "First 4, last 0", "First 5, last -1"], "correct_index": 0, "explanation": "With step -1, iteration starts at 5 and decrements until strictly before 0, ending at 1.", "difficulty": "hard", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"}
+    ],
+    "loop_termination_and_control_flow": [
+        {"id": "kc-term-1", "question": "What is the primary danger of failing to update the loop sentinel variable inside a while loop?", "options": ["Syntax error during compilation", "An infinite loop that never terminates", "Automatic garbage collection", "Variable scope leaks"], "correct_index": 1, "explanation": "If the condition variable never updates towards false, the loop runs indefinitely.", "difficulty": "easy", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-2", "question": "Which statement immediately exits the entire loop, regardless of condition status?", "options": ["continue", "break", "pass", "yield"], "correct_index": 1, "explanation": "The break statement unconditionally terminates the enclosing loop immediately.", "difficulty": "easy", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-3", "question": "What is the defining purpose of the continue statement inside a loop?", "options": ["Terminates the program completely", "Skips the remainder of the current iteration and begins the next", "Restarts the loop from the beginning of the function", "Executes the else block immediately"], "correct_index": 1, "explanation": "continue bypasses statements below it in the current cycle, advancing directly to the condition test.", "difficulty": "easy", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-4", "question": "If a while loop condition evaluates to False upon initial entry, how many times does the body execute?", "options": ["0 times", "1 time", "Depends on CPU architecture", "Throws an exception"], "correct_index": 0, "explanation": "A while loop tests its condition as a pre-condition; if false at entry, the body executes zero times.", "difficulty": "easy", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-5", "question": "What happens if you modify the length of a list while iterating over it with a for loop?", "options": ["Can cause skipped elements, duplicate reads, or unpredictable behavior", "The list is automatically cloned before iteration", "A compile-time warning is emitted", "All operations become atomic"], "correct_index": 0, "explanation": "Mutating a collection while iterating shifts internal index pointers, leading to skipped items.", "difficulty": "medium", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-6", "question": "In Python, when does a loop's else clause execute?", "options": ["When the loop terminates naturally without encountering a break", "Whenever a break statement is hit", "Only if an exception occurred in the loop", "Every single iteration"], "correct_index": 0, "explanation": "Python's loop else clause executes strictly when the loop exhausts its iterable or while condition becomes false.", "difficulty": "hard", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-7", "question": "What design pattern makes `while True:` safe in production systems?", "options": ["Having deterministic conditional break statements inside the body", "Running the loop on a dedicated thread only", "Disabling stdout printing", "Using global variables for exit"], "correct_index": 0, "explanation": "while True loops require clear, guaranteed break or return statements to ensure termination.", "difficulty": "medium", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-8", "question": "What is the effect of executing `break` inside a nested loop?", "options": ["Terminates only the innermost enclosing loop", "Terminates all outer loops simultaneously", "Terminates the entire host function", "Raises a BreakException"], "correct_index": 0, "explanation": "A break statement exits strictly the closest enclosing loop structure.", "difficulty": "medium", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-9", "question": "What is a loop invariant?", "options": ["A logical condition that remains true before and after each iteration", "A variable whose value cannot be reassigned", "A function that has no return statement", "A loop with zero body instructions"], "correct_index": 0, "explanation": "A loop invariant is a formal property that holds across all iterations, used to verify correctness.", "difficulty": "hard", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-10", "question": "What sentinel value convention is commonly used for terminal user input loops?", "options": ["A special value like -1 or 'quit' that signals loop exit", "A random integer generated by the OS", "An uninitialized pointer", "A float NaN value"], "correct_index": 0, "explanation": "Sentinel values act as flags indicating that processing is finished.", "difficulty": "easy", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-11", "question": "How does an infinite loop differ from an infinite recursion?", "options": ["Infinite loop reuses stack frame; infinite recursion causes stack overflow", "Infinite recursion does not consume CPU cycles", "An infinite loop terminates after 1000 iterations", "They are identical in memory behavior"], "correct_index": 0, "explanation": "Loops reuse the same execution frame; recursion pushes frames until the call stack limit is breached.", "difficulty": "hard", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"},
+        {"id": "kc-term-12", "question": "To mathematically prove while loop termination, the loop variant must:", "options": ["Monotonically decrease towards a well-defined lower bound", "Remain constant throughout execution", "Multiply exponentially on each pass", "Alternate between positive and negative integers"], "correct_index": 0, "explanation": "Termination proofs require a variant integer function that strictly decreases towards the terminal bound.", "difficulty": "hard", "concept_id": "loop_termination_and_control_flow", "concept": "Loop Termination & Control Flow Guarantees"}
+    ],
+    "variable_scope_and_state": [
+        {"id": "kc-scope-1", "question": "What scope applies to a variable defined inside a standard function body?", "options": ["Local scope limited to that function's execution frame", "Global scope across all modules", "Package-level namespace access", "Operating system environment scope"], "correct_index": 0, "explanation": "Variables initialized in functions exist locally within the activation record.", "difficulty": "easy", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-2", "question": "What occurs when a local variable shares the same name as a global variable?", "options": ["The local variable shadows the global variable within the function", "A syntax error is thrown immediately", "The global variable is deleted", "Both variables are merged into a tuple"], "correct_index": 0, "explanation": "Identifier shadowing causes the local reference to take precedence within the local frame.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-3", "question": "What error occurs in Python if you read and then assign to a global variable inside a function without the `global` declaration?", "options": ["UnboundLocalError: local variable referenced before assignment", "NameError: variable is undefined", "SyntaxError: assignment violation", "ValueError: scope mismatch"], "correct_index": 0, "explanation": "Assignment inside a function marks the name as local; reading before assigning triggers UnboundLocalError.", "difficulty": "hard", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-4", "question": "Why is using a mutable default argument like `def append_to(item, target=[])` dangerous in Python?", "options": ["The default list is created once at function definition and shared across all calls", "It causes a compiler warning in Python 3", "Lists cannot be passed as function arguments", "It disables garbage collection for the argument"], "correct_index": 0, "explanation": "Default arguments are evaluated once at module load; mutable defaults persist state across invocations.", "difficulty": "hard", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-5", "question": "In Python, which types are immutable?", "options": ["int, float, str, tuple, frozenset", "list, dict, set", "bytearray, dict, list", "custom classes with __init__"], "correct_index": 0, "explanation": "Numeric primitives, strings, and tuples cannot have their memory contents modified in place.", "difficulty": "easy", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-6", "question": "What does Python's `is` operator compare between two variables?", "options": ["Memory address / object identity (id(a) == id(b))", "Value equality (a == b)", "Class hierarchy depth", "Data type names"], "correct_index": 0, "explanation": "The 'is' keyword evaluates whether both references point to the exact same heap memory object.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-7", "question": "What is the difference between a shallow copy and a deep copy of a nested list?", "options": ["Shallow copy references nested objects; deep copy clones all nested levels recursively", "Shallow copy clones all objects; deep copy only copies the outer list", "Shallow copy only works on tuples", "There is no functional difference in Python"], "correct_index": 0, "explanation": "Shallow copies duplicate the outer structure but preserve shared references to nested elements.", "difficulty": "hard", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-8", "question": "What is the identifier lookup order defined by Python's LEGB rule?", "options": ["Local, Enclosing, Global, Built-in", "Local, Extended, Global, Base", "Lexical, Enclosing, General, Binary", "List, Element, Group, Block"], "correct_index": 0, "explanation": "Python searches identifiers through Local, Enclosing function closures, Global module, and Built-ins.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-9", "question": "Which keyword permits modifying a variable in an outer enclosing (non-global) function scope?", "options": ["nonlocal", "global", "outer", "super"], "correct_index": 0, "explanation": "The nonlocal keyword binds an identifier to the nearest enclosing non-global scope.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-10", "question": "In Python, does a variable defined inside a `for` loop persist after the loop exits?", "options": ["Yes, it retains the last value assigned during the loop", "No, it is deleted automatically upon loop exit", "Only if declared as global", "Only if the loop had zero iterations"], "correct_index": 0, "explanation": "Unlike languages like C++ or Java, Python for-loop variables remain accessible in the enclosing function scope.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-11", "question": "What happens when a list is passed into a function and modified with `lst.append(5)`?", "options": ["The caller's original list is modified because references share the heap object", "A new local list is created silently", "An exception is raised unless the list is returned", "Only the function's copy is altered"], "correct_index": 0, "explanation": "Python passes object references by value; calling mutating methods on mutable objects alters the shared instance.", "difficulty": "easy", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"},
+        {"id": "kc-scope-12", "question": "What does reassigning a variable `x = x + 1` do for an integer variable in Python?", "options": ["Creates a new integer object and binds the name x to it", "Modifies the existing integer memory block in place", "Throws a TypeError because ints are immutable", "Increments the hardware register without allocating"], "correct_index": 0, "explanation": "Since integers are immutable, reassignment allocates a new integer and re-binds the identifier.", "difficulty": "medium", "concept_id": "variable_scope_and_state", "concept": "Variable Scoping & State Mutability"}
+    ],
+    "pointer_addressing_and_dereference": [
+        {"id": "kc-ptr-1", "question": "In C/C++, what does the address-of operator (&) return?", "options": ["The memory address where the operand variable is stored", "The value stored at that address", "The byte size of the variable", "A duplicate copy of the variable"], "correct_index": 0, "explanation": "The & operator retrieves the numerical memory address allocated to the variable.", "difficulty": "easy", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-2", "question": "What is the primary danger of dereferencing a NULL pointer in C?", "options": ["Causes undefined behavior, usually crashing the process with a segmentation fault", "Returns a zero value cleanly", "Allocates a new memory segment", "Throws an uncaught NullPointerError"], "correct_index": 0, "explanation": "NULL points to address 0x0; hardware protection traps invalid page reads, terminating the process.", "difficulty": "easy", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-3", "question": "In pointer arithmetic, what does `ptr + 1` add to the numerical address if ptr is `int *` (4 bytes)?", "options": ["Adds 4 bytes (sizeof(int))", "Adds 1 byte", "Adds 8 bytes", "Increments the integer value by 1"], "correct_index": 0, "explanation": "Pointer arithmetic scales increments automatically by sizeof(*ptr).", "difficulty": "medium", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-4", "question": "What is a dangling pointer?", "options": ["A pointer pointing to memory that has already been deallocated or freed", "A pointer that has never been initialized", "A pointer to a function", "A pointer stored in global memory"], "correct_index": 0, "explanation": "A dangling pointer holds an address to expired memory; accessing it causes undefined behavior.", "difficulty": "medium", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-5", "question": "In C, how does an array name behave when passed to a function taking a pointer?", "options": ["Decays into a pointer to its first element (&arr[0])", "Copies the entire array onto the call stack", "Creates a read-only const reference", "Throws a type mismatch compilation error"], "correct_index": 0, "explanation": "Array identifiers decay into pointers to their initial element in function parameter contexts.", "difficulty": "medium", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-6", "question": "Why must an uninitialized pointer never be dereferenced?", "options": ["It contains arbitrary garbage addresses and can corrupt system memory", "The compiler will always refuse to generate code", "It defaults to 0 and does nothing", "It causes an infinite loop in the linker"], "correct_index": 0, "explanation": "Wild pointers contain arbitrary stack remnants; dereferencing them causes memory corruption.", "difficulty": "easy", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-7", "question": "What is the restriction on dereferencing a `void *` pointer in C?", "options": ["Must be cast to a concrete data type pointer before dereferencing", "Can be dereferenced directly to yield bytes", "Can only be dereferenced inside main()", "Is permanently read-only"], "correct_index": 0, "explanation": "Because void has no size, the compiler cannot determine how many bytes to read without an explicit cast.", "difficulty": "hard", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-8", "question": "What does `const int *ptr` signify in C/C++?", "options": ["The pointed-to integer value cannot be modified through this pointer", "The pointer address itself cannot be changed to point elsewhere", "Both the address and value are immutable", "The pointer is allocated in static ROM"], "correct_index": 0, "explanation": "const int * declares a pointer to constant data; the pointer may move, but the data is read-only.", "difficulty": "hard", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-9", "question": "Why are double pointers (`int **ptr`) used in C functions that allocate memory?", "options": ["To allow the function to modify the caller's pointer address by reference", "To allocate two arrays simultaneously", "To bypass memory alignment checks", "Because single pointers cannot access heap memory"], "correct_index": 0, "explanation": "To reassign a caller's pointer variable, the function must receive a pointer to that pointer.", "difficulty": "hard", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-10", "question": "What is the size of any pointer type on a 64-bit architecture?", "options": ["8 bytes", "4 bytes", "16 bytes", "Varies based on sizeof(pointed_type)"], "correct_index": 0, "explanation": "A 64-bit architecture uses 64-bit (8-byte) virtual memory address pointers.", "difficulty": "easy", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-11", "question": "What defensive programming practice should be followed immediately after calling `free(ptr)`?", "options": ["Set ptr = NULL to prevent accidental reuse", "Call free(ptr) a second time to ensure cleanup", "Cast ptr to void*", "Decrement ptr by 1"], "correct_index": 0, "explanation": "Assigning NULL eliminates dangling references and turns accidental subsequent dereferences into immediate fail-fast traps.", "difficulty": "medium", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"},
+        {"id": "kc-ptr-12", "question": "In C++, what is the principal advantage of a reference (`int &ref`) over a raw pointer?", "options": ["Guaranteed non-null syntax without dereference operators", "Can be reseated to point to different objects at runtime", "Consumes zero memory under all conditions", "Permits manual pointer arithmetic"], "correct_index": 0, "explanation": "References provide clean syntax and cannot be null once bound, enhancing type safety.", "difficulty": "medium", "concept_id": "pointer_addressing_and_dereference", "concept": "Pointer Addressing & Dereferencing Safety"}
+    ],
+    "oop_and_inheritance": [
+        {"id": "kc-oop-1", "question": "What is the core objective of Encapsulation in object-oriented programming?", "options": ["Bundling state and methods together while restricting direct access to internal details", "Enabling a class to inherit from multiple parent classes", "Converting source code into binary assembly", "Eliminating all runtime exception handlers"], "correct_index": 0, "explanation": "Encapsulation hides internal representation and exposes controlled public interfaces.", "difficulty": "easy", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-2", "question": "What is the primary benefit of Inheritance in class hierarchies?", "options": ["Code reuse and establishing an 'is-a' relationship between parent and child classes", "Decreasing executable file size", "Forcing all methods to be static", "Eliminating the need for unit testing"], "correct_index": 0, "explanation": "Inheritance allows subclasses to inherit and extend attributes and behaviors from parent classes.", "difficulty": "easy", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-3", "question": "What is Method Overriding?", "options": ["A subclass providing a specific implementation of a method defined in its superclass", "Defining multiple methods with the same name but different parameter types", "Deleting a method from an existing class", "Calling a private method from outside the class"], "correct_index": 0, "explanation": "Overriding allows polymorphic customization of parent behavior in derived classes.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-4", "question": "What is the purpose of the `super()` function in Python and Java?", "options": ["Delegates method calls to the parent superclass implementation", "Initializes the global operating system runtime", "Creates a singleton instance of the current class", "Converts a class into an immutable interface"], "correct_index": 0, "explanation": "super() accesses methods and constructors in the inheritance hierarchy according to MRO.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-5", "question": "What is Polymorphism in object-oriented design?", "options": ["The ability of different classes to respond to the same interface or method call appropriately", "Having multiple constructor arguments", "Compiling classes into bytecode", "Preventing classes from being subclassed"], "correct_index": 0, "explanation": "Polymorphism enables uniform treatment of distinct types via common interfaces.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-6", "question": "What defines an Abstract Base Class (ABC)?", "options": ["A class that cannot be instantiated directly and defines required interface contracts", "A class with no methods or attributes", "A class that can only be used in unit tests", "A class that compiles directly to microcode"], "correct_index": 0, "explanation": "Abstract base classes establish required method signatures that concrete derived classes must implement.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-7", "question": "Why is 'Composition over Inheritance' considered a best design practice?", "options": ["It reduces tight coupling and allows flexible runtime behavior changes", "Inheritance is deprecated in modern languages", "Composition executes in zero memory", "Inherited classes cannot have private variables"], "correct_index": 0, "explanation": "Composition combines independent components, avoiding rigid inheritance hierarchies.", "difficulty": "hard", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-8", "question": "In Python, what is the difference between a class variable and an instance variable?", "options": ["Class variables are shared across all instances; instance variables are unique to each object", "Class variables are stored in registers; instance variables are on disk", "Class variables cannot be modified once set", "There is no difference in Python"], "correct_index": 0, "explanation": "Class variables belong to the class definition; instance variables belong to self.__dict__.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-9", "question": "What is the primary role of the `__init__` method in Python classes?", "options": ["Initializes attributes for a newly created instance object", "Allocates the raw memory buffer for the object", "Destroys the object when it goes out of scope", "Registers the class in the global module namespace"], "correct_index": 0, "explanation": "__init__ serves as the instance initializer once __new__ has created the instance.", "difficulty": "easy", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-10", "question": "What problem does the C3 Method Resolution Order (MRO) algorithm solve?", "options": ["Resolves method lookup ambiguity in multiple inheritance (diamond problem)", "Calculates memory offsets for class fields", "Determines thread execution priority", "Allocates heap space for dynamic classes"], "correct_index": 0, "explanation": "C3 MRO guarantees a consistent, monotonic resolution order for complex inheritance trees.", "difficulty": "hard", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-11", "question": "Why is `isinstance(obj, BaseClass)` preferred over `type(obj) is BaseClass`?", "options": ["isinstance supports derived subclasses, honoring polymorphic inheritance", "type() is deprecated in Python 3", "isinstance runs twice as fast", "type() raises an exception on custom classes"], "correct_index": 0, "explanation": "isinstance respects the inheritance hierarchy; type() checks exact type equivalence only.", "difficulty": "medium", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"},
+        {"id": "kc-oop-12", "question": "In Python, how is private member naming conventionally indicated?", "options": ["A leading underscore (e.g. _internal) or double underscore (__private) for name mangling", "Using the private keyword before declarations", "Declaring members inside a private {} block", "Making attributes immutable tuples"], "correct_index": 0, "explanation": "Python indicates non-public API using single underscores and enforces name mangling with double underscores.", "difficulty": "easy", "concept_id": "oop_and_inheritance", "concept": "Object Encapsulation & Inheritance"}
+    ],
+    "advanced_mastery": [
+        {"id": "kc-adv-1", "question": "What does Big-O notation characterize in algorithm analysis?", "options": ["The asymptotic upper bound of growth rate for time or space complexity", "The exact execution time in milliseconds on a benchmark CPU", "The number of lines of compiled assembly instructions", "The memory size of the source file on disk"], "correct_index": 0, "explanation": "Big-O provides an asymptotic ceiling on resource growth as input size N scales.", "difficulty": "easy", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-2", "question": "What is the time complexity of searching for an item in a balanced Binary Search Tree (BST)?", "options": ["O(log N)", "O(N)", "O(1)", "O(N log N)"], "correct_index": 0, "explanation": "Halving the search space at each tree level yields logarithmic O(log N) time.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-3", "question": "How does a hash map achieve average O(1) key lookups?", "options": ["Hashing maps keys to continuous bucket array indices in constant time", "Sorting all keys after every insert", "Using binary search over a linked list", "Storing all items directly in CPU L1 registers"], "correct_index": 0, "explanation": "Hash functions compute array offsets directly, yielding constant-time average access.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-4", "question": "What is the primary benefit of CPU cache locality in contiguous array processing?", "options": ["Contiguous memory pre-fetches entire cache lines, minimizing high-latency RAM access", "Disables operating system paging", "Eliminates all CPU branch prediction stalls", "Permits memory allocation without bounds"], "correct_index": 0, "explanation": "Spatial and temporal locality enable CPU caches to drastically reduce memory stall cycles.", "difficulty": "hard", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-5", "question": "What defines an Idempotent operation in software architecture?", "options": ["Applying the operation multiple times produces the identical result as applying it once", "An operation that executes in zero clock cycles", "An operation that can only be invoked by a superuser", "A function that has no return value"], "correct_index": 0, "explanation": "Idempotent actions guarantee that repeated execution does not alter system state beyond the first call.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-6", "question": "What is the critical distinction between Concurrency and Parallelism?", "options": ["Concurrency is about dealing with lots of things at once; parallelism is doing lots of things at once", "Concurrency requires multiple physical CPUs; parallelism only requires one core", "Parallelism is deprecated in modern computing", "Concurrency is only applicable to network I/O"], "correct_index": 0, "explanation": "Concurrency structures tasks to progress independently; parallelism executes them simultaneously on hardware.", "difficulty": "hard", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-7", "question": "What is the primary goal of Defensive Programming?", "options": ["Anticipating unexpected inputs and edge failures to maintain deterministic invariants", "Preventing unauthorized users from viewing source code", "Writing all software in pure assembly", "Eliminating all logging from production code"], "correct_index": 0, "explanation": "Defensive design enforces rigorous validation so programs fail gracefully rather than corrupting state.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-8", "question": "What is the primary operational trade-off of using Immutable data structures?", "options": ["Thread safety and predictable state flow at the cost of memory allocation overhead on updates", "Zero memory consumption with slower read access", "Total elimination of compiler optimizations", "Inability to store string data"], "correct_index": 0, "explanation": "Immutability avoids data races and side effects, though updates require copying references or structural sharing.", "difficulty": "hard", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-9", "question": "What is Tail Call Optimization (TCO)?", "options": ["Reusing the current stack frame for a tail-recursive call to execute in O(1) stack space", "Sorting array tails before partitioning", "Deleting stack variables after every loop", "Terminating recursion after a fixed timeout"], "correct_index": 0, "explanation": "TCO prevents call stack overflow by replacing the final call with a jump instruction.", "difficulty": "hard", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-10", "question": "Why should profiling precede code optimization?", "options": ["Empirical profiling reveals actual execution bottlenecks, preventing premature optimization", "Compilers reject unprofiled code", "Optimization without profiling changes program semantics", "Profiling reduces source code complexity"], "correct_index": 0, "explanation": "Developers often optimize the wrong code paths; measurement identifies genuine bottlenecks.", "difficulty": "easy", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-11", "question": "What is the space complexity of an in-place sorting algorithm like Quicksort (excluding recursion stack)?", "options": ["O(1) auxiliary space", "O(N) auxiliary space", "O(N^2) space", "O(log N) heap space"], "correct_index": 0, "explanation": "In-place algorithms modify the input array directly without allocating secondary storage arrays.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"},
+        {"id": "kc-adv-12", "question": "What is a Memory Leak in long-running service applications?", "options": ["Allocated memory that is no longer needed by the program but is never released", "Memory that is physically corrupted by hardware faults", "Data stored in swap space rather than RAM", "A security vulnerability that exposes passwords in memory"], "correct_index": 0, "explanation": "Unreleased memory accumulates over time, eventually exhausting system resources and crashing the process.", "difficulty": "medium", "concept_id": "advanced_mastery", "concept": "Advanced Engineering & Computational Theory"}
+    ],
+    "baseline": [
+        {"id": "kc-base-1", "question": "What is the primary role of a language parser during code compilation/execution?", "options": ["Validates syntax structure and transforms source tokens into an Abstract Syntax Tree (AST)", "Executes binary machine instructions directly", "Manages database connections", "Generates network packets"], "correct_index": 0, "explanation": "Parsers verify grammar rules and build the syntactic tree representation for evaluation.", "difficulty": "easy", "concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"},
+        {"id": "kc-base-2", "question": "What is standard output (stdout) used for in terminal applications?", "options": ["Streaming normal text output and logs to the console display", "Writing directly to system BIOS memory", "Accepting keyboard input from the user", "Logging kernel crash diagnostics"], "correct_index": 0, "explanation": "stdout is the standard stream channel for displaying formatted program output.", "difficulty": "easy", "concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"},
+        {"id": "kc-base-3", "question": "What is the fundamental purpose of conditional branching statements (if/elif/else)?", "options": ["Executing different code paths based on Boolean condition evaluations", "Repeating a block of code a fixed number of times", "Allocating variables in persistent storage", "Terminating the program immediately"], "correct_index": 0, "explanation": "Conditional statements direct program execution flow along different paths based on truth values.", "difficulty": "easy", "concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"},
+        {"id": "kc-base-4", "question": "What is the primary benefit of organizing code into modular functions?", "options": ["Improves code reusability, testability, readability, and separation of concerns", "Forces the CPU to execute code in parallel", "Eliminates all runtime memory allocations", "Makes variable names permanently global"], "correct_index": 0, "explanation": "Modular decomposition breaks complex problems into maintainable, testable units.", "difficulty": "easy", "concept_id": "robustness_and_architecture", "concept": "Robustness & Architectural Principles"},
+        {"id": "kc-base-5", "question": "What is the purpose of structured exception handling (try-except / try-catch)?", "options": ["Gracefully catching and handling runtime errors without unhandled process crashes", "Suppressing all compilation errors", "Speeding up arithmetic calculations", "Preventing functions from returning None"], "correct_index": 0, "explanation": "Exception handling separates error detection from error recovery logic, ensuring resilience.", "difficulty": "easy", "concept_id": "robustness_and_architecture", "concept": "Robustness & Architectural Principles"},
+        {"id": "kc-base-6", "question": "In basic arithmetic operations, what does the modulo operator (%) calculate?", "options": ["The remainder after integer division", "The quotient rounded up", "The exponentiation power of two numbers", "The bitwise inverse"], "correct_index": 0, "explanation": "The modulo operator computes the remainder: e.g. 7 % 3 evaluates to 1.", "difficulty": "easy", "concept_id": "operator_precedence_and_evaluation", "concept": "Operator Semantics & Evaluation Precedence"},
+        {"id": "kc-base-7", "question": "Why is code readability considered a vital software engineering practice?", "options": ["Software is read and maintained far more often than it is originally written", "Readable code compiles 10x faster", "The interpreter only executes code with docstrings", "Variable names are restricted to 8 characters by standard libraries"], "correct_index": 0, "explanation": "Clear naming and structure minimize cognitive load for teams maintaining and debugging systems.", "difficulty": "easy", "concept_id": "robustness_and_architecture", "concept": "Robustness & Architectural Principles"},
+        {"id": "kc-base-8", "question": "What is the function of a return statement in a function body?", "options": ["Terminates function execution and passes back a result value to the caller", "Restarts the function from line 1", "Declares a global variable", "Pauses execution for 1 second"], "correct_index": 0, "explanation": "return hands execution and optional data back to the invocation site.", "difficulty": "easy", "concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"},
+        {"id": "kc-base-9", "question": "What is a unit test designed to verify?", "options": ["The correctness of an isolated, small piece of functionality (e.g. a single function)", "The entire end-to-end cloud deployment network", "The physical hardware integrity of the CPU", "The speed of the developer's typing"], "correct_index": 0, "explanation": "Unit testing validates individual components in isolation against expected inputs and outputs.", "difficulty": "easy", "concept_id": "debugging_and_runtime_flow", "concept": "Debugging & Runtime Flow"},
+        {"id": "kc-base-10", "question": "What is the primary difference between a statically typed and dynamically typed language?", "options": ["Static types are checked at compile time; dynamic types are resolved at runtime", "Static languages have no variables; dynamic languages have variables", "Dynamic languages cannot perform floating point math", "Static languages run exclusively in browser web pages"], "correct_index": 0, "explanation": "Static typing verifies variable types prior to execution; dynamic typing associates types with values during runtime.", "difficulty": "medium", "concept_id": "syntax_and_conventions", "concept": "Syntax & Language Conventions"},
+        {"id": "kc-base-11", "question": "What is the purpose of writing automated test assertions (e.g. `assert x == expected`)?", "options": ["Automatically validates that assumptions and outputs match required specifications", "Slows down execution for manual inspection", "Formats output text for printing", "Converts test cases into PDF reports"], "correct_index": 0, "explanation": "Assertions enforce program invariants; failure indicates immediate regression or defect.", "difficulty": "easy", "concept_id": "debugging_and_runtime_flow", "concept": "Debugging & Runtime Flow"},
+        {"id": "kc-base-12", "question": "What basic data structure represents an ordered collection of accessible elements by index?", "options": ["Array or List", "Hash Map or Dictionary", "Binary Search Tree", "Graph adjacency matrix"], "correct_index": 0, "explanation": "Lists and arrays store elements sequentially, providing indexed retrieval by position.", "difficulty": "easy", "concept_id": "boundary_conditions_and_indexing", "concept": "Boundary Conditions & Range Stop Limits"}
+    ]
+}
 
 class AdaptedLessonService:
     """Orchestrates learner profiling, cognitive load evaluation, teaching strategy selection, and Gemini lesson generation."""
@@ -377,21 +481,26 @@ class AdaptedLessonService:
         if not force_refresh:
             cached = state_store.get_adapted_lesson(safe_user_id, topic_id, normalized_mode)
             if cached and cached.get("lesson_data"):
-                cached_at = cached.get("created_at")
-                attempts = state_store.get_quiz_attempts(safe_user_id, topic_id)
-                is_stale = False
-                if attempts and cached_at:
-                    latest_attempt_at = attempts[0].get("created_at")
-                    if latest_attempt_at and str(latest_attempt_at) > str(cached_at):
-                        is_stale = True
-                if not is_stale:
-                    return {
-                        "success": True,
-                        "cached": True,
-                        "topic_id": topic_id,
-                        "detail_level": normalized_mode,
-                        "lesson": cached["lesson_data"]
-                    }
+                lesson_data = cached["lesson_data"]
+                # Require that cached lesson quiz section has strictly 10 questions
+                quiz_sec = next((s for s in lesson_data.get("sections", []) if s.get("type") == "quiz" or s.get("id") == "knowledge-check"), None)
+                has_10_q = (quiz_sec is not None and isinstance(quiz_sec.get("questions"), list) and len(quiz_sec.get("questions", [])) == 10)
+                if has_10_q:
+                    cached_at = cached.get("created_at")
+                    attempts = state_store.get_quiz_attempts(safe_user_id, topic_id)
+                    is_stale = False
+                    if attempts and cached_at:
+                        latest_attempt_at = attempts[0].get("created_at")
+                        if latest_attempt_at and str(latest_attempt_at) > str(cached_at):
+                            is_stale = True
+                    if not is_stale:
+                        return {
+                            "success": True,
+                            "cached": True,
+                            "topic_id": topic_id,
+                            "detail_level": normalized_mode,
+                            "lesson": lesson_data
+                        }
 
         # 2. Retrieve authoritative curriculum data
         topic_meta = self.curriculum.get_topic_detail(topic_id)
@@ -544,7 +653,8 @@ class AdaptedLessonService:
                 confidence=confidence,
                 reason=reason,
                 signals_used=signals_used,
-                diagnosis=diagnosis
+                diagnosis=diagnosis,
+                user_id=safe_user_id
             )
 
         # 8. Validate and sanitize through Pydantic
@@ -566,6 +676,36 @@ class AdaptedLessonService:
                 signals_used=signals_used,
                 diagnosis=diagnosis
             )
+
+        # Guarantee quiz section has strictly 10 questions and valid session
+        quiz_sec = None
+        for sec in validated_lesson.get("sections", []):
+            if sec.get("type") == "quiz" or sec.get("id") == "knowledge-check":
+                quiz_sec = sec
+                break
+
+        if quiz_sec:
+            if not quiz_sec.get("questions") or len(quiz_sec.get("questions", [])) != 10:
+                gap_key = diagnosis.get("primary_gap_concept") or "baseline"
+                gap_cand = _ADAPTED_GAP_QUESTION_BANKS.get(gap_key, _ADAPTED_GAP_QUESTION_BANKS["baseline"])
+                top_cand = quiz_service.get_candidate_questions_for_topic(topic_id, topic_meta)
+                cand_pool = list(gap_cand) + list(top_cand)
+                pres_ids = state_store.get_presented_question_ids(safe_user_id, topic_id)
+                final_q = quiz_service.select_unique_10_questions(cand_pool, pres_ids, topic_id, topic_title)
+                quiz_sec["questions"] = final_q
+
+            if not quiz_sec.get("session_id"):
+                actual_sess_id = f"sess_adapt_{safe_user_id}_{topic_id}_{uuid.uuid4().hex[:8]}"
+                quiz_sec["session_id"] = actual_sess_id
+                state_store.record_presented_questions(
+                    user_id=safe_user_id,
+                    topic_id=topic_id,
+                    question_ids=[q["id"] for q in quiz_sec["questions"]],
+                    quiz_type="adapted",
+                    session_id=actual_sess_id,
+                    questions=quiz_sec["questions"]
+                )
+                state_store.save_quiz_session(actual_sess_id, safe_user_id, topic_id, "adapted", quiz_sec["questions"])
 
         # 9. Save to SQLite cache
         cached_signals = dict(telemetry_signals)
@@ -824,7 +964,8 @@ IMPORTANT:
         confidence: float,
         reason: str,
         signals_used: List[str],
-        diagnosis: Optional[Dict[str, Any]] = None
+        diagnosis: Optional[Dict[str, Any]] = None,
+        user_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Construct a high-quality offline adapted lesson grounded in curriculum data and tailored to student knowledge gaps."""
         diag = diagnosis or {}
@@ -1372,6 +1513,30 @@ IMPORTANT:
             ]
 
         # Assemble modular sections conforming strictly to LessonSection schema
+        # Collect candidate pool from diagnosed gap category + topic candidate questions
+        gap_candidates = _ADAPTED_GAP_QUESTION_BANKS.get(gap_key, _ADAPTED_GAP_QUESTION_BANKS["baseline"])
+        topic_candidates = quiz_service.get_candidate_questions_for_topic(topic_id, topic_meta)
+        candidate_pool = list(gap_candidates) + list(topic_candidates)
+
+        # Retrieve student presented IDs to guarantee attempt uniqueness
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        presented_ids = state_store.get_presented_question_ids(safe_uid, topic_id)
+
+        # Select exactly 10 questions prioritizing unused questions
+        final_quiz_questions = quiz_service.select_unique_10_questions(candidate_pool, presented_ids, topic_id, topic_title)
+
+        # Generate and record session
+        session_id = f"sess_adapt_{safe_uid}_{topic_id}_{uuid.uuid4().hex[:8]}"
+        state_store.record_presented_questions(
+            user_id=safe_uid,
+            topic_id=topic_id,
+            question_ids=[q["id"] for q in final_quiz_questions],
+            quiz_type="adapted",
+            session_id=session_id,
+            questions=final_quiz_questions
+        )
+        state_store.save_quiz_session(session_id, safe_uid, topic_id, "adapted", final_quiz_questions)
+
         sections = [
             {
                 "id": "core-intuition",
@@ -1440,8 +1605,9 @@ IMPORTANT:
             {
                 "id": "knowledge-check",
                 "type": "quiz",
-                "title": "8. Knowledge Check",
-                "questions": quiz_questions,
+                "title": "8. Lesson Mastery Quiz",
+                "session_id": session_id,
+                "questions": final_quiz_questions,
                 "importance": "primary"
             }
         ]
@@ -1473,6 +1639,44 @@ IMPORTANT:
                 "Reinforced understanding through hands-on sandbox execution and self-check."
             ],
             "next_step": f"Continue with the next module in {subject.capitalize()} or solidify mastery in the Coding Studio."
+        }
+
+    def get_adapted_lesson(self, *args, **kwargs):
+        """Backward compatibility alias for generate_adapted_lesson."""
+        return self.generate_adapted_lesson(*args, **kwargs)
+
+    def get_adapted_lesson_quiz(
+        self,
+        user_id: str,
+        topic_id: str,
+        detail_level: Optional[str] = None,
+        refresh: bool = False
+    ) -> Dict[str, Any]:
+        """Retrieve or regenerate the adapted 10-question mastery quiz for the learner."""
+        safe_uid = str(user_id or "guest-learner").strip() or "guest-learner"
+        res = self.generate_adapted_lesson(
+            user_id=safe_uid,
+            topic_id=topic_id,
+            detail_level=detail_level or "STANDARD",
+            force_refresh=refresh
+        )
+        lesson = res.get("lesson") or {}
+        quiz_sec = None
+        for s in lesson.get("sections", []):
+            if s.get("type") == "quiz" or s.get("id") == "knowledge-check":
+                quiz_sec = s
+                break
+
+        questions = quiz_sec.get("questions", []) if quiz_sec else []
+        session_id = quiz_sec.get("session_id") if quiz_sec else None
+        topic_title = lesson.get("topic") or topic_id.replace("top-", "").replace("-", " ").title()
+
+        return {
+            "topic_id": topic_id,
+            "session_id": session_id,
+            "quiz_type": "adapted",
+            "title": f"Adapted Mastery Quiz: {topic_title}",
+            "questions": questions
         }
 
 

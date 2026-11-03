@@ -7,9 +7,73 @@ import random
 import re
 from typing import Dict, Any, List, Optional
 
+import uuid
+from backend.config import PROJECT_ROOT
 from backend.services.state_store import state_store
 
 logger = logging.getLogger(__name__)
+
+# Static 10-question pre-built banks from data directory
+_STATIC_QUIZZES_PATH = PROJECT_ROOT / "backend" / "data" / "allTopicQuizzes.json"
+_STATIC_QUIZZES: Dict[str, Any] = {}
+if _STATIC_QUIZZES_PATH.exists():
+    try:
+        with open(_STATIC_QUIZZES_PATH, "r", encoding="utf-8") as f:
+            _STATIC_QUIZZES = json.load(f)
+    except Exception as e:
+        logger.warning("Failed to load static quizzes: %s", e)
+
+# Curated concept and language question banks to guarantee 30+ candidate questions per topic
+_LANGUAGE_DOMAIN_BANKS: Dict[str, List[tuple]] = {
+    "python": [
+        ("What does PEP 8 define in the Python ecosystem?", "The standard style guide for writing readable Python code.", ["The bytecode interpreter specification", "The official compiler test suite", "The package deployment protocol"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("How does Python manage memory for dynamically allocated objects?", "Automatic reference counting supplemented by a cyclic garbage collector.", ["Manual free() invocation required by developers", "Static stack pre-allocation only", "Operating system kernel swap paging"], "medium", "variable_scope_and_state", "Variable Scoping & State Mutability"),
+        ("What is the consequence of modifying a list while iterating over it in Python?", "Can cause skipped elements or unexpected iteration behavior.", ["Forces an immediate CPU kernel panic", "Automatically creates an immutable tuple copy", "Converts the list into a dictionary"], "medium", "boundary_conditions_and_indexing", "Boundary Conditions & Range Stop Limits"),
+        ("Which built-in Python function returns both the index and value during iteration?", "enumerate()", ["indexof()", "pair()", "zip_index()"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("What occurs when accessing a non-existent key in a standard Python dict using d[key]?", "Raises a KeyError exception.", ["Returns None silently", "Initializes the key with 0", "Returns False"], "medium", "debugging_and_runtime_flow", "Debugging & Runtime Flow"),
+        ("How does Python handle integer precision in Python 3?", "Integers have arbitrary precision limited only by available memory.", ["Fixed 32-bit signed integer limits", "Fixed 64-bit with silent overflow wrap-around", "Requires importing the BigInt module"], "hard", "operator_precedence_and_evaluation", "Operator Semantics & Evaluation Precedence"),
+        ("What is the primary characteristic of Python tuples compared to lists?", "Tuples are immutable; their elements cannot be changed in place.", ["Tuples can only store numeric values", "Tuples cannot be indexed or sliced", "Tuples are allocated strictly on the CPU registers"], "easy", "variable_scope_and_state", "Variable Scoping & State Mutability"),
+        ("In Python, what does the 'is' operator test?", "Object identity (whether two references point to the same memory object).", ["Value equality equivalent to ==", "String prefix matching", "Type equivalence only"], "medium", "operator_precedence_and_evaluation", "Operator Semantics & Evaluation Precedence"),
+        ("What is the purpose of the 'finally' clause in Python try-except blocks?", "Executes cleanup code regardless of whether an exception occurred.", ["Executes only when an unhandled exception is caught", "Re-raises the previous exception", "Suppresses all syntax errors"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+        ("What does a Python list slice `lst[::-1]` produce?", "A new list with all elements in reversed order.", ["A shallow copy with alternate elements skipped", "An in-place reversal modifying the original list", "A runtime ValueError if step is negative"], "medium", "boundary_conditions_and_indexing", "Boundary Conditions & Range Stop Limits")
+    ],
+    "c": [
+        ("In C, what is the size of a pointer on a 64-bit architecture?", "8 bytes.", ["4 bytes", "2 bytes", "Depends on the pointed data type"], "easy", "pointer_addressing_and_dereference", "Pointer Addressing & Dereferencing Safety"),
+        ("What is the effect of calling free() on a pointer and not setting it to NULL?", "Creates a dangling pointer that can lead to undefined behavior if accessed.", ["Immediately zeroes the allocated heap memory", "Deallocates all variables in the calling function", "Prevents future malloc calls"], "medium", "memory_allocation_and_lifecycle", "Dynamic Memory Allocation & Lifecycle"),
+        ("Which header file must be included to utilize malloc() and free() in C?", "<stdlib.h>", ["<stdio.h>", "<string.h>", "<memory.h>"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("What is the consequence of reading uninitialized stack variables in C?", "Produces garbage data and undefined behavior.", ["Automatically defaults to 0", "Throws a NullReferenceException at runtime", "Halts compiler execution with an error"], "medium", "debugging_and_runtime_flow", "Debugging & Runtime Flow"),
+        ("In C, how are strings represented in memory?", "Null-terminated character arrays ending with '\\0'.", ["Pascal length-prefixed byte structures", "Fixed 256-byte character buffers", "Immutable heap-allocated objects"], "easy", "boundary_conditions_and_indexing", "Boundary Conditions & Range Stop Limits"),
+        ("What does the 'static' keyword do when applied to a global variable in C?", "Restricts the variable's linkage to the current translation unit (.c file).", ["Allocates the variable in read-only hardware ROM", "Prevents the variable from ever being modified", "Makes the variable accessible to all threads without locks"], "hard", "variable_scope_and_state", "Variable Scoping & State Mutability"),
+        ("What is the result of dereferencing a NULL pointer in C?", "Causes undefined behavior, typically terminating the process with a segmentation fault.", ["Returns 0 cleanly", "Allocates a new default struct", "Skips to the next assembly instruction"], "medium", "pointer_addressing_and_dereference", "Pointer Addressing & Dereferencing Safety"),
+        ("Why should strncpy() be preferred over strcpy() in secure C programming?", "Specifies maximum bytes copied to prevent buffer overflow vulnerabilities.", ["Automatically encrypts the destination buffer", "Executes three times faster on multi-core processors", "Allocates destination heap memory automatically"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles"),
+        ("What does sizeof(char) evaluate to in standard C?", "Always 1.", ["4 bytes", "2 bytes", "System dependent"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("In C pointer arithmetic, what does `ptr + 1` evaluate to?", "Points to the memory address incremented by sizeof(*ptr) bytes.", ["Points to the exact next byte in memory", "Increments the integer value stored at ptr", "Shifts the pointer by 4 bytes regardless of type"], "medium", "pointer_addressing_and_dereference", "Pointer Addressing & Dereferencing Safety")
+    ],
+    "cpp": [
+        ("What is the RAII (Resource Acquisition Is Initialization) idiom in C++?", "Binds resource lifecycle to object lifetime so destructors automatically release resources.", ["A compiler flag to enable runtime reflection", "A design pattern requiring all objects to be heap allocated", "A method to initialize global variables before main()"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+        ("What is the key difference between std::vector and std::array in C++?", "std::vector has dynamic runtime capacity, while std::array has fixed compile-time size.", ["std::vector cannot be indexed with operator[]", "std::array is allocated strictly on the heap", "std::vector does not support iterators"], "easy", "boundary_conditions_and_indexing", "Boundary Conditions & Range Stop Limits"),
+        ("Why should a base class destructor be declared virtual in polymorphic C++?", "Ensures derived class destructors are called when deleting through a base class pointer.", ["Required by the compiler for any class with private members", "Prevents derived classes from inheriting member variables", "Speeds up object allocation on the heap"], "hard", "oop_and_inheritance", "Object Encapsulation & Inheritance"),
+        ("What is the purpose of std::unique_ptr in modern C++?", "Provides exclusive ownership of a dynamic object and deletes it when out of scope.", ["Enables shared ownership across multiple threads", "Caches objects permanently in static memory", "Allows raw pointer arithmetic without bounds checks"], "medium", "memory_allocation_and_lifecycle", "Dynamic Memory Allocation & Lifecycle"),
+        ("What does passing a parameter by `const Type&` achieve in C++?", "Avoids expensive copying while preventing modifications to the original object.", ["Forces the object to be copied onto the stack", "Converts the parameter into a raw void pointer", "Disables all member functions on the object"], "medium", "performance_and_resource_scoping", "Performance & Resource Scoping"),
+        ("In C++, what is the difference between `delete` and `delete[]`?", "`delete[]` calls destructors for every element in an allocated array before freeing.", ["`delete[]` is used for single heap objects", "`delete` can only be used inside class methods", "`delete[]` is deprecated in C++11 and later"], "medium", "memory_allocation_and_lifecycle", "Dynamic Memory Allocation & Lifecycle"),
+        ("What is a pure virtual function in C++?", "A virtual function declared with `= 0` that makes the class abstract.", ["A function that contains no local variables", "A function that executes in constant O(1) time", "A function that cannot be overridden by derived classes"], "medium", "oop_and_inheritance", "Object Encapsulation & Inheritance"),
+        ("What is the benefit of using `auto` keyword for type deduction in C++?", "Improves readability and eliminates verbose template type specifications.", ["Disables static type checking at compile time", "Converts all types into dynamic Python objects", "Forces variable allocation in CPU registers"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("What is an rvalue reference (`Type&&`) in modern C++ primarily used for?", "Enables move semantics and perfect forwarding without copying data.", ["Declaring double pointers to stack memory", "Creating thread-safe global references", "Preventing const member functions from executing"], "hard", "performance_and_resource_scoping", "Performance & Resource Scoping"),
+        ("In C++, what is the consequence of throwing an exception from a destructor?", "Can trigger std::terminate if another exception is already propagating.", ["Automatically restarts the program from main()", "Catches and logs the exception to stdout", "Silently deletes the enclosing stack frame"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles")
+    ],
+    "java": [
+        ("What is the difference between `==` and `.equals()` when comparing Java objects?", "`==` compares reference memory addresses, while `.equals()` compares logical content.", ["`==` compares strings, while `.equals()` compares numbers", "`==` is only valid for primitives and causes compile errors on objects", "Both perform identical bitwise comparisons"], "easy", "operator_precedence_and_evaluation", "Operator Semantics & Evaluation Precedence"),
+        ("Why are Java Strings immutable?", "Enhances security, caching (String Pool), thread-safety, and hash code consistency.", ["Java virtual machine lacks heap memory for dynamic strings", "To prevent strings from being stored in arrays", "Because Java does not support character arrays"], "medium", "variable_scope_and_state", "Variable Scoping & State Mutability"),
+        ("What is the primary role of the Java Virtual Machine (JVM)?", "Executes compiled Java bytecode and manages system memory and garbage collection.", ["Compiles .java source code directly to CPU assembly", "Acts as a database management engine", "Provides hardware BIOS firmware emulation"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("What is the consequence of not handling a checked exception in Java?", "Causes a compile-time error unless declared in the method's `throws` clause.", ["Process terminates silently at runtime", "JVM automatically swallows the exception", "Converts the exception into a RuntimeException"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+        ("In Java, what does the `final` keyword indicate when applied to a class?", "The class cannot be subclassed or extended.", ["All methods in the class execute in O(1) time", "The class can only be instantiated once (singleton)", "All fields in the class are automatically made public"], "medium", "oop_and_inheritance", "Object Encapsulation & Inheritance"),
+        ("How does Java's `try-with-resources` statement manage resources?", "Automatically closes resources implementing AutoCloseable at block termination.", ["Keeps database connections open permanently in memory", "Catches all OutOfMemoryError failures", "Replaces the need for catch blocks entirely"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+        ("What data structure does Java's `HashMap` use internally?", "An array of node buckets (linked lists transitioning to balanced trees under high collisions).", ["A continuous sorted binary array", "A single doubly linked list", "A fixed-size circular ring buffer"], "hard", "performance_and_resource_scoping", "Performance & Resource Scoping"),
+        ("In Java, what is the default value of an uninitialized instance field of type `boolean`?", "`false`", ["`true`", "`null`", "Undefined (causes NullPointerException)"], "easy", "syntax_and_conventions", "Syntax & Language Conventions"),
+        ("What is the difference between `ArrayList` and `LinkedList` in Java?", "`ArrayList` provides O(1) random access, while `LinkedList` provides O(1) insertion at endpoints.", ["`LinkedList` has faster indexed get(i) than `ArrayList`", "`ArrayList` cannot contain duplicate elements", "`LinkedList` is automatically synchronized across threads"], "medium", "performance_and_resource_scoping", "Performance & Resource Scoping"),
+        ("What does the `volatile` keyword guarantee in Java multi-threading?", "Ensures changes made by one thread are immediately visible to all other threads.", ["Locks the variable so only one thread can ever read it", "Makes compound operations like `i++` atomic", "Moves the variable from heap memory to CPU L1 cache permanently"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles")
+    ]
+}
 
 
 def clean_snippet(code: str, max_lines: int = 6) -> str:
@@ -478,25 +542,386 @@ class QuizService:
 
         return None
 
-    def get_quiz_for_topic(self, topic_id: str, force_regenerate: bool = False) -> Dict[str, Any]:
-        """Retrieve or generate exactly 10 questions for the topic with caching."""
-        # 1. Check persistent SQLite cache unless force_regenerate
-        if not force_regenerate:
-            cached = state_store.get_generated_quiz(topic_id)
-            if cached and isinstance(cached.get("questions"), list) and len(cached["questions"]) == 10:
-                topic_title = cached.get("title", topic_id).replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
-                for q in cached["questions"]:
-                    if not q.get("concept_id") or not q.get("concept"):
-                        c_meta = self.get_concept_for_question(q, topic_id, topic_title)
-                        q["concept_id"] = c_meta["concept_id"]
-                        q["concept"] = c_meta["concept"]
-                return cached
+    def gather_offline_candidate_questions(self, topic: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Extract all candidate questions grounded in lesson objectives, syntax, code, mistakes, and mechanics."""
+        topic_id = topic.get("id", "top-unknown")
+        topic_title = topic.get("title", "Topic Lesson")
+        lang = (topic.get("language") or "python").lower()
+        if "cpp" in topic_id:
+            lang = "cpp"
+        elif "java" in topic_id:
+            lang = "java"
+        elif "c-" in topic_id or "c_adv" in topic_id or "c_int" in topic_id:
+            lang = "c"
 
-        # 2. Look up topic in curriculum
+        lang_display = "C++" if lang == "cpp" else "Java" if lang == "java" else "C" if lang == "c" else "Python"
+        clean_title = topic_title.replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
+
+        candidates = []
+        seen = set()
+
+        def add_cand(q_text: str, correct_opt: str, distractors: List[str], expl: str, diff: str):
+            if not q_text or q_text.lower() in seen:
+                return
+            seen.add(q_text.lower())
+            target_idx = (len(candidates) * 3 + 1) % 4
+            opts, c_idx = shuffle_options_with_correct(distractors, correct_opt, target_idx)
+            c_meta = self.get_concept_for_question({"question": q_text, "explanation": expl}, topic_id, clean_title)
+            candidates.append({
+                "id": f"q-{topic_id}-ext-{len(candidates) + 1}",
+                "question": q_text,
+                "options": opts,
+                "correct_index": c_idx,
+                "correctIndex": c_idx,
+                "explanation": expl,
+                "difficulty": diff,
+                "concept_id": c_meta["concept_id"],
+                "concept": c_meta["concept"]
+            })
+
+        objectives = [o.strip() for o in topic.get("learningObjectives", []) if isinstance(o, str) and len(o.strip()) > 8]
+        concept_expl = topic.get("conceptExplanation", "")
+        if isinstance(concept_expl, list):
+            concept_expl = " ".join(str(x) for x in concept_expl)
+        elif not isinstance(concept_expl, str):
+            concept_expl = str(concept_expl or "")
+
+        simple_ex = topic.get("simpleExample", {})
+        simple_ex = simple_ex if isinstance(simple_ex, dict) else {}
+        syntax_str = topic.get("syntax", "")
+        code_ex = topic.get("codeExample", "")
+        expected_out = topic.get("expectedOutput", "")
+        steps = [s.strip() for s in topic.get("stepByStep", []) if isinstance(s, str) and len(s.strip()) > 8]
+        mistakes = topic.get("commonMistakes", []) or []
+        real_world = topic.get("realWorldExample", {})
+        practice = topic.get("practice", {})
+        summary_items = [s.strip() for s in topic.get("summary", []) if isinstance(s, str) and len(s.strip()) > 8]
+        code_snippet = clean_snippet(code_ex or simple_ex.get("code", ""))
+
+        # 1. Learning Objectives
+        for obj in objectives:
+            add_cand(
+                f"Which statement best describes mastering the concept: '{obj}'?",
+                f"Demonstrates proper understanding and execution of {clean_title} in {lang_display}.",
+                [f"Restricts {clean_title} to legacy environment compilers only", "Disables all runtime exception handling and bounds checks", "Requires rewriting the host operating system kernel"],
+                f"Mastering this objective verifies core competence in {clean_title}.", "easy"
+            )
+
+        # 2. Syntax & Conventions
+        if syntax_str:
+            clean_syn = clean_snippet(syntax_str, max_lines=2)
+            add_cand(
+                f"Which syntax convention applies to {clean_title} in {lang_display}?",
+                f"Standard syntax: {clean_syn[:80]}..." if len(clean_syn) > 15 else f"Follows standard {lang_display} syntax rules.",
+                ["Requires omitting return types and parameter brackets", "Only legal inside assembly __asm blocks", "Can only be declared inside global header namespaces"],
+                "Following verified syntax ensures proper parser and compiler resolution.", "medium"
+            )
+
+        # 3. Code Output Prediction
+        if expected_out or code_snippet:
+            clean_out = str(expected_out).strip().split("\n")[0][:60] if expected_out else f"Executes {clean_title} successfully"
+            q_code = f"What is the expected result of running this {lang_display} code for {clean_title}?\n\n{code_snippet}" if code_snippet and len(code_snippet) < 140 else f"What is the expected output when the canonical example for {clean_title} executes?"
+            correct = clean_out if len(clean_out) > 2 else f"Produces expected validated results for {clean_title}"
+            add_cand(q_code, correct, ["Compilation Error / SyntaxError", "Segmentation fault or NullPointerException", "Infinite loop without producing output"], f"Executing this code yields '{correct}'.", "medium")
+
+        # 4. Common Mistakes & Pitfalls
+        for m in mistakes:
+            m_title = m.get("mistake", "") if isinstance(m, dict) else str(m)
+            m_expl = m.get("explanation", "") if isinstance(m, dict) else ""
+            m_fix = m.get("correction", "") if isinstance(m, dict) else "Follow established best practices."
+            m_code = clean_snippet(m.get("codeSnippet", ""), max_lines=3) if isinstance(m, dict) else ""
+            q_mistake = f"In {clean_title}, what issue is present in this snippet?\n\n{m_code}" if m_code else f"Which common pitfall must developers avoid when implementing {clean_title}?"
+            correct = f"{m_title}: {m_expl}"[:140] if m_expl else f"Pitfall: {m_fix}"
+            add_cand(q_mistake, correct, ["The code executes twice as fast but disables type checks", "Compiler silently fixes the statement without emitting diagnostics", "Forces the process into a permanent background daemon"], f"{m_fix}. {m_expl}", "hard")
+
+        # 5. Real-World Application
+        if real_world:
+            scenario = real_world.get("scenario", "Production Systems") if isinstance(real_world, dict) else "Production Systems"
+            rw_expl = real_world.get("explanation", "") if isinstance(real_world, dict) else str(real_world)
+            add_cand(
+                f"How is {clean_title} utilized in practical production systems ({scenario})?",
+                rw_expl[:140] if rw_expl else f"Provides high reliability and structured data flow for {scenario}.",
+                ["Removes the necessity for test suites and memory budgeting", "Bypasses network firewall policies completely", "Requires converting all memory into uncompressed raw bytes"],
+                f"In {scenario}, {rw_expl or 'this concept delivers robust system execution.'}", "hard"
+            )
+
+        # 6. Step-by-Step Runtime Mechanics
+        for s in steps:
+            add_cand(
+                f"During the runtime execution of {clean_title}, which step occurs?",
+                s[:130],
+                ["Memory registers are cleared and execution resets to entry", "The runtime pauses execution to query remote cloud servers", "CPU enters low power sleep mode until interrupt"],
+                f"Execution follows this verified step: {s}.", "medium"
+            )
+
+        # 7. Key Takeaways
+        for sm in summary_items:
+            add_cand(
+                f"Which principle is a fundamental key takeaway for {clean_title}?",
+                sm[:130],
+                [f"Disable compiler and interpreter safety flags for {clean_title}", f"{clean_title} should be avoided in production software", "Always prefer hardcoded absolute memory addresses"],
+                f"Essential rule: {sm}.", "hard"
+            )
+
+        # 8. Practice Challenge
+        if practice:
+            prompt = practice.get("prompt", "") if isinstance(practice, dict) else str(practice)
+            hint = practice.get("hint", "") if isinstance(practice, dict) else ""
+            if prompt:
+                add_cand(
+                    f"When approaching the practice problem '{prompt[:90]}...', what is the recommended strategy?",
+                    hint[:130] if hint else f"Apply the idiomatic {lang_display} solution design for {clean_title}.",
+                    ["Return hardcoded dummy values without implementing logic", "Write an infinite loop that ignores input parameters", "Bypass the type system using unsafe casts"],
+                    f"Guidance: {hint or 'Implement structured logic matching problem specifications.'}", "hard"
+                )
+
+        # 9. Concept Explanation Sentences
+        sentences = [
+            s.strip() for s in re.split(r'[.\n]+', concept_expl)
+            if len(s.strip()) > 20 and not s.strip().startswith("#") and not s.strip().startswith("```")
+        ]
+        for cs in sentences:
+            add_cand(
+                f"Regarding {clean_title} in {lang_display}, which statement is accurate?",
+                cs[:130],
+                [f"{clean_title} is completely deprecated in modern {lang_display}", "Executes without sandbox memory protection", "Causes mandatory process restart upon invocation"],
+                f"Core principle: {cs}.", "medium"
+            )
+
+        return candidates
+
+    def get_candidate_questions_for_topic(self, topic_id: str, topic: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Collect all available candidate questions for a topic (static, curriculum, extracted, language-domain)."""
+        candidates: List[Dict[str, Any]] = []
+        seen_texts = set()
+
+        if not topic:
+            from backend.services.curriculum_service import curriculum_service
+            topic = curriculum_service.get_topic_detail(topic_id)
+            if not topic:
+                for t in curriculum_service.data.get("topics", []):
+                    if t.get("id") == topic_id:
+                        topic = t
+                        break
+
+        topic_title = topic.get("title", topic_id) if topic else topic_id
+        clean_title = topic_title.replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
+
+        # 1. Authoritative static questions from allTopicQuizzes.json
+        static_list = _STATIC_QUIZZES.get(topic_id, [])
+        for q in static_list:
+            if isinstance(q, dict):
+                txt = (q.get("question") or q.get("question_text") or "").strip()
+                if txt and txt.lower() not in seen_texts:
+                    seen_texts.add(txt.lower())
+                    c_meta = self.get_concept_for_question(q, topic_id, clean_title)
+                    item = dict(q)
+                    item["concept_id"] = c_meta["concept_id"]
+                    item["concept"] = c_meta["concept"]
+                    candidates.append(item)
+
+        # 2. Topic curriculum questions
+        if topic and isinstance(topic.get("quiz"), list):
+            for q in topic["quiz"]:
+                if isinstance(q, dict):
+                    txt = (q.get("question") or q.get("question_text") or "").strip()
+                    if txt and txt.lower() not in seen_texts:
+                        seen_texts.add(txt.lower())
+                        c_meta = self.get_concept_for_question(q, topic_id, clean_title)
+                        item = dict(q)
+                        item["concept_id"] = c_meta["concept_id"]
+                        item["concept"] = c_meta["concept"]
+                        candidates.append(item)
+
+        # 3. Candidate questions extracted offline from lesson components
+        if topic:
+            extracted = self.gather_offline_candidate_questions(topic)
+            for q in extracted:
+                txt = (q.get("question") or q.get("question_text") or "").strip()
+                if txt and txt.lower() not in seen_texts:
+                    seen_texts.add(txt.lower())
+                    candidates.append(q)
+
+        # 4. Language/domain specific concept bank
+        lang = "python"
+        if "cpp" in topic_id:
+            lang = "cpp"
+        elif "java" in topic_id:
+            lang = "java"
+        elif "c-" in topic_id or "c_adv" in topic_id or "c_int" in topic_id:
+            lang = "c"
+        elif topic and topic.get("language"):
+            lang = topic["language"].lower()
+
+        lang_bank = _LANGUAGE_DOMAIN_BANKS.get(lang, _LANGUAGE_DOMAIN_BANKS["python"])
+        for idx, (t_q, t_ans, t_dist, t_diff, t_cid, t_cname) in enumerate(lang_bank):
+            if t_q.lower() not in seen_texts:
+                seen_texts.add(t_q.lower())
+                opts, c_idx = shuffle_options_with_correct(t_dist, t_ans, (idx * 3 + 1) % 4)
+                candidates.append({
+                    "id": f"q-{topic_id}-dom-{idx + 1}",
+                    "question": t_q,
+                    "options": opts,
+                    "correct_index": c_idx,
+                    "correctIndex": c_idx,
+                    "explanation": f"Core {lang.upper()} principle: {t_ans}",
+                    "difficulty": t_diff,
+                    "concept_id": t_cid,
+                    "concept": t_cname
+                })
+
+        return candidates
+
+    def select_unique_10_questions(
+        self,
+        candidates: List[Dict[str, Any]],
+        presented_ids: List[str],
+        topic_id: str,
+        topic_title: str
+    ) -> List[Dict[str, Any]]:
+        """Select exactly 10 unique questions for an attempt, prioritizing unused questions and eliminating duplicates."""
+        # Normalize candidates
+        normalized_candidates: List[Dict[str, Any]] = []
+        seen_texts = set()
+        seen_ids = set()
+
+        for c in candidates:
+            if not isinstance(c, dict):
+                continue
+            q_text = (c.get("question") or c.get("question_text") or "").strip()
+            if not q_text or q_text.lower() in seen_texts:
+                continue
+            qid = str(c.get("id") or "").strip()
+            if qid and qid in seen_ids:
+                continue
+            seen_texts.add(q_text.lower())
+            if qid:
+                seen_ids.add(qid)
+            normalized_candidates.append(c)
+
+        presented_set = {str(pid).strip() for pid in presented_ids if str(pid).strip()}
+
+        # Partition into unused vs used
+        unused = [c for c in normalized_candidates if str(c.get("id", "")).strip() not in presented_set]
+        used = [c for c in normalized_candidates if str(c.get("id", "")).strip() in presented_set]
+
+        # Sort used questions by least-recently-seen (oldest presented questions first)
+        pres_pos = {pid: idx for idx, pid in enumerate(presented_ids)}
+        used.sort(key=lambda c: pres_pos.get(str(c.get("id", "")).strip(), 0), reverse=True)
+
+        selected: List[Dict[str, Any]] = []
+        selected_ids: set = set()
+
+        # Prioritize unused questions
+        for c in unused:
+            cid = str(c.get("id", "")).strip()
+            if cid not in selected_ids:
+                selected.append(c)
+                selected_ids.add(cid)
+            if len(selected) == 10:
+                break
+
+        # If fewer than 10 unused questions, backfill from least-recently-used
+        if len(selected) < 10:
+            for c in used:
+                cid = str(c.get("id", "")).strip()
+                if cid not in selected_ids:
+                    selected.append(c)
+                    selected_ids.add(cid)
+                if len(selected) == 10:
+                    break
+
+        # If pool has fewer than 10 unique questions in total, pad with concept fallback templates
+        if len(selected) < 10:
+            clean_topic = re.sub(r'[^a-zA-Z0-9_]', '_', (topic_id or "core").lower()).strip('_')
+            fallback_templates = [
+                (f"What is a foundational mechanism behind {topic_title}?", f"Executes structured logic adhering to standard language mechanics.", ["Bypasses all type checks", "Disables memory management", "Forces unbuffered I/O"], "easy", f"{clean_topic}_core_mechanics", f"{topic_title} Mechanics"),
+                (f"Which principle is recommended when architecting solutions for {topic_title}?", f"Maintain clean boundary separation and predictable resource scoping.", ["Rely on silent error handling", "Disable compiler optimization", "Store transient state in global variables"], "medium", "robustness_and_architecture", "Robustness & Architectural Principles"),
+                (f"What is the primary debugging approach if {topic_title} behaves unexpectedly?", f"Trace variable bindings, bounds checking, and runtime flow.", ["Assume internal compiler fault", "Delete all assertions", "Remove type annotations"], "medium", "debugging_and_runtime_flow", "Debugging & Runtime Flow"),
+                (f"How does {topic_title} enhance program robustness?", f"Ensures idiomatic, maintainable, and type-safe execution.", ["Eliminates all unit tests", "Replaces standard libraries", "Executes directly in hardware bios"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles"),
+                (f"What is a key performance consideration when utilizing {topic_title}?", f"Minimize unnecessary memory allocations and redundant iterations.", ["Always use blocking sleeps", "Avoid utilizing local variables", "Disable stack execution"], "hard", "performance_and_resource_scoping", "Performance & Resource Scoping"),
+                (f"Which testing strategy best verifies {topic_title} behavior?", f"Write automated tests covering edge conditions and boundary limits.", ["Avoid running any tests", "Test only standard paths and ignore bounds", "Rely on runtime memory dumps"], "medium", "debugging_and_runtime_flow", "Debugging & Runtime Flow"),
+                (f"What error handling convention is best suited for {topic_title}?", f"Use descriptive, typed exceptions and maintain deterministic invariants.", ["Swallow all exceptions silently", "Terminate OS kernel on failure", "Ignore invalid parameter states"], "hard", "robustness_and_architecture", "Robustness & Architectural Principles")
+            ]
+            pad_idx = 0
+            while len(selected) < 10:
+                tmpl = fallback_templates[pad_idx % len(fallback_templates)]
+                pad_id = f"q-{topic_id}-pad-{len(selected) + 1}"
+                if pad_id not in selected_ids:
+                    opts, c_idx = shuffle_options_with_correct(tmpl[2], tmpl[1], (len(selected) * 3 + 1) % 4)
+                    selected.append({
+                        "id": pad_id,
+                        "question": tmpl[0],
+                        "options": opts,
+                        "correct_index": c_idx,
+                        "correctIndex": c_idx,
+                        "explanation": f"In {topic_title}, this represents standard best engineering practice.",
+                        "difficulty": tmpl[3],
+                        "concept_id": tmpl[4],
+                        "concept": tmpl[5]
+                    })
+                    selected_ids.add(pad_id)
+                pad_idx += 1
+
+        # Format and validate final 10 questions
+        final_10 = []
+        for idx, q in enumerate(selected[:10]):
+            c_idx = q.get("correct_index") if "correct_index" in q else q.get("correctIndex", 0)
+            if not isinstance(c_idx, int) or c_idx < 0 or c_idx > 3:
+                c_idx = 0
+            opts = q.get("options", [])
+            if not isinstance(opts, list):
+                opts = []
+            opts = [str(o).strip() for o in opts if str(o).strip()]
+            while len(opts) < 4:
+                opts.append(f"Option {chr(65 + len(opts))}")
+            opts = opts[:4]
+
+            qid = str(q.get("id") or f"q-{topic_id}-{idx + 1}").strip()
+            c_meta = self.get_concept_for_question(q, topic_id, topic_title)
+            final_10.append({
+                "id": qid,
+                "question": q.get("question") or q.get("question_text") or f"Question {idx + 1} on {topic_title}",
+                "options": opts,
+                "correct_index": c_idx,
+                "correctIndex": c_idx,
+                "explanation": q.get("explanation") or f"Authoritative explanation for {topic_title}.",
+                "difficulty": q.get("difficulty") or "medium",
+                "concept_id": c_meta["concept_id"],
+                "concept": c_meta["concept"]
+            })
+
+        return final_10
+
+    def get_quiz_for_topic(
+        self,
+        topic_id: str,
+        user_id: str = "guest-learner",
+        quiz_type: str = "mastery",
+        force_regenerate: bool = False,
+        session_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Retrieve or generate exactly 10 questions for the topic with user-aware attempt uniqueness."""
+        clean_user_id = str(user_id or "guest-learner").strip() or "guest-learner"
+
+        # Check existing session if session_id provided and not force_regenerate
+        if session_id and not force_regenerate:
+            sess = state_store.get_quiz_session(session_id)
+            if sess and sess.get("questions") and len(sess["questions"]) == 10:
+                topic_title = topic_id.replace("top-", "").replace("-", " ").title()
+                return {
+                    "topic_id": topic_id,
+                    "session_id": session_id,
+                    "title": f"Mini Quiz: {topic_title}",
+                    "target_difficulty": "standard",
+                    "adaptive_note": "Standard calibrated 10-question quiz based on your active mastery.",
+                    "questions": sess["questions"]
+                }
+
+        # Look up topic in curriculum
         from backend.services.curriculum_service import curriculum_service
         topic = curriculum_service.get_topic_detail(topic_id)
         if not topic:
-            # Check platform data
             for t in curriculum_service.data.get("topics", []):
                 if t.get("id") == topic_id:
                     topic = t
@@ -511,42 +936,62 @@ class QuizService:
             }
 
         topic_title = topic.get("title", topic_id)
-
-        # 3. Check if topic already has 10 rich questions
-        existing_quiz = topic.get("quiz", [])
-        questions = None
-        if isinstance(existing_quiz, list) and len(existing_quiz) == 10:
-            questions = self.validate_and_normalize_quiz(existing_quiz, topic_id, topic_title)
-
-        # 4. Try AI generation if force_regenerate or missing
-        if not questions and force_regenerate:
-            questions = self.generate_10_questions_ai(topic)
-
-        # 5. Lesson-grounded generator fallback
-        if not questions or len(questions) != 10:
-            questions = self.generate_10_questions_offline(topic)
-
-        # Ensure all questions carry concept_id and concept metadata
         clean_title = topic_title.replace("Mini Quiz: ", "").replace("Knowledge Check: ", "")
-        for q in questions:
-            if not q.get("concept_id") or not q.get("concept"):
-                c_meta = self.get_concept_for_question(q, topic_id, clean_title)
-                q["concept_id"] = c_meta["concept_id"]
-                q["concept"] = c_meta["concept"]
+
+        # Candidate pool for this topic
+        candidates = self.get_candidate_questions_for_topic(topic_id, topic)
+
+        # For unauthenticated or guest reads without force_regenerate, return stable canonical quiz from cache
+        if not force_regenerate and not session_id and clean_user_id == "guest-learner":
+            cached = state_store.get_generated_quiz(topic_id)
+            if cached and cached.get("questions") and len(cached["questions"]) == 10:
+                return cached
+
+        # AI generation if force_regenerate
+        if force_regenerate:
+            ai_q = self.generate_10_questions_ai(topic)
+            if ai_q and len(ai_q) == 10:
+                candidates = ai_q + candidates
+
+        # Fetch previously presented questions for this student and topic
+        if clean_user_id == "guest-learner" and not force_regenerate:
+            presented_ids = []
+        else:
+            presented_ids = state_store.get_presented_question_ids(clean_user_id, topic_id)
+
+        # Select 10 questions prioritizing unused questions
+        questions = self.select_unique_10_questions(candidates, presented_ids, topic_id, clean_title)
+
+        # Create session ID
+        actual_session_id = session_id or f"sess_{clean_user_id}_{topic_id}_{uuid.uuid4().hex[:8]}"
 
         quiz_data = {
             "topic_id": topic_id,
-            "title": f"Mini Quiz: {topic_title}",
+            "session_id": actual_session_id,
+            "title": f"Mini Quiz: {clean_title}",
             "target_difficulty": "standard",
             "adaptive_note": "Standard calibrated 10-question quiz based on your active mastery.",
             "questions": questions
         }
 
-        # 6. Cache in SQLite
+        # Cache in SQLite for backward compatibility and canonical guest reads
         state_store.save_generated_quiz(topic_id, quiz_data)
 
-        return quiz_data
+        # Record presented questions at issuance for authenticated learners or explicit sessions/regenerations
+        if clean_user_id != "guest-learner" or session_id or force_regenerate:
+            selected_ids = [q["id"] for q in questions]
+            state_store.record_presented_questions(
+                user_id=clean_user_id,
+                topic_id=topic_id,
+                question_ids=selected_ids,
+                quiz_type=quiz_type,
+                session_id=actual_session_id,
+                questions=questions
+            )
+        else:
+            state_store.save_quiz_session(actual_session_id, clean_user_id, topic_id, quiz_type, questions)
 
+        return quiz_data
     def generate_adaptive_feedback(
         self,
         topic_title: str,
